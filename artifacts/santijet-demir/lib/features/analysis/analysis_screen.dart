@@ -221,6 +221,11 @@ class _AnalysisSelectedBatchArea extends ConsumerWidget {
       );
     }
 
+    // Fire özeti yalnız analiz tamamlandıktan sonra (yükleme overlay sonrası).
+    if (!batch.isOptimized) {
+      return const SizedBox.shrink();
+    }
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(8, 0, 8, AppSpacing.md),
       child: AnalysisFireSummaryPanel(

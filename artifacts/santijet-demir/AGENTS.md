@@ -39,7 +39,8 @@ Kaynak: `lib/core/widgets/santijet_header.dart`, `lib/features/shell/main_shell.
 ## Analiz / Rapor (kilitli)
 
 - Analiz ekranında **Tahvil Hesaplayıcı** kartı / bölümü yok. Geri koyma.
-- DWG analiz listesi kartının altında **Fire analizi yap** butonu vardır. Kaldırma.
+- DWG analiz listesi kartının altında **İmalattan Veri Al** (mavi) sonra **Fire analizi yap** (yeşil). Üstte import butonu yok.
+- Fire özeti paneli yalnız fire analizi tamamlandıktan sonra görünür; panel içinde **Fire analizi yap** yok.
 - Analiz veri kaynağı: **İmalattan Veri Al** (CAD metrajı imalata gönderilmiş kayıtlar). **Ön İmalat** sekmesi / “Ön İmalattan Veri Al” yok; geri koyma.
 - Keşif sekmeleri yalnız **İmalat · Otomatik Metraj** (çerçeveli başlık). Üçüncü **Ön İmalat** sekmesi yok.
 - Fire analizi **tahvilsiz**: zayiatsız kesim + minimum fire (boy eşleştirme + stok kesim). Tahvil banner / `(tahvil ile fire analizi yap)` / tahvil zorunluluğu yok. Buton: **Fire analizi yap**. KPI: **Kesim Fire**.

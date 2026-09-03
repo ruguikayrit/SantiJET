@@ -5,7 +5,6 @@ import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_radii.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
 import 'package:santijet_demir/core/widgets/app_components.dart';
-import 'package:santijet_demir/core/widgets/app_description_lines.dart';
 import 'package:santijet_demir/domain/entities/cutting_bending.dart';
 import 'package:santijet_demir/features/analysis/cutting_bending_calculator.dart';
 import 'package:santijet_demir/features/analysis/widgets/analysis_fire_summary_details.dart';
@@ -293,20 +292,8 @@ class _AnalysisFireSummaryPanelState
                   ] else if (analysisError != null) ...[
                     const SizedBox(height: 14),
                     _AnalysisErrorBanner(message: analysisError),
-                  ] else if (!isRunning) ...[
-                    if (!batch.isOptimized) ...[
-                      const SizedBox(height: 14),
-                      _MinimumFireAnalysisPanel(
-                        enabled: batch.pieceLines.isNotEmpty,
-                        onStart: () => confirmAndRunFireAnalysis(
-                          context: context,
-                          ref: ref,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                    ] else ...[
-                      const SizedBox(height: 12),
-                    ],
+                  ] else ...[
+                    const SizedBox(height: 12),
                     AnalysisReportActions(
                       batch: batch,
                       sourceBatches: widget.sourceBatches,
@@ -400,38 +387,6 @@ class _ActiveKpiCard extends StatelessWidget {
         ],
       ),
       child: child,
-    );
-  }
-}
-
-class _MinimumFireAnalysisPanel extends StatelessWidget {
-  const _MinimumFireAnalysisPanel({
-    required this.enabled,
-    required this.onStart,
-  });
-
-  final bool enabled;
-  final Future<void> Function() onStart;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        const AppDescriptionLines(
-          [
-            'Zayiatsız kesim planı ve minimum fire hedeflenir.',
-            'Çap değiştirilmez; yakın boylar eşleştirilerek stok kesimi yapılır.',
-          ],
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: 10),
-        _MatteGreenGradientButton(
-          onPressed: enabled ? () => onStart() : null,
-          icon: Icons.content_cut_outlined,
-          label: 'Fire analizi yap',
-        ),
-      ],
     );
   }
 }
@@ -634,110 +589,6 @@ class _AnalysisCompletedBanner extends StatelessWidget {
   }
 }
 
-class _MatteGreenGradientButton extends StatelessWidget {
-  const _MatteGreenGradientButton({
-    required this.onPressed,
-    required this.icon,
-    required this.label,
-  });
-
-  final VoidCallback? onPressed;
-  final IconData icon;
-  final String label;
-
-  static const _enabledGradient = LinearGradient(
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-    colors: [
-      Color(0xFF0B6B50),
-      Color(0xFF0F8566),
-      Color(0xFF0A7258),
-    ],
-  );
-
-  static const _disabledGradient = LinearGradient(
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-    colors: [
-      Color(0xFF1A2E28),
-      Color(0xFF1F3530),
-      Color(0xFF1A2E28),
-    ],
-  );
-
-  @override
-  Widget build(BuildContext context) {
-    final enabled = onPressed != null;
-
-    return Material(
-      color: Colors.transparent,
-      borderRadius: AppRadii.md,
-      elevation: enabled ? 2 : 0,
-      shadowColor: enabled
-          ? AppColors.success.withValues(alpha: 0.35)
-          : Colors.transparent,
-      child: InkWell(
-        onTap: onPressed,
-        borderRadius: AppRadii.md,
-        splashColor: Colors.white.withValues(alpha: 0.1),
-        highlightColor: Colors.white.withValues(alpha: 0.05),
-        child: Ink(
-          width: double.infinity,
-          height: 52,
-          decoration: BoxDecoration(
-            borderRadius: AppRadii.md,
-            gradient: enabled ? _enabledGradient : _disabledGradient,
-            border: Border.all(
-              color: enabled
-                  ? const Color(0xFF14A07A).withValues(alpha: 0.55)
-                  : AppColors.cardBorder,
-              width: enabled ? 1.25 : 1,
-            ),
-            boxShadow: enabled
-                ? [
-                    BoxShadow(
-                      color: AppColors.success.withValues(alpha: 0.22),
-                      blurRadius: 16,
-                      offset: const Offset(0, 4),
-                    ),
-                  ]
-                : null,
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                icon,
-                size: 22,
-                color: enabled
-                    ? const Color(0xFFE8FFF5)
-                    : AppColors.cardTextDisabled,
-              ),
-              const SizedBox(width: 10),
-              Flexible(
-                child: Text(
-                  label,
-                  textAlign: TextAlign.center,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTypography.titleMedium.copyWith(
-                    color: enabled
-                        ? Colors.white
-                        : AppColors.cardTextDisabled,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0.15,
-                    fontSize: (AppTypography.titleMedium.fontSize ?? 14) * 1.125,
-                    height: 0.825 * 0.75,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
 
 class AnalysisStepHeader extends StatelessWidget {
   const AnalysisStepHeader({

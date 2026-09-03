@@ -52,21 +52,7 @@ class AnalysisBatchListPanel extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
-            child: FilledButton.icon(
-              onPressed: onImportFromPreProduction,
-              icon: const Icon(Icons.inventory_2_outlined, size: 18),
-              label: const Text('İmalattan Veri Al'),
-              style: FilledButton.styleFrom(
-                minimumSize: const Size.fromHeight(44),
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                backgroundColor: AppColors.electricBlue,
-                foregroundColor: Colors.white,
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(14, 0, 14, 6),
+            padding: const EdgeInsets.fromLTRB(14, 14, 14, 6),
             child: Text(
               'DWG analiz listesi',
               style: AppTypography.titleMedium,
@@ -279,7 +265,21 @@ class AnalysisBatchListPanel extends ConsumerWidget {
             },
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(14, 10, 14, 14),
+            padding: const EdgeInsets.fromLTRB(14, 12, 14, 0),
+            child: FilledButton.icon(
+              onPressed: onImportFromPreProduction,
+              icon: const Icon(Icons.inventory_2_outlined, size: 18),
+              label: const Text('İmalattan Veri Al'),
+              style: FilledButton.styleFrom(
+                minimumSize: const Size.fromHeight(44),
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                backgroundColor: AppColors.electricBlue,
+                foregroundColor: Colors.white,
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 8, 14, 14),
             child: FilledButton.icon(
               onPressed: fireAnalysisEnabled
                   ? () => confirmAndRunFireAnalysis(
@@ -292,10 +292,10 @@ class AnalysisBatchListPanel extends ConsumerWidget {
               style: FilledButton.styleFrom(
                 minimumSize: const Size.fromHeight(44),
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                backgroundColor: AppColors.electricBlue,
+                backgroundColor: AppColors.success,
                 foregroundColor: Colors.white,
                 disabledBackgroundColor:
-                    AppColors.electricBlue.withValues(alpha: 0.35),
+                    AppColors.success.withValues(alpha: 0.35),
                 disabledForegroundColor: Colors.white70,
               ),
             ),
