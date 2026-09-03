@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:santijet_demir/core/routing/app_routes.dart';
 import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_radii.dart';
 import 'package:santijet_demir/core/theme/app_spacing.dart';
@@ -17,6 +19,8 @@ class SubscriptionScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final current = ref.watch(currentSubscriptionPlanProvider);
     final package = ref.watch(currentSubscriptionPackageProvider);
+    final isGuest = ref.watch(isGuestSessionProvider);
+    final canPurchase = ref.watch(canPurchaseSubscriptionProvider);
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
@@ -38,7 +42,7 @@ class SubscriptionScreen extends ConsumerWidget {
                 Text('Mevcut plan', style: AppTypography.labelMedium),
                 const SizedBox(height: 6),
                 Text(
-                  package.title,
+                  isGuest ? 'Demo sürüm' : package.title,
                   style: AppTypography.titleMedium.copyWith(
                     fontWeight: FontWeight.w700,
                     color: AppColors.electricBlueLight,
@@ -46,7 +50,9 @@ class SubscriptionScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  package.monthlyPriceLabel,
+                  isGuest
+                      ? 'Misafir oturumu — satın alma kapalı'
+                      : package.monthlyPriceLabel,
                   style: AppTypography.bodySmall.copyWith(
                     color: AppColors.textMuted,
                   ),
@@ -54,6 +60,45 @@ class SubscriptionScreen extends ConsumerWidget {
               ],
             ),
           ),
+          if (isGuest) ...[
+            const SizedBox(height: 12),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: AppColors.warning.withValues(alpha: 0.1),
+                borderRadius: AppRadii.md,
+                border: Border.all(
+                  color: AppColors.warning.withValues(alpha: 0.4),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    'Üyelik açmadan premium paket alınamaz',
+                    style: AppTypography.titleMedium.copyWith(
+                      color: AppColors.warning,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Misafir girişi Demo Şantiye ile test içindir. '
+                    'Paket satın almak için hesap oluşturun.',
+                    style: AppTypography.bodySmall.copyWith(
+                      color: AppColors.cardTextPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  FilledButton(
+                    onPressed: () => context.push(AppRoutes.register),
+                    child: const Text('Üyelik aç'),
+                  ),
+                ],
+              ),
+            ),
+          ],
           const SizedBox(height: 16),
           Text(
             'Paketler',
@@ -61,21 +106,26 @@ class SubscriptionScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            'İki paket — fiyatlar geçici; ödeme altyapısı yakında bağlanacak.',
+            isGuest
+                ? 'Paketler yalnızca üyelik sonrası satın alınabilir.'
+                : 'İki paket — fiyatlar geçici; ödeme altyapısı yakında bağlanacak.',
             style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
           ),
           const SizedBox(height: 12),
           for (final info in SubscriptionCatalog.purchasable) ...[
             _PackageCard(
               info: info,
-              isCurrent: current == info.plan,
+              isCurrent: !isGuest && current == info.plan,
+              purchaseEnabled: canPurchase,
               onSelect: () => _confirmPurchase(context, ref, info),
             ),
             const SizedBox(height: 12),
           ],
           Text(
-            'Satın alma şu an simülasyondur. Gerçek ödeme entegrasyonu '
-            'sonraki adımda eklenecektir.',
+            isGuest
+                ? 'Misafir hesapla satın alma simülasyonu da kapalıdır.'
+                : 'Satın alma şu an simülasyondur. Gerçek ödeme entegrasyonu '
+                    'sonraki adımda eklenecektir.',
             style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
             textAlign: TextAlign.center,
           ),
@@ -90,6 +140,17 @@ class SubscriptionScreen extends ConsumerWidget {
     WidgetRef ref,
     SubscriptionPackageInfo info,
   ) async {
+    if (!ref.read(canPurchaseSubscriptionProvider)) {
+      ScaffoldMessenger.of(context).showAppSnackBar(
+        const SnackBar(
+          content: Text(
+            'Misafir hesapla premium paket alınamaz. Üyelik açın.',
+          ),
+        ),
+      );
+      return;
+    }
+
     final current = ref.read(currentSubscriptionPlanProvider);
     if (current == info.plan) {
       ScaffoldMessenger.of(context).showAppSnackBar(
@@ -144,11 +205,13 @@ class _PackageCard extends StatelessWidget {
   const _PackageCard({
     required this.info,
     required this.isCurrent,
+    required this.purchaseEnabled,
     required this.onSelect,
   });
 
   final SubscriptionPackageInfo info;
   final bool isCurrent;
+  final bool purchaseEnabled;
   final VoidCallback onSelect;
 
   @override
@@ -251,7 +314,7 @@ class _PackageCard extends StatelessWidget {
             ),
           const SizedBox(height: 12),
           FilledButton(
-            onPressed: isCurrent ? null : onSelect,
+            onPressed: (!purchaseEnabled || isCurrent) ? null : onSelect,
             style: FilledButton.styleFrom(
               backgroundColor: info.highlighted
                   ? AppColors.electricBlueLight
@@ -263,9 +326,13 @@ class _PackageCard extends StatelessWidget {
               minimumSize: const Size.fromHeight(48),
             ),
             child: Text(
-              isCurrent
-                  ? 'Mevcut plan'
-                  : (info.highlighted ? 'Bu pakete yükselt' : 'Bu paketi seç'),
+              !purchaseEnabled
+                  ? 'Üyelik gerekli'
+                  : isCurrent
+                      ? 'Mevcut plan'
+                      : (info.highlighted
+                          ? 'Bu pakete yükselt'
+                          : 'Bu paketi seç'),
             ),
           ),
         ],

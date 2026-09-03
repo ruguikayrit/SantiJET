@@ -91,6 +91,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
         await _supabaseAuth.restoreSession();
         final session = _supabaseAuth.getActiveSession();
         if (session == null) {
+          final guest = _tryRestoreLocalGuest();
+          if (guest != null) {
+            state = guest;
+            return;
+          }
           state = AuthState(isInitialized: true, usesSupabase: true);
           return;
         }
@@ -229,6 +234,50 @@ class AuthNotifier extends StateNotifier<AuthState> {
       );
       return false;
     }
+  }
+
+  /// Yerel misafir oturumu — buluta yazılmaz; demo ile uygulamayı test eder.
+  Future<bool> loginAsGuest() async {
+    try {
+      final sessionId = _newSessionId();
+      final user = await _localAuth.loginAsGuest(sessionId: sessionId);
+
+      await _ref.read(appSettingsProvider.notifier).updateProfile(
+            profileName: 'Misafir',
+            profileProfession: '',
+            profileRole: 'Misafir · Demo',
+          );
+
+      state = AuthState(
+        user: user,
+        sessionId: sessionId,
+        isSessionValid: true,
+        isInitialized: true,
+        usesSupabase: _usesSupabase,
+      );
+      return true;
+    } catch (e) {
+      state = state.copyWith(
+        error: 'Misafir girişi başarısız: $e',
+        isInitialized: true,
+      );
+      return false;
+    }
+  }
+
+  AuthState? _tryRestoreLocalGuest() {
+    final session = _localAuth.getActiveSession();
+    if (session == null) return null;
+    final user = _localAuth.findById(session.userId);
+    if (user == null || !user.isGuest) return null;
+    if (!_localAuth.isSessionValid(session)) return null;
+    return AuthState(
+      user: user,
+      sessionId: session.sessionId,
+      isSessionValid: true,
+      isInitialized: true,
+      usesSupabase: _usesSupabase,
+    );
   }
 
   Future<bool> login({
@@ -443,6 +492,13 @@ class AuthNotifier extends StateNotifier<AuthState> {
     final user = state.user;
     if (user == null) {
       state = state.copyWith(error: 'Oturum bulunamadı');
+      return false;
+    }
+    if (user.isGuest) {
+      state = state.copyWith(
+        error:
+            'Misafir hesapla premium paket alınamaz. Üyelik açarak devam edin.',
+      );
       return false;
     }
 

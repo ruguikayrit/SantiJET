@@ -93,6 +93,35 @@ class AuthRepository {
     return updated;
   }
 
+  Future<UserAccount> loginAsGuest({required String sessionId}) async {
+    final existing = findById(UserAccount.guestId);
+    final account = UserAccount(
+      id: UserAccount.guestId,
+      email: UserAccount.guestEmail,
+      displayName: 'Misafir',
+      passwordHash: '',
+      currentSessionId: sessionId,
+      membershipType: MembershipType.individual,
+      // Demo sürümde tüm sekmeleri (Analiz dahil) test edebilsin.
+      subscriptionPlan: SubscriptionPlan.demirTakipAnaliz,
+      isGuest: true,
+    );
+
+    if (existing == null) {
+      final accounts = getAllAccounts()..add(account);
+      await _saveAccounts(accounts);
+    } else {
+      await _upsertAccount(account);
+    }
+
+    await _saveActiveSession(
+      userId: account.id,
+      sessionId: sessionId,
+      email: account.email,
+    );
+    return account;
+  }
+
   Future<void> logout() async {
     await _box.delete(_activeSessionKey);
   }

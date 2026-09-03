@@ -62,7 +62,9 @@ class SettingsScreen extends ConsumerWidget {
           _SettingsTile(
             icon: Icons.workspace_premium_outlined,
             title: 'Abonelik',
-            subtitle: '${package.title} · Paketleri gör',
+            subtitle: ref.watch(authProvider).user?.isGuest == true
+                ? 'Misafir · premium alınamaz · üyelik açın'
+                : '${package.title} · Paketleri gör',
             onTap: () => context.push(AppRoutes.subscription),
           ),
           _SettingsTile(

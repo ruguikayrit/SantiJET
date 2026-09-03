@@ -25,7 +25,11 @@ Alt nav: **Ana Sayfa · Sipariş · Gelen Demir · Saha Sayım · Analiz**
 
 Kaynak: `lib/core/widgets/santijet_header.dart`, `lib/features/shell/main_shell.dart`, `app_bottom_nav_bar.dart`.
 
-## Ana sayfa / Ayarlar (kilitli)
+## Giriş / Misafir (kilitli)
+
+- Giriş ekranında **Misafir girişi · Demo ile dene** vardır. Misafir yerel oturum + Demo Şantiye yükler.
+- Misafir **premium paket satın alamaz** (Abonelik ekranı + `setSubscriptionPlan` koruması). Üyelik açmadan satın alma yok.
+- Misafir buluta yazılmaz; proje oluşturma yerelde kalır.
 
 - **Günlük Brifing** ve **Demir Tahmin Motoru** kartı anasayfada yok. Geri koyma.
 - **Proje İlerleme Durumu** altında formül satırı yok (`Proje ilerleme = planlanan kullanım toplamı / keşif miktarı`). Geri koyma.

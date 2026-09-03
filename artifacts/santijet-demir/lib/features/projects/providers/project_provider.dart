@@ -148,24 +148,8 @@ class ProjectsController {
     final Project project;
 
     try {
-      final sync = await _cloudSync();
-      if (SupabaseService.isConfigured && sync == null) {
-        throw ProjectException(
-          'Bulut bağlantısı kurulamadı. İnternet/Supabase ayarını kontrol edip tekrar deneyin.',
-        );
-      }
-
-      if (sync != null) {
-        project = await sync.createProject(
-          owner: user,
-          name: name,
-          location: location,
-          startDate: startDate,
-          endDate: endDate,
-          progress: progress,
-          code: code,
-        );
-      } else {
+      // Misafir: yalnız yerel proje — bulut/üye olmadan demo seed çalışsın.
+      if (user.isGuest) {
         project = await _repo.createProject(
           owner: user,
           name: name,
@@ -175,6 +159,35 @@ class ProjectsController {
           progress: progress,
           code: code,
         );
+      } else {
+        final sync = await _cloudSync();
+        if (SupabaseService.isConfigured && sync == null) {
+          throw ProjectException(
+            'Bulut bağlantısı kurulamadı. İnternet/Supabase ayarını kontrol edip tekrar deneyin.',
+          );
+        }
+
+        if (sync != null) {
+          project = await sync.createProject(
+            owner: user,
+            name: name,
+            location: location,
+            startDate: startDate,
+            endDate: endDate,
+            progress: progress,
+            code: code,
+          );
+        } else {
+          project = await _repo.createProject(
+            owner: user,
+            name: name,
+            location: location,
+            startDate: startDate,
+            endDate: endDate,
+            progress: progress,
+            code: code,
+          );
+        }
       }
     } on ProjectException {
       rethrow;

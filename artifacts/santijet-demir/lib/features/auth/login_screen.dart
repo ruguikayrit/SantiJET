@@ -8,6 +8,7 @@ import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_spacing.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
 import 'package:santijet_demir/features/auth/providers/auth_provider.dart';
+import 'package:santijet_demir/features/demo/demo_seed_provider.dart';
 import 'package:santijet_demir/features/projects/providers/project_provider.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -66,6 +67,53 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       }
 
       router.go(AppRoutes.projects);
+    } finally {
+      if (context.mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _continueAsGuest() async {
+    final messenger = ScaffoldMessenger.of(context);
+    final router = GoRouter.of(context);
+    setState(() => _loading = true);
+    try {
+      final ok = await ref.read(authProvider.notifier).loginAsGuest();
+      if (!context.mounted) return;
+      if (!ok) {
+        messenger.showAppSnackBar(
+          SnackBar(
+            content: Text(
+              ref.read(authProvider).error ?? 'Misafir girişi başarısız',
+            ),
+          ),
+        );
+        return;
+      }
+
+      try {
+        await ref.read(demoSeedControllerProvider).loadAll();
+      } catch (e) {
+        if (!context.mounted) return;
+        messenger.showAppSnackBar(
+          SnackBar(
+            content: Text(
+              'Misafir oturumu açıldı; demo veri yüklenemedi: $e',
+            ),
+          ),
+        );
+        router.go(AppRoutes.dashboard);
+        return;
+      }
+
+      if (!context.mounted) return;
+      messenger.showAppSnackBar(
+        const SnackBar(
+          content: Text(
+            'Demo Şantiye yüklendi. Premium paket için üyelik açın.',
+          ),
+        ),
+      );
+      router.go(AppRoutes.dashboard);
     } finally {
       if (context.mounted) setState(() => _loading = false);
     }
@@ -176,8 +224,22 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   : const Text('Giriş Yap'),
             ),
             const SizedBox(height: 12),
+            OutlinedButton(
+              onPressed: _loading ? null : _continueAsGuest,
+              child: const Text('Misafir girişi · Demo ile dene'),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Üyelik açmadan premium paket alınamaz. Misafir hesabı Demo Şantiye ile test içindir.',
+              style: AppTypography.bodySmall.copyWith(
+                color: AppColors.textMuted,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 12),
             TextButton(
-              onPressed: () => context.push(AppRoutes.register),
+              onPressed:
+                  _loading ? null : () => context.push(AppRoutes.register),
               child: const Text('Bireysel veya kurumsal hesap oluştur'),
             ),
           ],

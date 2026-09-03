@@ -26,6 +26,16 @@ final canAccessPredictionBySubscriptionProvider = Provider<bool>((ref) {
   );
 });
 
+final isGuestSessionProvider = Provider<bool>((ref) {
+  return ref.watch(authProvider).user?.isGuest ?? false;
+});
+
+final canPurchaseSubscriptionProvider = Provider<bool>((ref) {
+  final user = ref.watch(authProvider).user;
+  if (user == null) return false;
+  return user.canPurchaseSubscription;
+});
+
 final hasActiveSubscriptionProvider = Provider<bool>((ref) {
   return ref.watch(currentSubscriptionPlanProvider).isPaid;
 });

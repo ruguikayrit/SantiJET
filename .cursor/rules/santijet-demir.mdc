@@ -16,6 +16,7 @@ Kapsam: `artifacts/santijet-demir/**`. Başka ürüne dokunma. Özet: `artifacts
 - Anasayfaya Günlük Brifing / Tahmin kartı ve ilerleme formül satırını geri koyma.
 - Ayarlara Proje Bilgileri / Dokunma Titreşimi geri koyma.
 - Ayarlar’da **Demo veriyi yükle** (Yedekleme sonrası) kalır; Demo Şantiye seed’i.
+- Girişte **Misafir girişi · Demo ile dene** kalır. Misafir premium satın alamaz.
 - Analiz’de **Tahvil Hesaplayıcı** yok; geri koyma.
 - Keşif: yalnız **İmalat · Otomatik Metraj** (çerçeveli). Ön İmalat sekmesi yok. Analiz: **İmalattan Veri Al**.
 - Fire analizi tahvilsiz (minimum fire / zayiatsız kesim). Buton: **Fire analizi yap**. Tahvil banner/zorunluluk geri gelmez.

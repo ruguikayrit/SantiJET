@@ -12,7 +12,11 @@ class UserAccount {
     this.membershipType = MembershipType.individual,
     this.corporateRole,
     this.subscriptionPlan = SubscriptionPlan.demirTakip,
+    this.isGuest = false,
   });
+
+  static const guestId = 'guest-local';
+  static const guestEmail = 'guest@santijet.local';
 
   final String id;
   final String email;
@@ -23,16 +27,23 @@ class UserAccount {
   final CorporateRole? corporateRole;
   final SubscriptionPlan subscriptionPlan;
 
+  /// Üyeliksiz yerel deneme oturumu — premium satın alamaz.
+  final bool isGuest;
+
   bool get isCorporate => membershipType == MembershipType.corporate;
 
+  bool get canPurchaseSubscription => !isGuest;
+
   String get membershipSummary {
+    if (isGuest) return 'Misafir · Demo';
     if (!isCorporate) return MembershipType.individual.label;
     final role = corporateRole?.label;
     if (role == null) return MembershipType.corporate.label;
     return '${MembershipType.corporate.label} · $role';
   }
 
-  String get subscriptionSummary => subscriptionPlan.label;
+  String get subscriptionSummary =>
+      isGuest ? 'Demo sürüm' : subscriptionPlan.label;
 
   UserAccount copyWith({
     String? id,
@@ -43,6 +54,7 @@ class UserAccount {
     MembershipType? membershipType,
     CorporateRole? corporateRole,
     SubscriptionPlan? subscriptionPlan,
+    bool? isGuest,
     bool clearCorporateRole = false,
   }) {
     return UserAccount(
@@ -55,6 +67,7 @@ class UserAccount {
       corporateRole:
           clearCorporateRole ? null : (corporateRole ?? this.corporateRole),
       subscriptionPlan: subscriptionPlan ?? this.subscriptionPlan,
+      isGuest: isGuest ?? this.isGuest,
     );
   }
 
@@ -67,6 +80,7 @@ class UserAccount {
         'membershipType': membershipType.storageValue,
         'corporateRole': corporateRole?.storageValue,
         'subscriptionPlan': subscriptionPlan.storageValue,
+        'isGuest': isGuest,
       };
 
   factory UserAccount.fromJson(Map<dynamic, dynamic> json) {
@@ -86,6 +100,9 @@ class UserAccount {
         json['subscriptionPlan'] as String? ??
             json['subscription_plan'] as String?,
       ),
+      isGuest: json['isGuest'] as bool? ??
+          (json['id'] == guestId ||
+              (json['email'] as String?)?.toLowerCase() == guestEmail),
     );
   }
 }
