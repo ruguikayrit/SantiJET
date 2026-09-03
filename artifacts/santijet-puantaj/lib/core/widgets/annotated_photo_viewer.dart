@@ -634,61 +634,90 @@ class _AnnotatedPhotoViewerPageState extends State<AnnotatedPhotoViewerPage> {
                         ),
                       ),
                       const SizedBox(height: AppSpacing.sm),
-                      Row(
-                        children: [
-                          for (final c in _palette)
-                            Padding(
-                              padding: const EdgeInsets.only(right: 8),
-                              child: GestureDetector(
-                                onTap: () => setState(() => _color = c),
-                                child: Container(
-                                  width: 26,
-                                  height: 26,
-                                  decoration: BoxDecoration(
-                                    color: c,
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                      color: _color == c
-                                          ? AppColors.electricBlue
-                                          : Colors.white30,
-                                      width: _color == c ? 2.5 : 1,
+                      SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: [
+                            for (final c in _palette)
+                              Padding(
+                                padding: const EdgeInsets.only(right: 8),
+                                child: GestureDetector(
+                                  onTap: () => setState(() => _color = c),
+                                  child: Container(
+                                    width: 26,
+                                    height: 26,
+                                    decoration: BoxDecoration(
+                                      color: c,
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                        color: _color == c
+                                            ? AppColors.electricBlue
+                                            : Colors.white30,
+                                        width: _color == c ? 2.5 : 1,
+                                      ),
                                     ),
                                   ),
                                 ),
                               ),
+                            const SizedBox(width: AppSpacing.sm),
+                            Text(
+                              'Kalınlık',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .labelSmall
+                                  ?.copyWith(color: Colors.white54),
                             ),
-                          const SizedBox(width: AppSpacing.sm),
-                          Text(
-                            'Kalınlık',
-                            style: Theme.of(context)
-                                .textTheme
-                                .labelSmall
-                                ?.copyWith(color: Colors.white54),
-                          ),
-                          const SizedBox(width: 6),
-                          for (final w in _strokeOptions)
-                            Padding(
-                              padding: const EdgeInsets.only(right: 6),
-                              child: _strokeChip(w),
+                            const SizedBox(width: 6),
+                            for (final w in _strokeOptions)
+                              Padding(
+                                padding: const EdgeInsets.only(right: 6),
+                                child: _strokeChip(w),
+                              ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.xs),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _editActionButton(
+                              tooltip: 'Son değişikliği geri al',
+                              label: 'Son değişikliği geri al',
+                              icon: Icons.undo,
+                              enabled: !_saving &&
+                                  !_rotating &&
+                                  _annotations.isNotEmpty,
+                              onPressed: _undo,
                             ),
-                          const Spacer(),
-                          IconButton(
-                            tooltip: 'Geri al',
-                            onPressed:
-                                _annotations.isEmpty ? null : _undo,
-                            icon: const Icon(Icons.undo, color: Colors.white70),
                           ),
-                          IconButton(
-                            tooltip: 'Temizle',
-                            onPressed:
-                                _annotations.isEmpty ? null : _clearAll,
-                            icon: const Icon(
-                              Icons.delete_outline,
-                              color: Colors.white70,
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: _editActionButton(
+                              tooltip: 'Tüm çizimleri temizle',
+                              label: 'Tümünü geri al',
+                              icon: Icons.delete_outline,
+                              enabled: !_saving &&
+                                  !_rotating &&
+                                  _annotations.isNotEmpty,
+                              onPressed: _clearAll,
                             ),
                           ),
                         ],
                       ),
+                      if (_canRevertPrevious) ...[
+                        const SizedBox(height: 6),
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: _editActionButton(
+                            tooltip: 'Kaydedilmiş düzenlemeyi geri al',
+                            label: 'Kaydedilmiş hali geri al',
+                            icon: Icons.history,
+                            enabled: !_saving && !_rotating && !_reverting,
+                            accent: const Color(0xFFFF8A80),
+                            onPressed: _revertPrevious,
+                          ),
+                        ),
+                      ],
                       const SizedBox(height: AppSpacing.xs),
                       Row(
                         children: [
@@ -735,6 +764,53 @@ class _AnnotatedPhotoViewerPageState extends State<AnnotatedPhotoViewerPage> {
                 ),
               ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _editActionButton({
+    required String tooltip,
+    required String label,
+    required IconData icon,
+    required bool enabled,
+    required VoidCallback onPressed,
+    Color accent = Colors.white,
+  }) {
+    final color = enabled ? accent : Colors.white38;
+    return Tooltip(
+      message: tooltip,
+      child: Material(
+        color: enabled
+            ? Colors.white.withValues(alpha: 0.12)
+            : Colors.white.withValues(alpha: 0.05),
+        borderRadius: AppRadii.sm,
+        child: InkWell(
+          borderRadius: AppRadii.sm,
+          onTap: enabled ? onPressed : null,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.max,
+              children: [
+                Icon(icon, size: 18, color: color),
+                const SizedBox(width: 6),
+                Flexible(
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: color,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -1047,6 +1123,9 @@ class _PhotoCanvasPainter extends CustomPainter {
 }
 
 /// Görev fotoğrafları için tam ekran düzenleyici.
+///
+/// [rootNavigator] ile shell alt navigasyonunun üstünde açılır; aksi halde
+/// geri al / temizle satırı bottom bar altında kalır.
 Future<void> openAnnotatedPhotoViewer(
   BuildContext context, {
   required Uint8List imageBytes,
@@ -1054,10 +1133,10 @@ Future<void> openAnnotatedPhotoViewer(
   Future<void> Function()? onRevertPrevious,
   bool startInDrawMode = false,
 }) {
-  return Navigator.of(context).push<void>(
+  return Navigator.of(context, rootNavigator: true).push<void>(
     PageRouteBuilder<void>(
-      opaque: false,
-      barrierColor: Colors.black.withValues(alpha: 0.92),
+      opaque: true,
+      fullscreenDialog: true,
       pageBuilder: (context, animation, secondaryAnimation) {
         return FadeTransition(
           opacity: animation,
