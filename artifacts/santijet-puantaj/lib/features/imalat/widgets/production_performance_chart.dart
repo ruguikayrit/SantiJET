@@ -45,8 +45,12 @@ class _ProductionPerformanceChartState
     super.dispose();
   }
 
-  void _scrollToEndIfNeeded(int bucketCount, ProductionPerformancePeriod period) {
-    if (bucketCount <= ProductionPerformanceChart.visibleBucketCount) return;
+  void _scrollToCenterIfNeeded({
+    required bool scrollable,
+    required int bucketCount,
+    required ProductionPerformancePeriod period,
+  }) {
+    if (!scrollable) return;
     if (widget.production.id != _lastProductionId) {
       _lastProductionId = widget.production.id;
       _lastPeriod = null;
@@ -57,7 +61,9 @@ class _ProductionPerformanceChartState
     _lastBucketCount = bucketCount;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!_scrollController.hasClients) return;
-      _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+      final max = _scrollController.position.maxScrollExtent;
+      if (max <= 0) return;
+      _scrollController.jumpTo(max / 2);
     });
   }
 
@@ -154,8 +160,6 @@ class _ProductionPerformanceChartState
     final options = ref.watch(productionPerformanceChartOptionsProvider);
     final buckets = _buckets(widget.production, options.period);
     if (buckets.isEmpty) return const SizedBox.shrink();
-
-    _scrollToEndIfNeeded(buckets.length, options.period);
 
     final unit =
         widget.production.unit.trim().isEmpty ? '' : widget.production.unit.trim();
@@ -258,13 +262,40 @@ class _ProductionPerformanceChartState
         LayoutBuilder(
           builder: (context, constraints) {
             final viewportW = constraints.maxWidth - 30;
-            final scrollable = buckets.length >
-                ProductionPerformanceChart.visibleBucketCount;
+            // Sabit slot: az veride barlar ortada kümelenir; veri artınca
+            // küme merkezden sola-sağa genişler; viewport dolunca kaydırılır.
+            final naturalSlot = hasPlan ? 48.0 : 40.0;
+            final naturalChartW = naturalSlot * buckets.length;
+            final scrollable = naturalChartW > viewportW + 0.5;
             final slotW = scrollable
                 ? viewportW / ProductionPerformanceChart.visibleBucketCount
-                : viewportW / buckets.length;
-            final chartW = scrollable ? slotW * buckets.length : viewportW;
+                : naturalSlot;
+            final chartW = slotW * buckets.length;
             final barWidth = _barWidth(slotW: slotW, hasPlan: hasPlan);
+            final groupsSpace = scrollable ? 6.0 : 10.0;
+
+            _scrollToCenterIfNeeded(
+              scrollable: scrollable,
+              bucketCount: buckets.length,
+              period: options.period,
+            );
+
+            final chart = SizedBox(
+              width: chartW,
+              height: widget.height,
+              child: BarChart(
+                _chartData(
+                  theme: theme,
+                  buckets: buckets,
+                  top: top * 1.12,
+                  unit: unit,
+                  hasPlan: hasPlan,
+                  barWidth: barWidth,
+                  groupsSpace: groupsSpace,
+                  showLeftTitles: false,
+                ),
+              ),
+            );
 
             return Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -292,30 +323,18 @@ class _ProductionPerformanceChartState
                   ),
                 ),
                 Expanded(
-                  child: SingleChildScrollView(
-                    controller: _scrollController,
-                    scrollDirection: Axis.horizontal,
-                    clipBehavior: Clip.hardEdge,
-                    physics: scrollable
-                        ? const BouncingScrollPhysics()
-                        : const NeverScrollableScrollPhysics(),
-                    child: SizedBox(
-                      width: chartW,
-                      height: widget.height,
-                      child: BarChart(
-                        _chartData(
-                          theme: theme,
-                          buckets: buckets,
-                          top: top * 1.12,
-                          unit: unit,
-                          hasPlan: hasPlan,
-                          barWidth: barWidth,
-                          groupsSpace: scrollable ? 6 : (buckets.length <= 4 ? 16 : 8),
-                          showLeftTitles: false,
+                  child: scrollable
+                      ? SingleChildScrollView(
+                          controller: _scrollController,
+                          scrollDirection: Axis.horizontal,
+                          clipBehavior: Clip.hardEdge,
+                          physics: const BouncingScrollPhysics(),
+                          child: chart,
+                        )
+                      : Align(
+                          alignment: Alignment.center,
+                          child: chart,
                         ),
-                      ),
-                    ),
-                  ),
                 ),
               ],
             );
@@ -324,7 +343,7 @@ class _ProductionPerformanceChartState
         if (buckets.length > ProductionPerformanceChart.visibleBucketCount) ...[
           const SizedBox(height: 4),
           Text(
-            'Daha eski ${options.period.label.toLowerCase()} kayıtları için grafiği kaydırın',
+            'Daha fazla ${options.period.label.toLowerCase()} için grafiği kaydırın',
             style: theme.textTheme.labelSmall?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
               fontStyle: FontStyle.italic,
@@ -385,7 +404,7 @@ class _ProductionPerformanceChartState
     return BarChartData(
       maxY: top,
       minY: 0,
-      alignment: BarChartAlignment.spaceBetween,
+      alignment: BarChartAlignment.center,
       groupsSpace: groupsSpace,
       barTouchData: BarTouchData(
         enabled: true,
