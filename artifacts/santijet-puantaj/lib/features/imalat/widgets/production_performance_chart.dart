@@ -159,7 +159,6 @@ class _ProductionPerformanceChartState
     final theme = Theme.of(context);
     final options = ref.watch(productionPerformanceChartOptionsProvider);
     final buckets = _buckets(widget.production, options.period);
-    if (buckets.isEmpty) return const SizedBox.shrink();
 
     final unit =
         widget.production.unit.trim().isEmpty ? '' : widget.production.unit.trim();
@@ -168,22 +167,30 @@ class _ProductionPerformanceChartState
     final hasPlan = planQty > 0 && planDays > 0;
 
     final totalActual = buckets.fold<double>(0, (s, b) => s + b.actual);
-    final avgActual = totalActual / buckets.length;
+    final avgActual = buckets.isEmpty ? 0.0 : totalActual / buckets.length;
 
     final planPerPeriod = buckets.isEmpty
-        ? 0.0
+        ? (hasPlan
+            ? switch (options.period) {
+                ProductionPerformancePeriod.daily => planQty / planDays,
+                ProductionPerformancePeriod.weekly => planQty / planDays * 7,
+                ProductionPerformancePeriod.monthly => planQty / planDays * 30,
+              }
+            : 0.0)
         : buckets.fold<double>(0, (s, b) => s + b.planned) / buckets.length;
 
     final maxBar = buckets.fold<double>(0, (m, b) {
       final v = hasPlan && b.planned > b.actual ? b.planned : b.actual;
       return v > m ? v : m;
     });
-    final maxY = maxBar;
-    final top = maxY <= 0 ? 1.0 : maxY * 1.22;
+    final maxY = maxBar > 0
+        ? maxBar
+        : (planPerPeriod > 0 ? planPerPeriod : 1.0);
+    final top = maxY * 1.22;
 
     String? paceLabel;
     Color? paceColor;
-    if (hasPlan && avgActual > 0 && planPerPeriod > 0) {
+    if (buckets.isNotEmpty && hasPlan && avgActual > 0 && planPerPeriod > 0) {
       final ratio = avgActual / planPerPeriod;
       if (ratio >= 1.05) {
         paceLabel = 'Plan temposunun önünde';
@@ -253,7 +260,9 @@ class _ProductionPerformanceChartState
         ),
         const SizedBox(height: 4),
         Text(
-          _hintText(hasPlan, unit, periodUnit),
+          buckets.isEmpty
+              ? 'Günlük kayıt eklenince çubuklar burada ortalanır'
+              : _hintText(hasPlan, unit, periodUnit),
           style: theme.textTheme.labelSmall?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
           ),
@@ -262,15 +271,16 @@ class _ProductionPerformanceChartState
         LayoutBuilder(
           builder: (context, constraints) {
             final viewportW = constraints.maxWidth - 30;
-            // Sabit slot: az veride barlar ortada kümelenir; veri artınca
-            // küme merkezden sola-sağa genişler; viewport dolunca kaydırılır.
+            // Barlar sabit slot ile merkezde; çizim alanı (ızgara) her zaman
+            // viewport genişliğine yaslanır.
             final naturalSlot = hasPlan ? 48.0 : 40.0;
             final naturalChartW = naturalSlot * buckets.length;
-            final scrollable = naturalChartW > viewportW + 0.5;
+            final scrollable =
+                buckets.isNotEmpty && naturalChartW > viewportW + 0.5;
             final slotW = scrollable
                 ? viewportW / ProductionPerformanceChart.visibleBucketCount
                 : naturalSlot;
-            final chartW = slotW * buckets.length;
+            final chartW = scrollable ? slotW * buckets.length : viewportW;
             final barWidth = _barWidth(slotW: slotW, hasPlan: hasPlan);
             final groupsSpace = scrollable ? 6.0 : 10.0;
 
@@ -331,10 +341,7 @@ class _ProductionPerformanceChartState
                           physics: const BouncingScrollPhysics(),
                           child: chart,
                         )
-                      : Align(
-                          alignment: Alignment.center,
-                          child: chart,
-                        ),
+                      : chart,
                 ),
               ],
             );
@@ -352,14 +359,16 @@ class _ProductionPerformanceChartState
         ],
         const SizedBox(height: AppSpacing.xs),
         Text(
-          hasPlan
-              ? 'Ort. ${_fmt(avgActual)}${unit.isEmpty ? '' : ' $unit'}/$periodUnit'
-                  ' · Plan ${_fmt(planPerPeriod)}${unit.isEmpty ? '' : ' $unit'}/$periodUnit'
-                  ' · Toplam ${_fmt(totalActual)}${unit.isEmpty ? '' : ' $unit'}'
-                  '${planQty > 0 ? ' / ${_fmt(planQty)}' : ''}'
-              : 'Ort. ${_fmt(avgActual)}${unit.isEmpty ? '' : ' $unit'}/$periodUnit'
-                  ' · Toplam ${_fmt(totalActual)}${unit.isEmpty ? '' : ' $unit'}'
-                  ' · ${buckets.length} $periodUnit',
+          buckets.isEmpty
+              ? 'Henüz metraj kaydı yok'
+              : hasPlan
+                  ? 'Ort. ${_fmt(avgActual)}${unit.isEmpty ? '' : ' $unit'}/$periodUnit'
+                      ' · Plan ${_fmt(planPerPeriod)}${unit.isEmpty ? '' : ' $unit'}/$periodUnit'
+                      ' · Toplam ${_fmt(totalActual)}${unit.isEmpty ? '' : ' $unit'}'
+                      '${planQty > 0 ? ' / ${_fmt(planQty)}' : ''}'
+                  : 'Ort. ${_fmt(avgActual)}${unit.isEmpty ? '' : ' $unit'}/$periodUnit'
+                      ' · Toplam ${_fmt(totalActual)}${unit.isEmpty ? '' : ' $unit'}'
+                      ' · ${buckets.length} $periodUnit',
           style: theme.textTheme.labelSmall?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
             fontWeight: FontWeight.w600,
@@ -476,8 +485,8 @@ class _ProductionPerformanceChartState
         ),
         bottomTitles: AxisTitles(
           sideTitles: SideTitles(
-            showTitles: true,
-            reservedSize: 22,
+            showTitles: buckets.isNotEmpty,
+            reservedSize: buckets.isEmpty ? 8 : 22,
             getTitlesWidget: (v, meta) {
               final i = v.toInt();
               if (i < 0 || i >= buckets.length) {
@@ -495,16 +504,30 @@ class _ProductionPerformanceChartState
           ),
         ),
       ),
-      barGroups: [
-        for (var i = 0; i < buckets.length; i++)
-          _barGroup(
-            index: i,
-            bucket: buckets[i],
-            barWidth: barWidth,
-            hasPlan: hasPlan,
-            actualColor: actualColor(buckets[i]),
-          ),
-      ],
+      // Boşken görünmez yer tutucu — ızgara tam genişlikte çizilsin.
+      barGroups: buckets.isEmpty
+          ? [
+              BarChartGroupData(
+                x: 0,
+                barRods: [
+                  BarChartRodData(
+                    toY: 0,
+                    width: 0.1,
+                    color: Colors.transparent,
+                  ),
+                ],
+              ),
+            ]
+          : [
+              for (var i = 0; i < buckets.length; i++)
+                _barGroup(
+                  index: i,
+                  bucket: buckets[i],
+                  barWidth: barWidth,
+                  hasPlan: hasPlan,
+                  actualColor: actualColor(buckets[i]),
+                ),
+            ],
     );
   }
 
