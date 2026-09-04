@@ -39,10 +39,21 @@ class _ProductionPerformanceChartState
   int _lastBucketCount = 0;
   String? _lastProductionId;
 
+  /// Dokunulan periyot grubu (x); -1 = yok. Plan+gerçek tek tooltip.
+  int _touchedGroupX = -1;
+
   @override
   void dispose() {
     _scrollController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(covariant ProductionPerformanceChart oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.production.id != widget.production.id) {
+      _touchedGroupX = -1;
+    }
   }
 
   void _scrollToCenterIfNeeded({
@@ -297,12 +308,18 @@ class _ProductionPerformanceChartState
                 _chartData(
                   theme: theme,
                   buckets: buckets,
-                  top: top * 1.12,
+                  // Tooltip bar üstünde kalsın diye ekstra dikey boşluk.
+                  top: top * 1.38,
                   unit: unit,
                   hasPlan: hasPlan,
                   barWidth: barWidth,
                   groupsSpace: groupsSpace,
                   showLeftTitles: false,
+                  touchedGroupX: _touchedGroupX,
+                  onTouchedGroupX: (x) {
+                    if (_touchedGroupX == x) return;
+                    setState(() => _touchedGroupX = x);
+                  },
                 ),
               ),
             );
@@ -337,7 +354,7 @@ class _ProductionPerformanceChartState
                       ? SingleChildScrollView(
                           controller: _scrollController,
                           scrollDirection: Axis.horizontal,
-                          clipBehavior: Clip.hardEdge,
+                          clipBehavior: Clip.none,
                           physics: const BouncingScrollPhysics(),
                           child: chart,
                         )
@@ -401,6 +418,8 @@ class _ProductionPerformanceChartState
     required bool hasPlan,
     required double barWidth,
     required double groupsSpace,
+    required int touchedGroupX,
+    required ValueChanged<int> onTouchedGroupX,
     bool showLeftTitles = true,
   }) {
     Color actualColor(_PeriodBucket b) {
@@ -410,6 +429,12 @@ class _ProductionPerformanceChartState
           : AppColors.electricBlue;
     }
 
+    int tooltipRodIndex(_PeriodBucket b) {
+      if (!hasPlan) return 0;
+      // Tooltip en yüksek çubuğun üstüne otursun.
+      return b.planned > b.actual ? 1 : 0;
+    }
+
     return BarChartData(
       maxY: top,
       minY: 0,
@@ -417,35 +442,52 @@ class _ProductionPerformanceChartState
       groupsSpace: groupsSpace,
       barTouchData: BarTouchData(
         enabled: true,
+        handleBuiltInTouches: false,
+        touchExtraThreshold: const EdgeInsets.symmetric(horizontal: 8),
+        touchCallback: (event, response) {
+          if (!event.isInterestedForInteractions ||
+              response == null ||
+              response.spot == null) {
+            onTouchedGroupX(-1);
+            return;
+          }
+          onTouchedGroupX(response.spot!.touchedBarGroup.x);
+        },
         touchTooltipData: BarTouchTooltipData(
-          // Yüksek çubuklarda (günlük/haftalık) üstte taşan tooltip
-          // scroll/clip altında kalıyordu; dikeyde içeri sıkıştır.
-          fitInsideVertically: true,
+          // Barların önüne çekilmesin; üstte kalsın.
+          fitInsideVertically: false,
           fitInsideHorizontally: true,
           direction: TooltipDirection.top,
-          tooltipMargin: 4,
+          tooltipMargin: 10,
           tooltipPadding: const EdgeInsets.symmetric(
-            horizontal: 8,
-            vertical: 6,
+            horizontal: 10,
+            vertical: 8,
           ),
           getTooltipColor: (_) =>
               theme.colorScheme.inverseSurface.withValues(alpha: 0.94),
           getTooltipItem: (group, groupIndex, rod, rodIndex) {
-            final b = buckets[group.x.toInt()];
-            final qtyLine = unit.isEmpty
-                ? _fmt(rod.toY)
-                : '${_fmt(rod.toY)} $unit';
-            final planLine = hasPlan && b.planned > 0
-                ? '\nPlan: ${_fmt(b.planned)}${unit.isEmpty ? '' : ' $unit'}'
-                : '';
-            final kind = hasPlan && rodIndex == 1 ? 'Plan' : 'Gerçek';
+            final ix = group.x.toInt();
+            if (ix < 0 || ix >= buckets.length) return null;
+            final b = buckets[ix];
+            // Grupta yalnız bir rod için kutu (çift tooltip yok).
+            if (rodIndex != tooltipRodIndex(b)) return null;
+
+            final u = unit.isEmpty ? '' : ' $unit';
+            final buf = StringBuffer(b.tooltipTitle)
+              ..writeln()
+              ..write('Gerçek: ${_fmt(b.actual)}$u');
+            if (hasPlan && b.planned > 0) {
+              buf
+                ..writeln()
+                ..write('Plan: ${_fmt(b.planned)}$u');
+            }
             return BarTooltipItem(
-              '${b.tooltipTitle}\n$kind: $qtyLine$planLine',
+              buf.toString(),
               TextStyle(
                 color: theme.colorScheme.onInverseSurface,
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
-                height: 1.25,
+                height: 1.3,
               ),
             );
           },
@@ -526,6 +568,9 @@ class _ProductionPerformanceChartState
                   barWidth: barWidth,
                   hasPlan: hasPlan,
                   actualColor: actualColor(buckets[i]),
+                  showingTooltipIndicators: touchedGroupX == i
+                      ? [tooltipRodIndex(buckets[i])]
+                      : const [],
                 ),
             ],
     );
@@ -537,11 +582,13 @@ class _ProductionPerformanceChartState
     required double barWidth,
     required bool hasPlan,
     required Color actualColor,
+    List<int> showingTooltipIndicators = const [],
   }) {
     if (hasPlan) {
       return BarChartGroupData(
         x: index,
         barsSpace: 4,
+        showingTooltipIndicators: showingTooltipIndicators,
         barRods: [
           BarChartRodData(
             toY: bucket.actual,
@@ -561,6 +608,7 @@ class _ProductionPerformanceChartState
 
     return BarChartGroupData(
       x: index,
+      showingTooltipIndicators: showingTooltipIndicators,
       barRods: [
         BarChartRodData(
           toY: bucket.actual,
