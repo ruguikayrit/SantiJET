@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/theme/app_colors.dart';
+import '../enums/attendance_status.dart';
 
 /// Sabit görev etiketleri — disiplin (İnşaat / Elektrik / Mekanik).
 abstract final class TaskTagCatalog {
@@ -32,14 +33,16 @@ abstract final class TaskTagCatalog {
   static bool isKnown(String raw) =>
       all.any((t) => t.toLowerCase() == raw.trim().toLowerCase());
 
+  /// Ana sayfa Günlük Puantaj özet kartlarıyla aynı palet:
+  /// İnşaat→Mevcut, Elektrik→Yarım, Mekanik→Yok.
   static Color accentFor(String tag) {
     switch (normalize(tag)) {
       case insaat:
-        return AppColors.moduleInsaat;
+        return AttendanceStatus.present.color;
       case elektrik:
-        return AppColors.moduleElektrik;
+        return AttendanceStatus.half.color;
       case mekanik:
-        return AppColors.moduleMekanik;
+        return AttendanceStatus.absent.color;
       default:
         return AppColors.inkMuted;
     }

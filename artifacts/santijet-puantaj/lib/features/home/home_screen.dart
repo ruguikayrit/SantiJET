@@ -402,9 +402,7 @@ class _HomeUrgentTasksSectionState extends State<_HomeUrgentTasksSection> {
                     child: _UrgentTagFilter(
                       label: TaskTagCatalog.cardLabel(summary.tag),
                       count: summary.count,
-                      color: _softUrgentTagAccent(
-                        TaskTagCatalog.accentFor(summary.tag),
-                      ),
+                      color: TaskTagCatalog.accentFor(summary.tag),
                       selected: _selectedTag == summary.tag,
                       onTap: () {
                         setState(() {
@@ -732,15 +730,6 @@ class _SummarySection extends StatelessWidget {
   }
 }
 
-/// Ana sayfa acil etiketleri — soft pastel (2 kademe daha canlı).
-Color _softUrgentTagAccent(Color accent) {
-  final hsl = HSLColor.fromColor(accent);
-  return hsl
-      .withSaturation((hsl.saturation * 0.76).clamp(0.40, 0.78))
-      .withLightness((hsl.lightness * 0.45 + 0.38).clamp(0.42, 0.62))
-      .toColor();
-}
-
 class _UrgentTagFilter extends StatelessWidget {
   const _UrgentTagFilter({
     required this.label,
@@ -759,9 +748,8 @@ class _UrgentTagFilter extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    // Soft ton: seçili = pastel dolgu + aynı mürekkep; seçili değil = outline.
-    final ink = color;
-    final fill = selected ? color.withValues(alpha: 0.28) : Colors.transparent;
+    // Günlük Puantaj _MiniStat ile aynı dolgu / kenar / mürekkep.
+    final ink = AppColors.statusInkOnCard(color);
 
     return Material(
       color: Colors.transparent,
@@ -772,11 +760,11 @@ class _UrgentTagFilter extends StatelessWidget {
           duration: const Duration(milliseconds: 160),
           padding: const EdgeInsets.fromLTRB(10, 10, 10, 8),
           decoration: BoxDecoration(
-            color: fill,
+            color: color.withValues(alpha: selected ? 0.16 : 0.08),
             borderRadius: AppRadii.sm,
             border: Border.all(
-              color: color.withValues(alpha: selected ? 0.9 : 0.7),
-              width: selected ? 1.5 : 1.25,
+              color: color.withValues(alpha: selected ? 0.55 : 0.25),
+              width: selected ? 1.5 : 1,
             ),
           ),
           child: Column(
@@ -784,16 +772,6 @@ class _UrgentTagFilter extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  Container(
-                    width: 8,
-                    height: 8,
-                    decoration: BoxDecoration(
-                      color: selected ? ink : Colors.transparent,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: ink, width: 1.5),
-                    ),
-                  ),
-                  const SizedBox(width: 6),
                   Expanded(
                     child: Text(
                       label,
@@ -807,7 +785,7 @@ class _UrgentTagFilter extends StatelessWidget {
                     ),
                   ),
                   if (selected)
-                    Icon(Icons.check_rounded, size: 14, color: ink),
+                    Icon(Icons.check_circle, size: 14, color: ink),
                 ],
               ),
               const SizedBox(height: 6),
