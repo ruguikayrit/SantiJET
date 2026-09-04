@@ -1094,8 +1094,8 @@ class _ImalatJobSheetState extends ConsumerState<_ImalatJobSheet> {
   }
 }
 
-/// İmalat detay — ilerleme + günlük kayıt listesi.
-class _ImalatDetailSheet extends ConsumerWidget {
+/// İmalat detay — ilerleme + günlük kayıt listesi (+ açılır tarih filtresi).
+class _ImalatDetailSheet extends ConsumerStatefulWidget {
   const _ImalatDetailSheet({
     required this.productionId,
     required this.onEditJob,
@@ -1106,16 +1106,57 @@ class _ImalatDetailSheet extends ConsumerWidget {
   final VoidCallback onEditJob;
   final VoidCallback onAddDay;
 
+  @override
+  ConsumerState<_ImalatDetailSheet> createState() => _ImalatDetailSheetState();
+}
+
+class _ImalatDetailSheetState extends ConsumerState<_ImalatDetailSheet> {
+  bool _calendarExpanded = false;
+  final Set<String> _selectedDates = {};
+  late DateTime _month;
+  bool _monthSeeded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final now = DateTime.now();
+    _month = DateTime(now.year, now.month);
+  }
+
   static String _fmt(double v) {
     if (v == v.roundToDouble()) return v.toStringAsFixed(0);
     return v.toStringAsFixed(1);
   }
 
+  void _toggleDate(String key) {
+    setState(() {
+      if (_selectedDates.contains(key)) {
+        _selectedDates.remove(key);
+      } else {
+        _selectedDates.add(key);
+      }
+    });
+  }
+
+  void _seedMonthIfNeeded(List<ProductionDayEntry> entries) {
+    if (_monthSeeded || entries.isEmpty) return;
+    _monthSeeded = true;
+    try {
+      final d = PuantajDate.parse(entries.first.date);
+      final next = DateTime(d.year, d.month);
+      if (next.year == _month.year && next.month == _month.month) return;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        setState(() => _month = next);
+      });
+    } catch (_) {}
+  }
+
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final p = ref.watch(productionProvider)
-        .where((e) => e.id == productionId)
+        .where((e) => e.id == widget.productionId)
         .firstOrNull;
     if (p == null) {
       return const SizedBox(
@@ -1126,6 +1167,18 @@ class _ImalatDetailSheet extends ConsumerWidget {
 
     final entries = [...p.dailyEntries]
       ..sort((a, b) => b.date.compareTo(a.date));
+    _seedMonthIfNeeded(entries);
+
+    final entryKeys = {for (final e in entries) e.date};
+    final visible = _selectedDates.isEmpty
+        ? entries
+        : entries.where((e) => _selectedDates.contains(e.date)).toList();
+
+    final filterLabel = _selectedDates.isEmpty
+        ? 'Tüm günler'
+        : _selectedDates.length == 1
+            ? 'Seçili: ${_selectedDates.first}'
+            : 'Seçili: ${_selectedDates.length} gün';
 
     return DraggableScrollableSheet(
       expand: false,
@@ -1150,7 +1203,7 @@ class _ImalatDetailSheet extends ConsumerWidget {
                     ),
                   ),
                 IconButton(
-                  onPressed: onEditJob,
+                  onPressed: widget.onEditJob,
                   icon: const Icon(Icons.edit_outlined),
                   tooltip: 'İmalat bilgileri',
                 ),
@@ -1175,11 +1228,31 @@ class _ImalatDetailSheet extends ConsumerWidget {
                 const Spacer(),
                 if (!p.isComplete)
                   FilledButton.tonalIcon(
-                    onPressed: onAddDay,
+                    onPressed: widget.onAddDay,
                     icon: const Icon(Icons.add, size: 18),
                     label: const Text('Gün ekle'),
                   ),
               ],
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            _ImalatEntryCalendarFilter(
+              expanded: _calendarExpanded,
+              month: _month,
+              entryKeys: entryKeys,
+              selected: _selectedDates,
+              filterLabel: filterLabel,
+              onToggleExpanded: () =>
+                  setState(() => _calendarExpanded = !_calendarExpanded),
+              onPrevMonth: () => setState(() {
+                _month = DateTime(_month.year, _month.month - 1);
+              }),
+              onNextMonth: () => setState(() {
+                _month = DateTime(_month.year, _month.month + 1);
+              }),
+              onToggleDay: _toggleDate,
+              onClear: _selectedDates.isEmpty
+                  ? null
+                  : () => setState(() => _selectedDates.clear()),
             ),
             const SizedBox(height: AppSpacing.sm),
             Expanded(
@@ -1192,81 +1265,391 @@ class _ImalatDetailSheet extends ConsumerWidget {
                         style: theme.textTheme.bodyMedium,
                       ),
                     )
-                  : ListView.separated(
-                      controller: scrollController,
-                      itemCount: entries.length,
-                      separatorBuilder: (_, __) =>
-                          const SizedBox(height: AppSpacing.xs),
-                      itemBuilder: (context, i) {
-                        final e = entries[i];
-                        return Material(
-                          color: AppColors.surfaceElevated,
-                          borderRadius: AppRadii.sm,
-                          child: InkWell(
-                            borderRadius: AppRadii.sm,
-                            onTap: () {
-                              showModalBottomSheet<void>(
-                                context: context,
-                                isScrollControlled: true,
-                                showDragHandle: true,
-                                builder: (ctx) => _ImalatDayEntrySheet(
-                                  production: p,
-                                  existing: e,
-                                  onDelete: () {
-                                    ref
-                                        .read(productionProvider.notifier)
-                                        .deleteDayEntry(p.id, e.id);
-                                    Navigator.pop(ctx);
-                                  },
-                                  onSave: (updated) {
-                                    ref
-                                        .read(productionProvider.notifier)
-                                        .updateDayEntry(p.id, updated);
-                                    Navigator.pop(ctx);
-                                  },
+                  : visible.isEmpty
+                      ? Center(
+                          child: Text(
+                            'Seçili günlerde kayıt yok.\n'
+                            'Takvimden gün seçimini değiştirin veya temizleyin.',
+                            textAlign: TextAlign.center,
+                            style: theme.textTheme.bodyMedium,
+                          ),
+                        )
+                      : ListView.separated(
+                          controller: scrollController,
+                          itemCount: visible.length,
+                          separatorBuilder: (_, __) =>
+                              const SizedBox(height: AppSpacing.xs),
+                          itemBuilder: (context, i) {
+                            final e = visible[i];
+                            return Material(
+                              color: AppColors.surfaceElevated,
+                              borderRadius: AppRadii.sm,
+                              child: InkWell(
+                                borderRadius: AppRadii.sm,
+                                onTap: () {
+                                  showModalBottomSheet<void>(
+                                    context: context,
+                                    isScrollControlled: true,
+                                    showDragHandle: true,
+                                    builder: (ctx) => _ImalatDayEntrySheet(
+                                      production: p,
+                                      existing: e,
+                                      onDelete: () {
+                                        ref
+                                            .read(productionProvider.notifier)
+                                            .deleteDayEntry(p.id, e.id);
+                                        Navigator.pop(ctx);
+                                      },
+                                      onSave: (updated) {
+                                        ref
+                                            .read(productionProvider.notifier)
+                                            .updateDayEntry(p.id, updated);
+                                        Navigator.pop(ctx);
+                                      },
+                                    ),
+                                  );
+                                },
+                                child: Padding(
+                                  padding: const EdgeInsets.all(AppSpacing.sm),
+                                  child: Row(
+                                    children: [
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              e.date,
+                                              style: theme.textTheme.titleSmall,
+                                            ),
+                                            Text(
+                                              '${_fmt(e.ustaCount)} usta · '
+                                              '${_fmt(e.duzIsciCount)} düz',
+                                              style: theme.textTheme.bodySmall,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      Text(
+                                        '+${_fmt(e.completedQty)} ${p.unit}',
+                                        style: theme.textTheme.titleSmall
+                                            ?.copyWith(
+                                          color: AppColors.success,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                              );
-                            },
-                            child: Padding(
-                              padding: const EdgeInsets.all(AppSpacing.sm),
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          e.date,
-                                          style: theme.textTheme.titleSmall,
-                                        ),
-                                        Text(
-                                          '${_fmt(e.ustaCount)} usta · '
-                                          '${_fmt(e.duzIsciCount)} düz',
-                                          style: theme.textTheme.bodySmall,
-                                        ),
-                                      ],
+                              ),
+                            );
+                          },
+                        ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Açılır ay takvimi — kayıtlı günler işaretli; seçilen gün(ler) listeyi filtreler.
+class _ImalatEntryCalendarFilter extends StatelessWidget {
+  const _ImalatEntryCalendarFilter({
+    required this.expanded,
+    required this.month,
+    required this.entryKeys,
+    required this.selected,
+    required this.filterLabel,
+    required this.onToggleExpanded,
+    required this.onPrevMonth,
+    required this.onNextMonth,
+    required this.onToggleDay,
+    this.onClear,
+  });
+
+  final bool expanded;
+  final DateTime month;
+  final Set<String> entryKeys;
+  final Set<String> selected;
+  final String filterLabel;
+  final VoidCallback onToggleExpanded;
+  final VoidCallback onPrevMonth;
+  final VoidCallback onNextMonth;
+  final ValueChanged<String> onToggleDay;
+  final VoidCallback? onClear;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final monthLabel = PuantajDate.monthLabel(PuantajDate.format(month));
+
+    return Material(
+      color: AppColors.surfaceElevated,
+      borderRadius: AppRadii.sm,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          InkWell(
+            onTap: onToggleExpanded,
+            borderRadius: AppRadii.sm,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.sm,
+                vertical: AppSpacing.sm,
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.calendar_month_outlined,
+                    size: 20,
+                    color: theme.colorScheme.primary,
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Kayıt takvimi',
+                          style: theme.textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        Text(
+                          expanded
+                              ? monthLabel
+                              : '$filterLabel · açmak için dokun',
+                          style: theme.textTheme.labelSmall,
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (onClear != null)
+                    TextButton(
+                      onPressed: onClear,
+                      child: const Text('Temizle'),
+                    ),
+                  Icon(
+                    expanded ? Icons.expand_less : Icons.expand_more,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (expanded) ...[
+            const Divider(height: 1),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.sm,
+                AppSpacing.sm,
+                AppSpacing.sm,
+                AppSpacing.md,
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      IconButton(
+                        tooltip: 'Önceki ay',
+                        onPressed: onPrevMonth,
+                        icon: const Icon(Icons.chevron_left),
+                      ),
+                      Expanded(
+                        child: Text(
+                          monthLabel,
+                          textAlign: TextAlign.center,
+                          style: theme.textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        tooltip: 'Sonraki ay',
+                        onPressed: onNextMonth,
+                        icon: const Icon(Icons.chevron_right),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.xs),
+                  Row(
+                    children: [
+                      for (final d in PuantajDate.trDaysShort)
+                        Expanded(
+                          child: Text(
+                            d,
+                            textAlign: TextAlign.center,
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.xs),
+                  _ImalatEntryMonthGrid(
+                    month: month,
+                    entryKeys: entryKeys,
+                    selected: selected,
+                    onToggleDay: onToggleDay,
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  Row(
+                    children: [
+                      _ImalatCalLegend(
+                        color: AppColors.success,
+                        label: 'Kayıtlı gün',
+                      ),
+                      const SizedBox(width: AppSpacing.md),
+                      _ImalatCalLegend(
+                        color: AppColors.electricBlue,
+                        label: 'Seçili filtre',
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _ImalatCalLegend extends StatelessWidget {
+  const _ImalatCalLegend({required this.color, required this.label});
+
+  final Color color;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 12,
+          height: 12,
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.85),
+            borderRadius: BorderRadius.circular(3),
+          ),
+        ),
+        const SizedBox(width: 6),
+        Text(label, style: theme.textTheme.labelSmall),
+      ],
+    );
+  }
+}
+
+class _ImalatEntryMonthGrid extends StatelessWidget {
+  const _ImalatEntryMonthGrid({
+    required this.month,
+    required this.entryKeys,
+    required this.selected,
+    required this.onToggleDay,
+  });
+
+  final DateTime month;
+  final Set<String> entryKeys;
+  final Set<String> selected;
+  final ValueChanged<String> onToggleDay;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final first = DateTime(month.year, month.month, 1);
+    final daysInMonth = DateTime(month.year, month.month + 1, 0).day;
+    final leading = first.weekday - 1;
+    final totalCells = leading + daysInMonth;
+    final rows = (totalCells / 7).ceil();
+    final today = DateTime.now();
+    final todayKey =
+        PuantajDate.format(DateTime(today.year, today.month, today.day));
+
+    return Column(
+      children: [
+        for (var r = 0; r < rows; r++)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 4),
+            child: Row(
+              children: [
+                for (var c = 0; c < 7; c++)
+                  Expanded(
+                    child: Builder(
+                      builder: (context) {
+                        final index = r * 7 + c;
+                        final dayNum = index - leading + 1;
+                        if (dayNum < 1 || dayNum > daysInMonth) {
+                          return const SizedBox(height: 40);
+                        }
+                        final day = DateTime(month.year, month.month, dayNum);
+                        final key = PuantajDate.format(day);
+                        final hasEntry = entryKeys.contains(key);
+                        final isSelected = selected.contains(key);
+                        final isToday = key == todayKey;
+
+                        Color? bg;
+                        if (isSelected) {
+                          bg = AppColors.electricBlue.withValues(alpha: 0.35);
+                        } else if (hasEntry) {
+                          bg = AppColors.success.withValues(alpha: 0.28);
+                        }
+
+                        return Padding(
+                          padding: const EdgeInsets.all(1),
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              onTap: () => onToggleDay(key),
+                              borderRadius: BorderRadius.circular(8),
+                              child: SizedBox(
+                                height: 40,
+                                child: Container(
+                                  alignment: Alignment.center,
+                                  decoration: BoxDecoration(
+                                    color: bg,
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: isToday
+                                        ? Border.all(
+                                            color: theme.colorScheme.primary,
+                                            width: 1.5,
+                                          )
+                                        : isSelected
+                                            ? Border.all(
+                                                color: AppColors.electricBlue,
+                                                width: 1.5,
+                                              )
+                                            : null,
+                                  ),
+                                  child: Text(
+                                    '$dayNum',
+                                    style: theme.textTheme.labelLarge?.copyWith(
+                                      fontWeight: hasEntry ||
+                                              isSelected ||
+                                              isToday
+                                          ? FontWeight.w800
+                                          : FontWeight.w500,
+                                      color: hasEntry || isSelected
+                                          ? theme.colorScheme.onSurface
+                                          : theme.colorScheme.onSurfaceVariant,
                                     ),
                                   ),
-                                  Text(
-                                    '+${_fmt(e.completedQty)} ${p.unit}',
-                                    style: theme.textTheme.titleSmall
-                                        ?.copyWith(
-                                      color: AppColors.success,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ],
+                                ),
                               ),
                             ),
                           ),
                         );
                       },
                     ),
+                  ),
+              ],
             ),
-          ],
-        ),
-      ),
+          ),
+      ],
     );
   }
 }
