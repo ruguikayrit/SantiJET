@@ -62,8 +62,8 @@ enum TaskExportColumn {
         plannedEnd ||
         actualEnd =>
           14,
-        status => 12,
-        description => 48,
+        status => 16,
+        description => 36,
       };
 
   static const List<TaskExportColumn> all = TaskExportColumn.values;

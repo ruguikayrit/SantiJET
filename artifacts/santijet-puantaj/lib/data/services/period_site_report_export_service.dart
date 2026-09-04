@@ -110,6 +110,16 @@ class PeriodSiteReportExportService {
       pw.SizedBox(height: 12),
     ];
 
+    /// Sonraki başlık yeni sayfada açılsın (puantaj özeti+personel hariç).
+    var breakBeforeNextSection = false;
+
+    void startSectionPage() {
+      if (breakBeforeNextSection) {
+        body.add(pw.NewPage());
+      }
+      breakBeforeNextSection = true;
+    }
+
     if (sections.puantajCounts) {
       body.add(_pdfSectionTitle('Puantaj özeti'));
       body.add(pw.SizedBox(height: 6));
@@ -138,7 +148,13 @@ class PeriodSiteReportExportService {
       }
       body.add(pw.SizedBox(height: 12));
     }
+    // Özet + personel aynı sayfada; sonraki başlıklar ayrı sayfa.
+    if (sections.puantajCounts || sections.personel) {
+      breakBeforeNextSection = true;
+    }
+
     if (sections.ekip) {
+      startSectionPage();
       body.add(_pdfSectionTitle('Ekip puantajı'));
       body.add(pw.SizedBox(height: 6));
       body.add(
@@ -161,6 +177,7 @@ class PeriodSiteReportExportService {
       body.add(pw.SizedBox(height: 12));
     }
     if (sections.yevmiyeli) {
+      startSectionPage();
       body.add(_pdfSectionTitle('Yevmiyeli işler'));
       body.add(pw.SizedBox(height: 6));
       body.add(
@@ -180,6 +197,7 @@ class PeriodSiteReportExportService {
       body.add(pw.SizedBox(height: 12));
     }
     if (sections.imalat) {
+      startSectionPage();
       body.add(_pdfSectionTitle('Yapılan işler (İmalat)'));
       body.add(pw.SizedBox(height: 6));
       body.add(
@@ -214,6 +232,7 @@ class PeriodSiteReportExportService {
       body.add(pw.SizedBox(height: 12));
     }
     if (sections.verim) {
+      startSectionPage();
       body.add(_pdfSectionTitle('Verim'));
       body.add(pw.SizedBox(height: 6));
       body.add(

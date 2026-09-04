@@ -19,7 +19,7 @@ class ProductionPerformanceChart extends ConsumerStatefulWidget {
   const ProductionPerformanceChart({
     required this.production,
     super.key,
-    this.height = 132,
+    this.height = 168,
   });
 
   final Production production;
@@ -237,6 +237,7 @@ class _ProductionPerformanceChartState
           children: [
             for (final p in ProductionPerformancePeriod.values)
               FilterChip(
+                showCheckmark: false,
                 label: Text(p.label),
                 selected: options.period == p,
                 visualDensity: VisualDensity.compact,
@@ -294,6 +295,7 @@ class _ProductionPerformanceChartState
                   child: SingleChildScrollView(
                     controller: _scrollController,
                     scrollDirection: Axis.horizontal,
+                    clipBehavior: Clip.hardEdge,
                     physics: scrollable
                         ? const BouncingScrollPhysics()
                         : const NeverScrollableScrollPhysics(),
@@ -304,7 +306,7 @@ class _ProductionPerformanceChartState
                         _chartData(
                           theme: theme,
                           buckets: buckets,
-                          top: top,
+                          top: top * 1.12,
                           unit: unit,
                           hasPlan: hasPlan,
                           barWidth: barWidth,
@@ -388,8 +390,18 @@ class _ProductionPerformanceChartState
       barTouchData: BarTouchData(
         enabled: true,
         touchTooltipData: BarTouchTooltipData(
+          // Yüksek çubuklarda (günlük/haftalık) üstte taşan tooltip
+          // scroll/clip altında kalıyordu; dikeyde içeri sıkıştır.
+          fitInsideVertically: true,
+          fitInsideHorizontally: true,
+          direction: TooltipDirection.top,
+          tooltipMargin: 4,
+          tooltipPadding: const EdgeInsets.symmetric(
+            horizontal: 8,
+            vertical: 6,
+          ),
           getTooltipColor: (_) =>
-              theme.colorScheme.inverseSurface.withValues(alpha: 0.92),
+              theme.colorScheme.inverseSurface.withValues(alpha: 0.94),
           getTooltipItem: (group, groupIndex, rod, rodIndex) {
             final b = buckets[group.x.toInt()];
             final qtyLine = unit.isEmpty
@@ -403,9 +415,9 @@ class _ProductionPerformanceChartState
               '${b.tooltipTitle}\n$kind: $qtyLine$planLine',
               TextStyle(
                 color: theme.colorScheme.onInverseSurface,
-                fontSize: 12,
+                fontSize: 11,
                 fontWeight: FontWeight.w600,
-                height: 1.3,
+                height: 1.25,
               ),
             );
           },

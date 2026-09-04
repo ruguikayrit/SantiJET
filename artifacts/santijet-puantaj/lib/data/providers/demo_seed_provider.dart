@@ -358,7 +358,7 @@ class DemoSeedController {
         name: 'Temel Demiri',
         floor: 'Temel',
         section: 'A Blok',
-        teamName: 'Demo Ekip',
+        teamName: 'Demir',
         unit: 'ton',
         plannedQty: 40,
         plannedDays: 14,

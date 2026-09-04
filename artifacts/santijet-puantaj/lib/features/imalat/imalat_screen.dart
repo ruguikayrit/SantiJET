@@ -1517,7 +1517,7 @@ class _ImalatPhaseFilterCard extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(AppSpacing.sm),
           decoration: BoxDecoration(
-            color: color.withValues(alpha: selected ? 0.16 : 0.08),
+            color: color.withValues(alpha: selected ? 0.24 : 0.14),
             borderRadius: AppRadii.sm,
             border: Border.all(
               color: color.withValues(alpha: selected ? 0.55 : 0.25),

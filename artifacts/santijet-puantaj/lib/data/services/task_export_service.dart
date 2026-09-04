@@ -275,8 +275,9 @@ class TaskExportService {
       'category' => const pw.FlexColumnWidth(0.95),
       'assignee' => const pw.FlexColumnWidth(1.05),
       'date' => const pw.FixedColumnWidth(58),
-      'status' => const pw.FixedColumnWidth(50),
-      'description' => const pw.FlexColumnWidth(3.2),
+      // "Tamamlandı" / "Devam ediyor" tek satırda kalsın.
+      'status' => const pw.FixedColumnWidth(76),
+      'description' => const pw.FlexColumnWidth(2.2),
       _ => const pw.FlexColumnWidth(1),
     };
   }

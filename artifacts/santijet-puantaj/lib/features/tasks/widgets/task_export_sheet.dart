@@ -55,7 +55,52 @@ class _TaskExportSheetState extends ConsumerState<TaskExportSheet> {
     ).taskCount;
   }
 
+  Future<void> _showExportBusyDialog({required bool pdf}) {
+    final theme = Theme.of(context);
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      useRootNavigator: true,
+      builder: (ctx) {
+        return PopScope(
+          canPop: false,
+          child: AlertDialog(
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SizedBox(
+                  width: 36,
+                  height: 36,
+                  child: CircularProgressIndicator(strokeWidth: 3),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                Text(
+                  pdf ? 'PDF hazırlanıyor…' : 'Excel hazırlanıyor…',
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                Text(
+                  'Dosya boyutu (görev sayısı ve fotoğraflar) nedeniyle '
+                  'bu işlem biraz sürebilir. Uygulama donmadı; lütfen bekleyin.',
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                    height: 1.35,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   Future<void> _export({required bool pdf}) async {
+    if (_busy) return;
     if (!_options.hasAnyColumn) {
       setState(() => _error = 'En az bir sütun seçin.');
       return;
@@ -73,10 +118,19 @@ class _TaskExportSheetState extends ConsumerState<TaskExportSheet> {
       });
       return;
     }
+
     setState(() {
       _busy = true;
       _error = null;
     });
+    // Önce buton/loading durumunun çizilmesi için bir kare bekle.
+    await Future<void>.delayed(Duration.zero);
+    if (!mounted) return;
+
+    // ignore: unawaited_futures
+    _showExportBusyDialog(pdf: pdf);
+
+    var exported = false;
     try {
       ref.read(taskExportOptionsProvider.notifier).save(_options);
       if (pdf) {
@@ -84,21 +138,26 @@ class _TaskExportSheetState extends ConsumerState<TaskExportSheet> {
       } else {
         await taskExportService.exportExcel(report);
       }
-      if (!mounted) return;
-      Navigator.of(context).pop();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            pdf ? 'PDF dışa aktarıldı.' : 'Excel dışa aktarıldı.',
-          ),
-        ),
-      );
+      exported = true;
     } catch (e) {
-      if (!mounted) return;
-      setState(() => _error = e.toString());
+      if (mounted) setState(() => _error = e.toString());
     } finally {
-      if (mounted) setState(() => _busy = false);
+      if (mounted) {
+        final nav = Navigator.of(context, rootNavigator: true);
+        if (nav.canPop()) nav.pop();
+        setState(() => _busy = false);
+      }
     }
+
+    if (!exported || !mounted) return;
+    Navigator.of(context).pop();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          pdf ? 'PDF dışa aktarıldı.' : 'Excel dışa aktarıldı.',
+        ),
+      ),
+    );
   }
 
   @override
@@ -279,7 +338,7 @@ class _TaskExportSheetState extends ConsumerState<TaskExportSheet> {
                 icon: Icons.picture_as_pdf_outlined,
                 loading: _busy,
                 expanded: true,
-                onPressed: () => _export(pdf: true),
+                onPressed: _busy ? null : () => _export(pdf: true),
               ),
             ),
             const SizedBox(width: AppSpacing.sm),
@@ -290,7 +349,7 @@ class _TaskExportSheetState extends ConsumerState<TaskExportSheet> {
                 variant: SJButtonVariant.secondary,
                 loading: _busy,
                 expanded: true,
-                onPressed: () => _export(pdf: false),
+                onPressed: _busy ? null : () => _export(pdf: false),
               ),
             ),
           ],

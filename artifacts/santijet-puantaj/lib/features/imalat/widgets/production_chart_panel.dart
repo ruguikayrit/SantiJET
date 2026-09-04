@@ -600,6 +600,7 @@ class _ChartSettingsSheetState extends State<_ChartSettingsSheet> {
             children: [
               for (final kind in ProductionChartKind.values)
                 FilterChip(
+                  showCheckmark: false,
                   label: Text(kind.label),
                   selected: (widget.forVerim
                           ? _options.verimKind
@@ -623,6 +624,7 @@ class _ChartSettingsSheetState extends State<_ChartSettingsSheet> {
               if (widget.forVerim)
                 for (final m in VerimChartMetric.values)
                   FilterChip(
+                    showCheckmark: false,
                     label: Text(m.label),
                     selected: _options.verimMetric == m,
                     onSelected: (_) => setState(
@@ -632,6 +634,7 @@ class _ChartSettingsSheetState extends State<_ChartSettingsSheet> {
               else
                 for (final m in ImalatChartMetric.values)
                   FilterChip(
+                    showCheckmark: false,
                     label: Text(m.label),
                     selected: _options.imalatMetric == m,
                     onSelected: (_) => setState(

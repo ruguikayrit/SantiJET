@@ -379,16 +379,28 @@ class _PuantajScreenState extends ConsumerState<PuantajScreen> {
                       );
                     }
                   },
-                  onCopyYesterday: () {
+                  onCopyYesterday: () async {
                     if (!canEdit) return denyWrite();
+                    final prev = PuantajDate.shift(_date, -1);
+                    final ok = await SJModal.confirm(
+                      context: context,
+                      title: 'Dünden kopyala',
+                      message:
+                          '$prev tarihindeki puantaj durumları $_date '
+                          'gününe kopyalansın mı?\n'
+                          'Aynı personelde bugünkü kayıt varsa üzerine yazılır.',
+                      confirmLabel: 'Kopyala',
+                    );
+                    if (!ok || !mounted) return;
                     final eligible =
                         people.where((p) => p.isActiveOn(_date)).toList();
                     final copied = notifier.copyFromPreviousDay(
                       projectId: project.id,
                       people: eligible,
                       date: _date,
-                      previousDate: PuantajDate.shift(_date, -1),
+                      previousDate: prev,
                     );
+                    if (!mounted) return;
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text(

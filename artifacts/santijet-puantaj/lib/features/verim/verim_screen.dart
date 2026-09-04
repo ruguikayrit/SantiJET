@@ -15,14 +15,22 @@ import '../imalat/imalat_screen.dart';
 import '../imalat/widgets/production_chart_panel.dart';
 
 /// Verim — grafik + ekip özeti + ad/% listesi (detay İmalat kartında).
-class VerimScreen extends ConsumerWidget {
+class VerimScreen extends ConsumerStatefulWidget {
   const VerimScreen({super.key, this.embedded = false});
 
   /// Hub içindeyken üst chrome (header) gösterilmez.
   final bool embedded;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<VerimScreen> createState() => _VerimScreenState();
+}
+
+class _VerimScreenState extends ConsumerState<VerimScreen> {
+  /// null = tüm imalatlar; dolu = ekip kartı filtresi.
+  String? _teamFilter;
+
+  @override
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final project = ref.watch(activeProjectProvider);
     final rows = ref.watch(verimRowsProvider);
@@ -36,7 +44,7 @@ class VerimScreen extends ConsumerWidget {
         actionLabel: 'Projelere Git',
         onAction: () => context.go(AppRoutes.projeler),
       );
-      if (embedded) return empty;
+      if (widget.embedded) return empty;
       return Scaffold(
         backgroundColor: AppColors.canvas,
         body: SafeArea(
@@ -51,6 +59,10 @@ class VerimScreen extends ConsumerWidget {
         ),
       );
     }
+
+    final filteredRows = _teamFilter == null
+        ? rows
+        : rows.where((r) => r.teamName == _teamFilter).toList();
 
     final body = rows.isEmpty
         ? SJEmptyState(
@@ -78,19 +90,51 @@ class VerimScreen extends ConsumerWidget {
               if (teamSummaries.length > 1) ...[
                 Text('Ekip özeti', style: theme.textTheme.titleSmall),
                 const SizedBox(height: AppSpacing.sm),
-                _TeamVerimSummaryStrip(summaries: teamSummaries),
+                _TeamVerimSummaryStrip(
+                  summaries: teamSummaries,
+                  selectedTeam: _teamFilter,
+                  onTeamTap: (team) {
+                    setState(() {
+                      _teamFilter = _teamFilter == team ? null : team;
+                    });
+                  },
+                ),
                 const SizedBox(height: AppSpacing.md),
               ],
-              Text('İmalatlar', style: theme.textTheme.titleSmall),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      _teamFilter == null
+                          ? 'İmalatlar'
+                          : 'İmalatlar · $_teamFilter',
+                      style: theme.textTheme.titleSmall,
+                    ),
+                  ),
+                  if (_teamFilter != null)
+                    TextButton(
+                      onPressed: () => setState(() => _teamFilter = null),
+                      child: const Text('Tümünü göster'),
+                    ),
+                ],
+              ),
               const SizedBox(height: AppSpacing.sm),
-              for (final row in rows) ...[
-                _VerimNamePercentCard(row: row),
-                const SizedBox(height: AppSpacing.sm),
-              ],
+              if (filteredRows.isEmpty)
+                Text(
+                  'Bu ekibe atanmış imalat yok',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                )
+              else
+                for (final row in filteredRows) ...[
+                  _VerimNamePercentCard(row: row),
+                  const SizedBox(height: AppSpacing.sm),
+                ],
             ],
           );
 
-    if (embedded) return body;
+    if (widget.embedded) return body;
     return Scaffold(
       backgroundColor: AppColors.canvas,
       body: SafeArea(
@@ -108,9 +152,15 @@ class VerimScreen extends ConsumerWidget {
 }
 
 class _TeamVerimSummaryStrip extends StatelessWidget {
-  const _TeamVerimSummaryStrip({required this.summaries});
+  const _TeamVerimSummaryStrip({
+    required this.summaries,
+    required this.selectedTeam,
+    required this.onTeamTap,
+  });
 
   final List<TeamVerimSummary> summaries;
+  final String? selectedTeam;
+  final ValueChanged<String> onTeamTap;
 
   @override
   Widget build(BuildContext context) {
@@ -123,10 +173,14 @@ class _TeamVerimSummaryStrip extends StatelessWidget {
         itemBuilder: (context, i) {
           final s = summaries[i];
           final efficiency = s.unitEfficiency;
+          final selected = selectedTeam == s.teamName;
 
           return SizedBox(
             width: 168,
             child: SJCard.builder(
+              selected: selected,
+              accentColor: selected ? AppColors.electricBlue : null,
+              onTap: () => onTeamTap(s.teamName),
               builder: (context, theme) {
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -205,11 +259,24 @@ class _VerimNamePercentCard extends ConsumerWidget {
         return Row(
           children: [
             Expanded(
-              child: Text(
-                row.imalatName.trim().isEmpty
-                    ? 'İmalat'
-                    : row.imalatName.trim(),
-                style: theme.textTheme.titleMedium,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    row.imalatName.trim().isEmpty
+                        ? 'İmalat'
+                        : row.imalatName.trim(),
+                    style: theme.textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    row.teamName,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.primary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
               ),
             ),
             const SizedBox(width: AppSpacing.sm),
