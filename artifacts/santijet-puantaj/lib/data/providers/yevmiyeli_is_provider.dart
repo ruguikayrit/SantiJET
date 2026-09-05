@@ -91,11 +91,15 @@ class YevmiyeliIsNotifier extends StateNotifier<List<YevmiyeliIsKaydi>> {
 
   YevmiyeliIsKaydi upsert(YevmiyeliIsKaydi entry) {
     final desc = entry.workDescription.trim();
-    if (desc.isEmpty || entry.personId.isEmpty) {
+    if (desc.isEmpty || entry.personName.trim().isEmpty) {
       throw StateError('Personel ve iş tanımı zorunlu.');
     }
+    final personId = entry.personId.trim().isEmpty
+        ? IdGen.make('ymnl_')
+        : entry.personId.trim();
     final now = DateTime.now();
     final cleaned = entry.copyWith(
+      personId: personId,
       workDescription: desc,
       updatedAt: now,
       createdAt: entry.createdAt ?? now,
@@ -137,6 +141,42 @@ class YevmiyeliIsNotifier extends StateNotifier<List<YevmiyeliIsKaydi>> {
         company: company,
         profession: person.profession,
         team: person.team,
+        workDescription: workDescription,
+        yevmiyeCount: yevmiyeCount,
+        note: note,
+        createdAt: now,
+        updatedAt: now,
+      ),
+    );
+  }
+
+  /// Personel listesine yazılmaz; yalnız bu yevmiyeli kayıtta kullanılır.
+  YevmiyeliIsKaydi addManual({
+    required String projectId,
+    required String date,
+    required String personName,
+    required String company,
+    required String workDescription,
+    required double yevmiyeCount,
+    String profession = '',
+    String team = '',
+    String note = '',
+  }) {
+    final name = personName.trim();
+    final firma = company.trim();
+    if (name.isEmpty) throw StateError('Personel adı zorunlu.');
+    if (firma.isEmpty) throw StateError('Taşeron firma zorunlu.');
+    final now = DateTime.now();
+    return upsert(
+      YevmiyeliIsKaydi(
+        id: IdGen.make('yis'),
+        projectId: projectId,
+        date: date,
+        personId: IdGen.make('ymnl_'),
+        personName: name,
+        company: firma,
+        profession: profession,
+        team: team,
         workDescription: workDescription,
         yevmiyeCount: yevmiyeCount,
         note: note,

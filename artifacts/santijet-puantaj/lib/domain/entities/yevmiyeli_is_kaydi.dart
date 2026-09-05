@@ -63,6 +63,11 @@ class YevmiyeliIsKaydi extends Equatable {
   final String personId;
   final String personName;
 
+  /// Listeye yazılmayan tek seferlik isim (`ymnl_…` id).
+  static bool isManualPersonId(String id) => id.startsWith('ymnl_');
+
+  bool get isManualPerson => isManualPersonId(personId);
+
   /// Firma Adı / taşeron.
   final String company;
   final String profession;

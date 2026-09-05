@@ -8,6 +8,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_radii.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/utils/text_format.dart';
+import '../../../core/utils/id_gen.dart';
 import '../../../data/providers/app_data_provider.dart';
 import '../../../data/providers/collaboration_provider.dart';
 import '../../../data/providers/yevmiyeli_is_provider.dart';
@@ -19,7 +20,7 @@ String formatYevmiyeCount(double v) {
   return v.toStringAsFixed(1);
 }
 
-/// Yevmiyeli iş kayıt formu — personelden otomatik taşeron/meslek/ekip.
+/// Yevmiyeli iş kayıt formu — listeden seç veya tek seferlik manuel ad.
 Future<void> openYevmiyeliIsEditor(
   BuildContext context,
   WidgetRef ref, {
@@ -40,15 +41,9 @@ Future<void> openYevmiyeliIsEditor(
   }
 
   final sortedPeople = [...people]..sort((a, b) => a.name.compareTo(b.name));
-  if (sortedPeople.isEmpty && existing == null) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Önce personel ekleyin.')),
-    );
-    return;
-  }
 
   Person? selected = initialPerson;
-  if (existing != null) {
+  if (existing != null && !existing.isManualPerson) {
     for (final p in sortedPeople) {
       if (p.id == existing.personId) {
         selected = p;
@@ -56,8 +51,23 @@ Future<void> openYevmiyeliIsEditor(
       }
     }
   }
-  selected ??= sortedPeople.isNotEmpty ? sortedPeople.first : null;
 
+  final existingIsManual = existing?.isManualPerson == true ||
+      (existing != null &&
+          sortedPeople.every((p) => p.id != existing.personId));
+  // Liste boşsa veya mevcut kayıt manuel ise manuel ad alanı.
+  var manualMode = sortedPeople.isEmpty || existingIsManual;
+  if (existing == null && initialPerson != null) {
+    manualMode = false;
+    selected = initialPerson;
+  }
+  if (!manualMode && selected == null && sortedPeople.isNotEmpty) {
+    selected = sortedPeople.first;
+  }
+
+  final manualNameCtrl = TextEditingController(
+    text: existingIsManual ? (existing?.personName ?? '') : '',
+  );
   final companyCtrl = TextEditingController(
     text: existing?.company.isNotEmpty == true
         ? existing!.company
@@ -75,11 +85,15 @@ Future<void> openYevmiyeliIsEditor(
       builder: (context, setModal) {
         final theme = Theme.of(context);
         final person = selected;
-        final meta = [
-          if ((person?.profession ?? '').trim().isNotEmpty)
-            titleCaseTr(person!.profession),
-          if ((person?.team ?? '').trim().isNotEmpty) titleCaseTr(person!.team),
-        ].join(' · ');
+        final meta = manualMode
+            ? 'Tek seferlik — personel listesine kaydedilmez'
+            : [
+                if ((person?.profession ?? '').trim().isNotEmpty)
+                  titleCaseTr(person!.profession),
+                if ((person?.team ?? '').trim().isNotEmpty)
+                  titleCaseTr(person!.team),
+              ].join(' · ');
+        final canPickFromList = sortedPeople.isNotEmpty && existing == null;
 
         return Form(
           key: formKey,
@@ -95,41 +109,100 @@ Future<void> openYevmiyeliIsEditor(
                 ),
               ),
               const SizedBox(height: AppSpacing.md),
-              DropdownButtonFormField<String>(
-                value: person?.id,
-                isExpanded: true,
-                decoration: const InputDecoration(labelText: 'Personel *'),
-                items: [
-                  for (final p in sortedPeople)
-                    DropdownMenuItem(
-                      value: p.id,
-                      child: Text(titleCaseTr(p.name)),
-                    ),
-                ],
-                onChanged: existing != null
-                    ? null
-                    : (id) {
-                        if (id == null) return;
-                        Person? next;
-                        for (final p in sortedPeople) {
-                          if (p.id == id) {
-                            next = p;
-                            break;
-                          }
+              if (canPickFromList) ...[
+                Text('Personel *', style: theme.textTheme.labelLarge),
+                const SizedBox(height: AppSpacing.xs),
+                Wrap(
+                  spacing: AppSpacing.xs,
+                  runSpacing: AppSpacing.xs,
+                  children: [
+                    FilterChip(
+                      showCheckmark: false,
+                      label: const Text('Listeden seç'),
+                      selected: !manualMode,
+                      onSelected: (_) => setModal(() {
+                        manualMode = false;
+                        selected ??= sortedPeople.first;
+                        if (companyCtrl.text.trim().isEmpty) {
+                          companyCtrl.text = selected!.company;
                         }
-                        if (next == null) return;
-                        setModal(() {
-                          selected = next;
-                          if (companyCtrl.text.trim().isEmpty ||
-                              companyCtrl.text.trim() ==
-                                  titleCaseTr(person?.company ?? '')) {
-                            companyCtrl.text = next!.company;
+                      }),
+                    ),
+                    FilterChip(
+                      showCheckmark: false,
+                      label: const Text('Manuel ad'),
+                      selected: manualMode,
+                      onSelected: (_) => setModal(() {
+                        manualMode = true;
+                        selected = null;
+                      }),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.sm),
+              ] else
+                Text(
+                  existing != null && !existingIsManual
+                      ? 'Personel *'
+                      : 'Personel * (manuel)',
+                  style: theme.textTheme.labelLarge,
+                ),
+              if (!manualMode && sortedPeople.isNotEmpty) ...[
+                if (!canPickFromList) const SizedBox(height: AppSpacing.xs),
+                DropdownButtonFormField<String>(
+                  value: person?.id,
+                  isExpanded: true,
+                  decoration: InputDecoration(
+                    labelText: canPickFromList ? null : 'Personel *',
+                    hintText: 'Kayıtlı personel',
+                  ),
+                  items: [
+                    for (final p in sortedPeople)
+                      DropdownMenuItem(
+                        value: p.id,
+                        child: Text(titleCaseTr(p.name)),
+                      ),
+                  ],
+                  onChanged: existing != null
+                      ? null
+                      : (id) {
+                          if (id == null) return;
+                          Person? next;
+                          for (final p in sortedPeople) {
+                            if (p.id == id) {
+                              next = p;
+                              break;
+                            }
                           }
-                        });
-                      },
-                validator: (v) =>
-                    v == null || v.isEmpty ? 'Personel seçin' : null,
-              ),
+                          if (next == null) return;
+                          setModal(() {
+                            selected = next;
+                            if (companyCtrl.text.trim().isEmpty ||
+                                companyCtrl.text.trim() ==
+                                    titleCaseTr(person?.company ?? '')) {
+                              companyCtrl.text = next!.company;
+                            }
+                          });
+                        },
+                  validator: (v) =>
+                      v == null || v.isEmpty ? 'Personel seçin' : null,
+                ),
+              ] else ...[
+                if (!canPickFromList) const SizedBox(height: AppSpacing.xs),
+                TextFormField(
+                  controller: manualNameCtrl,
+                  textCapitalization: TextCapitalization.words,
+                  enabled: existing == null || existingIsManual,
+                  decoration: const InputDecoration(
+                    labelText: 'Ad soyad *',
+                    hintText: 'Örn. Ahmet Yılmaz',
+                  ),
+                  validator: (v) {
+                    if ((v ?? '').trim().isEmpty) return 'Personel adı zorunlu';
+                    return null;
+                  },
+                ),
+              ],
               if (meta.isNotEmpty) ...[
                 const SizedBox(height: AppSpacing.xs),
                 Text(
@@ -237,9 +310,12 @@ Future<void> openYevmiyeliIsEditor(
   );
 
   final person = selected;
+  final usedManual = manualMode || person == null;
+  final manualName = manualNameCtrl.text;
   final company = companyCtrl.text;
   final work = workCtrl.text;
   final note = noteCtrl.text;
+  manualNameCtrl.dispose();
   companyCtrl.dispose();
   workCtrl.dispose();
   noteCtrl.dispose();
@@ -253,33 +329,65 @@ Future<void> openYevmiyeliIsEditor(
     }
     return;
   }
-  if (saved != true || person == null) return;
+  if (saved != true) return;
 
   try {
     final notifier = ref.read(yevmiyeliIsProvider.notifier);
-    if (existing != null) {
-      notifier.upsert(
-        existing.copyWith(
-          personId: person.id,
-          personName: person.name,
+    if (usedManual) {
+      final name = manualName.trim();
+      if (name.isEmpty) return;
+      if (existing != null) {
+        notifier.upsert(
+          existing.copyWith(
+            personId: existing.isManualPerson
+                ? existing.personId
+                : IdGen.make('ymnl_'),
+            personName: name,
+            company: company,
+            profession: existing.isManualPerson ? existing.profession : '',
+            team: existing.isManualPerson ? existing.team : '',
+            workDescription: work,
+            yevmiyeCount: yevmiye,
+            note: note,
+          ),
+        );
+      } else {
+        notifier.addManual(
+          projectId: projectId,
+          date: date,
+          personName: name,
           company: company,
-          profession: person.profession,
-          team: person.team,
           workDescription: work,
           yevmiyeCount: yevmiye,
           note: note,
-        ),
-      );
+        );
+      }
     } else {
-      notifier.addFromPerson(
-        projectId: projectId,
-        date: date,
-        person: person,
-        workDescription: work,
-        yevmiyeCount: yevmiye,
-        note: note,
-        companyOverride: company,
-      );
+      final p = person!;
+      if (existing != null) {
+        notifier.upsert(
+          existing.copyWith(
+            personId: p.id,
+            personName: p.name,
+            company: company,
+            profession: p.profession,
+            team: p.team,
+            workDescription: work,
+            yevmiyeCount: yevmiye,
+            note: note,
+          ),
+        );
+      } else {
+        notifier.addFromPerson(
+          projectId: projectId,
+          date: date,
+          person: p,
+          workDescription: work,
+          yevmiyeCount: yevmiye,
+          note: note,
+          companyOverride: company,
+        );
+      }
     }
   } catch (e) {
     if (!context.mounted) return;
@@ -459,7 +567,7 @@ class _DayYevmiyeliSectionState extends ConsumerState<DayYevmiyeliSection> {
           if (entries.isEmpty)
             Text(
               'Taşeronun parça iş için verdiği adamları buraya kaydedin. '
-              'Personel kartından da ekleyebilirsiniz.',
+              'Listeden seçebilir veya tek seferlik manuel ad yazabilirsiniz.',
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
