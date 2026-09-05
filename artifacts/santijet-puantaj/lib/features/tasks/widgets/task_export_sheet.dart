@@ -314,18 +314,82 @@ class _TaskExportSheetState extends ConsumerState<TaskExportSheet> {
             ],
           ),
         ),
-        CheckboxListTile(
-          contentPadding: EdgeInsets.zero,
-          dense: true,
-          title: const Text('Fotoğraflar'),
-          value: _options.includePhotos,
-          onChanged: _busy
-              ? null
-              : (v) => setState(() {
-                    _options = _options.copyWith(includePhotos: v ?? false);
-                    _error = null;
-                  }),
-          controlAffinity: ListTileControlAffinity.leading,
+        const SizedBox(height: AppSpacing.md),
+        Text('Ek içerik', style: theme.textTheme.labelLarge),
+        const SizedBox(height: AppSpacing.xs),
+        Material(
+          color: _options.includePhotos
+              ? AppColors.electricBlue.withValues(alpha: 0.10)
+              : AppColors.surfaceElevated,
+          borderRadius: AppRadii.sm,
+          child: InkWell(
+            borderRadius: AppRadii.sm,
+            onTap: _busy
+                ? null
+                : () => setState(() {
+                      _options = _options.copyWith(
+                        includePhotos: !_options.includePhotos,
+                      );
+                      _error = null;
+                    }),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.sm,
+                vertical: AppSpacing.sm,
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: (_options.includePhotos
+                              ? AppColors.electricBlue
+                              : theme.colorScheme.onSurfaceVariant)
+                          .withValues(alpha: 0.14),
+                      borderRadius: AppRadii.sm,
+                    ),
+                    child: Icon(
+                      Icons.photo_library_outlined,
+                      color: _options.includePhotos
+                          ? AppColors.electricBlue
+                          : theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Fotoğraflar',
+                          style: theme.textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        Text(
+                          'PDF / Excel çıktısına görev fotoğraflarını ekle',
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Switch.adaptive(
+                    value: _options.includePhotos,
+                    onChanged: _busy
+                        ? null
+                        : (v) => setState(() {
+                              _options =
+                                  _options.copyWith(includePhotos: v);
+                              _error = null;
+                            }),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ),
         const SizedBox(height: AppSpacing.md),
         Text('Format', style: theme.textTheme.labelLarge),

@@ -78,51 +78,67 @@ class _TaskCalendarPanelState extends State<TaskCalendarPanel> {
     await showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
+      isScrollControlled: true,
+      useRootNavigator: true,
       backgroundColor: SJModal.sheetSurface,
       builder: (ctx) {
         final theme = sheetTheme;
+        final maxH = MediaQuery.sizeOf(ctx).height * 0.55;
         return Theme(
           data: sheetTheme,
           child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(
-              AppSpacing.md,
-              0,
-              AppSpacing.md,
-              AppSpacing.md,
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  PuantajDate.longLabel(PuantajDate.format(day)),
-                  style: theme.textTheme.headlineMedium,
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                for (final t in list) ...[
-                  ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    title: Text(t.title),
-                    subtitle: Text(
-                      [
-                        if (t.assignee.isNotEmpty) 'Atanan: ${t.assignee}',
-                        if (t.earliestStart.isNotEmpty)
-                          'Başlangıç ${t.earliestStart}',
-                        if (t.dueDate.isNotEmpty)
-                          'Planlanan bitiş ${t.dueDate}',
-                      ].join(' · '),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.md,
+                0,
+                AppSpacing.md,
+                AppSpacing.md,
+              ),
+              child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      PuantajDate.longLabel(PuantajDate.format(day)),
+                      style: theme.textTheme.headlineMedium,
                     ),
-                  ),
-                ],
-                const SizedBox(height: AppSpacing.sm),
-                OutlinedButton(
-                  onPressed: () => Navigator.pop(ctx),
-                  child: const Text('Kapat'),
+                    const SizedBox(height: AppSpacing.sm),
+                    ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxHeight: maxH - 120,
+                      ),
+                      child: ListView.separated(
+                        shrinkWrap: true,
+                        itemCount: list.length,
+                        separatorBuilder: (_, __) =>
+                            const SizedBox(height: AppSpacing.xs),
+                        itemBuilder: (context, i) {
+                          final t = list[i];
+                          return ListTile(
+                            contentPadding: EdgeInsets.zero,
+                            title: Text(t.title),
+                            subtitle: Text(
+                              [
+                                if (t.assignee.isNotEmpty)
+                                  'Atanan: ${t.assignee}',
+                                if (t.earliestStart.isNotEmpty)
+                                  'Başlangıç ${t.earliestStart}',
+                                if (t.dueDate.isNotEmpty)
+                                  'Planlanan bitiş ${t.dueDate}',
+                              ].join(' · '),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    OutlinedButton(
+                      onPressed: () => Navigator.pop(ctx),
+                      child: const Text('Kapat'),
+                    ),
+                  ],
                 ),
-              ],
             ),
-          ),
           ),
         );
       },
