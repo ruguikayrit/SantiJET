@@ -447,11 +447,17 @@ class _ProductionPerformanceChartState
         touchCallback: (event, response) {
           final spot = response?.spot;
           if (spot != null) {
-            onTouchedGroupX(spot.touchedBarGroup.x);
+            final x = spot.touchedBarGroup.x;
+            if (event is FlTapUpEvent) {
+              // Aynı gruba tekrar tıklanınca seçim kalkar.
+              onTouchedGroupX(touchedGroupX == x ? -1 : x);
+            } else if (event is! FlTapDownEvent) {
+              // Hover / sürükleme — seçimi uygula (tap-down atlanır; çift toggle olmasın).
+              onTouchedGroupX(x);
+            }
             return;
           }
           // Masaüstünde imleç grafikten çıkınca vurguyu kaldır.
-          // Mobilde seçim, başka çubuğa dokunulana kadar kalır (tooltip okunabilsin).
           if (event is FlPointerExitEvent) {
             onTouchedGroupX(-1);
           }
