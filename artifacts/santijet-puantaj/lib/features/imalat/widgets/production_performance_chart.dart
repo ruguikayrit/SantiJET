@@ -445,13 +445,16 @@ class _ProductionPerformanceChartState
         handleBuiltInTouches: false,
         touchExtraThreshold: const EdgeInsets.symmetric(horizontal: 8),
         touchCallback: (event, response) {
-          if (!event.isInterestedForInteractions ||
-              response == null ||
-              response.spot == null) {
-            onTouchedGroupX(-1);
+          final spot = response?.spot;
+          if (spot != null) {
+            onTouchedGroupX(spot.touchedBarGroup.x);
             return;
           }
-          onTouchedGroupX(response.spot!.touchedBarGroup.x);
+          // Masaüstünde imleç grafikten çıkınca vurguyu kaldır.
+          // Mobilde seçim, başka çubuğa dokunulana kadar kalır (tooltip okunabilsin).
+          if (event is FlPointerExitEvent) {
+            onTouchedGroupX(-1);
+          }
         },
         touchTooltipData: BarTouchTooltipData(
           // Barların önüne çekilmesin; üstte kalsın.
@@ -568,6 +571,8 @@ class _ProductionPerformanceChartState
                   barWidth: barWidth,
                   hasPlan: hasPlan,
                   actualColor: actualColor(buckets[i]),
+                  selected: touchedGroupX == i,
+                  dimmed: touchedGroupX >= 0 && touchedGroupX != i,
                   showingTooltipIndicators: touchedGroupX == i
                       ? [tooltipRodIndex(buckets[i])]
                       : const [],
@@ -582,25 +587,66 @@ class _ProductionPerformanceChartState
     required double barWidth,
     required bool hasPlan,
     required Color actualColor,
+    required bool selected,
+    required bool dimmed,
     List<int> showingTooltipIndicators = const [],
   }) {
+    final w = selected ? barWidth + 1.5 : barWidth;
+    final frame = selected
+        ? BorderSide(
+            color: AppColors.electricBlueLight.withValues(alpha: 0.95),
+            width: 1.75,
+          )
+        : BorderSide.none;
+    final radius = BorderRadius.vertical(
+      top: Radius.circular(selected ? 4 : 3),
+    );
+
+    Color paint(Color base, {double selectedBoost = 1}) {
+      if (dimmed) return base.withValues(alpha: 0.32);
+      if (selected) {
+        return Color.lerp(base, Colors.white, 0.12 * selectedBoost) ?? base;
+      }
+      return base;
+    }
+
+    BackgroundBarChartRodData halo(double toY) {
+      if (!selected || toY <= 0) {
+        return BackgroundBarChartRodData(show: false);
+      }
+      return BackgroundBarChartRodData(
+        show: true,
+        toY: toY,
+        color: AppColors.electricBlue.withValues(alpha: 0.14),
+      );
+    }
+
     if (hasPlan) {
+      final planColor = AppColors.warning.withValues(alpha: 0.85);
       return BarChartGroupData(
         x: index,
-        barsSpace: 4,
+        barsSpace: selected ? 5 : 4,
         showingTooltipIndicators: showingTooltipIndicators,
         barRods: [
           BarChartRodData(
             toY: bucket.actual,
-            width: barWidth,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(3)),
-            color: actualColor,
+            width: w,
+            borderRadius: radius,
+            color: paint(actualColor),
+            borderSide: frame,
+            backDrawRodData: halo(
+              bucket.actual > bucket.planned ? bucket.actual : bucket.planned,
+            ),
           ),
           BarChartRodData(
             toY: bucket.planned,
-            width: barWidth,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(3)),
-            color: AppColors.warning.withValues(alpha: 0.85),
+            width: w,
+            borderRadius: radius,
+            color: paint(planColor, selectedBoost: 0.8),
+            borderSide: frame,
+            backDrawRodData: halo(
+              bucket.actual > bucket.planned ? bucket.actual : bucket.planned,
+            ),
           ),
         ],
       );
@@ -612,9 +658,11 @@ class _ProductionPerformanceChartState
       barRods: [
         BarChartRodData(
           toY: bucket.actual,
-          width: barWidth,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(3)),
-          color: actualColor,
+          width: w,
+          borderRadius: radius,
+          color: paint(actualColor),
+          borderSide: frame,
+          backDrawRodData: halo(bucket.actual),
         ),
       ],
     );
