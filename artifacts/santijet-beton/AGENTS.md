@@ -34,7 +34,7 @@ Kaynak: `lib/core/routing/app_router.dart`, `app_routes.dart`, `lib/features/she
 
 Eleman: temel / kolon / perde / döşeme (eski `kolon_perde` → kolon).
 Filtreler: Yapısal eleman / Durum / Zaman — açılır liste (`PopupMenuButton`).
-**Rapor Al** sağ üstte ayarlar dişlisinin solunda (`SantijetHeaderDownloadButton`, Saha Puantaj AL ile aynı slot). Altta yalnız **Rapor Ekle**. PDF/Excel sheet.
+**Rapor Al** sağ üstte ayarlar dişlisinin solunda (`SantijetHeaderDownloadButton`, Saha Puantaj AL ile aynı slot). **Rapor Ekle** diğer sayfalar gibi sağ alt `floatingActionButton`. PDF/Excel sheet.
 Anasayfa numune özeti: uygun + uygunsuz.
 
 ## Tema

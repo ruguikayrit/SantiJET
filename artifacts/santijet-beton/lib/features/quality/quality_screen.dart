@@ -110,6 +110,14 @@ class _QualityScreenState extends ConsumerState<QualityScreen> {
     final canExport = project != null && filtered.isNotEmpty;
 
     return Scaffold(
+      floatingActionButton: project == null
+          ? null
+          : FloatingActionButton.extended(
+              heroTag: 'test-rapor-ekle',
+              onPressed: () => _openEditor(context, ref),
+              icon: const Icon(Icons.add),
+              label: const Text('Rapor Ekle'),
+            ),
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -221,7 +229,7 @@ class _QualityScreenState extends ConsumerState<QualityScreen> {
                                         AppSpacing.md,
                                         AppSpacing.sm,
                                         AppSpacing.md,
-                                        AppSpacing.md,
+                                        88,
                                       ),
                                       itemCount: filtered.length,
                                       separatorBuilder: (_, __) =>
@@ -287,28 +295,7 @@ class _QualityScreenState extends ConsumerState<QualityScreen> {
                           ],
                         ),
             ),
-            if (project != null) _bottomActions(),
           ],
-        ),
-      ),
-    );
-  }
-
-  Widget _bottomActions() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.md,
-        AppSpacing.sm,
-        AppSpacing.md,
-        AppSpacing.sm,
-      ),
-      child: SizedBox(
-        width: double.infinity,
-        child: FloatingActionButton.extended(
-          heroTag: 'test-rapor-ekle',
-          onPressed: () => _openEditor(context, ref),
-          icon: const Icon(Icons.add),
-          label: const Text('Rapor Ekle'),
         ),
       ),
     );
