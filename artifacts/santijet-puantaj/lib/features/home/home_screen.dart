@@ -174,21 +174,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   _SummarySection(
                     title: 'Günlük Puantaj',
                     icon: Icons.fact_check_outlined,
+                    onTap: () => context.go(AppRoutes.puantaj),
                     child: Builder(
                       builder: (context) {
                         final theme = Theme.of(context);
-                        void openPuantaj() => context.go(AppRoutes.puantaj);
                         return Column(
                           children: [
                             Row(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
                                 Expanded(
                                   child: _MiniStat(
                                     label: 'Mevcut',
                                     value: '$present',
                                     color: AttendanceStatus.present.color,
-                                    onTap: openPuantaj,
                                   ),
                                 ),
                                 const SizedBox(width: AppSpacing.xs),
@@ -197,7 +195,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                     label: 'Yarım',
                                     value: '$half',
                                     color: AttendanceStatus.half.color,
-                                    onTap: openPuantaj,
                                   ),
                                 ),
                                 const SizedBox(width: AppSpacing.xs),
@@ -206,7 +203,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                     label: 'Yok',
                                     value: '$absent',
                                     color: AttendanceStatus.absent.color,
-                                    onTap: openPuantaj,
                                   ),
                                 ),
                               ],
@@ -253,6 +249,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   _SummarySection(
                     title: 'Acil görevler',
                     icon: Icons.assignment_late_outlined,
+                    onTap: () => context.go(AppRoutes.gorevler),
                     child: _HomeUrgentTasksSection(
                       tasks: urgentTasks,
                       categorySummaries: urgentByCategory,
@@ -691,15 +688,18 @@ class _SummarySection extends StatelessWidget {
     required this.title,
     required this.icon,
     required this.child,
+    this.onTap,
   });
 
   final String title;
   final IconData icon;
   final Widget child;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     return SJCard(
+      onTap: onTap,
       child: Builder(
         builder: (context) {
           final theme = Theme.of(context);
@@ -713,6 +713,11 @@ class _SummarySection extends StatelessWidget {
                   Expanded(
                     child: Text(title, style: theme.textTheme.titleMedium),
                   ),
+                  if (onTap != null)
+                    Icon(
+                      Icons.chevron_right,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
                 ],
               ),
               const SizedBox(height: AppSpacing.md),
@@ -753,13 +758,7 @@ class _UrgentTagFilter extends StatelessWidget {
         borderRadius: AppRadii.sm,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 160),
-          width: double.infinity,
-          constraints: const BoxConstraints(minHeight: 64),
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.sm,
-            vertical: AppSpacing.sm,
-          ),
-          alignment: Alignment.center,
+          padding: const EdgeInsets.fromLTRB(10, 10, 10, 8),
           decoration: BoxDecoration(
             color: color.withValues(alpha: selected ? 0.16 : 0.08),
             borderRadius: AppRadii.sm,
@@ -769,20 +768,15 @@ class _UrgentTagFilter extends StatelessWidget {
             ),
           ),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Flexible(
+                  Expanded(
                     child: Text(
                       label,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      textAlign: TextAlign.center,
                       style: theme.textTheme.labelSmall?.copyWith(
                         color: ink,
                         fontWeight: FontWeight.w800,
@@ -790,16 +784,13 @@ class _UrgentTagFilter extends StatelessWidget {
                       ),
                     ),
                   ),
-                  if (selected) ...[
-                    const SizedBox(width: 4),
+                  if (selected)
                     Icon(Icons.check_circle, size: 14, color: ink),
-                  ],
                 ],
               ),
               const SizedBox(height: 6),
               Text(
                 '$count',
-                textAlign: TextAlign.center,
                 style: theme.textTheme.headlineSmall?.copyWith(
                   color: ink,
                   fontWeight: FontWeight.w800,
@@ -922,10 +913,7 @@ class _MiniStat extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final child = Container(
-      width: double.infinity,
-      constraints: const BoxConstraints(minHeight: 64),
       padding: const EdgeInsets.all(AppSpacing.sm),
-      alignment: Alignment.center,
       decoration: BoxDecoration(
         color: color.withValues(alpha: selected ? 0.16 : 0.08),
         borderRadius: AppRadii.sm,
@@ -935,25 +923,20 @@ class _MiniStat extends StatelessWidget {
         ),
       ),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            mainAxisSize: MainAxisSize.min,
             children: [
-              Flexible(
+              Expanded(
                 child: Text(
                   label,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.center,
                   style: theme.textTheme.labelSmall,
                 ),
               ),
               if (selected) ...[
-                const SizedBox(width: 4),
+                const SizedBox(width: 2),
                 Icon(
                   Icons.check_circle,
                   size: 14,
@@ -963,15 +946,21 @@ class _MiniStat extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 4),
-          Text(
-            value,
-            textAlign: TextAlign.center,
-            style: theme.textTheme.titleLarge?.copyWith(
-              color: AppColors.statusInkOnCard(color),
-              fontWeight: FontWeight.w700,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Flexible(
+                child: Text(
+                  value,
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    color: AppColors.statusInkOnCard(color),
+                    fontWeight: FontWeight.w700,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
           ),
         ],
       ),
