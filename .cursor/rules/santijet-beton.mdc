@@ -9,6 +9,7 @@ alwaysApply: false
 Alt nav sırası: **Ana Sayfa · Keşif · Sipariş · Döküm · Test**. Ayarlar navda yok.
 
 - Test = `QualityScreen`, rota `/test` (`AppRoutes.kalite` alias).
+- Test: Rapor Al header’da dişlinin solunda; eleman/durum/zaman açılır filtre; altta yalnız Rapor Ekle.
 - Ayarlar = `/ayarlar`, **root navigator**; sağ üst `SantijetHeader` dişli ikonu.
 - Bildirim zili yok: `showNotification` varsayılan `false`. Açma.
 - Ayarlar listesi: Projelerim, Tema, Demo veriyi yükle, Hakkında, Tüm Verileri Sil.

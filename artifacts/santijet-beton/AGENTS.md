@@ -32,7 +32,10 @@ Kaynak: `lib/core/routing/app_router.dart`, `app_routes.dart`, `lib/features/she
 
 ## Test (basınç)
 
-Eleman: temel / kolon / perde / döşeme (eski `kolon_perde` → kolon). Filtre + İptal + PDF/Excel. Anasayfa numune özeti: uygun + uygunsuz.
+Eleman: temel / kolon / perde / döşeme (eski `kolon_perde` → kolon).
+Filtreler: Yapısal eleman / Durum / Zaman — açılır liste (`PopupMenuButton`).
+**Rapor Al** sağ üstte ayarlar dişlisinin solunda (`SantijetHeaderDownloadButton`, Saha Puantaj AL ile aynı slot). Altta yalnız **Rapor Ekle**. PDF/Excel sheet.
+Anasayfa numune özeti: uygun + uygunsuz.
 
 ## Tema
 

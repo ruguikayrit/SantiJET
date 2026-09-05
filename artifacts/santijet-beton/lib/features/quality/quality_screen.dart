@@ -3,11 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/design_system/sj_button.dart';
 import '../../core/design_system/sj_empty_state.dart';
-import '../../core/design_system/sj_filter_chips.dart';
 import '../../core/design_system/sj_list_item.dart';
 import '../../core/design_system/sj_modal.dart';
 import '../../core/design_system/sj_status_badge.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_radii.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/utils/app_date.dart';
 import '../../core/widgets/santijet_header.dart';
@@ -20,6 +20,8 @@ enum _ElementFilter { all, temel, kolon, perde, doseme }
 
 enum _StatusFilter { all, compliant, nonCompliant, pending }
 
+enum _TimeFilter { all, today, last7, last30, thisMonth }
+
 /// Laboratuvar beton basınç dayanım rapor kayıtları.
 class QualityScreen extends ConsumerStatefulWidget {
   const QualityScreen({super.key});
@@ -31,23 +33,33 @@ class QualityScreen extends ConsumerStatefulWidget {
 class _QualityScreenState extends ConsumerState<QualityScreen> {
   _ElementFilter _elementFilter = _ElementFilter.all;
   _StatusFilter _statusFilter = _StatusFilter.all;
+  _TimeFilter _timeFilter = _TimeFilter.all;
 
-  static const _elementLabels = [
-    'Tümü',
-    'Temel',
-    'Kolon',
-    'Perde',
-    'Döşeme',
-  ];
+  static const _elementLabels = {
+    _ElementFilter.all: 'Tümü',
+    _ElementFilter.temel: 'Temel',
+    _ElementFilter.kolon: 'Kolon',
+    _ElementFilter.perde: 'Perde',
+    _ElementFilter.doseme: 'Döşeme',
+  };
 
-  static const _statusLabels = [
-    'Tümü',
-    'Uygun',
-    'Uygunsuz',
-    'Sonuç bekleyen',
-  ];
+  static const _statusLabels = {
+    _StatusFilter.all: 'Tümü',
+    _StatusFilter.compliant: 'Uygun',
+    _StatusFilter.nonCompliant: 'Uygunsuz',
+    _StatusFilter.pending: 'Sonuç bekleyen',
+  };
+
+  static const _timeLabels = {
+    _TimeFilter.all: 'Tümü',
+    _TimeFilter.today: 'Bugün',
+    _TimeFilter.last7: 'Son 7 gün',
+    _TimeFilter.last30: 'Son 30 gün',
+    _TimeFilter.thisMonth: 'Bu ay',
+  };
 
   List<QualitySample> _applyFilters(List<QualitySample> samples) {
+    final today = AppDate.today();
     return samples.where((s) {
       final elementOk = switch (_elementFilter) {
         _ElementFilter.all => true,
@@ -62,8 +74,32 @@ class _QualityScreenState extends ConsumerState<QualityScreen> {
         _StatusFilter.nonCompliant => s.isCompliant == false,
         _StatusFilter.pending => s.isPending,
       };
-      return elementOk && statusOk;
+      final timeOk = _matchesTimeFilter(s.sampleDate, today);
+      return elementOk && statusOk && timeOk;
     }).toList();
+  }
+
+  bool _matchesTimeFilter(String sampleDate, DateTime today) {
+    if (_timeFilter == _TimeFilter.all) return true;
+    DateTime? parsed;
+    try {
+      parsed = AppDate.parse(sampleDate.trim());
+    } catch (_) {
+      return false;
+    }
+    final day = DateTime(parsed.year, parsed.month, parsed.day);
+    return switch (_timeFilter) {
+      _TimeFilter.all => true,
+      _TimeFilter.today => day == today,
+      _TimeFilter.last7 =>
+        !day.isBefore(today.subtract(const Duration(days: 6))) &&
+            !day.isAfter(today),
+      _TimeFilter.last30 =>
+        !day.isBefore(today.subtract(const Duration(days: 29))) &&
+            !day.isAfter(today),
+      _TimeFilter.thisMonth =>
+        day.year == today.year && day.month == today.month,
+    };
   }
 
   @override
@@ -71,13 +107,29 @@ class _QualityScreenState extends ConsumerState<QualityScreen> {
     final project = ref.watch(activeProjectProvider);
     final samples = ref.watch(activeQualityProvider);
     final filtered = _applyFilters(samples);
+    final canExport = project != null && filtered.isNotEmpty;
 
     return Scaffold(
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const SantijetHeader(subtitle: 'Test', avatarInitial: 'SJ'),
+            SantijetHeader(
+              subtitle: 'Test',
+              avatarInitial: 'SJ',
+              actionsBeforeSettings: [
+                SantijetHeaderDownloadButton(
+                  tooltip: 'Rapor Al',
+                  onDarkBand: true,
+                  enabled: canExport,
+                  onPressed: () {
+                    final p = project;
+                    if (p == null || filtered.isEmpty) return;
+                    _raporAl(context, project: p, samples: filtered);
+                  },
+                ),
+              ],
+            ),
             Expanded(
               child: project == null
                   ? const SJEmptyState(
@@ -105,36 +157,51 @@ class _QualityScreenState extends ConsumerState<QualityScreen> {
                                 AppSpacing.md,
                                 0,
                               ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                              child: Row(
                                 children: [
-                                  Text(
-                                    'Yapısal eleman',
-                                    style:
-                                        Theme.of(context).textTheme.labelLarge,
-                                  ),
-                                  const SizedBox(height: AppSpacing.xs),
-                                  SJFilterChips(
-                                    labels: _elementLabels,
-                                    selectedIndex: _elementFilter.index,
-                                    onSelected: (i) => setState(
-                                      () => _elementFilter =
-                                          _ElementFilter.values[i],
+                                  Expanded(
+                                    child: _FilterDropdown<_ElementFilter>(
+                                      caption: 'Yapısal eleman',
+                                      valueLabel:
+                                          _elementLabels[_elementFilter]!,
+                                      selected: _elementFilter,
+                                      items: [
+                                        for (final e in _ElementFilter.values)
+                                          (value: e, label: _elementLabels[e]!),
+                                      ],
+                                      onSelected: (v) => setState(
+                                        () => _elementFilter = v,
+                                      ),
                                     ),
                                   ),
-                                  const SizedBox(height: AppSpacing.sm),
-                                  Text(
-                                    'Durum',
-                                    style:
-                                        Theme.of(context).textTheme.labelLarge,
+                                  const SizedBox(width: AppSpacing.sm),
+                                  Expanded(
+                                    child: _FilterDropdown<_StatusFilter>(
+                                      caption: 'Durum',
+                                      valueLabel: _statusLabels[_statusFilter]!,
+                                      selected: _statusFilter,
+                                      items: [
+                                        for (final e in _StatusFilter.values)
+                                          (value: e, label: _statusLabels[e]!),
+                                      ],
+                                      onSelected: (v) => setState(
+                                        () => _statusFilter = v,
+                                      ),
+                                    ),
                                   ),
-                                  const SizedBox(height: AppSpacing.xs),
-                                  SJFilterChips(
-                                    labels: _statusLabels,
-                                    selectedIndex: _statusFilter.index,
-                                    onSelected: (i) => setState(
-                                      () => _statusFilter =
-                                          _StatusFilter.values[i],
+                                  const SizedBox(width: AppSpacing.sm),
+                                  Expanded(
+                                    child: _FilterDropdown<_TimeFilter>(
+                                      caption: 'Zaman',
+                                      valueLabel: _timeLabels[_timeFilter]!,
+                                      selected: _timeFilter,
+                                      items: [
+                                        for (final e in _TimeFilter.values)
+                                          (value: e, label: _timeLabels[e]!),
+                                      ],
+                                      onSelected: (v) => setState(
+                                        () => _timeFilter = v,
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -145,8 +212,8 @@ class _QualityScreenState extends ConsumerState<QualityScreen> {
                                   ? const SJEmptyState(
                                       title: 'Filtrede sonuç yok',
                                       message:
-                                          'Seçili yapısal eleman veya durum '
-                                          'filtresine uyan rapor bulunamadı.',
+                                          'Seçili yapısal eleman, durum veya '
+                                          'zaman filtresine uyan rapor bulunamadı.',
                                       icon: Icons.filter_alt_off_outlined,
                                     )
                                   : ListView.separated(
@@ -220,18 +287,14 @@ class _QualityScreenState extends ConsumerState<QualityScreen> {
                           ],
                         ),
             ),
-            if (project != null)
-              _bottomActions(project: project, filtered: filtered),
+            if (project != null) _bottomActions(),
           ],
         ),
       ),
     );
   }
 
-  Widget _bottomActions({
-    required Project project,
-    required List<QualitySample> filtered,
-  }) {
+  Widget _bottomActions() {
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         AppSpacing.md,
@@ -239,32 +302,14 @@ class _QualityScreenState extends ConsumerState<QualityScreen> {
         AppSpacing.md,
         AppSpacing.sm,
       ),
-      child: Row(
-        children: [
-          Expanded(
-            child: FloatingActionButton.extended(
-              heroTag: 'test-rapor-al',
-              onPressed: filtered.isEmpty
-                  ? null
-                  : () => _raporAl(
-                        context,
-                        project: project,
-                        samples: filtered,
-                      ),
-              icon: const Icon(Icons.ios_share_outlined),
-              label: const Text('Rapor Al'),
-            ),
-          ),
-          const SizedBox(width: AppSpacing.sm),
-          Expanded(
-            child: FloatingActionButton.extended(
-              heroTag: 'test-rapor-ekle',
-              onPressed: () => _openEditor(context, ref),
-              icon: const Icon(Icons.add),
-              label: const Text('Rapor Ekle'),
-            ),
-          ),
-        ],
+      child: SizedBox(
+        width: double.infinity,
+        child: FloatingActionButton.extended(
+          heroTag: 'test-rapor-ekle',
+          onPressed: () => _openEditor(context, ref),
+          icon: const Icon(Icons.add),
+          label: const Text('Rapor Ekle'),
+        ),
       ),
     );
   }
@@ -607,5 +652,103 @@ class _QualityScreenState extends ConsumerState<QualityScreen> {
             ),
           );
     }
+  }
+}
+
+/// Saha görev filtreleri ile aynı açılır menü deseni.
+class _FilterDropdown<T> extends StatelessWidget {
+  const _FilterDropdown({
+    required this.caption,
+    required this.valueLabel,
+    required this.items,
+    required this.selected,
+    required this.onSelected,
+  });
+
+  final String caption;
+  final String valueLabel;
+  final List<({T value, String label})> items;
+  final T selected;
+  final ValueChanged<T> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isActive = selected != items.first.value;
+
+    return PopupMenuButton<T>(
+      padding: EdgeInsets.zero,
+      offset: const Offset(0, 44),
+      onSelected: onSelected,
+      itemBuilder: (ctx) => [
+        for (final item in items)
+          PopupMenuItem<T>(
+            value: item.value,
+            child: Row(
+              children: [
+                Expanded(child: Text(item.label)),
+                if (item.value == selected)
+                  Icon(
+                    Icons.check,
+                    size: 16,
+                    color: theme.colorScheme.primary,
+                  ),
+              ],
+            ),
+          ),
+      ],
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.fromLTRB(10, 8, 8, 8),
+        decoration: BoxDecoration(
+          color: isActive
+              ? AppColors.electricBlue.withValues(alpha: 0.12)
+              : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+          borderRadius: AppRadii.sm,
+          border: Border.all(
+            color: isActive
+                ? AppColors.electricBlue.withValues(alpha: 0.85)
+                : theme.dividerColor.withValues(alpha: 0.55),
+            width: isActive ? 1.5 : 1,
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              caption,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+                fontWeight: FontWeight.w600,
+                fontSize: 10,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    valueLabel,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                Icon(
+                  Icons.expand_more,
+                  size: 18,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

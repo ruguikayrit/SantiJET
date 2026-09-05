@@ -18,6 +18,7 @@ class SantijetHeader extends StatelessWidget {
     this.showNotification = false,
     this.showAvatar = true,
     this.avatarInitial,
+    this.actionsBeforeSettings,
   });
 
   /// Ana sayfa ürün adı — wordmark altı (%50 büyütülmüş, Demir homeDemirScale).
@@ -44,6 +45,9 @@ class SantijetHeader extends StatelessWidget {
   final bool showAvatar;
   final String? avatarInitial;
 
+  /// Ayarlar dişlisinin solunda (Saha Puantaj AL / Rapor AL ile aynı slot).
+  final List<Widget>? actionsBeforeSettings;
+
   @override
   Widget build(BuildContext context) {
     if (showWordmark) {
@@ -58,6 +62,7 @@ class SantijetHeader extends StatelessWidget {
           showNotification: showNotification,
           showAvatar: showAvatar,
           avatarInitial: avatarInitial,
+          actionsBeforeSettings: actionsBeforeSettings,
         ),
       );
     }
@@ -67,6 +72,7 @@ class SantijetHeader extends StatelessWidget {
       showNotification: showNotification,
       showAvatar: showAvatar,
       avatarInitial: avatarInitial,
+      actionsBeforeSettings: actionsBeforeSettings,
     );
   }
 }
@@ -77,21 +83,32 @@ class _HeaderActions extends StatelessWidget {
     required this.showAvatar,
     this.avatarInitial,
     this.onDarkBand = false,
+    this.actionsBeforeSettings,
   });
 
   final bool showNotification;
   final bool showAvatar;
   final String? avatarInitial;
   final bool onDarkBand;
+  final List<Widget>? actionsBeforeSettings;
 
   @override
   Widget build(BuildContext context) {
-    if (!showNotification && !showAvatar) return const SizedBox.shrink();
+    final leading = actionsBeforeSettings ?? const <Widget>[];
+    if (!showNotification && !showAvatar && leading.isEmpty) {
+      return const SizedBox.shrink();
+    }
 
     return Row(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
+        for (var i = 0; i < leading.length; i++) ...[
+          if (i > 0) const SizedBox(width: SantijetHeader.actionGap),
+          leading[i],
+        ],
+        if (leading.isNotEmpty && (showNotification || showAvatar))
+          const SizedBox(width: SantijetHeader.actionGap),
         if (showNotification)
           _HeaderNotificationButton(onDarkBand: onDarkBand),
         if (showNotification && showAvatar)
@@ -101,6 +118,60 @@ class _HeaderActions extends StatelessWidget {
             onDarkBand: onDarkBand,
           ),
       ],
+    );
+  }
+}
+
+/// Sağ üst çıktı / indirme — ayarlar dişlisinin solunda (Saha ile aynı kurgu).
+class SantijetHeaderDownloadButton extends StatelessWidget {
+  const SantijetHeaderDownloadButton({
+    required this.onPressed,
+    this.tooltip = 'Rapor Al',
+    this.onDarkBand = false,
+    this.enabled = true,
+    super.key,
+  });
+
+  final VoidCallback? onPressed;
+  final String tooltip;
+  final bool onDarkBand;
+  final bool enabled;
+
+  @override
+  Widget build(BuildContext context) {
+    final lightIcon = onDarkBand ||
+        Theme.of(context).brightness == Brightness.light ||
+        AppColors.useDarkChrome;
+    final iconColor = !enabled
+        ? (lightIcon
+            ? Colors.white.withValues(alpha: 0.35)
+            : AppColors.textMuted.withValues(alpha: 0.45))
+        : (lightIcon
+            ? Colors.white.withValues(alpha: 0.88)
+            : AppColors.textSecondary);
+
+    return Semantics(
+      label: tooltip,
+      button: true,
+      enabled: enabled,
+      child: Tooltip(
+        message: tooltip,
+        child: SizedBox(
+          width: SantijetHeader.actionSize,
+          height: SantijetHeader.actionSize,
+          child: IconButton(
+            onPressed: enabled ? onPressed : null,
+            padding: EdgeInsets.zero,
+            visualDensity: VisualDensity.compact,
+            constraints: const BoxConstraints.tightFor(
+              width: SantijetHeader.actionSize,
+              height: SantijetHeader.actionSize,
+            ),
+            iconSize: SantijetHeader.actionIconSize,
+            icon: Icon(Icons.download_outlined, color: iconColor),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -181,12 +252,14 @@ class _PageBrandHeader extends StatelessWidget {
     required this.showAvatar,
     this.subtitle,
     this.avatarInitial,
+    this.actionsBeforeSettings,
   });
 
   final String? subtitle;
   final bool showNotification;
   final bool showAvatar;
   final String? avatarInitial;
+  final List<Widget>? actionsBeforeSettings;
 
   @override
   Widget build(BuildContext context) {
@@ -260,6 +333,7 @@ class _PageBrandHeader extends StatelessWidget {
             showAvatar: showAvatar,
             avatarInitial: avatarInitial,
             onDarkBand: onDarkBand,
+            actionsBeforeSettings: actionsBeforeSettings,
           ),
         ],
       ),
@@ -279,17 +353,22 @@ class _WordmarkHeader extends StatelessWidget {
     required this.showNotification,
     required this.showAvatar,
     this.avatarInitial,
+    this.actionsBeforeSettings,
   });
 
   final bool showNotification;
   final bool showAvatar;
   final String? avatarInitial;
+  final List<Widget>? actionsBeforeSettings;
 
   @override
   Widget build(BuildContext context) {
     final wordmarkHeight = _BrandTitleMetrics.wordmarkHeightOf(context);
     final productIndent = _BrandTitleMetrics.productIndentOf(context);
     final ink = AppColors.textPrimary;
+    final hasActions = showNotification ||
+        showAvatar ||
+        (actionsBeforeSettings?.isNotEmpty ?? false);
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -317,12 +396,13 @@ class _WordmarkHeader extends StatelessWidget {
             ],
           ),
         ),
-        if (showNotification || showAvatar) ...[
+        if (hasActions) ...[
           const SizedBox(width: SantijetHeader._homeBrandToActionsGap),
           _HeaderActions(
             showNotification: showNotification,
             showAvatar: showAvatar,
             avatarInitial: avatarInitial,
+            actionsBeforeSettings: actionsBeforeSettings,
           ),
         ],
       ],
