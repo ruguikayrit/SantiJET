@@ -114,18 +114,38 @@ class _TaskCalendarPanelState extends State<TaskCalendarPanel> {
                             const SizedBox(height: AppSpacing.xs),
                         itemBuilder: (context, i) {
                           final t = list[i];
-                          return ListTile(
-                            contentPadding: EdgeInsets.zero,
-                            title: Text(t.title),
-                            subtitle: Text(
-                              [
-                                if (t.assignee.isNotEmpty)
-                                  'Atanan: ${t.assignee}',
-                                if (t.earliestStart.isNotEmpty)
-                                  'Başlangıç ${t.earliestStart}',
-                                if (t.dueDate.isNotEmpty)
-                                  'Planlanan bitiş ${t.dueDate}',
-                              ].join(' · '),
+                          final lines = <String>[
+                            if (t.assignee.isNotEmpty)
+                              'Atanan: ${t.assignee}',
+                            if (t.earliestStart.isNotEmpty)
+                              'Başlangıç ${t.earliestStart}',
+                            if (t.dueDate.isNotEmpty)
+                              'Planlanan bitiş ${t.dueDate}',
+                          ];
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 6),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  t.title,
+                                  style: theme.textTheme.titleSmall?.copyWith(
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                                if (lines.isNotEmpty) ...[
+                                  const SizedBox(height: 4),
+                                  for (final line in lines)
+                                    Text(
+                                      line,
+                                      style: theme.textTheme.bodySmall?.copyWith(
+                                        color: theme
+                                            .colorScheme.onSurfaceVariant,
+                                        height: 1.35,
+                                      ),
+                                    ),
+                                ],
+                              ],
                             ),
                           );
                         },

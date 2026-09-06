@@ -385,7 +385,9 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
     }
     if (tag.isEmpty) tag = TaskTagCatalog.insaat;
     var photos = List<TaskPhoto>.from(existing?.photos ?? const []);
-    const maxPhotos = 5;
+    var uploadPhase = TaskPhotoPhase.before;
+    const maxPhotos = TaskPhoto.maxTotal;
+    const maxPerPhase = TaskPhoto.maxPerPhase;
     final picker = ImagePicker();
     Person? assignee;
     if (existing != null) {
@@ -583,233 +585,359 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                     ),
                     const SizedBox(height: AppSpacing.sm),
                     Text('Fotoğraf', style: theme.textTheme.labelLarge),
+                    const SizedBox(height: 2),
+                    Text(
+                      'En fazla $maxPerPhase önce + $maxPerPhase sonra '
+                      '(toplam $maxPhotos).',
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
                     const SizedBox(height: AppSpacing.xs),
-                    if (photos.isNotEmpty)
-                      SizedBox(
-                        height: 88,
-                        child: ListView.separated(
-                          scrollDirection: Axis.horizontal,
-                          itemCount: photos.length,
-                          separatorBuilder: (_, __) =>
-                              const SizedBox(width: AppSpacing.sm),
-                          itemBuilder: (_, i) {
-                            final photo = photos[i];
-                            Widget image;
-                            try {
-                              image = Image.memory(
-                                base64Decode(photo.dataBase64),
-                                fit: BoxFit.cover,
-                                width: 88,
-                                height: 88,
+                    if (canEditFields)
+                      SegmentedButton<TaskPhotoPhase>(
+                        segments: [
+                          ButtonSegment(
+                            value: TaskPhotoPhase.before,
+                            label: Text(
+                              'Önce (${photos.where((p) => p.phase == TaskPhotoPhase.before).length}/$maxPerPhase)',
+                            ),
+                          ),
+                          ButtonSegment(
+                            value: TaskPhotoPhase.after,
+                            label: Text(
+                              'Sonra (${photos.where((p) => p.phase == TaskPhotoPhase.after).length}/$maxPerPhase)',
+                            ),
+                          ),
+                        ],
+                        selected: {uploadPhase},
+                        onSelectionChanged: (s) =>
+                            setModal(() => uploadPhase = s.first),
+                      ),
+                    if (canEditFields) const SizedBox(height: AppSpacing.sm),
+                    for (final phase in TaskPhotoPhase.values) ...[
+                      if (photos.any((p) => p.phase == phase)) ...[
+                        Text(
+                          phase.label,
+                          style: theme.textTheme.labelMedium?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        SizedBox(
+                          height: 96,
+                          child: ListView.separated(
+                            scrollDirection: Axis.horizontal,
+                            itemCount:
+                                photos.where((p) => p.phase == phase).length,
+                            separatorBuilder: (_, __) =>
+                                const SizedBox(width: AppSpacing.sm),
+                            itemBuilder: (_, phaseIndex) {
+                              final phasePhotos = photos
+                                  .where((p) => p.phase == phase)
+                                  .toList();
+                              final photo = phasePhotos[phaseIndex];
+                              final i = photos.indexWhere(
+                                (p) => p.id == photo.id,
                               );
-                            } catch (_) {
-                              image = ColoredBox(
-                                color: theme.colorScheme.surfaceContainerHighest,
-                                child: const Icon(Icons.broken_image_outlined),
-                              );
-                            }
-                            return Stack(
-                              children: [
-                                Material(
-                                  color: Colors.transparent,
-                                  child: InkWell(
-                                    borderRadius: AppRadii.sm,
-                                    onTap: () async {
-                                      late final Uint8List bytes;
-                                      try {
-                                        bytes = base64Decode(photo.dataBase64);
-                                      } catch (_) {
-                                        return;
-                                      }
-                                      await openAnnotatedPhotoViewer(
-                                        ctx,
-                                        imageBytes: bytes,
-                                        startInDrawMode: canEditFields,
-                                        onRevertPrevious: canEditFields &&
-                                                photo.canRevertEdit
-                                            ? () async {
-                                                setModal(() {
-                                                  photos = [
-                                                    for (var j = 0;
-                                                        j < photos.length;
-                                                        j++)
-                                                      if (j == i)
-                                                        photos[j].revertEdit()
-                                                      else
-                                                        photos[j],
-                                                  ];
-                                                });
-                                              }
-                                            : null,
-                                        onSave: canEditFields
-                                            ? (annotated) async {
-                                                final updated =
-                                                    photo.withEditedBase64(
-                                                  base64Encode(annotated),
-                                                );
-                                                setModal(() {
-                                                  photos = [
-                                                    for (var j = 0;
-                                                        j < photos.length;
-                                                        j++)
-                                                      if (j == i)
-                                                        updated
-                                                      else
-                                                        photos[j],
-                                                  ];
-                                                });
-                                              }
-                                            : null,
-                                      );
-                                    },
-                                    child: ClipRRect(
+                              Widget image;
+                              try {
+                                image = Image.memory(
+                                  base64Decode(photo.dataBase64),
+                                  fit: BoxFit.cover,
+                                  width: 88,
+                                  height: 88,
+                                );
+                              } catch (_) {
+                                image = ColoredBox(
+                                  color: theme
+                                      .colorScheme.surfaceContainerHighest,
+                                  child: const Icon(
+                                    Icons.broken_image_outlined,
+                                  ),
+                                );
+                              }
+                              return Stack(
+                                children: [
+                                  Material(
+                                    color: Colors.transparent,
+                                    child: InkWell(
                                       borderRadius: AppRadii.sm,
-                                      child: SizedBox(
-                                        width: 88,
-                                        height: 88,
-                                        child: image,
+                                      onTap: () async {
+                                        late final Uint8List bytes;
+                                        try {
+                                          bytes =
+                                              base64Decode(photo.dataBase64);
+                                        } catch (_) {
+                                          return;
+                                        }
+                                        await openAnnotatedPhotoViewer(
+                                          ctx,
+                                          imageBytes: bytes,
+                                          startInDrawMode: canEditFields,
+                                          onRevertPrevious: canEditFields &&
+                                                  photo.canRevertEdit
+                                              ? () async {
+                                                  setModal(() {
+                                                    photos = [
+                                                      for (var j = 0;
+                                                          j < photos.length;
+                                                          j++)
+                                                        if (j == i)
+                                                          photos[j]
+                                                              .revertEdit()
+                                                        else
+                                                          photos[j],
+                                                    ];
+                                                  });
+                                                }
+                                              : null,
+                                          onSave: canEditFields
+                                              ? (annotated) async {
+                                                  final updated =
+                                                      photo.withEditedBase64(
+                                                    base64Encode(annotated),
+                                                  );
+                                                  setModal(() {
+                                                    photos = [
+                                                      for (var j = 0;
+                                                          j < photos.length;
+                                                          j++)
+                                                        if (j == i)
+                                                          updated
+                                                        else
+                                                          photos[j],
+                                                    ];
+                                                  });
+                                                }
+                                              : null,
+                                        );
+                                      },
+                                      child: ClipRRect(
+                                        borderRadius: AppRadii.sm,
+                                        child: SizedBox(
+                                          width: 88,
+                                          height: 88,
+                                          child: image,
+                                        ),
                                       ),
                                     ),
                                   ),
-                                ),
-                                if (canEditFields)
                                   Positioned(
-                                    top: 2,
-                                    right: 2,
+                                    left: 2,
+                                    bottom: 2,
                                     child: Material(
-                                      color: Colors.black54,
-                                      shape: const CircleBorder(),
+                                      color: Colors.black87,
+                                      borderRadius: AppRadii.xs,
                                       child: InkWell(
-                                        customBorder: const CircleBorder(),
-                                        onTap: () => setModal(
-                                          () => photos = [
-                                            for (var j = 0;
-                                                j < photos.length;
-                                                j++)
-                                              if (j != i) photos[j],
-                                          ],
-                                        ),
-                                        child: const Padding(
-                                          padding: EdgeInsets.all(4),
-                                          child: Icon(
-                                            Icons.close,
-                                            size: 14,
-                                            color: Colors.white,
+                                        borderRadius: AppRadii.xs,
+                                        onTap: canEditFields
+                                            ? () {
+                                                final other = photo.phase ==
+                                                        TaskPhotoPhase.before
+                                                    ? TaskPhotoPhase.after
+                                                    : TaskPhotoPhase.before;
+                                                final otherCount = photos
+                                                    .where(
+                                                      (p) => p.phase == other,
+                                                    )
+                                                    .length;
+                                                if (otherCount >=
+                                                    maxPerPhase) {
+                                                  ScaffoldMessenger.of(ctx)
+                                                      .showSnackBar(
+                                                    SnackBar(
+                                                      content: Text(
+                                                        '${other.label} için '
+                                                        'en fazla $maxPerPhase '
+                                                        'fotoğraf.',
+                                                      ),
+                                                    ),
+                                                  );
+                                                  return;
+                                                }
+                                                setModal(() {
+                                                  photos = [
+                                                    for (var j = 0;
+                                                        j < photos.length;
+                                                        j++)
+                                                      if (j == i)
+                                                        photos[j].copyWith(
+                                                          phase: other,
+                                                        )
+                                                      else
+                                                        photos[j],
+                                                  ];
+                                                });
+                                              }
+                                            : null,
+                                        child: Padding(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 6,
+                                            vertical: 3,
+                                          ),
+                                          child: Text(
+                                            photo.phase.label,
+                                            style: theme
+                                                .textTheme.labelSmall
+                                                ?.copyWith(
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.w700,
+                                              fontSize: 10,
+                                            ),
                                           ),
                                         ),
                                       ),
                                     ),
                                   ),
-                                if (canEditFields)
-                                  Positioned(
-                                    bottom: 2,
-                                    right: 2,
-                                    child: Material(
-                                      color: AppColors.electricBlue
-                                          .withValues(alpha: 0.92),
-                                      borderRadius: AppRadii.xs,
-                                      child: const Padding(
-                                        padding: EdgeInsets.all(4),
-                                        child: Icon(
-                                          Icons.brush_outlined,
-                                          size: 12,
-                                          color: Colors.white,
+                                  if (canEditFields)
+                                    Positioned(
+                                      top: 2,
+                                      right: 2,
+                                      child: Material(
+                                        color: Colors.black54,
+                                        shape: const CircleBorder(),
+                                        child: InkWell(
+                                          customBorder: const CircleBorder(),
+                                          onTap: () => setModal(
+                                            () => photos = [
+                                              for (var j = 0;
+                                                  j < photos.length;
+                                                  j++)
+                                                if (j != i) photos[j],
+                                            ],
+                                          ),
+                                          child: const Padding(
+                                            padding: EdgeInsets.all(4),
+                                            child: Icon(
+                                              Icons.close,
+                                              size: 14,
+                                              color: Colors.white,
+                                            ),
+                                          ),
                                         ),
                                       ),
                                     ),
-                                  ),
-                                if (canEditFields)
-                                  Positioned(
-                                    bottom: 2,
-                                    left: 2,
-                                    child: Material(
-                                      color: Colors.black54,
-                                      shape: const CircleBorder(),
-                                      child: InkWell(
-                                        customBorder: const CircleBorder(),
-                                        onTap: () async {
-                                          late final Uint8List bytes;
-                                          try {
-                                            bytes =
-                                                base64Decode(photo.dataBase64);
-                                          } catch (_) {
-                                            return;
-                                          }
-                                          final rotated =
-                                              await rotateImageBytesCw90(bytes);
-                                          if (rotated == null) return;
-                                          final updated =
-                                              photo.withEditedBase64(
-                                            base64Encode(rotated),
-                                          );
-                                          setModal(() {
+                                  if (canEditFields)
+                                    Positioned(
+                                      bottom: 2,
+                                      right: 2,
+                                      child: Material(
+                                        color: AppColors.electricBlue
+                                            .withValues(alpha: 0.92),
+                                        borderRadius: AppRadii.xs,
+                                        child: const Padding(
+                                          padding: EdgeInsets.all(4),
+                                          child: Icon(
+                                            Icons.brush_outlined,
+                                            size: 12,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  if (canEditFields)
+                                    Positioned(
+                                      top: 28,
+                                      left: 2,
+                                      child: Material(
+                                        color: Colors.black54,
+                                        shape: const CircleBorder(),
+                                        child: InkWell(
+                                          customBorder: const CircleBorder(),
+                                          onTap: () async {
+                                            late final Uint8List bytes;
+                                            try {
+                                              bytes = base64Decode(
+                                                photo.dataBase64,
+                                              );
+                                            } catch (_) {
+                                              return;
+                                            }
+                                            final rotated =
+                                                await rotateImageBytesCw90(
+                                              bytes,
+                                            );
+                                            if (rotated == null) return;
+                                            final updated =
+                                                photo.withEditedBase64(
+                                              base64Encode(rotated),
+                                            );
+                                            setModal(() {
+                                              photos = [
+                                                for (var j = 0;
+                                                    j < photos.length;
+                                                    j++)
+                                                  if (j == i)
+                                                    updated
+                                                  else
+                                                    photos[j],
+                                              ];
+                                            });
+                                          },
+                                          child: const Padding(
+                                            padding: EdgeInsets.all(4),
+                                            child: Icon(
+                                              Icons.rotate_90_degrees_cw,
+                                              size: 14,
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  if (canEditFields && photo.canRevertEdit)
+                                    Positioned(
+                                      top: 2,
+                                      left: 2,
+                                      child: Material(
+                                        color: AppColors.critical
+                                            .withValues(alpha: 0.92),
+                                        shape: const CircleBorder(),
+                                        child: InkWell(
+                                          customBorder: const CircleBorder(),
+                                          onTap: () => setModal(() {
                                             photos = [
                                               for (var j = 0;
                                                   j < photos.length;
                                                   j++)
                                                 if (j == i)
-                                                  updated
+                                                  photos[j].revertEdit()
                                                 else
                                                   photos[j],
                                             ];
-                                          });
-                                        },
-                                        child: const Padding(
-                                          padding: EdgeInsets.all(4),
-                                          child: Icon(
-                                            Icons.rotate_90_degrees_cw,
-                                            size: 14,
-                                            color: Colors.white,
+                                          }),
+                                          child: const Padding(
+                                            padding: EdgeInsets.all(4),
+                                            child: Icon(
+                                              Icons.history,
+                                              size: 14,
+                                              color: Colors.white,
+                                            ),
                                           ),
                                         ),
                                       ),
                                     ),
-                                  ),
-                                if (canEditFields && photo.canRevertEdit)
-                                  Positioned(
-                                    top: 2,
-                                    left: 2,
-                                    child: Material(
-                                      color: AppColors.critical
-                                          .withValues(alpha: 0.92),
-                                      shape: const CircleBorder(),
-                                      child: InkWell(
-                                        customBorder: const CircleBorder(),
-                                        onTap: () => setModal(() {
-                                          photos = [
-                                            for (var j = 0;
-                                                j < photos.length;
-                                                j++)
-                                              if (j == i)
-                                                photos[j].revertEdit()
-                                              else
-                                                photos[j],
-                                          ];
-                                        }),
-                                        child: const Padding(
-                                          padding: EdgeInsets.all(4),
-                                          child: Icon(
-                                            Icons.history,
-                                            size: 14,
-                                            color: Colors.white,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                              ],
-                            );
-                          },
+                                ],
+                              );
+                            },
+                          ),
                         ),
-                      ),
-                    if (photos.isNotEmpty)
-                      const SizedBox(height: AppSpacing.sm),
+                        const SizedBox(height: AppSpacing.sm),
+                      ],
+                    ],
                     if (canEditFields)
                       Row(
                         children: [
                           Expanded(
                             child: OutlinedButton.icon(
-                              onPressed: photos.length >= maxPhotos
+                              onPressed: photos.length >= maxPhotos ||
+                                      photos
+                                              .where(
+                                                (p) => p.phase == uploadPhase,
+                                              )
+                                              .length >=
+                                          maxPerPhase
                                   ? null
                                   : () async {
                                       try {
@@ -819,13 +947,21 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                                           imageQuality: 72,
                                         );
                                         if (files.isEmpty) return;
+                                        final phaseCount = photos
+                                            .where(
+                                              (p) => p.phase == uploadPhase,
+                                            )
+                                            .length;
+                                        final room = maxPerPhase - phaseCount;
+                                        final totalRoom =
+                                            maxPhotos - photos.length;
+                                        final cap = room < totalRoom
+                                            ? room
+                                            : totalRoom;
                                         final added = <TaskPhoto>[];
                                         var skipped = 0;
                                         for (final file in files) {
-                                          if (photos.length + added.length >=
-                                              maxPhotos) {
-                                            break;
-                                          }
+                                          if (added.length >= cap) break;
                                           try {
                                             final bytes =
                                                 await file.readAsBytes();
@@ -842,6 +978,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                                                 mimeType: file.mimeType ??
                                                     'image/jpeg',
                                                 createdAt: DateTime.now(),
+                                                phase: uploadPhase,
                                               ),
                                             );
                                           } catch (_) {}
@@ -887,14 +1024,21 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                                 Icons.photo_library_outlined,
                                 size: 18,
                               ),
-                              label: const Text('Galeriden'),
+                              label: Text('Galeriden (${uploadPhase.label})'),
                             ),
                           ),
                           if (!kIsWeb) ...[
                             const SizedBox(width: AppSpacing.sm),
                             Expanded(
                               child: OutlinedButton.icon(
-                                onPressed: photos.length >= maxPhotos
+                                onPressed: photos.length >= maxPhotos ||
+                                        photos
+                                                .where(
+                                                  (p) =>
+                                                      p.phase == uploadPhase,
+                                                )
+                                                .length >=
+                                            maxPerPhase
                                     ? null
                                     : () async {
                                         try {
@@ -929,6 +1073,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                                                 mimeType: file.mimeType ??
                                                     'image/jpeg',
                                                 createdAt: DateTime.now(),
+                                                phase: uploadPhase,
                                               ),
                                             ],
                                           );
@@ -948,17 +1093,25 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                                   Icons.photo_camera_outlined,
                                   size: 18,
                                 ),
-                                label: const Text('Çek'),
+                                label: Text('Çek (${uploadPhase.label})'),
                               ),
                             ),
                           ],
                         ],
                       ),
-                    if (canEditFields && photos.length >= maxPhotos)
+                    if (canEditFields &&
+                        (photos.length >= maxPhotos ||
+                            photos
+                                    .where((p) => p.phase == uploadPhase)
+                                    .length >=
+                                maxPerPhase))
                       Padding(
                         padding: const EdgeInsets.only(top: 4),
                         child: Text(
-                          'En fazla $maxPhotos fotoğraf eklenebilir.',
+                          photos.length >= maxPhotos
+                              ? 'En fazla $maxPhotos fotoğraf eklenebilir.'
+                              : '${uploadPhase.label} için en fazla '
+                                  '$maxPerPhase fotoğraf.',
                           style: theme.textTheme.labelSmall?.copyWith(
                             color: theme.colorScheme.onSurfaceVariant,
                           ),
@@ -1780,14 +1933,26 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                                     if (task.photos.isNotEmpty) ...[
                                       const SizedBox(height: 8),
                                       SizedBox(
-                                        height: 64,
+                                        height: 72,
                                         child: ListView.separated(
                                           scrollDirection: Axis.horizontal,
                                           itemCount: task.photos.length,
                                           separatorBuilder: (_, __) =>
                                               const SizedBox(width: 6),
                                           itemBuilder: (_, i) {
-                                            final photo = task.photos[i];
+                                            final ordered = [
+                                              ...task.photos.where(
+                                                (p) =>
+                                                    p.phase ==
+                                                    TaskPhotoPhase.before,
+                                              ),
+                                              ...task.photos.where(
+                                                (p) =>
+                                                    p.phase ==
+                                                    TaskPhotoPhase.after,
+                                              ),
+                                            ];
+                                            final photo = ordered[i];
                                             try {
                                               final bytes = base64Decode(
                                                 photo.dataBase64,
@@ -1813,6 +1978,35 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                                                           width: 64,
                                                           height: 64,
                                                           fit: BoxFit.cover,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  Positioned(
+                                                    left: 2,
+                                                    top: 2,
+                                                    child: Container(
+                                                      padding:
+                                                          const EdgeInsets
+                                                              .symmetric(
+                                                        horizontal: 4,
+                                                        vertical: 2,
+                                                      ),
+                                                      decoration: BoxDecoration(
+                                                        color: Colors.black87,
+                                                        borderRadius:
+                                                            AppRadii.xs,
+                                                      ),
+                                                      child: Text(
+                                                        photo.phase.label,
+                                                        style: theme
+                                                            .textTheme
+                                                            .labelSmall
+                                                            ?.copyWith(
+                                                          color: Colors.white,
+                                                          fontWeight:
+                                                              FontWeight.w700,
+                                                          fontSize: 9,
                                                         ),
                                                       ),
                                                     ),
@@ -1844,7 +2038,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                                                       photo.canRevertEdit)
                                                     Positioned(
                                                       left: 2,
-                                                      top: 2,
+                                                      bottom: 2,
                                                       child: Material(
                                                         color: AppColors
                                                             .critical
@@ -2201,18 +2395,19 @@ class _TaskFilterDropdown<T> extends StatelessWidget {
             ? theme.colorScheme.primary
             : theme.colorScheme.outlineVariant);
 
-    return PopupMenuButton<T>(
+    // PopupMenuButton null value'yu "iptal" sayar; "Tümü" (null) için indeks kullan.
+    return PopupMenuButton<int>(
       padding: EdgeInsets.zero,
       offset: const Offset(0, 40),
-      onSelected: onSelected,
+      onSelected: (index) => onSelected(items[index].value),
       itemBuilder: (ctx) => [
-        for (final item in items)
-          PopupMenuItem<T>(
-            value: item.value,
+        for (var i = 0; i < items.length; i++)
+          PopupMenuItem<int>(
+            value: i,
             child: Row(
               children: [
-                Expanded(child: Text(item.label)),
-                if (item.value == selected)
+                Expanded(child: Text(items[i].label)),
+                if (items[i].value == selected)
                   Icon(
                     Icons.check,
                     size: 16,

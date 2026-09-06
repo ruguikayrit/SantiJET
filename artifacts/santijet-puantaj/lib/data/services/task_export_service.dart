@@ -159,18 +159,31 @@ class TaskExportService {
   }
 
   List<pw.Widget> _photoRows(List<TaskPhoto> photos) {
-    const perRow = 4;
+    const perRow = TaskPhoto.maxPerPhase;
     const cellHeight = 78.0;
+    final labeled = TaskPhoto.reportRows(photos);
     final out = <pw.Widget>[];
 
-    for (var i = 0; i < photos.length; i += perRow) {
-      final chunk = photos.skip(i).take(perRow).toList();
+    for (final entry in labeled) {
+      final label = entry.$1;
+      final chunk = entry.$2;
       out.add(
         pw.Padding(
           padding: const pw.EdgeInsets.only(bottom: 6),
           child: pw.Row(
-            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            crossAxisAlignment: pw.CrossAxisAlignment.center,
             children: [
+              pw.SizedBox(
+                width: 42,
+                child: pw.Text(
+                  label,
+                  style: pw.TextStyle(
+                    fontSize: 8,
+                    fontWeight: pw.FontWeight.bold,
+                    color: _ink,
+                  ),
+                ),
+              ),
               for (final photo in chunk)
                 pw.Expanded(child: _photoCell(photo, cellHeight)),
               for (var pad = chunk.length; pad < perRow; pad++)
@@ -350,11 +363,11 @@ class TaskExportService {
       photosSheet
           .cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: 1))
           .value = TextCellValue(
-        '${report.photoGroups.length} görev · satırda 4 fotoğraf',
+        '${report.photoGroups.length} görev · Önce / Sonra · satırda 4 fotoğraf',
       );
 
-      for (var c = 0; c < 4; c++) {
-        photosSheet.setColumnWidth(c, 18);
+      for (var c = 0; c < 5; c++) {
+        photosSheet.setColumnWidth(c, c == 0 ? 10 : 18);
       }
 
       var row = 3;
@@ -364,35 +377,39 @@ class TaskExportService {
             .value = TextCellValue('#${group.index}  ${group.title}');
         row++;
 
-        var col = 0;
-        for (final photo in group.photos) {
-          Uint8List? bytes;
-          try {
-            if (photo.dataBase64.trim().isNotEmpty) {
-              bytes = base64Decode(photo.dataBase64);
+        for (final entry in TaskPhoto.reportRows(group.photos)) {
+          photosSheet
+              .cell(CellIndex.indexByColumnRow(columnIndex: 0, rowIndex: row))
+              .value = TextCellValue(entry.$1);
+          var col = 1;
+          for (final photo in entry.$2) {
+            Uint8List? bytes;
+            try {
+              if (photo.dataBase64.trim().isNotEmpty) {
+                bytes = base64Decode(photo.dataBase64);
+              }
+            } catch (_) {
+              bytes = null;
             }
-          } catch (_) {
-            bytes = null;
+            if (bytes == null || bytes.isEmpty) {
+              photosSheet
+                  .cell(
+                    CellIndex.indexByColumnRow(
+                      columnIndex: col,
+                      rowIndex: row,
+                    ),
+                  )
+                  .value = TextCellValue('(yüklenemedi)');
+            } else {
+              placements.add(
+                XlsxImagePlacement(row: row, column: col, bytes: bytes),
+              );
+              photosSheet.setRowHeight(row, 72);
+            }
+            col++;
           }
-          if (bytes == null || bytes.isEmpty) {
-            photosSheet
-                .cell(
-                  CellIndex.indexByColumnRow(columnIndex: col, rowIndex: row),
-                )
-                .value = TextCellValue('(yüklenemedi)');
-          } else {
-            placements.add(
-              XlsxImagePlacement(row: row, column: col, bytes: bytes),
-            );
-            photosSheet.setRowHeight(row, 72);
-          }
-          col++;
-          if (col >= 4) {
-            col = 0;
-            row++;
-          }
+          row++;
         }
-        if (col != 0) row++;
         row++;
       }
     }

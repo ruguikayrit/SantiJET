@@ -5,6 +5,24 @@ import '../enums/task_status.dart';
 import '../permissions/role_degree.dart';
 import 'person.dart';
 
+/// Görev fotoğrafı — iş öncesi / sonrası.
+enum TaskPhotoPhase {
+  before,
+  after;
+
+  String get label => switch (this) {
+        TaskPhotoPhase.before => 'Önce',
+        TaskPhotoPhase.after => 'Sonra',
+      };
+
+  static TaskPhotoPhase fromStorage(String? raw) => switch (raw) {
+        'after' => TaskPhotoPhase.after,
+        _ => TaskPhotoPhase.before,
+      };
+
+  String get storage => name;
+}
+
 /// Göreve eklenen fotoğraf — Hive’da base64.
 class TaskPhoto extends Equatable {
   const TaskPhoto({
@@ -14,7 +32,11 @@ class TaskPhoto extends Equatable {
     this.createdAt,
     this.previousDataBase64,
     this.previousMimeType,
+    this.phase = TaskPhotoPhase.before,
   });
+
+  static const maxTotal = 8;
+  static const maxPerPhase = 4;
 
   final String id;
   final String dataBase64;
@@ -25,19 +47,44 @@ class TaskPhoto extends Equatable {
   final String? previousDataBase64;
   final String? previousMimeType;
 
+  /// Önce / sonra — PDF’de ayrı satırlar.
+  final TaskPhotoPhase phase;
+
   bool get canRevertEdit =>
       previousDataBase64 != null && previousDataBase64!.trim().isNotEmpty;
+
+  TaskPhoto copyWith({
+    String? dataBase64,
+    String? mimeType,
+    DateTime? createdAt,
+    String? previousDataBase64,
+    String? previousMimeType,
+    TaskPhotoPhase? phase,
+    bool clearPrevious = false,
+  }) {
+    return TaskPhoto(
+      id: id,
+      dataBase64: dataBase64 ?? this.dataBase64,
+      mimeType: mimeType ?? this.mimeType,
+      createdAt: createdAt ?? this.createdAt,
+      previousDataBase64: clearPrevious
+          ? null
+          : (previousDataBase64 ?? this.previousDataBase64),
+      previousMimeType: clearPrevious
+          ? null
+          : (previousMimeType ?? this.previousMimeType),
+      phase: phase ?? this.phase,
+    );
+  }
 
   /// Düzenlenmiş görüntüyü kaydeder; mevcut hali geri alma için saklar.
   TaskPhoto withEditedBase64(
     String editedBase64, {
     String mimeType = 'image/png',
   }) {
-    return TaskPhoto(
-      id: id,
+    return copyWith(
       dataBase64: editedBase64,
       mimeType: mimeType,
-      createdAt: createdAt,
       previousDataBase64: dataBase64,
       previousMimeType: this.mimeType,
     );
@@ -46,11 +93,10 @@ class TaskPhoto extends Equatable {
   /// Son düzenlemeyi geri alır (tek seviye).
   TaskPhoto revertEdit() {
     if (!canRevertEdit) return this;
-    return TaskPhoto(
-      id: id,
+    return copyWith(
       dataBase64: previousDataBase64!,
       mimeType: previousMimeType ?? 'image/jpeg',
-      createdAt: createdAt,
+      clearPrevious: true,
     );
   }
 
@@ -59,6 +105,7 @@ class TaskPhoto extends Equatable {
         'dataBase64': dataBase64,
         'mimeType': mimeType,
         'createdAt': createdAt?.toIso8601String(),
+        'phase': phase.storage,
         if (previousDataBase64 != null) 'previousDataBase64': previousDataBase64,
         if (previousMimeType != null) 'previousMimeType': previousMimeType,
       };
@@ -72,7 +119,38 @@ class TaskPhoto extends Equatable {
             : null,
         previousDataBase64: json['previousDataBase64'] as String?,
         previousMimeType: json['previousMimeType'] as String?,
+        phase: TaskPhotoPhase.fromStorage(json['phase'] as String?),
       );
+
+  /// PDF/Excel: önce satırı + sonra satırı (en fazla 4’er).
+  /// Eski kayıtlarda hepsi “önce” ve 4’ten fazlaysa ilk 4 / kalan 4 bölünür.
+  static List<(String label, List<TaskPhoto>)> reportRows(
+    List<TaskPhoto> photos,
+  ) {
+    final list = [
+      for (final p in photos)
+        if (p.dataBase64.trim().isNotEmpty) p,
+    ];
+    if (list.isEmpty) return const [];
+
+    final before = list
+        .where((p) => p.phase == TaskPhotoPhase.before)
+        .toList();
+    final after =
+        list.where((p) => p.phase == TaskPhotoPhase.after).toList();
+
+    if (after.isEmpty && before.length > maxPerPhase) {
+      return [
+        ('Önce', before.take(maxPerPhase).toList()),
+        ('Sonra', before.skip(maxPerPhase).take(maxPerPhase).toList()),
+      ];
+    }
+
+    return [
+      if (before.isNotEmpty) ('Önce', before.take(maxPerPhase).toList()),
+      if (after.isNotEmpty) ('Sonra', after.take(maxPerPhase).toList()),
+    ];
+  }
 
   @override
   List<Object?> get props => [
@@ -82,6 +160,7 @@ class TaskPhoto extends Equatable {
         createdAt,
         previousDataBase64,
         previousMimeType,
+        phase,
       ];
 }
 

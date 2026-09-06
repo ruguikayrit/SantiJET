@@ -997,6 +997,7 @@ class DemoSeedController {
                 dataBase64: demoPhotoBase64,
                 mimeType: 'image/png',
                 createdAt: DateTime.now(),
+                phase: TaskPhotoPhase.before,
               ),
             ]
           : const <TaskPhoto>[];
