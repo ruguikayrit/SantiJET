@@ -281,7 +281,11 @@ class _ProductionPerformanceChartState
         const SizedBox(height: AppSpacing.sm),
         LayoutBuilder(
           builder: (context, constraints) {
-            final viewportW = constraints.maxWidth - 30;
+            // Sol eksen + sağ/sol gösterim payı — çubuklar kart dışına taşmasın.
+            const axisW = 30.0;
+            const edgeInset = 6.0;
+            final viewportW =
+                (constraints.maxWidth - axisW - edgeInset * 2).clamp(0.0, double.infinity);
             // Barlar sabit slot ile merkezde; çizim alanı (ızgara) her zaman
             // viewport genişliğine yaslanır.
             final naturalSlot = hasPlan ? 48.0 : 40.0;
@@ -328,7 +332,7 @@ class _ProductionPerformanceChartState
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 SizedBox(
-                  width: 30,
+                  width: axisW,
                   height: widget.height,
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -350,15 +354,20 @@ class _ProductionPerformanceChartState
                   ),
                 ),
                 Expanded(
-                  child: scrollable
-                      ? SingleChildScrollView(
-                          controller: _scrollController,
-                          scrollDirection: Axis.horizontal,
-                          clipBehavior: Clip.none,
-                          physics: const BouncingScrollPhysics(),
-                          child: chart,
-                        )
-                      : chart,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: edgeInset),
+                    child: ClipRect(
+                      child: scrollable
+                          ? SingleChildScrollView(
+                              controller: _scrollController,
+                              scrollDirection: Axis.horizontal,
+                              clipBehavior: Clip.hardEdge,
+                              physics: const BouncingScrollPhysics(),
+                              child: chart,
+                            )
+                          : chart,
+                    ),
+                  ),
                 ),
               ],
             );
