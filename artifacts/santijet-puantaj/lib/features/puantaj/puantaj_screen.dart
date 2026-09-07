@@ -3396,28 +3396,12 @@ class _PuantajExportSheetState extends State<_PuantajExportSheet> {
     }
   }
 
-  /// Sabit genişlikte check yuvası — seçimde metin kaymasın.
-  static Widget _puantajSegLabel(String text, bool selected) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        SizedBox(
-          width: 14,
-          child: selected
-              ? const Icon(Icons.check, size: 14)
-              : const SizedBox.shrink(),
-        ),
-        const SizedBox(width: 4),
-        Flexible(
-          child: Text(
-            text,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            textAlign: TextAlign.center,
-          ),
-        ),
-      ],
+  static Widget _puantajSegLabel(String text) {
+    return Text(
+      text,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      textAlign: TextAlign.center,
     );
   }
 
@@ -3449,23 +3433,23 @@ class _PuantajExportSheetState extends State<_PuantajExportSheet> {
             foregroundColor: theme.colorScheme.onSurfaceVariant,
             selectedForegroundColor: theme.colorScheme.onSecondary,
             selectedBackgroundColor: theme.colorScheme.secondary,
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+            visualDensity: VisualDensity.compact,
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            alignment: Alignment.center,
           ),
           segments: [
             ButtonSegment(
               value: PuantajReportPeriod.daily,
-              label: _puantajSegLabel('Günlük', _period == PuantajReportPeriod.daily),
+              label: _puantajSegLabel('Günlük'),
             ),
             ButtonSegment(
               value: PuantajReportPeriod.weekly,
-              label: _puantajSegLabel(
-                'Haftalık',
-                _period == PuantajReportPeriod.weekly,
-              ),
+              label: _puantajSegLabel('Haftalık'),
             ),
             ButtonSegment(
               value: PuantajReportPeriod.monthly,
-              label: _puantajSegLabel('Aylık', _period == PuantajReportPeriod.monthly),
+              label: _puantajSegLabel('Aylık'),
             ),
           ],
           selected: {_period},
@@ -3480,29 +3464,23 @@ class _PuantajExportSheetState extends State<_PuantajExportSheet> {
             foregroundColor: theme.colorScheme.onSurfaceVariant,
             selectedForegroundColor: theme.colorScheme.onSecondary,
             selectedBackgroundColor: theme.colorScheme.secondary,
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+            visualDensity: VisualDensity.compact,
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            alignment: Alignment.center,
           ),
           segments: [
             ButtonSegment(
               value: PuantajExportLayout.isim,
-              label: _puantajSegLabel(
-                'Personel',
-                _layout == PuantajExportLayout.isim,
-              ),
+              label: _puantajSegLabel('Personel'),
             ),
             ButtonSegment(
               value: PuantajExportLayout.ekip,
-              label: _puantajSegLabel(
-                'Ekip',
-                _layout == PuantajExportLayout.ekip,
-              ),
+              label: _puantajSegLabel('Ekip'),
             ),
             ButtonSegment(
               value: PuantajExportLayout.yevmiyeli,
-              label: _puantajSegLabel(
-                'Yevmiyeli',
-                _layout == PuantajExportLayout.yevmiyeli,
-              ),
+              label: _puantajSegLabel('Yevmiyeli'),
             ),
           ],
           selected: {_layout},
