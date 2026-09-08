@@ -30,8 +30,10 @@ Satır alanları: tarih, tedarikçi, açıklama, gelir, gider, ödeme şekli, be
 - Arama: tedarikçi + açıklama + ek açıklama.
 - Rapor dışa aktarım: **JPG · PDF · Excel** (sayfa en altı)
 - Rapor içe aktarım: **JPG · PDF · Excel** (sayfa en altı)
-  - Excel: tablo satır parse
-  - JPG/PDF: OCR.space ile metin → satır satır kasa hareketi
+  - Excel: tablo satır parse → **önizleme** (satır seç / ele / onayla)
+  - JPG/PDF: görüntü ön işleme + OCR.space (`isOverlayRequired` + `isTable`) →
+    sütun hizalı tablo parse (yoksa satır soyma / heuristic) → **önizleme**
+  - Yoğun Excel tablosu JPG’sinde OCR sınırlı; Excel dosyası tercih edilir
 
 ## Bilinçli sınırlar (v1)
 

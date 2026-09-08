@@ -11,6 +11,7 @@ import 'package:santijet_kasa/domain/money_format.dart';
 import 'package:santijet_kasa/data/demo_data.dart';
 import 'package:santijet_kasa/data/kasa_export_service.dart';
 import 'package:santijet_kasa/data/kasa_import_service.dart';
+import 'package:santijet_kasa/data/kasa_table_ocr.dart';
 
 void main() {
   group('validateHareket', () {
@@ -185,6 +186,102 @@ void main() {
       );
       expect(pdf.belgeTuru, BelgeTuru.fatura);
       expect(pdf.ekAciklama, contains('PDF'));
+    });
+  });
+
+  group('KasaTableOcr', () {
+    test('peels excel-like expense line', () {
+      const raw = '''
+TARİH TEDARİKÇİ AÇIKLAMA GELİR GİDER ÖDEME BELGE ŞANTİYE
+11.08.2024 YEŞİLLER TEKNİK CIVATA SOMUN ₺350,00 ŞAHSI K.KARTI FİŞ İZMİT/EFSANE
+''';
+      final parsed = KasaTableOcr.parse(
+        rawText: raw,
+        now: DateTime(2026, 9, 8),
+      );
+      expect(parsed.hareketler, isNotEmpty);
+      final h = parsed.hareketler.first;
+      expect(h.gider, 350);
+      expect(h.tarih.day, 11);
+      expect(h.santiye, contains('İZMİT'));
+    });
+
+    test('overlay column alignment', () {
+      final header = [
+        const OcrWord(text: 'TARİH', left: 10, top: 10, width: 40, height: 12),
+        const OcrWord(
+          text: 'TEDARİKÇİ',
+          left: 80,
+          top: 10,
+          width: 60,
+          height: 12,
+        ),
+        const OcrWord(
+          text: 'AÇIKLAMA',
+          left: 200,
+          top: 10,
+          width: 60,
+          height: 12,
+        ),
+        const OcrWord(text: 'GELİR', left: 360, top: 10, width: 40, height: 12),
+        const OcrWord(text: 'GİDER', left: 420, top: 10, width: 40, height: 12),
+        const OcrWord(text: 'ÖDEME', left: 500, top: 10, width: 40, height: 12),
+        const OcrWord(text: 'BELGE', left: 580, top: 10, width: 40, height: 12),
+        const OcrWord(
+          text: 'ŞANTİYE',
+          left: 660,
+          top: 10,
+          width: 50,
+          height: 12,
+        ),
+      ];
+      final row = [
+        const OcrWord(
+          text: '11.08.2024',
+          left: 8,
+          top: 40,
+          width: 55,
+          height: 12,
+        ),
+        const OcrWord(
+          text: 'YEŞİLLER',
+          left: 80,
+          top: 40,
+          width: 50,
+          height: 12,
+        ),
+        const OcrWord(
+          text: 'CIVATA',
+          left: 200,
+          top: 40,
+          width: 40,
+          height: 12,
+        ),
+        const OcrWord(
+          text: '350,00',
+          left: 415,
+          top: 40,
+          width: 40,
+          height: 12,
+        ),
+        const OcrWord(text: 'NAKİT', left: 500, top: 40, width: 35, height: 12),
+        const OcrWord(text: 'FİŞ', left: 585, top: 40, width: 25, height: 12),
+        const OcrWord(
+          text: 'İZMİT/EFSANE',
+          left: 650,
+          top: 40,
+          width: 70,
+          height: 12,
+        ),
+      ];
+      final parsed = KasaTableOcr.parse(
+        rawText: '',
+        words: [...header, ...row],
+        now: DateTime(2026, 9, 8),
+      );
+      expect(parsed.hareketler.length, 1);
+      expect(parsed.hareketler.first.gider, 350);
+      expect(parsed.hareketler.first.aciklama, contains('CIVATA'));
     });
   });
 

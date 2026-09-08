@@ -21,6 +21,7 @@ import '../../domain/kasa_hareket.dart';
 import '../../domain/kasa_rules.dart';
 import '../../domain/kasa_transfer_format.dart';
 import '../../domain/money_format.dart';
+import 'import_preview_screen.dart';
 
 /// Rapor — kırılım üstte; JPG/PDF/Excel içe·dışa aktar en altta.
 class RaporScreen extends ConsumerStatefulWidget {
@@ -70,6 +71,7 @@ class _RaporScreenState extends ConsumerState<RaporScreen> {
     required List<KasaHareket> rows,
     required int skipped,
     required String title,
+    String? rawHint,
   }) async {
     if (rows.isEmpty) {
       if (!mounted) return;
@@ -85,39 +87,25 @@ class _RaporScreenState extends ConsumerState<RaporScreen> {
       return;
     }
     if (!mounted) return;
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surfaceElevated,
-        title: Text(title, style: TextStyle(color: AppColors.textPrimary)),
-        content: Text(
-          '${rows.length} satır eklenecek'
-          '${skipped > 0 ? ' ($skipped atlandı)' : ''}. '
-          'Mevcut hareketler silinmez; üzerine eklenir.',
-          style: TextStyle(color: AppColors.textSecondary),
+    final chosen = await Navigator.of(context).push<List<KasaHareket>>(
+      MaterialPageRoute(
+        builder: (_) => ImportPreviewScreen(
+          title: title,
+          hareketler: rows,
+          skipped: skipped,
+          rawHint: rawHint,
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Vazgeç'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Ekle'),
-          ),
-        ],
       ),
     );
-    if (ok == true) {
-      final current = ref.read(hareketlerProvider);
-      await ref
-          .read(hareketlerProvider.notifier)
-          .replaceAll([...rows, ...current]);
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${rows.length} satır içe aktarıldı.')),
-      );
-    }
+    if (chosen == null || chosen.isEmpty) return;
+    final current = ref.read(hareketlerProvider);
+    await ref
+        .read(hareketlerProvider.notifier)
+        .replaceAll([...chosen, ...current]);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('${chosen.length} satır içe aktarıldı.')),
+    );
   }
 
   Future<void> _import(KasaTransferFormat format) async {
@@ -147,6 +135,7 @@ class _RaporScreenState extends ConsumerState<RaporScreen> {
           rows: result.hareketler,
           skipped: result.skipped,
           title: 'Excel içe aktar',
+          rawHint: 'Mevcut hareketler silinmez; seçilenler üste eklenir.',
         );
         return;
       }
@@ -158,7 +147,7 @@ class _RaporScreenState extends ConsumerState<RaporScreen> {
             : lower.endsWith('.webp')
                 ? 'image/webp'
                 : 'image/jpeg';
-        setState(() => _status = 'JPG OCR…');
+        setState(() => _status = 'JPG OCR (ön işleme)…');
         final ocr = await KasaOcrService.importFromImage(
           bytes,
           mime: mime,
@@ -175,7 +164,8 @@ class _RaporScreenState extends ConsumerState<RaporScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text(
-                'OCR satır bulamadı — formu elle tamamlayın.',
+                'OCR satır bulamadı — formu elle tamamlayın. '
+                'Yoğun tablolar için Excel dosyası önerilir.',
               ),
             ),
           );
@@ -186,6 +176,9 @@ class _RaporScreenState extends ConsumerState<RaporScreen> {
           rows: ocr.hareketler,
           skipped: ocr.skipped,
           title: 'JPG OCR içe aktar',
+          rawHint: ocr.usedOverlay
+              ? 'Tablo hizalama kullanıldı. Satırları kontrol edin; hatalıları kaldırın.'
+              : 'Metin satır parse kullanıldı. Tercihen Excel dosyası daha güvenilir.',
         );
         return;
       }
@@ -205,7 +198,10 @@ class _RaporScreenState extends ConsumerState<RaporScreen> {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('OCR satır bulamadı — formu elle tamamlayın.'),
+            content: Text(
+              'OCR satır bulamadı — formu elle tamamlayın. '
+              'Yoğun tablolar için Excel dosyası önerilir.',
+            ),
           ),
         );
         context.push(AppRoutes.hareketForm);
@@ -215,6 +211,9 @@ class _RaporScreenState extends ConsumerState<RaporScreen> {
         rows: ocr.hareketler,
         skipped: ocr.skipped,
         title: 'PDF OCR içe aktar',
+        rawHint: ocr.usedOverlay
+            ? 'Tablo hizalama kullanıldı. Satırları kontrol edin; hatalıları kaldırın.'
+            : 'Metin satır parse kullanıldı. Tercihen Excel dosyası daha güvenilir.',
       );
     } catch (e) {
       if (!mounted) return;
@@ -362,8 +361,8 @@ class _RaporScreenState extends ConsumerState<RaporScreen> {
                   ),
                   const SizedBox(height: AppSpacing.sm),
                   Text(
-                    'Excel: tablo satırları. JPG/PDF: OCR ile satır satır okunur '
-                    've kasaya eklenir.',
+                    'Excel tercih edilir. JPG/PDF: ön işleme + tablo OCR, '
+                    'sonra önizlemede satır seçip onaylarsınız.',
                     style: AppTypography.bodySmall.copyWith(
                       color: AppColors.textMuted,
                     ),
