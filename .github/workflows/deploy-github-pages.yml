@@ -14,6 +14,7 @@ on:
       - 'artifacts/santijet-ana/**'
       - 'artifacts/santijet-muhendis/**'
       - 'artifacts/santijet-tahvil/**'
+      - 'artifacts/santijet-kasa/**'
       - '.github/workflows/deploy-github-pages.yml'
       - '.github/scripts/**'
   workflow_dispatch:
@@ -238,6 +239,27 @@ jobs:
             exit 1
           fi
 
+      - name: Setup Flutter for Kasa
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: '3.44.3'
+          cache: true
+          cache-key: flutter-kasa-3.44.3
+
+      - name: Build Kasa web (staging preview)
+        id: kasa_build
+        env:
+          GITHUB_REPOSITORY_NAME: ${{ github.event.repository.name }}
+        run: |
+          if [ -f staging-src/.github/scripts/build-kasa-pages.sh ]; then
+            bash staging-src/.github/scripts/build-kasa-pages.sh
+          elif [ -f .github/scripts/build-kasa-pages.sh ]; then
+            bash .github/scripts/build-kasa-pages.sh
+          else
+            echo "::warning::build-kasa-pages.sh missing; skipping /kasa/."
+          fi
+
       - name: Verify site bundle
         run: |
           test -f site/index.html
@@ -279,6 +301,9 @@ jobs:
           if [ ! -f site/tahvil/index.html ]; then
             echo "::warning::Tahvil bundle missing (site/tahvil/index.html)."
           fi
+          if [ ! -f site/kasa/index.html ]; then
+            echo "::warning::Kasa bundle missing (site/kasa/index.html)."
+          fi
           echo "Site bundle OK:"
           find site -maxdepth 3 -type f -name 'index.html' | sort
 
@@ -305,3 +330,4 @@ jobs:
           echo "PRO staging: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/pro/"
           echo "Mühendis staging: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/muhendis/"
           echo "Tahvil staging: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/tahvil/"
+          echo "Kasa staging: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/kasa/"

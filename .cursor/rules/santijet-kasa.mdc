@@ -1,0 +1,24 @@
+---
+description: ŞantiJET Kasa — ayrı ürün; başka ürüne karıştırma.
+globs: artifacts/santijet-kasa/**
+alwaysApply: false
+---
+
+# ŞantiJET Kasa
+
+Klasör `artifacts/santijet-kasa`. Staging: `/kasa/`
+(https://ruguikayrit.github.io/SantiJET/kasa/).
+
+Özet: `artifacts/santijet-kasa/AGENTS.md`.
+
+Turuncu **STAGING ÖNİZLEME** şeridi yok: `build-kasa-pages.sh` `#santijet-staging-banner`, 28px spacer veya `flutter-view { top:28px }` basmaz. `--dart-define=DEPLOY_CHANNEL=staging` kalır. Geri koyma.
+
+- Alt nav: **Kasa · Hareketler · Rapor**. Ayarlar navda yok
+  (`SantijetHeader` dişli → `/ayarlar`).
+- Bildirim zili ve avatar yok.
+- Abonelik / hesap / bulut yok. Hive `kasa_` önekli.
+- Tek seferlik IAP iskeleti Ayarlar’da durur; abonelik koyma.
+- Tahvil / DEMİR / Beton / PRO ekran veya nav kopyalama yok. Kasa işini
+  başka ürüne taşıma.
+
+Deploy: kullanıcı `deploy et` deyince `staging` push.
