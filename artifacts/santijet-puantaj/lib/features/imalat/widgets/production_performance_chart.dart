@@ -19,13 +19,17 @@ class ProductionPerformanceChart extends ConsumerStatefulWidget {
   const ProductionPerformanceChart({
     required this.production,
     super.key,
-    this.height = 168,
+    this.height = 220,
   });
 
   final Production production;
   final double height;
 
   static const visibleBucketCount = 12;
+
+  /// Bilgi kartı (3 satır + padding + margin) için üst boşluk.
+  static const tooltipReservePx = 76.0;
+  static const bottomTitlesPx = 22.0;
 
   @override
   ConsumerState<ProductionPerformanceChart> createState() =>
@@ -194,10 +198,17 @@ class _ProductionPerformanceChartState
       final v = hasPlan && b.planned > b.actual ? b.planned : b.actual;
       return v > m ? v : m;
     });
-    final maxY = maxBar > 0
+    final dataMax = maxBar > 0
         ? maxBar
         : (planPerPeriod > 0 ? planPerPeriod : 1.0);
-    final top = maxY * 1.22;
+    // En yüksek çubuk ile grafik üstü arasında bilgi kartı yüksekliği kadar pay.
+    final plotH =
+        (widget.height - ProductionPerformanceChart.bottomTitlesPx)
+            .clamp(80.0, 400.0);
+    final usableFrac = ((plotH - ProductionPerformanceChart.tooltipReservePx) /
+            plotH)
+        .clamp(0.52, 0.78);
+    final top = dataMax / usableFrac;
 
     String? paceLabel;
     Color? paceColor;
@@ -269,7 +280,7 @@ class _ProductionPerformanceChartState
               ),
           ],
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: AppSpacing.sm),
         Text(
           buckets.isEmpty
               ? 'Günlük kayıt eklenince çubuklar burada ortalanır'
@@ -278,7 +289,7 @@ class _ProductionPerformanceChartState
             color: theme.colorScheme.onSurfaceVariant,
           ),
         ),
-        const SizedBox(height: AppSpacing.sm),
+        const SizedBox(height: AppSpacing.md),
         LayoutBuilder(
           builder: (context, constraints) {
             // Sol eksen + sağ/sol gösterim payı — çubuklar kart dışına taşmasın.
@@ -312,8 +323,7 @@ class _ProductionPerformanceChartState
                 _chartData(
                   theme: theme,
                   buckets: buckets,
-                  // Tooltip bar üstünde kalsın diye ekstra dikey boşluk.
-                  top: top * 1.38,
+                  top: top,
                   unit: unit,
                   hasPlan: hasPlan,
                   barWidth: barWidth,
@@ -357,6 +367,8 @@ class _ProductionPerformanceChartState
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: edgeInset),
                     child: ClipRect(
+                      // Yatay taşmayı kes; dikeyde bilgi kartına pay bırak.
+                      clipper: const _HorizontalOnlyClipper(),
                       child: scrollable
                           ? SingleChildScrollView(
                               controller: _scrollController,
@@ -472,11 +484,11 @@ class _ProductionPerformanceChartState
           }
         },
         touchTooltipData: BarTouchTooltipData(
-          // Barların önüne çekilmesin; üstte kalsın.
-          fitInsideVertically: false,
+          // Üst boşluk tooltip yüksekliğine göre ayarlı; kart çizim alanında kalsın.
+          fitInsideVertically: true,
           fitInsideHorizontally: true,
           direction: TooltipDirection.top,
-          tooltipMargin: 10,
+          tooltipMargin: 8,
           tooltipPadding: const EdgeInsets.symmetric(
             horizontal: 10,
             vertical: 8,
@@ -696,4 +708,18 @@ class _PeriodBucket {
   final String tooltipTitle;
   final double actual;
   final double planned;
+}
+
+/// Sol/sağ taşmayı keser; üstte bilgi kartına dikey pay bırakır.
+class _HorizontalOnlyClipper extends CustomClipper<Rect> {
+  const _HorizontalOnlyClipper();
+
+  @override
+  Rect getClip(Size size) {
+    const topSlop = ProductionPerformanceChart.tooltipReservePx;
+    return Rect.fromLTRB(0, -topSlop, size.width, size.height);
+  }
+
+  @override
+  bool shouldReclip(covariant CustomClipper<Rect> oldClipper) => false;
 }
