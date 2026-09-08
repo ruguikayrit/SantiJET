@@ -172,6 +172,42 @@ void main() {
       expect(parsed.hareketler.first.aciklama, isNotEmpty);
     });
 
+    test('column char counts follow widest cell (except sizing policy)', () {
+      final now = DateTime(2026, 9, 8);
+      final svc = KasaExportService();
+      final rows = [
+        KasaHareket(
+          id: '1',
+          tarih: now,
+          tedarikci: 'AB',
+          aciklama: 'kısa',
+          gider: 10,
+          odemeSekli: OdemeSekli.nakit,
+          belgeTuru: BelgeTuru.fis,
+          santiye: 'X',
+          createdAt: now,
+          updatedAt: now,
+        ),
+        KasaHareket(
+          id: '2',
+          tarih: now,
+          tedarikci: 'ÇOKUZUNTTEDARIKCIADI',
+          aciklama: 'çok uzun açıklama satırı burada',
+          gider: 1234567.89,
+          odemeSekli: OdemeSekli.sahsiKart,
+          belgeTuru: BelgeTuru.fatura,
+          santiye: 'İZMİT/EFSANE',
+          createdAt: now,
+          updatedAt: now,
+        ),
+      ];
+      final maxes = svc.maxContentCharCounts(rows);
+      expect(maxes[1], 'ÇOKUZUNTTEDARIKCIADI'.length);
+      expect(maxes[4], MoneyFormat.format(1234567.89).length);
+      expect(maxes[0], greaterThanOrEqualTo('Tarih'.length));
+      expect(KasaExportService.headers.contains('Ek Açıklama'), isFalse);
+    });
+
     test('belge draft from jpg/pdf', () {
       final jpg = KasaImportService().draftFromBelge(
         format: KasaTransferFormat.jpg,

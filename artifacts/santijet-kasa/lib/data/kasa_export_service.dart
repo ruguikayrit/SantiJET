@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:excel/excel.dart';
@@ -184,25 +185,23 @@ class KasaExportService {
     return Uint8List.fromList(await doc.save());
   }
 
-  /// Açıklama hariç dar sabit sütunlar + tek satır; kalan genişlik açıklamada.
+  /// Açıklama hariç sütunlar içeriğe (en geniş hücre) göre; kalan alan açıklamada.
   pw.Widget _pdfTable(List<KasaHareket> hareketler) {
     final headerStyle =
         pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 7.5);
     const cellStyle = pw.TextStyle(fontSize: 7);
 
+    final columnWidths = <int, pw.TableColumnWidth>{
+      for (var i = 0; i < headers.length; i++)
+        i: i == aciklamaColumnIndex
+            ? const pw.FlexColumnWidth()
+            : const pw.IntrinsicColumnWidth(),
+    };
+
     return pw.Table(
       border: pw.TableBorder.all(color: PdfColors.grey400, width: 0.4),
       defaultVerticalAlignment: pw.TableCellVerticalAlignment.middle,
-      columnWidths: const {
-        0: pw.FixedColumnWidth(48), // Tarih
-        1: pw.FixedColumnWidth(68), // Tedarikçi
-        2: pw.FlexColumnWidth(3.2), // Açıklama — daralma buraya
-        3: pw.FixedColumnWidth(52), // Gelir
-        4: pw.FixedColumnWidth(52), // Gider
-        5: pw.FixedColumnWidth(62), // Ödeme
-        6: pw.FixedColumnWidth(42), // Belge
-        7: pw.FixedColumnWidth(64), // Şantiye
-      },
+      columnWidths: columnWidths,
       children: [
         pw.TableRow(
           decoration: const pw.BoxDecoration(color: PdfColors.blueGrey100),
@@ -276,17 +275,40 @@ class KasaExportService {
       sheet.appendRow(rowCells(h).map(TextCellValue.new).toList());
     }
 
-    // Dar sütunlar + açıklama geniş — Excel’de de aynı mantık
-    sheet.setColumnWidth(0, 11); // Tarih
-    sheet.setColumnWidth(1, 14); // Tedarikçi
-    sheet.setColumnWidth(2, 36); // Açıklama
-    sheet.setColumnWidth(3, 12); // Gelir
-    sheet.setColumnWidth(4, 12); // Gider
-    sheet.setColumnWidth(5, 14); // Ödeme
-    sheet.setColumnWidth(6, 10); // Belge
-    sheet.setColumnWidth(7, 14); // Şantiye
+    _applyExcelColumnWidths(sheet, hareketler);
 
     return Uint8List.fromList(excel.encode()!);
+  }
+
+  /// Başlık + satırlar: sütun başına en uzun metin.
+  List<int> maxContentCharCounts(List<KasaHareket> hareketler) {
+    final maxes = List<int>.generate(headers.length, (i) => headers[i].length);
+    for (final h in hareketler) {
+      final cells = rowCells(h);
+      for (var i = 0; i < cells.length; i++) {
+        final len = cells[i].length;
+        if (len > maxes[i]) maxes[i] = len;
+      }
+    }
+    return maxes;
+  }
+
+  void _applyExcelColumnWidths(Sheet sheet, List<KasaHareket> hareketler) {
+    final maxes = maxContentCharCounts(hareketler);
+    // Açıklama hariç: en geniş veri (+ pay). Açıklama kalan/esnek alan.
+    var fixedChars = 0;
+    for (var i = 0; i < headers.length; i++) {
+      if (i == aciklamaColumnIndex) continue;
+      final w = (maxes[i] + 2).clamp(6, 48).toDouble();
+      sheet.setColumnWidth(i, w);
+      fixedChars += w.round();
+    }
+    final aciklamaFromContent = (maxes[aciklamaColumnIndex] + 2).toDouble();
+    final aciklamaFlex = (70 - fixedChars).clamp(18, 60).toDouble();
+    sheet.setColumnWidth(
+      aciklamaColumnIndex,
+      math.max(aciklamaFromContent, aciklamaFlex).clamp(18, 60),
+    );
   }
 
   List<String> rowCells(KasaHareket h) => [
