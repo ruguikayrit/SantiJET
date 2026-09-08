@@ -9,6 +9,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_typography.dart';
 import '../../data/hareketler_store.dart';
+import '../../data/import_draft_provider.dart';
 import '../../data/settings_store.dart';
 import '../../domain/kasa_hareket.dart';
 import '../../domain/kasa_lookups.dart';
@@ -56,6 +57,14 @@ class _HareketFormScreenState extends ConsumerState<HareketFormScreen> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _santiye = ref.read(defaultSantiyeProvider);
+      final draft = ref.read(belgeImportDraftProvider.notifier).take();
+      if (draft != null && widget.hareketId == null) {
+        _aciklama.text = draft.aciklama;
+        _ek.text = draft.ekAciklama;
+        _belgeTuru = draft.belgeTuru;
+        if (mounted) setState(() {});
+        return;
+      }
       final id = widget.hareketId;
       if (id != null) {
         final list = ref.read(hareketlerProvider);

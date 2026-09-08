@@ -3,9 +3,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:santijet_kasa/domain/csv_export.dart';
 import 'package:santijet_kasa/domain/hareket_filters.dart';
 import 'package:santijet_kasa/domain/kasa_hareket.dart';
+import 'package:santijet_kasa/domain/kasa_lookups.dart';
 import 'package:santijet_kasa/domain/kasa_rules.dart';
+import 'package:santijet_kasa/domain/kasa_transfer_format.dart';
 import 'package:santijet_kasa/domain/money_format.dart';
 import 'package:santijet_kasa/data/demo_data.dart';
+import 'package:santijet_kasa/data/kasa_export_service.dart';
+import 'package:santijet_kasa/data/kasa_import_service.dart';
 
 void main() {
   group('validateHareket', () {
@@ -151,6 +155,35 @@ void main() {
       final csv = CsvExport.hareketlerToCsv(demo.take(2));
       expect(csv, startsWith('Tarih;Tedarikçi;Açıklama'));
       expect(csv.split('\n').length, greaterThan(2));
+    });
+  });
+
+  group('Excel import/export', () {
+    test('round-trips hareket rows', () {
+      final demo = buildDemoHareketler(now: DateTime(2026, 9, 8));
+      final bytes = KasaExportService().buildExcelBytes(hareketler: demo);
+      final parsed = KasaImportService().parseExcelBytes(
+        bytes,
+        now: DateTime(2026, 9, 8),
+      );
+      expect(parsed.hareketler.length, demo.length);
+      expect(parsed.hareketler.first.aciklama, isNotEmpty);
+    });
+
+    test('belge draft from jpg/pdf', () {
+      final jpg = KasaImportService().draftFromBelge(
+        format: KasaTransferFormat.jpg,
+        fileName: 'fis_kocatas.jpg',
+      );
+      expect(jpg.belgeTuru, BelgeTuru.fis);
+      expect(jpg.ekAciklama, contains('JPG'));
+
+      final pdf = KasaImportService().draftFromBelge(
+        format: KasaTransferFormat.pdf,
+        fileName: 'fatura.pdf',
+      );
+      expect(pdf.belgeTuru, BelgeTuru.fatura);
+      expect(pdf.ekAciklama, contains('PDF'));
     });
   });
 }

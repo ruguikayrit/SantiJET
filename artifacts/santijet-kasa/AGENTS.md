@@ -28,6 +28,8 @@ Satır alanları: tarih, tedarikçi, açıklama, gelir, gider, ödeme şekli, be
 - Para TR formatı: `₺1.234,56`
 - Filtre: tarih aralığı, şantiye, tedarikçi, ödeme şekli, belge türü, gelir/gider.
 - Arama: tedarikçi + açıklama + ek açıklama.
+- Rapor dışa aktarım: **JPG · PDF · Excel**
+- Rapor içe aktarım: **JPG · PDF · Excel** (Excel = satır; JPG/PDF = belge → form, OCR yok)
 
 ## Bilinçli sınırlar (v1)
 
