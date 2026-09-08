@@ -18,6 +18,7 @@ class KasaExportService {
   static final _date = DateFormat('dd.MM.yyyy');
   static final _stamp = DateFormat('yyyyMMdd_HHmm');
 
+  /// Çıktı sütunları — Ek Açıklama yok. Açıklama hariç tek satır.
   static const headers = <String>[
     'Tarih',
     'Tedarikçi',
@@ -27,8 +28,10 @@ class KasaExportService {
     'Ödeme Şekli',
     'Belge Türü',
     'Şantiye',
-    'Ek Açıklama',
   ];
+
+  /// Açıklama sütun indeksi — tek satır kısıtı yok; daralma buraya yansır.
+  static const aciklamaColumnIndex = 2;
 
   Future<void> export(
     KasaTransferFormat format, {
@@ -140,7 +143,7 @@ class KasaExportService {
     doc.addPage(
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4.landscape,
-        margin: const pw.EdgeInsets.all(28),
+        margin: const pw.EdgeInsets.all(24),
         build: (context) => [
           pw.Text(
             'ŞantiJET KASA',
@@ -173,23 +176,74 @@ class KasaExportService {
             ],
           ),
           pw.SizedBox(height: 16),
-          pw.TableHelper.fromTextArray(
-            headers: headers,
-            data: hareketler.map(rowCells).toList(),
-            headerStyle:
-                pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 8),
-            cellStyle: const pw.TextStyle(fontSize: 7.5),
-            headerDecoration:
-                const pw.BoxDecoration(color: PdfColors.blueGrey100),
-            cellAlignment: pw.Alignment.centerLeft,
-            cellPadding:
-                const pw.EdgeInsets.symmetric(horizontal: 4, vertical: 3),
-          ),
+          _pdfTable(hareketler),
         ],
       ),
     );
 
     return Uint8List.fromList(await doc.save());
+  }
+
+  /// Açıklama hariç dar sabit sütunlar + tek satır; kalan genişlik açıklamada.
+  pw.Widget _pdfTable(List<KasaHareket> hareketler) {
+    final headerStyle =
+        pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 7.5);
+    const cellStyle = pw.TextStyle(fontSize: 7);
+
+    return pw.Table(
+      border: pw.TableBorder.all(color: PdfColors.grey400, width: 0.4),
+      defaultVerticalAlignment: pw.TableCellVerticalAlignment.middle,
+      columnWidths: const {
+        0: pw.FixedColumnWidth(48), // Tarih
+        1: pw.FixedColumnWidth(68), // Tedarikçi
+        2: pw.FlexColumnWidth(3.2), // Açıklama — daralma buraya
+        3: pw.FixedColumnWidth(52), // Gelir
+        4: pw.FixedColumnWidth(52), // Gider
+        5: pw.FixedColumnWidth(62), // Ödeme
+        6: pw.FixedColumnWidth(42), // Belge
+        7: pw.FixedColumnWidth(64), // Şantiye
+      },
+      children: [
+        pw.TableRow(
+          decoration: const pw.BoxDecoration(color: PdfColors.blueGrey100),
+          children: [
+            for (var i = 0; i < headers.length; i++)
+              _pdfCell(
+                headers[i],
+                style: headerStyle,
+                singleLine: true,
+              ),
+          ],
+        ),
+        for (final h in hareketler)
+          pw.TableRow(
+            children: [
+              for (var i = 0; i < headers.length; i++)
+                _pdfCell(
+                  rowCells(h)[i],
+                  style: cellStyle,
+                  singleLine: i != aciklamaColumnIndex,
+                ),
+            ],
+          ),
+      ],
+    );
+  }
+
+  pw.Widget _pdfCell(
+    String text, {
+    required pw.TextStyle style,
+    required bool singleLine,
+  }) {
+    return pw.Padding(
+      padding: const pw.EdgeInsets.symmetric(horizontal: 3, vertical: 3),
+      child: pw.Text(
+        text,
+        style: style,
+        maxLines: singleLine ? 1 : null,
+        softWrap: !singleLine,
+      ),
+    );
   }
 
   Uint8List buildExcelBytes({
@@ -222,6 +276,16 @@ class KasaExportService {
       sheet.appendRow(rowCells(h).map(TextCellValue.new).toList());
     }
 
+    // Dar sütunlar + açıklama geniş — Excel’de de aynı mantık
+    sheet.setColumnWidth(0, 11); // Tarih
+    sheet.setColumnWidth(1, 14); // Tedarikçi
+    sheet.setColumnWidth(2, 36); // Açıklama
+    sheet.setColumnWidth(3, 12); // Gelir
+    sheet.setColumnWidth(4, 12); // Gider
+    sheet.setColumnWidth(5, 14); // Ödeme
+    sheet.setColumnWidth(6, 10); // Belge
+    sheet.setColumnWidth(7, 14); // Şantiye
+
     return Uint8List.fromList(excel.encode()!);
   }
 
@@ -234,7 +298,6 @@ class KasaExportService {
         h.odemeSekli,
         h.belgeTuru,
         h.santiye,
-        h.ekAciklama,
       ];
 
   String _rangeLabel(DateTime? from, DateTime? to) {

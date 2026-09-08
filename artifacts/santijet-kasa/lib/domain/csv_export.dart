@@ -10,7 +10,7 @@ abstract final class CsvExport {
   static String hareketlerToCsv(Iterable<KasaHareket> hareketler) {
     final buf = StringBuffer();
     buf.writeln(
-      'Tarih;Tedarikçi;Açıklama;Gelir;Gider;Ödeme Şekli;Belge Türü;Şantiye;Ek Açıklama',
+      'Tarih;Tedarikçi;Açıklama;Gelir;Gider;Ödeme Şekli;Belge Türü;Şantiye',
     );
     for (final h in hareketler) {
       buf.writeln([
@@ -22,7 +22,6 @@ abstract final class CsvExport {
         _csv(h.odemeSekli),
         _csv(h.belgeTuru),
         _csv(h.santiye),
-        _csv(h.ekAciklama),
       ].join(';'));
     }
     return buf.toString();
