@@ -14,8 +14,8 @@ Excel “İŞ AVANSI VE HARCAMA TABLOSU” kurgusunun mobil/web karşılığı:
 - Üst özet: toplam gelir · toplam gider · güncel kasa
 - Hareket satırları (tarih, tedarikçi, açıklama, gelir/gider, ödeme, belge, şantiye…)
 - Filtre, arama, şantiye bazlı rapor
-- PDF / Excel / JPG dışa aktarım
-- JPG / PDF / Excel içe aktarım
+- PDF / Excel / JPG dışa aktarım (Rapor sayfası altı)
+- JPG / PDF OCR + Excel satır içe aktarım (Rapor sayfası altı)
 
 ## Çalıştırma
 

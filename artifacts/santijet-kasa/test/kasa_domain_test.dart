@@ -4,6 +4,7 @@ import 'package:santijet_kasa/domain/csv_export.dart';
 import 'package:santijet_kasa/domain/hareket_filters.dart';
 import 'package:santijet_kasa/domain/kasa_hareket.dart';
 import 'package:santijet_kasa/domain/kasa_lookups.dart';
+import 'package:santijet_kasa/domain/kasa_ocr_parser.dart';
 import 'package:santijet_kasa/domain/kasa_rules.dart';
 import 'package:santijet_kasa/domain/kasa_transfer_format.dart';
 import 'package:santijet_kasa/domain/money_format.dart';
@@ -184,6 +185,47 @@ void main() {
       );
       expect(pdf.belgeTuru, BelgeTuru.fatura);
       expect(pdf.ekAciklama, contains('PDF'));
+    });
+  });
+
+  group('KasaOcrParser', () {
+    test('parses table-like expense line', () {
+      const raw = '''
+TARİH TEDARİKÇİ AÇIKLAMA GELİR GİDER ÖDEME BELGE ŞANTİYE
+11.08.2024 YEŞİLLER TEKNİK CIVATA SOMUN ₺350,00 ŞAHSI K.KARTI FİŞ İZMİT/EFSANE
+''';
+      final parsed = KasaOcrParser.parseText(
+        raw,
+        now: DateTime(2026, 9, 8),
+      );
+      expect(parsed.hareketler, isNotEmpty);
+      final h = parsed.hareketler.first;
+      expect(h.gider, 350);
+      expect(h.tarih.day, 11);
+      expect(h.tarih.month, 8);
+    });
+
+    test('parses income line', () {
+      const raw =
+          '11.07.2026 KADİR BEY DENİZBANK HESABIMA GÖNDERDİ ₺5.429,83 HAVALE';
+      final parsed = KasaOcrParser.parseText(raw, now: DateTime(2026, 9, 8));
+      expect(parsed.hareketler, isNotEmpty);
+      expect(parsed.hareketler.first.gelir, closeTo(5429.83, 0.01));
+    });
+
+    test('receipt fallback single amount', () {
+      const raw = '''
+Market fişi
+Alışveriş notu
+15.03.2025
+TOPLAM ₺890,00
+''';
+      final parsed = KasaOcrParser.parseText(raw, now: DateTime(2026, 9, 8));
+      expect(parsed.hareketler, isNotEmpty);
+      expect(
+        parsed.hareketler.any((h) => h.gider == 890),
+        isTrue,
+      );
     });
   });
 }

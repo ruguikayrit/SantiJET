@@ -61,7 +61,7 @@ class KasaImportService {
     };
   }
 
-  /// JPG veya PDF → hareket formu taslağı (OCR yok).
+  /// JPG veya PDF → OCR bulunamazsa form taslağı.
   BelgeImportDraft draftFromBelge({
     required KasaTransferFormat format,
     required String fileName,

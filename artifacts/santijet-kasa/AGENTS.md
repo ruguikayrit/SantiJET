@@ -28,16 +28,18 @@ Satır alanları: tarih, tedarikçi, açıklama, gelir, gider, ödeme şekli, be
 - Para TR formatı: `₺1.234,56`
 - Filtre: tarih aralığı, şantiye, tedarikçi, ödeme şekli, belge türü, gelir/gider.
 - Arama: tedarikçi + açıklama + ek açıklama.
-- Rapor dışa aktarım: **JPG · PDF · Excel**
-- Rapor içe aktarım: **JPG · PDF · Excel** (Excel = satır; JPG/PDF = belge → form, OCR yok)
+- Rapor dışa aktarım: **JPG · PDF · Excel** (sayfa en altı)
+- Rapor içe aktarım: **JPG · PDF · Excel** (sayfa en altı)
+  - Excel: tablo satır parse
+  - JPG/PDF: OCR.space ile metin → satır satır kasa hareketi
 
 ## Bilinçli sınırlar (v1)
 
 - Çoklu kullanıcı / bulut senkron yok
-- Fiş OCR / kamera yok
 - Banka entegrasyonu yok
 - Abonelik yok
 - PRO hub / DEMİR sipariş kabuğu kopyalama yok
+- OCR: OCR.space (staging `helloworld` anahtarı; prod için `OCR_SPACE_API_KEY`)
 
 ## Git / deploy
 
