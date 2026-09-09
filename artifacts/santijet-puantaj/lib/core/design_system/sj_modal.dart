@@ -109,45 +109,56 @@ abstract final class SJModal {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (context) => Theme(
-        data: theme,
-        child: SafeArea(
-          child: Padding(
-            padding: EdgeInsets.only(
-              left: AppSpacing.md,
-              right: AppSpacing.md,
-              top: AppSpacing.sm,
-              bottom: AppSpacing.md + MediaQuery.viewInsetsOf(context).bottom,
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Center(
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    margin: const EdgeInsets.only(bottom: AppSpacing.sm),
-                    decoration: BoxDecoration(
-                      color: theme.dividerColor,
-                      borderRadius: AppRadii.full,
+      builder: (context) {
+        final media = MediaQuery.of(context);
+        final maxHeight = media.size.height * 0.92 - media.viewInsets.bottom;
+        return Theme(
+          data: theme,
+          child: SafeArea(
+            child: Padding(
+              padding: EdgeInsets.only(
+                left: AppSpacing.md,
+                right: AppSpacing.md,
+                top: AppSpacing.sm,
+                bottom: AppSpacing.md + media.viewInsets.bottom,
+              ),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxHeight: maxHeight),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 40,
+                        height: 4,
+                        margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+                        decoration: BoxDecoration(
+                          color: theme.dividerColor,
+                          borderRadius: AppRadii.full,
+                        ),
+                      ),
                     ),
-                  ),
+                    Text(
+                      title,
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        color: theme.colorScheme.onSurface,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    Flexible(
+                      child: SingleChildScrollView(
+                        child: child,
+                      ),
+                    ),
+                  ],
                 ),
-                Text(
-                  title,
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    color: theme.colorScheme.onSurface,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                child,
-              ],
+              ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
