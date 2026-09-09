@@ -3842,21 +3842,6 @@ class _PuantajExportSheetState extends State<_PuantajExportSheet> {
                 selected: _allStatusesSelected,
                 onSelected: _busy ? null : (_) => _selectAllStatuses(),
               ),
-              FilterChip(
-                showCheckmark: false,
-                visualDensity: VisualDensity.compact,
-                label: const Text('Yalnız Mevcut'),
-                selected: !_includeUnrecorded &&
-                    _includedStatuses.length == 1 &&
-                    _includedStatuses.contains(AttendanceStatus.present),
-                onSelected: _busy
-                    ? null
-                    : (_) => setState(() {
-                          _includedStatuses = {AttendanceStatus.present};
-                          _includeUnrecorded = false;
-                          _error = null;
-                        }),
-              ),
               ActionChip(
                 visualDensity: VisualDensity.compact,
                 label: const Text('Temizle'),
