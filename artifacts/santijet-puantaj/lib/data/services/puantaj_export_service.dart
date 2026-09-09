@@ -118,7 +118,7 @@ class PuantajExportService {
           ),
           pw.SizedBox(height: 10),
           if (!report.plainTable) ...[
-            _legend(),
+            _legend(report.visual.effectiveStatusColumns),
             pw.SizedBox(height: 10),
           ],
           if (report.plainTable)
@@ -266,12 +266,12 @@ class PuantajExportService {
     );
   }
 
-  pw.Widget _legend() {
+  pw.Widget _legend(List<AttendanceStatus> statuses) {
     return pw.Wrap(
       spacing: 8,
       runSpacing: 4,
       children: [
-        for (final s in AttendanceStatus.values)
+        for (final s in statuses)
           pw.Row(
             mainAxisSize: pw.MainAxisSize.min,
             children: [
@@ -312,11 +312,12 @@ class PuantajExportService {
 
   pw.Widget _matrixTable(PuantajReportVisual visual) {
     final dayCount = visual.dayHeaders.length;
+    final statusColumns = visual.effectiveStatusColumns;
     // A4 landscape ~842pt kullanılabilir; isim + günler + durum özetleri.
     const nameW = 72.0;
     const summaryW = 29.0;
     const totalW = 34.0;
-    final summaryTotalW = AttendanceStatus.values.length * summaryW;
+    final summaryTotalW = statusColumns.length * summaryW;
     final dayW = dayCount <= 0
         ? 14.0
         : ((842 - 36 - nameW - summaryTotalW - totalW) / dayCount)
@@ -331,7 +332,7 @@ class PuantajExportService {
           width: summaryW,
           child: pw.Center(child: child),
         );
-    final statusTotals = List<int>.filled(AttendanceStatus.values.length, 0);
+    final statusTotals = List<int>.filled(statusColumns.length, 0);
     for (final company in visual.companies) {
       for (final row in company.rows) {
         for (var i = 0; i < row.statusCounts.length; i++) {
@@ -342,7 +343,7 @@ class PuantajExportService {
     final generalTotal = statusTotals.asMap().entries.fold<int>(
           0,
           (sum, entry) {
-            final status = AttendanceStatus.values[entry.key];
+            final status = statusColumns[entry.key];
             return status.countsInGeneralTotal ? sum + entry.value : sum;
           },
         );
@@ -367,7 +368,7 @@ class PuantajExportService {
                   style: const pw.TextStyle(fontSize: 6, color: _inkMuted),
                 ),
               ),
-            for (final s in AttendanceStatus.values)
+            for (final s in statusColumns)
               summaryCell(
                 pw.Text(
                   switch (s) {
@@ -452,7 +453,7 @@ class PuantajExportService {
                   ),
                   for (final s in row.statuses)
                     dayCell(_statusBadge(s, size: dayW > 14 ? 11 : 9)),
-                  for (var i = 0; i < AttendanceStatus.values.length; i++)
+                  for (var i = 0; i < statusColumns.length; i++)
                     summaryCell(
                       pw.Text(
                         i < row.statusCounts.length
@@ -462,9 +463,7 @@ class PuantajExportService {
                         style: pw.TextStyle(
                           fontSize: 7,
                           fontWeight: pw.FontWeight.bold,
-                          color: _fromFlutter(
-                            AttendanceStatus.values[i].color,
-                          ),
+                          color: _fromFlutter(statusColumns[i].color),
                         ),
                       ),
                     ),
@@ -515,7 +514,7 @@ class PuantajExportService {
                     ),
                   ),
                 ),
-              for (var i = 0; i < AttendanceStatus.values.length; i++)
+              for (var i = 0; i < statusColumns.length; i++)
                 summaryCell(
                   pw.Text(
                     '${statusTotals[i]}',
@@ -523,7 +522,7 @@ class PuantajExportService {
                     style: pw.TextStyle(
                       fontSize: 7,
                       fontWeight: pw.FontWeight.bold,
-                      color: _fromFlutter(AttendanceStatus.values[i].color),
+                      color: _fromFlutter(statusColumns[i].color),
                     ),
                   ),
                 ),

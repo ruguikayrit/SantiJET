@@ -3065,6 +3065,7 @@ class _PuantajExportSheetState extends State<_PuantajExportSheet> {
   late PuantajReportPeriod _period = widget.initialPeriod;
   late PuantajExportLayout _layout = PuantajExportLayout.isim;
   late Set<String> _selectedPersonIds;
+  late Set<AttendanceStatus> _includedStatuses;
   final _personSearchController = TextEditingController();
   final _teamSearchController = TextEditingController();
   final _peopleTileController = ExpansionTileController();
@@ -3080,6 +3081,7 @@ class _PuantajExportSheetState extends State<_PuantajExportSheet> {
   void initState() {
     super.initState();
     _selectedPersonIds = _eligiblePeople.map((p) => p.id).toSet();
+    _includedStatuses = {...AttendanceStatus.values};
   }
 
   @override
@@ -3354,6 +3356,11 @@ class _PuantajExportSheetState extends State<_PuantajExportSheet> {
       setState(() => _error = 'Bu dönemde yevmiyeli iş kaydı yok.');
       return;
     }
+    if (_layout != PuantajExportLayout.yevmiyeli &&
+        _includedStatuses.isEmpty) {
+      setState(() => _error = 'En az bir durum seçin.');
+      return;
+    }
     setState(() {
       _busy = true;
       _error = null;
@@ -3369,6 +3376,7 @@ class _PuantajExportSheetState extends State<_PuantajExportSheet> {
         layout: _layout,
         uninsuredTeams: widget.uninsuredTeams,
         yevmiyeliEntries: widget.yevmiyeliEntries,
+        includedStatuses: _includedStatuses,
       );
       if (pdf) {
         await puantajExportService.exportPdf(
@@ -3792,6 +3800,89 @@ class _PuantajExportSheetState extends State<_PuantajExportSheet> {
           ),
         ),
         ], // personel/ekip seçimi — yevmiyeli çıktıda gizlenir
+        if (_layout != PuantajExportLayout.yevmiyeli) ...[
+          const SizedBox(height: AppSpacing.md),
+          Text('Durumlar', style: theme.textTheme.labelLarge),
+          const SizedBox(height: 2),
+          Text(
+            'Çıktıda gösterilecek puantaj durumları',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Wrap(
+            spacing: AppSpacing.xs,
+            runSpacing: AppSpacing.xs,
+            children: [
+              FilterChip(
+                showCheckmark: false,
+                label: Text(
+                  _includedStatuses.length == AttendanceStatus.values.length
+                      ? 'Tümü'
+                      : 'Tümü (${_includedStatuses.length})',
+                ),
+                selected:
+                    _includedStatuses.length == AttendanceStatus.values.length,
+                onSelected: _busy
+                    ? null
+                    : (_) => setState(() {
+                          _includedStatuses = {...AttendanceStatus.values};
+                          _error = null;
+                        }),
+              ),
+              FilterChip(
+                showCheckmark: false,
+                label: const Text('Yalnız Mevcut'),
+                selected: _includedStatuses.length == 1 &&
+                    _includedStatuses.contains(AttendanceStatus.present),
+                onSelected: _busy
+                    ? null
+                    : (_) => setState(() {
+                          _includedStatuses = {AttendanceStatus.present};
+                          _error = null;
+                        }),
+              ),
+              ActionChip(
+                label: const Text('Temizle'),
+                onPressed: _busy
+                    ? null
+                    : () => setState(() {
+                          _includedStatuses = {};
+                          _error = null;
+                        }),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Wrap(
+            spacing: AppSpacing.xs,
+            runSpacing: AppSpacing.xs,
+            children: [
+              for (final s in AttendanceStatus.values)
+                FilterChip(
+                  showCheckmark: false,
+                  avatar: CircleAvatar(
+                    backgroundColor: s.color,
+                    radius: 6,
+                  ),
+                  label: Text(s.label),
+                  selected: _includedStatuses.contains(s),
+                  selectedColor: s.color.withValues(alpha: 0.22),
+                  onSelected: _busy
+                      ? null
+                      : (on) => setState(() {
+                            if (on) {
+                              _includedStatuses = {..._includedStatuses, s};
+                            } else {
+                              _includedStatuses = {..._includedStatuses}..remove(s);
+                            }
+                            _error = null;
+                          }),
+                ),
+            ],
+          ),
+        ],
         const SizedBox(height: AppSpacing.md),
         Text('Format', style: theme.textTheme.labelLarge),
         const SizedBox(height: AppSpacing.sm),

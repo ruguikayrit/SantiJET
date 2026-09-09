@@ -86,6 +86,7 @@ class PuantajReportVisual {
     required this.companies,
     this.footerPresentCounts = const [],
     this.firstColumnLabel = 'Personel',
+    this.statusColumns = const [],
   });
 
   final bool isMatrix;
@@ -99,6 +100,13 @@ class PuantajReportVisual {
 
   /// Matris ilk sütun başlığı (`Personel` / `Ekip Adı`).
   final String firstColumnLabel;
+
+  /// PDF özet sütunları / lejant. Boş → tüm [AttendanceStatus.values].
+  final List<AttendanceStatus> statusColumns;
+
+  List<AttendanceStatus> get effectiveStatusColumns => statusColumns.isEmpty
+      ? AttendanceStatus.values
+      : statusColumns;
 }
 
 class PuantajVisualCompany {
@@ -132,7 +140,7 @@ class PuantajVisualPersonRow {
   /// Matris: gün sayısı kadar; günlük: tek eleman (null = boş).
   final List<AttendanceStatus?> statuses;
 
-  /// Matris özet sütunları; [AttendanceStatus.values] sırasındadır.
+  /// Matris özet sütunları; [PuantajReportVisual.statusColumns] sırasındadır.
   final List<int> statusCounts;
 
   /// Ekip puantajı: gün başına çalışan sayısı metni (doluysa rozet yerine bu).
@@ -170,7 +178,9 @@ abstract final class PuantajReportBuilder {
     PuantajExportLayout layout = PuantajExportLayout.isim,
     List<UninsuredTeamEntry> uninsuredTeams = const [],
     List<YevmiyeliIsKaydi> yevmiyeliEntries = const [],
+    Set<AttendanceStatus>? includedStatuses,
   }) {
+    final statuses = _normalizeIncludedStatuses(includedStatuses);
     if (layout == PuantajExportLayout.yevmiyeli) {
       return buildYevmiyeli(
         projectName: projectName,
@@ -189,6 +199,7 @@ abstract final class PuantajReportBuilder {
         period: period,
         anchorDate: anchorDate,
         uninsuredTeams: uninsuredTeams,
+        includedStatuses: statuses,
       );
     }
 
@@ -202,6 +213,7 @@ abstract final class PuantajReportBuilder {
           people: people,
           attendance: projectAtt,
           date: anchorDate,
+          includedStatuses: statuses,
         ),
       PuantajReportPeriod.weekly => _matrix(
           projectName: projectName,
@@ -212,6 +224,7 @@ abstract final class PuantajReportBuilder {
           rangeLabel: PuantajDate.weekLabel(PuantajDate.weekDays(anchorDate)),
           fileStem: 'haftalik-${_fileDate(anchorDate)}',
           dayHeader: _weekDayHeader,
+          includedStatuses: statuses,
         ),
       PuantajReportPeriod.monthly => _matrix(
           projectName: projectName,
@@ -222,9 +235,27 @@ abstract final class PuantajReportBuilder {
           rangeLabel: PuantajDate.monthLabel(anchorDate),
           fileStem: 'aylik-${_fileMonth(anchorDate)}',
           dayHeader: _monthDayHeader,
+          includedStatuses: statuses,
         ),
     };
   }
+
+  static Set<AttendanceStatus> _normalizeIncludedStatuses(
+    Set<AttendanceStatus>? included,
+  ) {
+    if (included == null || included.isEmpty) {
+      return {...AttendanceStatus.values};
+    }
+    return {...included};
+  }
+
+  static List<AttendanceStatus> _orderedStatuses(
+    Set<AttendanceStatus> included,
+  ) =>
+      [
+        for (final s in AttendanceStatus.values)
+          if (included.contains(s)) s,
+      ];
 
   /// Yevmiyeli iş tablosu — taşeron / meslek / iş tanımı / manuel yevmiye.
   static PuantajReportData buildYevmiyeli({
@@ -362,7 +393,9 @@ abstract final class PuantajReportBuilder {
     required PuantajReportPeriod period,
     required String anchorDate,
     List<UninsuredTeamEntry> uninsuredTeams = const [],
+    Set<AttendanceStatus>? includedStatuses,
   }) {
+    final statuses = _normalizeIncludedStatuses(includedStatuses);
     final days = PuantajDate.daysForReportPeriod(
       anchorDate: anchorDate,
       daily: period == PuantajReportPeriod.daily,
@@ -387,6 +420,7 @@ abstract final class PuantajReportBuilder {
           rangeLabel: anchorDate,
           fileStem: 'ekip-gunluk-${_fileDate(anchorDate)}',
           landscape: false,
+          includedStatuses: statuses,
         ),
       PuantajReportPeriod.weekly => _ekipTable(
           projectName: projectName,
@@ -399,6 +433,7 @@ abstract final class PuantajReportBuilder {
           rangeLabel: PuantajDate.weekLabel(days),
           fileStem: 'ekip-haftalik-${_fileDate(anchorDate)}',
           landscape: true,
+          includedStatuses: statuses,
         ),
       PuantajReportPeriod.monthly => _ekipTable(
           projectName: projectName,
@@ -411,6 +446,7 @@ abstract final class PuantajReportBuilder {
           rangeLabel: PuantajDate.monthLabel(anchorDate),
           fileStem: 'ekip-aylik-${_fileMonth(anchorDate)}',
           landscape: true,
+          includedStatuses: statuses,
         ),
     };
   }
@@ -444,6 +480,7 @@ abstract final class PuantajReportBuilder {
     required String rangeLabel,
     required String fileStem,
     required bool landscape,
+    required Set<AttendanceStatus> includedStatuses,
   }) {
     final lookup = <String, Attendance>{};
     for (final a in attendance) {
@@ -474,7 +511,11 @@ abstract final class PuantajReportBuilder {
           date: d,
           recorded: a?.status,
         );
-        if (status == null || !status.countsInTeamHeadcount) continue;
+        if (status == null ||
+            !status.countsInTeamHeadcount ||
+            !includedStatuses.contains(status)) {
+          continue;
+        }
         final company = _ekipCompanyLabel(p.company);
         final team = _ekipTeamLabel(p.team);
         addDaily(company, team, di, 1);
@@ -576,7 +617,9 @@ abstract final class PuantajReportBuilder {
     required List<Person> people,
     required List<Attendance> attendance,
     required String date,
+    required Set<AttendanceStatus> includedStatuses,
   }) {
+    final statusColumns = _orderedStatuses(includedStatuses);
     final byPerson = <String, Attendance>{};
     for (final a in attendance) {
       if (a.date == date) byPerson[a.personId] = a;
@@ -597,7 +640,7 @@ abstract final class PuantajReportBuilder {
     final rows = <List<String>>[];
     final visualCompanies = <PuantajVisualCompany>[];
     final counts = <AttendanceStatus, int>{
-      for (final s in AttendanceStatus.values) s: 0,
+      for (final s in statusColumns) s: 0,
     };
     var none = 0;
     var totalAg = 0.0;
@@ -615,6 +658,10 @@ abstract final class PuantajReportBuilder {
         final leaveLine = AttendanceDisplay.leaveDateLine(p);
         final hireLabel = _employmentPart(p.hireDate);
         final leaveLabel = _employmentPart(p.leaveDate);
+        // Seçilmeyen durumlar çıktıda yok (günlük satır filtresi).
+        if (status != null && !includedStatuses.contains(status)) {
+          continue;
+        }
         if (status == null) {
           none++;
           rows.add([
@@ -671,6 +718,7 @@ abstract final class PuantajReportBuilder {
           ),
         );
       }
+      if (visualRows.isEmpty) continue;
       visualCompanies.add(
         PuantajVisualCompany(name: group.company, rows: visualRows),
       );
@@ -686,6 +734,7 @@ abstract final class PuantajReportBuilder {
         none: none,
         totalAg: totalAg,
         legend: false,
+        statusColumns: statusColumns,
       ),
       landscape: false,
       fileStem: 'gunluk-${_fileDate(date)}',
@@ -693,6 +742,7 @@ abstract final class PuantajReportBuilder {
         isMatrix: false,
         dayHeaders: const [],
         companies: visualCompanies,
+        statusColumns: statusColumns,
       ),
     );
   }
@@ -706,7 +756,9 @@ abstract final class PuantajReportBuilder {
     required String rangeLabel,
     required String fileStem,
     required String Function(String date) dayHeader,
+    required Set<AttendanceStatus> includedStatuses,
   }) {
+    final statusColumns = _orderedStatuses(includedStatuses);
     final lookup = <String, Attendance>{};
     for (final a in attendance) {
       if (days.contains(a.date)) {
@@ -722,13 +774,13 @@ abstract final class PuantajReportBuilder {
       'Giriş',
       'Çıkış',
       ...dayHeaders,
-      for (final s in AttendanceStatus.values) s.label,
+      for (final s in statusColumns) s.label,
       'Genel Toplam',
     ];
     final rows = <List<String>>[];
     final visualCompanies = <PuantajVisualCompany>[];
     final counts = <AttendanceStatus, int>{
-      for (final s in AttendanceStatus.values) s: 0,
+      for (final s in statusColumns) s: 0,
     };
     var noneCells = 0;
     var totalAg = 0.0;
@@ -741,7 +793,7 @@ abstract final class PuantajReportBuilder {
         final cells = <String>[];
         final statuses = <AttendanceStatus?>[];
         final rowStatusCounts = <AttendanceStatus, int>{
-          for (final s in AttendanceStatus.values) s: 0,
+          for (final s in statusColumns) s: 0,
         };
         final hireLine = AttendanceDisplay.hireDateLine(p);
         final leaveLine = AttendanceDisplay.leaveDateLine(p);
@@ -755,8 +807,8 @@ abstract final class PuantajReportBuilder {
             date: d,
             recorded: a?.status,
           );
-          if (status == null) {
-            noneCells++;
+          if (status == null || !includedStatuses.contains(status)) {
+            if (status == null) noneCells++;
             cells.add('');
             statuses.add(null);
           } else {
@@ -771,7 +823,7 @@ abstract final class PuantajReportBuilder {
           }
         }
         totalAg += rowAg;
-        final generalTotal = AttendanceStatus.values
+        final generalTotal = statusColumns
             .where((s) => s.countsInGeneralTotal)
             .fold<int>(0, (sum, s) => sum + (rowStatusCounts[s] ?? 0));
         rows.add([
@@ -781,7 +833,7 @@ abstract final class PuantajReportBuilder {
           hireLabel,
           leaveLabel,
           ...cells,
-          for (final s in AttendanceStatus.values) '${rowStatusCounts[s] ?? 0}',
+          for (final s in statusColumns) '${rowStatusCounts[s] ?? 0}',
           '$generalTotal',
         ]);
         visualRows.add(
@@ -789,7 +841,7 @@ abstract final class PuantajReportBuilder {
             name: p.name,
             statuses: statuses,
             statusCounts: [
-              for (final s in AttendanceStatus.values) rowStatusCounts[s] ?? 0,
+              for (final s in statusColumns) rowStatusCounts[s] ?? 0,
             ],
             team: p.team,
             totalLabel: generalTotal > 0 ? '$generalTotal' : '–',
@@ -814,6 +866,7 @@ abstract final class PuantajReportBuilder {
         none: noneCells,
         totalAg: totalAg,
         legend: true,
+        statusColumns: statusColumns,
       ),
       landscape: true,
       fileStem: fileStem,
@@ -822,6 +875,7 @@ abstract final class PuantajReportBuilder {
         dayHeaders: dayHeaders,
         companies: visualCompanies,
         footerPresentCounts: footer,
+        statusColumns: statusColumns,
       ),
     );
   }
@@ -831,18 +885,19 @@ abstract final class PuantajReportBuilder {
     required int none,
     required double totalAg,
     required bool legend,
+    required List<AttendanceStatus> statusColumns,
   }) {
     final lines = <String>[
       'Özet — Toplam adam-gün: ${_fmtNum(totalAg)}',
       [
-        for (final s in AttendanceStatus.values)
+        for (final s in statusColumns)
           if ((counts[s] ?? 0) > 0) '${s.label}: ${counts[s]}',
         if (none > 0) 'Boş: $none',
       ].join(' · '),
     ];
     if (legend) {
       lines.add(
-        'Kodlar: ${AttendanceStatus.values.map((s) => '${s.short}=${s.label}').join(', ')}',
+        'Kodlar: ${statusColumns.map((s) => '${s.short}=${s.label}').join(', ')}',
       );
     }
     return lines;
