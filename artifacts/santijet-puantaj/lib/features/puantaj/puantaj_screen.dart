@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/design_system/sj_add_fab.dart';
 import '../../core/design_system/sj_card.dart';
 import '../../core/design_system/sj_empty_state.dart';
 import '../../core/design_system/sj_button.dart';
@@ -212,14 +213,13 @@ class _PuantajScreenState extends ConsumerState<PuantajScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
-      floatingActionButton: FloatingActionButton.extended(
+      floatingActionButton: SJAddFab(
+        tooltip: 'Veri ekle',
         onPressed: () => _openVeriEkleSheet(
           context,
           project: project,
           people: people,
         ),
-        icon: const Icon(Icons.add),
-        label: const Text('Veri ekle'),
       ),
       body: SafeArea(
         bottom: false,

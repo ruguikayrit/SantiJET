@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../core/design_system/sj_add_fab.dart';
 import '../../core/design_system/sj_button.dart';
 import '../../core/design_system/sj_card.dart';
 import '../../core/design_system/sj_empty_state.dart';
@@ -1673,8 +1674,9 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
       backgroundColor: AppColors.canvas,
       floatingActionButton: operator == null
           ? null
-          : FloatingActionButton.extended(
+          : SJAddFab(
               heroTag: 'task_assign',
+              tooltip: 'Görev ekle',
               onPressed: canAssign
                   ? () => _openEditor(operator: operator, people: people)
                   : () {
@@ -1687,8 +1689,6 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                         ),
                       );
                     },
-              icon: const Icon(Icons.add_task_outlined),
-              label: const Text('Görev Ekle'),
             ),
       body: SafeArea(
         bottom: false,

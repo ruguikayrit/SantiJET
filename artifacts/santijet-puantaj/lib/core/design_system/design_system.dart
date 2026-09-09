@@ -3,6 +3,7 @@
 /// Tüm ekranlar bu bileşenleri kullanır. Görsel dil ŞantiJET Demir ile aynıdır.
 library;
 
+export 'sj_add_fab.dart';
 export 'sj_bottom_navigation.dart';
 export 'sj_button.dart';
 export 'sj_card.dart';

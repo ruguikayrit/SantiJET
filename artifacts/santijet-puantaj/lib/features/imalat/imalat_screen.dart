@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/design_system/sj_add_fab.dart';
 import '../../core/design_system/sj_card.dart';
 import '../../core/design_system/sj_empty_state.dart';
 import '../../core/design_system/sj_status_badge.dart';
@@ -427,7 +428,8 @@ class _ImalatScreenState extends ConsumerState<ImalatScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
-      floatingActionButton: FloatingActionButton.extended(
+      floatingActionButton: SJAddFab(
+        tooltip: 'İmalat ekle',
         onPressed: teams.isEmpty
             ? () => _warnNoTeams(context)
             : () => _openJobEditor(
@@ -436,8 +438,6 @@ class _ImalatScreenState extends ConsumerState<ImalatScreen> {
                   projectId: project.id,
                   teams: teams,
                 ),
-        icon: const Icon(Icons.add),
-        label: const Text('İmalat Ekle'),
       ),
       body: SafeArea(
         top: !widget.embedded,
