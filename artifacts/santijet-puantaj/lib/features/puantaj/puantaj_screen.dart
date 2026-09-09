@@ -3066,6 +3066,7 @@ class _PuantajExportSheetState extends State<_PuantajExportSheet> {
   late PuantajExportLayout _layout = PuantajExportLayout.isim;
   late Set<String> _selectedPersonIds;
   late Set<AttendanceStatus> _includedStatuses;
+  bool _includeUnrecorded = true;
   final _personSearchController = TextEditingController();
   final _teamSearchController = TextEditingController();
   final _peopleTileController = ExpansionTileController();
@@ -3077,11 +3078,24 @@ class _PuantajExportSheetState extends State<_PuantajExportSheet> {
 
   static const _noTeamKey = '__no_team__';
 
+  bool get _allStatusesSelected =>
+      _includeUnrecorded &&
+      _includedStatuses.length == AttendanceStatus.values.length;
+
+  void _selectAllStatuses() {
+    setState(() {
+      _includedStatuses = {...AttendanceStatus.values};
+      _includeUnrecorded = true;
+      _error = null;
+    });
+  }
+
   @override
   void initState() {
     super.initState();
     _selectedPersonIds = _eligiblePeople.map((p) => p.id).toSet();
     _includedStatuses = {...AttendanceStatus.values};
+    _includeUnrecorded = true;
   }
 
   @override
@@ -3357,7 +3371,8 @@ class _PuantajExportSheetState extends State<_PuantajExportSheet> {
       return;
     }
     if (_layout != PuantajExportLayout.yevmiyeli &&
-        _includedStatuses.isEmpty) {
+        _includedStatuses.isEmpty &&
+        !_includeUnrecorded) {
       setState(() => _error = 'En az bir durum seçin.');
       return;
     }
@@ -3377,6 +3392,7 @@ class _PuantajExportSheetState extends State<_PuantajExportSheet> {
         uninsuredTeams: widget.uninsuredTeams,
         yevmiyeliEntries: widget.yevmiyeliEntries,
         includedStatuses: _includedStatuses,
+        includeUnrecorded: _includeUnrecorded,
       );
       if (pdf) {
         await puantajExportService.exportPdf(
@@ -3805,7 +3821,7 @@ class _PuantajExportSheetState extends State<_PuantajExportSheet> {
           Text('Durumlar', style: theme.textTheme.labelLarge),
           const SizedBox(height: 2),
           Text(
-            'Çıktıda gösterilecek puantaj durumları',
+            'Puantajdaki tüm durumlar — çıktıda hangileri görünsün',
             style: theme.textTheme.bodySmall?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
@@ -3817,44 +3833,45 @@ class _PuantajExportSheetState extends State<_PuantajExportSheet> {
             children: [
               FilterChip(
                 showCheckmark: false,
+                visualDensity: VisualDensity.compact,
                 label: Text(
-                  _includedStatuses.length == AttendanceStatus.values.length
+                  _allStatusesSelected
                       ? 'Tümü'
-                      : 'Tümü (${_includedStatuses.length})',
+                      : 'Tümü (${_includedStatuses.length + (_includeUnrecorded ? 1 : 0)})',
                 ),
-                selected:
-                    _includedStatuses.length == AttendanceStatus.values.length,
-                onSelected: _busy
-                    ? null
-                    : (_) => setState(() {
-                          _includedStatuses = {...AttendanceStatus.values};
-                          _error = null;
-                        }),
+                selected: _allStatusesSelected,
+                onSelected: _busy ? null : (_) => _selectAllStatuses(),
               ),
               FilterChip(
                 showCheckmark: false,
+                visualDensity: VisualDensity.compact,
                 label: const Text('Yalnız Mevcut'),
-                selected: _includedStatuses.length == 1 &&
+                selected: !_includeUnrecorded &&
+                    _includedStatuses.length == 1 &&
                     _includedStatuses.contains(AttendanceStatus.present),
                 onSelected: _busy
                     ? null
                     : (_) => setState(() {
                           _includedStatuses = {AttendanceStatus.present};
+                          _includeUnrecorded = false;
                           _error = null;
                         }),
               ),
               ActionChip(
+                visualDensity: VisualDensity.compact,
                 label: const Text('Temizle'),
                 onPressed: _busy
                     ? null
                     : () => setState(() {
                           _includedStatuses = {};
+                          _includeUnrecorded = false;
                           _error = null;
                         }),
               ),
             ],
           ),
           const SizedBox(height: AppSpacing.xs),
+          // Puantaj günlük özet / durum seçici ile aynı sıra ve set.
           Wrap(
             spacing: AppSpacing.xs,
             runSpacing: AppSpacing.xs,
@@ -3862,11 +3879,22 @@ class _PuantajExportSheetState extends State<_PuantajExportSheet> {
               for (final s in AttendanceStatus.values)
                 FilterChip(
                   showCheckmark: false,
-                  avatar: CircleAvatar(
-                    backgroundColor: s.color,
-                    radius: 6,
+                  visualDensity: VisualDensity.compact,
+                  label: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: s.color,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Text('${s.short} · ${s.label}'),
+                    ],
                   ),
-                  label: Text(s.label),
                   selected: _includedStatuses.contains(s),
                   selectedColor: s.color.withValues(alpha: 0.22),
                   onSelected: _busy
@@ -3880,6 +3908,32 @@ class _PuantajExportSheetState extends State<_PuantajExportSheet> {
                             _error = null;
                           }),
                 ),
+              FilterChip(
+                showCheckmark: false,
+                visualDensity: VisualDensity.compact,
+                label: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.onSurfaceVariant,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    const Text('– · Girilmedi'),
+                  ],
+                ),
+                selected: _includeUnrecorded,
+                onSelected: _busy
+                    ? null
+                    : (on) => setState(() {
+                          _includeUnrecorded = on;
+                          _error = null;
+                        }),
+              ),
             ],
           ),
         ],

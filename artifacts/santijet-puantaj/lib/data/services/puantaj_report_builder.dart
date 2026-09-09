@@ -179,6 +179,7 @@ abstract final class PuantajReportBuilder {
     List<UninsuredTeamEntry> uninsuredTeams = const [],
     List<YevmiyeliIsKaydi> yevmiyeliEntries = const [],
     Set<AttendanceStatus>? includedStatuses,
+    bool includeUnrecorded = true,
   }) {
     final statuses = _normalizeIncludedStatuses(includedStatuses);
     if (layout == PuantajExportLayout.yevmiyeli) {
@@ -214,6 +215,7 @@ abstract final class PuantajReportBuilder {
           attendance: projectAtt,
           date: anchorDate,
           includedStatuses: statuses,
+          includeUnrecorded: includeUnrecorded,
         ),
       PuantajReportPeriod.weekly => _matrix(
           projectName: projectName,
@@ -225,6 +227,7 @@ abstract final class PuantajReportBuilder {
           fileStem: 'haftalik-${_fileDate(anchorDate)}',
           dayHeader: _weekDayHeader,
           includedStatuses: statuses,
+          includeUnrecorded: includeUnrecorded,
         ),
       PuantajReportPeriod.monthly => _matrix(
           projectName: projectName,
@@ -236,6 +239,7 @@ abstract final class PuantajReportBuilder {
           fileStem: 'aylik-${_fileMonth(anchorDate)}',
           dayHeader: _monthDayHeader,
           includedStatuses: statuses,
+          includeUnrecorded: includeUnrecorded,
         ),
     };
   }
@@ -618,6 +622,7 @@ abstract final class PuantajReportBuilder {
     required List<Attendance> attendance,
     required String date,
     required Set<AttendanceStatus> includedStatuses,
+    required bool includeUnrecorded,
   }) {
     final statusColumns = _orderedStatuses(includedStatuses);
     final byPerson = <String, Attendance>{};
@@ -663,6 +668,7 @@ abstract final class PuantajReportBuilder {
           continue;
         }
         if (status == null) {
+          if (!includeUnrecorded) continue;
           none++;
           rows.add([
             p.name,
@@ -670,7 +676,7 @@ abstract final class PuantajReportBuilder {
             p.team,
             hireLabel,
             leaveLabel,
-            '—',
+            'Girilmedi',
             '',
             '',
             '',
@@ -757,6 +763,7 @@ abstract final class PuantajReportBuilder {
     required String fileStem,
     required String Function(String date) dayHeader,
     required Set<AttendanceStatus> includedStatuses,
+    required bool includeUnrecorded,
   }) {
     final statusColumns = _orderedStatuses(includedStatuses);
     final lookup = <String, Attendance>{};
@@ -808,7 +815,7 @@ abstract final class PuantajReportBuilder {
             recorded: a?.status,
           );
           if (status == null || !includedStatuses.contains(status)) {
-            if (status == null) noneCells++;
+            if (status == null && includeUnrecorded) noneCells++;
             cells.add('');
             statuses.add(null);
           } else {
@@ -892,7 +899,7 @@ abstract final class PuantajReportBuilder {
       [
         for (final s in statusColumns)
           if ((counts[s] ?? 0) > 0) '${s.label}: ${counts[s]}',
-        if (none > 0) 'Boş: $none',
+        if (none > 0) 'Girilmedi: $none',
       ].join(' · '),
     ];
     if (legend) {
