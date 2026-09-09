@@ -27,10 +27,9 @@ class KasaScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
-      floatingActionButton: FloatingActionButton.extended(
+      floatingActionButton: FloatingActionButton(
         onPressed: () => context.push(AppRoutes.hareketForm),
-        icon: const Icon(Icons.add),
-        label: const Text('Hareket Ekle'),
+        child: const Icon(Icons.add),
       ),
       body: SafeArea(
         bottom: false,
