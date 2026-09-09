@@ -133,7 +133,7 @@ class PuantajExportPeriodField extends StatelessWidget {
         if (period == PuantajReportPeriod.weekly) ...[
           const SizedBox(height: AppSpacing.xs),
           Text(
-            'Herhangi bir güne dokunun; haftanın tamamı seçilir.',
+            'Gün seçin, ardından Tamam ile onaylayın.',
             style: theme.textTheme.bodySmall?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
@@ -156,24 +156,32 @@ class _WeeklyPickerDialog extends StatefulWidget {
 class _WeeklyPickerDialogState extends State<_WeeklyPickerDialog> {
   late DateTime _month;
   late Set<String> _selectedWeek;
+  late String _pendingAnchor;
 
   @override
   void initState() {
     super.initState();
     final anchor = PuantajDate.parse(widget.anchorDate);
     _month = DateTime(anchor.year, anchor.month);
-    _selectedWeek = PuantajDate.weekDays(widget.anchorDate).toSet();
+    _pendingAnchor = widget.anchorDate;
+    _selectedWeek = PuantajDate.weekDays(_pendingAnchor).toSet();
   }
 
   void _selectDay(DateTime day) {
     final anchor = PuantajDate.format(day);
-    setState(() => _selectedWeek = PuantajDate.weekDays(anchor).toSet());
-    Navigator.of(context).pop(anchor);
+    setState(() {
+      _pendingAnchor = anchor;
+      _selectedWeek = PuantajDate.weekDays(anchor).toSet();
+    });
   }
+
+  void _confirm() => Navigator.of(context).pop(_pendingAnchor);
 
   @override
   Widget build(BuildContext context) {
     final theme = SJModal.sheetThemeOf(context);
+    final weekLabel =
+        PuantajDate.weekLabel(PuantajDate.weekDays(_pendingAnchor));
     return Theme(
       data: theme,
       child: AlertDialog(
@@ -198,6 +206,14 @@ class _WeeklyPickerDialogState extends State<_WeeklyPickerDialog> {
                 selectedWeek: _selectedWeek,
                 onDayTap: _selectDay,
               ),
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                weekLabel,
+                textAlign: TextAlign.center,
+                style: theme.textTheme.labelLarge?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ],
           ),
         ),
@@ -205,6 +221,10 @@ class _WeeklyPickerDialogState extends State<_WeeklyPickerDialog> {
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
             child: const Text('İptal'),
+          ),
+          FilledButton(
+            onPressed: _confirm,
+            child: const Text('Tamam'),
           ),
         ],
       ),
@@ -233,14 +253,17 @@ class _MonthlyPickerDialogState extends State<_MonthlyPickerDialog> {
     _selectedMonth = anchor.month;
   }
 
-  void _selectMonth(int month) {
-    final anchor = PuantajDate.format(DateTime(_year, month, 1));
+  void _confirm() {
+    final anchor = PuantajDate.format(DateTime(_year, _selectedMonth, 1));
     Navigator.of(context).pop(anchor);
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = SJModal.sheetThemeOf(context);
+    final monthLabel = PuantajDate.monthLabel(
+      PuantajDate.format(DateTime(_year, _selectedMonth, 1)),
+    );
     return Theme(
       data: theme,
       child: AlertDialog(
@@ -284,12 +307,17 @@ class _MonthlyPickerDialogState extends State<_MonthlyPickerDialog> {
                     _MonthTile(
                       label: PuantajDate.trMonths[m - 1],
                       selected: m == _selectedMonth,
-                      onTap: () {
-                        setState(() => _selectedMonth = m);
-                        _selectMonth(m);
-                      },
+                      onTap: () => setState(() => _selectedMonth = m),
                     ),
                 ],
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                monthLabel,
+                textAlign: TextAlign.center,
+                style: theme.textTheme.labelLarge?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ],
           ),
@@ -298,6 +326,10 @@ class _MonthlyPickerDialogState extends State<_MonthlyPickerDialog> {
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
             child: const Text('İptal'),
+          ),
+          FilledButton(
+            onPressed: _confirm,
+            child: const Text('Tamam'),
           ),
         ],
       ),
