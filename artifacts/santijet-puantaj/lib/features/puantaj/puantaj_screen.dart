@@ -25,6 +25,7 @@ import '../../data/providers/uninsured_teams_provider.dart';
 import '../../data/providers/yevmiyeli_is_provider.dart';
 import '../../data/services/puantaj_export_service.dart';
 import '../../data/services/puantaj_report_builder.dart';
+import 'widgets/puantaj_export_period_picker.dart';
 import '../../domain/attendance/attendance_display.dart';
 import '../../domain/entities/attendance.dart';
 import '../../domain/entities/person.dart';
@@ -3063,6 +3064,7 @@ class _PuantajExportSheet extends StatefulWidget {
 
 class _PuantajExportSheetState extends State<_PuantajExportSheet> {
   late PuantajReportPeriod _period = widget.initialPeriod;
+  late String _anchorDate = widget.anchorDate;
   late PuantajExportLayout _layout = PuantajExportLayout.isim;
   late Set<String> _selectedPersonIds;
   late Set<AttendanceStatus> _includedStatuses;
@@ -3106,7 +3108,7 @@ class _PuantajExportSheetState extends State<_PuantajExportSheet> {
   }
 
   List<String> get _periodDays => PuantajDate.daysForReportPeriod(
-        anchorDate: widget.anchorDate,
+        anchorDate: _anchorDate,
         daily: _period == PuantajReportPeriod.daily,
         weekly: _period == PuantajReportPeriod.weekly,
       );
@@ -3212,11 +3214,11 @@ class _PuantajExportSheetState extends State<_PuantajExportSheet> {
   String get _rangeHint {
     switch (_period) {
       case PuantajReportPeriod.daily:
-        return widget.anchorDate;
+        return _anchorDate;
       case PuantajReportPeriod.weekly:
-        return PuantajDate.weekLabel(PuantajDate.weekDays(widget.anchorDate));
+        return PuantajDate.weekLabel(PuantajDate.weekDays(_anchorDate));
       case PuantajReportPeriod.monthly:
-        return PuantajDate.monthLabel(widget.anchorDate);
+        return PuantajDate.monthLabel(_anchorDate);
     }
   }
 
@@ -3273,14 +3275,24 @@ class _PuantajExportSheetState extends State<_PuantajExportSheet> {
   void _setPeriod(PuantajReportPeriod period) {
     setState(() {
       _period = period;
-      final available = _eligiblePeople.map((p) => p.id).toSet();
-      _selectedPersonIds = _selectedPersonIds.intersection(available);
-      // Dönem değişince uygun kimse kalmazsa yine tümünü seç.
-      if (_selectedPersonIds.isEmpty) {
-        _selectedPersonIds = available;
-      }
-      _error = null;
+      _refreshSelectionAfterPeriodChange();
     });
+  }
+
+  void _setAnchorDate(String date) {
+    setState(() {
+      _anchorDate = date;
+      _refreshSelectionAfterPeriodChange();
+    });
+  }
+
+  void _refreshSelectionAfterPeriodChange() {
+    final available = _eligiblePeople.map((p) => p.id).toSet();
+    _selectedPersonIds = _selectedPersonIds.intersection(available);
+    if (_selectedPersonIds.isEmpty) {
+      _selectedPersonIds = available;
+    }
+    _error = null;
   }
 
   void _selectAllPeople() {
@@ -3387,7 +3399,7 @@ class _PuantajExportSheetState extends State<_PuantajExportSheet> {
         people: _exportPeople,
         attendance: widget.attendance,
         period: _period,
-        anchorDate: widget.anchorDate,
+        anchorDate: _anchorDate,
         layout: _layout,
         uninsuredTeams: widget.uninsuredTeams,
         yevmiyeliEntries: widget.yevmiyeliEntries,
@@ -3478,6 +3490,13 @@ class _PuantajExportSheetState extends State<_PuantajExportSheet> {
           ],
           selected: {_period},
           onSelectionChanged: _busy ? null : (s) => _setPeriod(s.first),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        PuantajExportPeriodField(
+          period: _period,
+          anchorDate: _anchorDate,
+          enabled: !_busy,
+          onChanged: _setAnchorDate,
         ),
         const SizedBox(height: AppSpacing.md),
         Text('Çıktı türü', style: theme.textTheme.labelLarge),
