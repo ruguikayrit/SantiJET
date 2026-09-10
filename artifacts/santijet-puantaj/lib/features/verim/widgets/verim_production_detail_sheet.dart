@@ -8,18 +8,20 @@ import '../../../core/widgets/production_triple_progress.dart';
 import '../../../domain/entities/production.dart';
 import '../../../domain/models/production_metrics.dart';
 
-/// Verim imalat satırı — zaman + birim verim çizgi grafikleri (alt alta).
+/// Verim imalat satırı — metraj · süre · adam-gün · verim (alt alta).
 class VerimProductionCharts extends StatelessWidget {
   const VerimProductionCharts({
     required this.production,
     super.key,
     this.inline = false,
+    this.chartHeight = 150,
   });
 
   final Production production;
 
   /// Liste kartında üst bilgi zaten gösteriliyorsa ekip/rozet gizlenir.
   final bool inline;
+  final double chartHeight;
 
   List<_VerimTimelinePoint> _timeline() {
     final byDay = <DateTime, ({double qty, double labor})>{};
@@ -37,10 +39,15 @@ class VerimProductionCharts extends StatelessWidget {
     if (byDay.isEmpty) return const [];
 
     final keys = byDay.keys.toList()..sort();
-    final hasMetrajPlan =
-        production.plannedQty > 0 && production.plannedDays > 0;
-    final dailyPlanQty = hasMetrajPlan
-        ? production.plannedQty / production.plannedDays
+    final plannedDays = production.plannedDays;
+    final hasMetrajPlan = production.plannedQty > 0 && plannedDays > 0;
+    final hasSurePlan = plannedDays > 0;
+    final hasLaborPlan = production.plannedWorkerDays > 0 && plannedDays > 0;
+
+    final dailyPlanQty =
+        hasMetrajPlan ? production.plannedQty / plannedDays : 0.0;
+    final dailyPlanLabor = hasLaborPlan
+        ? production.plannedWorkerDays / plannedDays
         : 0.0;
 
     var cumQty = 0.0;
@@ -59,11 +66,19 @@ class VerimProductionCharts extends StatelessWidget {
             actualQty: cumQty,
             actualWorkerDays: cumLabor,
           );
+          final workedDays = dayIndex.toDouble();
+          final plannedWorkedDays = hasSurePlan
+              ? workedDays.clamp(0.0, plannedDays.toDouble()).toDouble()
+              : 0.0;
           return _VerimTimelinePoint(
             label: '${d.day}.${d.month}',
             tooltip: PuantajDate.format(d),
             cumulativeQty: cumQty,
             plannedCumulativeQty: hasMetrajPlan ? dailyPlanQty * dayIndex : 0,
+            cumulativeWorkedDays: workedDays,
+            plannedCumulativeWorkedDays: plannedWorkedDays,
+            cumulativeLabor: cumLabor,
+            plannedCumulativeLabor: hasLaborPlan ? dailyPlanLabor * dayIndex : 0,
             efficiencyPct: eff != null ? eff * 100 : null,
           );
         }(),
@@ -109,8 +124,124 @@ class VerimProductionCharts extends StatelessWidget {
           ],
           const SizedBox(height: AppSpacing.md),
         ],
+        _VerimChartSection(
+          title: 'Metraj · Kümülatif',
+          points: points,
+          height: chartHeight,
+          unitSuffix: unit.isEmpty ? '' : ' $unit',
+          primaryValue: (p) => p.cumulativeQty,
+          secondaryValue: (p) => p.plannedCumulativeQty,
+          showSecondary: metrics.metraj.hasPlan,
+          primaryLabel: 'Gerçek',
+          secondaryLabel: 'Plan',
+        ),
+        const SizedBox(height: AppSpacing.lg),
+        _VerimChartSection(
+          title: 'Süre · Çalışılan gün',
+          points: points,
+          height: chartHeight,
+          unitSuffix: ' gün',
+          primaryValue: (p) => p.cumulativeWorkedDays,
+          secondaryValue: (p) => p.plannedCumulativeWorkedDays,
+          showSecondary: metrics.sure.hasPlan,
+          primaryLabel: 'Gerçek',
+          secondaryLabel: 'Plan',
+        ),
+        const SizedBox(height: AppSpacing.lg),
+        _VerimChartSection(
+          title: 'Adam-gün · Kümülatif',
+          points: points,
+          height: chartHeight,
+          unitSuffix: ' AG',
+          primaryValue: (p) => p.cumulativeLabor,
+          secondaryValue: (p) => p.plannedCumulativeLabor,
+          showSecondary: metrics.labor.hasPlan,
+          primaryLabel: 'Gerçek',
+          secondaryLabel: 'Plan',
+        ),
+        const SizedBox(height: AppSpacing.lg),
+        _VerimChartSection(
+          title: 'Verim · Birim verim',
+          points: points,
+          height: chartHeight,
+          unitSuffix: '%',
+          primaryValue: (p) => p.efficiencyPct,
+          secondaryValue: (_) => 100,
+          showSecondary: metrics.canComputeEfficiency,
+          primaryLabel: 'Verim',
+          secondaryLabel: 'Plan',
+          minY: 0,
+        ),
+        const SizedBox(height: AppSpacing.sm),
         Text(
-          'Zaman · Kümülatif metraj',
+          'Her nokta o güne kadar kümülatif metraj, süre, adam-gün ve birim '
+          'verimi gösterir.',
+          style: theme.textTheme.labelSmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _VerimTimelinePoint {
+  const _VerimTimelinePoint({
+    required this.label,
+    required this.tooltip,
+    required this.cumulativeQty,
+    required this.plannedCumulativeQty,
+    required this.cumulativeWorkedDays,
+    required this.plannedCumulativeWorkedDays,
+    required this.cumulativeLabor,
+    required this.plannedCumulativeLabor,
+    required this.efficiencyPct,
+  });
+
+  final String label;
+  final String tooltip;
+  final double cumulativeQty;
+  final double plannedCumulativeQty;
+  final double cumulativeWorkedDays;
+  final double plannedCumulativeWorkedDays;
+  final double cumulativeLabor;
+  final double plannedCumulativeLabor;
+  final double? efficiencyPct;
+}
+
+class _VerimChartSection extends StatelessWidget {
+  const _VerimChartSection({
+    required this.title,
+    required this.points,
+    required this.height,
+    required this.unitSuffix,
+    required this.primaryValue,
+    required this.secondaryValue,
+    required this.showSecondary,
+    required this.primaryLabel,
+    required this.secondaryLabel,
+    this.minY = 0,
+  });
+
+  final String title;
+  final List<_VerimTimelinePoint> points;
+  final double height;
+  final String unitSuffix;
+  final double? Function(_VerimTimelinePoint) primaryValue;
+  final double Function(_VerimTimelinePoint) secondaryValue;
+  final bool showSecondary;
+  final String primaryLabel;
+  final String secondaryLabel;
+  final double minY;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          title,
           style: theme.textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700),
         ),
         const SizedBox(height: AppSpacing.xs),
@@ -127,68 +258,18 @@ class VerimProductionCharts extends StatelessWidget {
         const SizedBox(height: AppSpacing.sm),
         _DualLineChart(
           points: points,
-          height: 180,
-          unitSuffix: unit.isEmpty ? '' : ' $unit',
-          primaryValue: (p) => p.cumulativeQty,
-          secondaryValue: (p) => p.plannedCumulativeQty,
-          showSecondary: metrics.metraj.hasPlan,
-          primaryLabel: 'Gerçek',
-          secondaryLabel: 'Plan',
-        ),
-        const SizedBox(height: AppSpacing.lg),
-        Text(
-          'Verim · Birim verim',
-          style: theme.textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700),
-        ),
-        const SizedBox(height: AppSpacing.xs),
-        _LegendRow(
-          items: const [
-            _LegendItem(color: AppColors.electricBlue, label: 'Verim %'),
-            _LegendItem(
-              color: AppColors.warning,
-              label: 'Plan %100',
-              dashed: true,
-            ),
-          ],
-        ),
-        const SizedBox(height: AppSpacing.sm),
-        _DualLineChart(
-          points: points,
-          height: 180,
-          unitSuffix: '%',
-          primaryValue: (p) => p.efficiencyPct,
-          secondaryValue: (_) => 100,
-          showSecondary: metrics.canComputeEfficiency,
-          primaryLabel: 'Verim',
-          secondaryLabel: 'Plan',
-          minY: 0,
-        ),
-        const SizedBox(height: AppSpacing.sm),
-        Text(
-          'Her nokta o güne kadar kümülatif metraj ve birim verimi gösterir.',
-          style: theme.textTheme.labelSmall?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
+          height: height,
+          unitSuffix: unitSuffix,
+          primaryValue: primaryValue,
+          secondaryValue: secondaryValue,
+          showSecondary: showSecondary,
+          primaryLabel: primaryLabel,
+          secondaryLabel: secondaryLabel,
+          minY: minY,
         ),
       ],
     );
   }
-}
-
-class _VerimTimelinePoint {
-  const _VerimTimelinePoint({
-    required this.label,
-    required this.tooltip,
-    required this.cumulativeQty,
-    required this.plannedCumulativeQty,
-    required this.efficiencyPct,
-  });
-
-  final String label;
-  final String tooltip;
-  final double cumulativeQty;
-  final double plannedCumulativeQty;
-  final double? efficiencyPct;
 }
 
 class _LegendItem {

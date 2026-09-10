@@ -19,6 +19,7 @@ class SJCard extends StatelessWidget {
     this.onTap,
     this.padding = const EdgeInsets.all(AppSpacing.md),
     this.accentColor,
+    this.backgroundColor,
     this.selected = false,
     super.key,
   });
@@ -30,6 +31,7 @@ class SJCard extends StatelessWidget {
     VoidCallback? onTap,
     EdgeInsetsGeometry padding = const EdgeInsets.all(AppSpacing.md),
     Color? accentColor,
+    Color? backgroundColor,
     bool selected = false,
   }) {
     return SJCard(
@@ -37,6 +39,7 @@ class SJCard extends StatelessWidget {
       onTap: onTap,
       padding: padding,
       accentColor: accentColor,
+      backgroundColor: backgroundColor,
       selected: selected,
       child: Builder(
         builder: (context) => builder(context, Theme.of(context)),
@@ -48,6 +51,9 @@ class SJCard extends StatelessWidget {
   final VoidCallback? onTap;
   final EdgeInsetsGeometry padding;
   final Color? accentColor;
+
+  /// Özel kart yüzeyi — null ise [AppColors.cardSurface].
+  final Color? backgroundColor;
   final bool selected;
 
   static TextTheme _forceInk(
@@ -280,12 +286,17 @@ class SJCard extends StatelessWidget {
     final useDarkContrast = AppColors.useDarkCards;
     final useLightContrast = AppColors.isSantijetPro;
     final useContrast = useDarkContrast || useLightContrast;
-    final surface = useContrast
-        ? AppColors.cardSurface
-        : (theme.cardTheme.color ?? theme.colorScheme.surface);
+    final surface = backgroundColor ??
+        (useContrast
+            ? AppColors.cardSurface
+            : (theme.cardTheme.color ?? theme.colorScheme.surface));
+    final tintedSurface = backgroundColor != null;
+    final lightTint = tintedSurface && surface.computeLuminance() > 0.35;
     final borderColor = selected
         ? theme.colorScheme.primary
-        : (useContrast ? AppColors.cardBorder : theme.dividerColor);
+        : tintedSurface
+            ? Color.lerp(surface, AppColors.cardBorder, lightTint ? 0.55 : 0.35)!
+            : (useContrast ? AppColors.cardBorder : theme.dividerColor);
 
     // Accent şerit: IntrinsicHeight kullanma — LayoutBuilder / CustomPaint
     // gibi çocuklar intrinsik yüksekliği 0 verir; kart grafik açılınca
@@ -316,8 +327,8 @@ class SJCard extends StatelessWidget {
             ),
     );
 
-    // Pro açık kart öncelikli — koyu chrome’da koyu mürekkep.
-    if (useLightContrast) {
+    // Özel açık tint veya Pro açık kart — koyu mürekkep.
+    if (lightTint || (useLightContrast && !tintedSurface)) {
       content = Theme(
         data: lightContrastTheme(theme),
         child: IconTheme.merge(
@@ -331,7 +342,7 @@ class SJCard extends StatelessWidget {
           ),
         ),
       );
-    } else if (useDarkContrast) {
+    } else if (useDarkContrast || (tintedSurface && !lightTint)) {
       content = Theme(
         data: darkContrastTheme(theme),
         child: IconTheme.merge(

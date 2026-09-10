@@ -12,6 +12,7 @@ import '../../core/widgets/santijet_header.dart';
 import '../../data/providers/app_data_provider.dart';
 import '../../data/providers/verim_provider.dart';
 import '../imalat/widgets/production_chart_panel.dart';
+import 'widgets/verim_card_colors.dart';
 import 'widgets/verim_production_detail_sheet.dart';
 
 /// Verim — grafik + ekip özeti + ad/% listesi (detay İmalat kartında).
@@ -127,8 +128,11 @@ class _VerimScreenState extends ConsumerState<VerimScreen> {
                   ),
                 )
               else
-                for (final row in filteredRows) ...[
-                  _VerimNamePercentCard(row: row),
+                for (var i = 0; i < filteredRows.length; i++) ...[
+                  _VerimNamePercentCard(
+                    row: filteredRows[i],
+                    colorIndex: i,
+                  ),
                   const SizedBox(height: AppSpacing.sm),
                 ],
             ],
@@ -241,16 +245,22 @@ class _TeamVerimSummaryStrip extends StatelessWidget {
 }
 
 class _VerimNamePercentCard extends StatelessWidget {
-  const _VerimNamePercentCard({required this.row});
+  const _VerimNamePercentCard({
+    required this.row,
+    required this.colorIndex,
+  });
 
   final VerimRow row;
+  final int colorIndex;
 
   @override
   Widget build(BuildContext context) {
     final efficiency = row.unitEfficiency;
     final hasEntries = row.production.dailyEntries.isNotEmpty;
+    final cardBg = VerimCardColors.at(colorIndex);
 
     return SJCard.builder(
+      backgroundColor: cardBg,
       builder: (context, theme) {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -284,8 +294,9 @@ class _VerimNamePercentCard extends StatelessWidget {
                     '%${(efficiency * 100).toStringAsFixed(0)}',
                     style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w700,
-                      color: AppColors.statusInkOnCard(
+                      color: AppColors.statusInk(
                         efficiencyColorForRatio(efficiency),
+                        surface: cardBg,
                       ),
                     ),
                   )
