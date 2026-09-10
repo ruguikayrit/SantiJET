@@ -482,7 +482,6 @@ class _PuantajScreenState extends ConsumerState<PuantajScreen> {
               color: theme.colorScheme.primary,
             ),
             title: const Text('Personel'),
-            subtitle: const Text('Kayıtlı personel yönetimi'),
             onTap: () {
               Navigator.of(context).pop();
               context.push(AppRoutes.personel);
@@ -495,7 +494,6 @@ class _PuantajScreenState extends ConsumerState<PuantajScreen> {
               color: theme.colorScheme.primary,
             ),
             title: const Text('Ekip'),
-            subtitle: const Text('Ekip adı + çalışan sayısı'),
             onTap: () async {
               Navigator.of(context).pop();
               if (!canEdit) {
@@ -535,7 +533,6 @@ class _PuantajScreenState extends ConsumerState<PuantajScreen> {
               color: theme.colorScheme.primary,
             ),
             title: const Text('Yevmiyeli iş'),
-            subtitle: const Text('Taşeron parça iş kaydı'),
             onTap: () {
               Navigator.of(context).pop();
               openYevmiyeliIsEditor(

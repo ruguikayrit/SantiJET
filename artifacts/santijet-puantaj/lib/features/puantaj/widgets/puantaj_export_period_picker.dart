@@ -242,6 +242,21 @@ class _MonthlyPickerDialog extends StatefulWidget {
 }
 
 class _MonthlyPickerDialogState extends State<_MonthlyPickerDialog> {
+  static const _monthAbbr = [
+    'Oca',
+    'Şub',
+    'Mar',
+    'Nis',
+    'May',
+    'Haz',
+    'Tem',
+    'Ağu',
+    'Eyl',
+    'Eki',
+    'Kas',
+    'Ara',
+  ];
+
   late int _year;
   late int _selectedMonth;
 
@@ -264,63 +279,59 @@ class _MonthlyPickerDialogState extends State<_MonthlyPickerDialog> {
     final monthLabel = PuantajDate.monthLabel(
       PuantajDate.format(DateTime(_year, _selectedMonth, 1)),
     );
+    final now = DateTime.now();
+
     return Theme(
       data: theme,
       child: AlertDialog(
         title: const Text('Ay seçin'),
+        contentPadding: const EdgeInsets.fromLTRB(
+          AppSpacing.lg,
+          AppSpacing.sm,
+          AppSpacing.lg,
+          AppSpacing.md,
+        ),
         content: SizedBox(
-          width: 320,
+          width: 340,
           child: Column(
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Row(
-                children: [
-                  IconButton(
-                    onPressed: () => setState(() => _year--),
-                    icon: const Icon(Icons.chevron_left),
-                  ),
-                  Expanded(
-                    child: Text(
-                      '$_year',
-                      textAlign: TextAlign.center,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: () => setState(() => _year++),
-                    icon: const Icon(Icons.chevron_right),
-                  ),
-                ],
+              _YearStepperBar(
+                year: _year,
+                onPrev: () => setState(() => _year--),
+                onNext: () => setState(() => _year++),
               ),
-              const SizedBox(height: AppSpacing.sm),
+              const SizedBox(height: AppSpacing.md),
               GridView.count(
-                crossAxisCount: 3,
+                crossAxisCount: 4,
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
-                mainAxisSpacing: AppSpacing.xs,
-                crossAxisSpacing: AppSpacing.xs,
-                childAspectRatio: 2.2,
+                mainAxisSpacing: AppSpacing.sm,
+                crossAxisSpacing: AppSpacing.sm,
+                childAspectRatio: 1.35,
                 children: [
                   for (var m = 1; m <= 12; m++)
                     _MonthTile(
-                      label: PuantajDate.trMonths[m - 1],
+                      label: _monthAbbr[m - 1],
+                      fullLabel: PuantajDate.trMonths[m - 1],
                       selected: m == _selectedMonth,
+                      isCurrentMonth:
+                          _year == now.year && m == now.month,
                       onTap: () => setState(() => _selectedMonth = m),
                     ),
                 ],
               ),
-              const SizedBox(height: AppSpacing.sm),
-              Text(
-                monthLabel,
-                textAlign: TextAlign.center,
-                style: theme.textTheme.labelLarge?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
+              const SizedBox(height: AppSpacing.md),
+              _MonthSelectionSummary(label: monthLabel),
             ],
           ),
+        ),
+        actionsPadding: const EdgeInsets.fromLTRB(
+          AppSpacing.md,
+          0,
+          AppSpacing.md,
+          AppSpacing.sm,
         ),
         actions: [
           TextButton(
@@ -337,35 +348,219 @@ class _MonthlyPickerDialogState extends State<_MonthlyPickerDialog> {
   }
 }
 
+class _YearStepperBar extends StatelessWidget {
+  const _YearStepperBar({
+    required this.year,
+    required this.onPrev,
+    required this.onNext,
+  });
+
+  final int year;
+  final VoidCallback onPrev;
+  final VoidCallback onNext;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final surface = theme.colorScheme.surfaceContainerHighest.withValues(
+      alpha: theme.brightness == Brightness.dark ? 0.45 : 0.65,
+    );
+
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.xs,
+        vertical: AppSpacing.xs,
+      ),
+      decoration: BoxDecoration(
+        color: surface,
+        borderRadius: AppRadii.md,
+        border: Border.all(color: theme.colorScheme.outlineVariant),
+      ),
+      child: Row(
+        children: [
+          _StepperIconButton(
+            icon: Icons.chevron_left,
+            tooltip: 'Önceki yıl',
+            onPressed: onPrev,
+          ),
+          Expanded(
+            child: Column(
+              children: [
+                Text(
+                  'Yıl',
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                    letterSpacing: 0.4,
+                  ),
+                ),
+                Text(
+                  '$year',
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    height: 1.1,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          _StepperIconButton(
+            icon: Icons.chevron_right,
+            tooltip: 'Sonraki yıl',
+            onPressed: onNext,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StepperIconButton extends StatelessWidget {
+  const _StepperIconButton({
+    required this.icon,
+    required this.tooltip,
+    required this.onPressed,
+  });
+
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return IconButton(
+      tooltip: tooltip,
+      visualDensity: VisualDensity.compact,
+      style: IconButton.styleFrom(
+        foregroundColor: AppColors.electricBlue,
+        backgroundColor: theme.colorScheme.surface.withValues(alpha: 0.85),
+        shape: RoundedRectangleBorder(borderRadius: AppRadii.sm),
+      ),
+      onPressed: onPressed,
+      icon: Icon(icon),
+    );
+  }
+}
+
+class _MonthSelectionSummary extends StatelessWidget {
+  const _MonthSelectionSummary({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.electricBlue.withValues(alpha: 0.1),
+        borderRadius: AppRadii.md,
+        border: Border.all(
+          color: AppColors.electricBlue.withValues(alpha: 0.28),
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.event_outlined,
+            size: 20,
+            color: AppColors.electricBlue,
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Seçili dönem',
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                Text(
+                  label,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _MonthTile extends StatelessWidget {
   const _MonthTile({
     required this.label,
+    required this.fullLabel,
     required this.selected,
+    required this.isCurrentMonth,
     required this.onTap,
   });
 
   final String label;
+  final String fullLabel;
   final bool selected;
+  final bool isCurrentMonth;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Material(
-      color: selected
-          ? AppColors.electricBlue
-          : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-      borderRadius: AppRadii.sm,
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        child: Center(
-          child: Text(
-            label,
-            style: theme.textTheme.labelLarge?.copyWith(
-              fontWeight: FontWeight.w600,
-              color: selected ? Colors.white : theme.colorScheme.onSurface,
-            ),
+    final borderColor = selected
+        ? AppColors.electricBlue
+        : isCurrentMonth
+            ? AppColors.electricBlue.withValues(alpha: 0.55)
+            : theme.colorScheme.outlineVariant;
+
+    return Tooltip(
+      message: fullLabel,
+      child: Material(
+        color: selected
+            ? AppColors.electricBlue
+            : theme.colorScheme.surface,
+        elevation: selected ? 2 : 0,
+        shadowColor: AppColors.electricBlue.withValues(alpha: 0.35),
+        shape: RoundedRectangleBorder(
+          borderRadius: AppRadii.md,
+          side: BorderSide(
+            color: borderColor,
+            width: selected ? 1.5 : 1,
+          ),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              Text(
+                label,
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.2,
+                  color: selected ? Colors.white : theme.colorScheme.onSurface,
+                ),
+              ),
+              if (isCurrentMonth && !selected)
+                Positioned(
+                  bottom: 6,
+                  child: Container(
+                    width: 5,
+                    height: 5,
+                    decoration: BoxDecoration(
+                      color: AppColors.electricBlue,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
+            ],
           ),
         ),
       ),
