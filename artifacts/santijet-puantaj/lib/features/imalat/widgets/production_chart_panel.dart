@@ -170,7 +170,7 @@ class ProductionChartPanel extends ConsumerWidget {
             if (s.unitEfficiency != null)
               _ChartSlice(
                 label: s.teamName,
-                value: (s.unitEfficiency! * 100).clamp(0, 200),
+                value: s.unitEfficiency! * 100,
                 color: AppColors.electricBlue,
               ),
         ];
@@ -214,7 +214,7 @@ class ProductionChartPanel extends ConsumerWidget {
           for (var i = 0; i < top.length; i++)
             _ChartSlice(
               label: top[i].name,
-              value: (top[i].eff * 100).clamp(0, 200),
+              value: top[i].eff * 100,
               color: palette[i % palette.length],
             ),
         ];
