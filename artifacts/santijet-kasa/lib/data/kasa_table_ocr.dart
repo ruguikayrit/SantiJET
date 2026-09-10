@@ -4,7 +4,7 @@ import '../domain/kasa_hareket.dart';
 import '../domain/kasa_lookups.dart';
 import '../domain/kasa_ocr_parser.dart';
 import '../domain/kasa_rules.dart';
-import '../domain/money_format.dart';
+import 'kasa_ocr_normalize.dart';
 
 /// OCR kelimesi — konum ile.
 class OcrWord {
@@ -160,16 +160,8 @@ abstract final class KasaTableOcr {
 
   static int _findHeaderRow(List<List<OcrWord>> rows) {
     for (var i = 0; i < rows.length && i < 8; i++) {
-      final joined = rows[i].map((w) => w.text.toLowerCase()).join(' ');
-      final hits = [
-        'tarih',
-        'tedarik',
-        'açıklama',
-        'aciklama',
-        'gelir',
-        'gider',
-      ].where(joined.contains).length;
-      if (hits >= 3) return i;
+      final joined = rows[i].map((w) => KasaOcrNormalize.fold(w.text)).join(' ');
+      if (KasaOcrNormalize.isHeaderLine(joined)) return i;
     }
     return -1;
   }
@@ -266,41 +258,43 @@ abstract final class KasaTableOcr {
   }) {
     final tarih = _parseDate(cells['tarih'] ?? '') ??
         _parseDate(_dateRe.firstMatch(cells.values.join(' '))?.group(0) ?? '');
-    final gelir = MoneyFormat.tryParse(cells['gelir']);
-    final gider = MoneyFormat.tryParse(cells['gider']);
     var aciklama = (cells['aciklama'] ?? '').trim();
     final tedarikci = (cells['tedarikci'] ?? '').trim();
     if (aciklama.isEmpty) aciklama = tedarikci;
     if (aciklama.isEmpty) return null;
 
-    double? gIn = gelir != null && gelir > 0 ? gelir : null;
-    double? gOut = gider != null && gider > 0 ? gider : null;
-    if (gIn != null && gOut != null) {
-      // İkisi dolu olmasın — boş hücre kayması: küçük olanı yok say
-      if (gIn >= gOut) {
-        gOut = null;
-      } else {
-        gIn = null;
-      }
-    }
+    var odemeRaw = (cells['odeme'] ?? '').trim();
+    final odeme = KasaOcrNormalize.matchOdeme(odemeRaw);
+    final context = '${cells.values.join(' ')} $aciklama $tedarikci';
+
+    var gIn = KasaOcrNormalize.parseMoney(cells['gelir']);
+    var gOut = KasaOcrNormalize.parseMoney(cells['gider']);
     if (gIn == null && gOut == null) {
-      // Tutarı yanlış sütunda okumuş olabilir
-      for (final key in ['aciklama', 'odeme', 'ek', 'tedarikci']) {
-        final v = MoneyFormat.tryParse(cells[key] ?? '');
-        if (v != null && v > 0) {
-          gOut = v;
-          break;
-        }
-      }
+      final amounts = KasaOcrNormalize.allAmounts(cells.values.join(' '));
+      final split = KasaOcrNormalize.splitAmounts(
+        amounts: amounts,
+        context: context,
+        odeme: odeme,
+      );
+      gIn = split.gelir;
+      gOut = split.gider;
+    } else {
+      final split = KasaOcrNormalize.splitAmounts(
+        amounts: [
+          if (gIn != null) gIn,
+          if (gOut != null) gOut,
+        ],
+        context: context,
+        odeme: odeme,
+      );
+      gIn = split.gelir;
+      gOut = split.gider;
     }
 
     final err = validateHareket(aciklama: aciklama, gelir: gIn, gider: gOut);
     if (err != null) return null;
 
-    var odeme = (cells['odeme'] ?? '').trim();
-    odeme = _matchOdeme(odeme);
-    var belge = (cells['belge'] ?? '').trim();
-    belge = _matchBelge(belge);
+    var belge = KasaOcrNormalize.matchBelge((cells['belge'] ?? '').trim());
     var santiye = (cells['santiye'] ?? '').trim();
     if (santiye.isEmpty) santiye = defaultSantiye;
 
@@ -314,7 +308,7 @@ abstract final class KasaTableOcr {
       odemeSekli: odeme.isEmpty ? OdemeSekli.nakit : odeme,
       belgeTuru: belge.isEmpty ? BelgeTuru.yok : belge,
       santiye: santiye,
-      ekAciklama: '${(cells['ek'] ?? '').trim()} · $sourceLabel'.trim(),
+      ekAciklama: (cells['ek'] ?? '').trim(),
       createdAt: stamp,
       updatedAt: stamp,
     );
@@ -340,8 +334,8 @@ abstract final class KasaTableOcr {
     var skipped = 0;
 
     for (final line in lines) {
-      final lower = line.toLowerCase();
-      if (_isHeader(lower)) {
+      final lower = KasaOcrNormalize.fold(line);
+      if (KasaOcrNormalize.isHeaderLine(lower)) {
         skipped++;
         continue;
       }
@@ -371,9 +365,7 @@ abstract final class KasaTableOcr {
               peeled.odeme.isEmpty ? OdemeSekli.nakit : peeled.odeme,
           belgeTuru: peeled.belge.isEmpty ? BelgeTuru.yok : peeled.belge,
           santiye: peeled.santiye.isEmpty ? defaultSantiye : peeled.santiye,
-          ekAciklama: peeled.ek.isEmpty
-              ? 'Kaynak: $sourceLabel'
-              : '${peeled.ek} · $sourceLabel',
+          ekAciklama: peeled.ek,
           createdAt: stamp,
           updatedAt: stamp,
         ),
@@ -381,23 +373,6 @@ abstract final class KasaTableOcr {
     }
 
     return (hareketler: out, skipped: skipped);
-  }
-
-  static bool _isHeader(String lower) {
-    final hits = [
-      'tarih',
-      'tedarik',
-      'açıklama',
-      'aciklama',
-      'gelir',
-      'gider',
-      'ödeme',
-      'belge',
-      'şantiye',
-    ].where(lower.contains).length;
-    return hits >= 3 ||
-        lower.contains('iş avansı') ||
-        lower.contains('harcama tablosu');
   }
 
   static _Peeled? _peelLine(String line, {required String defaultSantiye}) {
@@ -425,85 +400,47 @@ abstract final class KasaTableOcr {
       rest = rest.replaceFirst(santiye, ' ').trim();
     }
 
-    // Belge
     var belge = '';
     for (final b in ['FATURA', 'FİŞ', 'FIS', 'YOK']) {
       final re = RegExp('\\b${RegExp.escape(b)}\\b', caseSensitive: false);
       if (re.hasMatch(rest)) {
-        belge = b == 'FIS' ? BelgeTuru.fis : (b == 'FİŞ' ? BelgeTuru.fis : b);
-        if (b == 'FATURA') belge = BelgeTuru.fatura;
-        if (b == 'YOK') belge = BelgeTuru.yok;
+        belge = KasaOcrNormalize.matchBelge(b);
         rest = rest.replaceFirst(re, ' ').trim();
         break;
       }
     }
 
-    // Ödeme
     var odeme = '';
-    final odemePatterns = <(RegExp, String)>[
-      (RegExp(r'ŞAHS[Iİ]\s*K\.?\s*KART[Iİ]', caseSensitive: false),
-        OdemeSekli.sahsiKart),
-      (RegExp(r'ŞİRKET\s*K\.?\s*KART', caseSensitive: false),
-        OdemeSekli.sirketKart),
-      (RegExp(r'\bHAVALE\b', caseSensitive: false), OdemeSekli.havale),
-      (RegExp(r'\bNAK[Iİ]T\b', caseSensitive: false), OdemeSekli.nakit),
-      (RegExp(r'\bD[Iİ]ĞER\b|\bDIGER\b', caseSensitive: false),
-        OdemeSekli.diger),
+    final odemePatterns = <RegExp>[
+      RegExp(r'ŞAHS[Iİ]\s*K\.?\s*KART[Iİ]', caseSensitive: false),
+      RegExp(r'ŞİRKET\s*K\.?\s*KART', caseSensitive: false),
+      RegExp(r'\bHAVALE\b', caseSensitive: false),
+      RegExp(r'\bNAK[Iİ]T\b', caseSensitive: false),
+      RegExp(r'\bD[Iİ]ĞER\b|\bDIGER\b', caseSensitive: false),
     ];
-    for (final (re, label) in odemePatterns) {
-      if (re.hasMatch(rest)) {
-        odeme = label;
+    for (final re in odemePatterns) {
+      final m = re.firstMatch(rest);
+      if (m != null) {
+        odeme = KasaOcrNormalize.matchOdeme(m.group(0)!);
         rest = rest.replaceFirst(re, ' ').trim();
         break;
       }
     }
 
-    // Paralar
-    final moneyRe = RegExp(
-      r'₺\s*(-?\d{1,3}(?:\.\d{3})*(?:,\d{2})?|-?\d+,\d{2})|'
-      r'(-?\d{1,3}(?:\.\d{3})*,\d{2})\s*(?:₺|TL)?',
-      caseSensitive: false,
-    );
-    final moneyMatches = moneyRe.allMatches(rest).toList();
-    final amounts = <double>[];
-    for (final m in moneyMatches) {
-      final rawAmt = m.group(1) ?? m.group(2) ?? '';
-      final v = MoneyFormat.tryParse(rawAmt);
-      if (v != null && v > 0) amounts.add(v);
+    final amounts = KasaOcrNormalize.allAmounts(rest);
+    for (final m in KasaOcrNormalize.moneyPattern.allMatches(rest)) {
       rest = rest.replaceFirst(m.group(0)!, ' ');
     }
     rest = rest.replaceAll(RegExp(r'\s+'), ' ').trim();
 
-    double? gelir;
-    double? gider;
-    final lower = line.toLowerCase();
-    final incomeHint = lower.contains('gönder') ||
-        lower.contains('avans') ||
-        lower.contains('hesabıma') ||
-        lower.contains('hesabima');
-    if (amounts.length >= 2) {
-      gelir = amounts[amounts.length - 2];
-      gider = amounts.last;
-      // İkisi birden: gelir sütunu boşsa OCR iki kez aynı tutarı okumuş olabilir
-      if ((gelir - gider).abs() < 0.01) {
-        gelir = null;
-      } else if (!incomeHint) {
-        // Defterde çoğu satır sadece gider — ilk tutarı at (yanlış pozitif)
-        gelir = null;
-      }
-    } else if (amounts.length == 1) {
-      if (incomeHint && odeme == OdemeSekli.havale) {
-        gelir = amounts.first;
-      } else {
-        gider = amounts.first;
-      }
-    } else {
-      return null;
-    }
-
-    if (gelir != null && gider != null) {
-      gider = null;
-    }
+    final split = KasaOcrNormalize.splitAmounts(
+      amounts: amounts,
+      context: line,
+      odeme: odeme,
+    );
+    final gelir = split.gelir;
+    final gider = split.gider;
+    if (gelir == null && gider == null) return null;
 
     // Kalan: tedarikçi + açıklama + ek
     var tedarikci = '';
@@ -556,26 +493,6 @@ abstract final class KasaTableOcr {
     var y = int.parse(m.group(3)!);
     if (y < 100) y += 2000;
     return DateTime(y, mo, d);
-  }
-
-  static String _matchOdeme(String raw) {
-    final t = raw.toUpperCase();
-    if (t.contains('HAVALE')) return OdemeSekli.havale;
-    if (t.contains('NAKİT') || t.contains('NAKIT')) return OdemeSekli.nakit;
-    if (t.contains('ŞİRKET') || t.contains('SIRKET')) {
-      return OdemeSekli.sirketKart;
-    }
-    if (t.contains('KART')) return OdemeSekli.sahsiKart;
-    if (t.contains('DİĞER') || t.contains('DIGER')) return OdemeSekli.diger;
-    return raw.trim();
-  }
-
-  static String _matchBelge(String raw) {
-    final t = raw.toUpperCase();
-    if (t.contains('FATURA')) return BelgeTuru.fatura;
-    if (t.contains('FİŞ') || t.contains('FIS')) return BelgeTuru.fis;
-    if (t.contains('YOK')) return BelgeTuru.yok;
-    return raw.trim();
   }
 
   static String _fold(String s) {

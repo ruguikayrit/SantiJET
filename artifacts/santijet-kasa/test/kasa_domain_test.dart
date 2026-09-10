@@ -11,7 +11,11 @@ import 'package:santijet_kasa/domain/money_format.dart';
 import 'package:santijet_kasa/data/demo_data.dart';
 import 'package:santijet_kasa/data/kasa_export_service.dart';
 import 'package:santijet_kasa/data/kasa_import_service.dart';
+import 'package:santijet_kasa/data/kasa_import_template_service.dart';
+import 'package:santijet_kasa/data/kasa_ocr_normalize.dart';
 import 'package:santijet_kasa/data/kasa_table_ocr.dart';
+import 'package:santijet_kasa/domain/import_row_check.dart';
+import 'package:santijet_kasa/domain/kasa_import_format.dart';
 
 void main() {
   group('validateHareket', () {
@@ -331,6 +335,132 @@ void main() {
       );
       expect(pdf.belgeTuru, BelgeTuru.fatura);
       expect(pdf.ekAciklama, contains('PDF'));
+    });
+  });
+
+  group('analyzeImportRows', () {
+    final now = DateTime(2026, 9, 10);
+
+    KasaHareket row({
+      DateTime? tarih,
+      String tedarikci = 'KOÇTAŞ YAPI MARKET',
+      String aciklama = 'CIVATA SOMUN',
+      double? gider = 350,
+      String odeme = OdemeSekli.sahsiKart,
+      String belge = BelgeTuru.fis,
+      String id = 'r1',
+    }) {
+      return KasaHareket(
+        id: id,
+        tarih: tarih ?? DateTime(2026, 8, 11),
+        tedarikci: tedarikci,
+        aciklama: aciklama,
+        gider: gider,
+        odemeSekli: odeme,
+        belgeTuru: belge,
+        createdAt: now,
+        updatedAt: now,
+      );
+    }
+
+    test('clean row has no issues', () {
+      final issues = analyzeImportRows(rows: [row()], now: now);
+      expect(issues.single, isEmpty);
+    });
+
+    test('flags unreadable date falling back to import time', () {
+      final issues = analyzeImportRows(rows: [row(tarih: now)], now: now);
+      expect(issues.single, contains(ImportIssue.tarihSupheli));
+    });
+
+    test('flags unknown odeme and belge', () {
+      final issues = analyzeImportRows(
+        rows: [row(odeme: 'ŞAHSI K.KARTI', belge: 'FIS')],
+        now: now,
+      );
+      expect(issues.single, contains(ImportIssue.odemeBilinmiyor));
+      expect(issues.single, contains(ImportIssue.belgeBilinmiyor));
+    });
+
+    test('flags short description', () {
+      final issues = analyzeImportRows(rows: [row(aciklama: 'X')], now: now);
+      expect(issues.single, contains(ImportIssue.aciklamaKisa));
+    });
+
+    test('flags duplicate against existing ledger', () {
+      final issues = analyzeImportRows(
+        rows: [row()],
+        existing: [row(id: 'existing')],
+        now: now,
+      );
+      expect(issues.single, contains(ImportIssue.mukerrer));
+    });
+
+    test('flags duplicate inside the same batch only once', () {
+      final issues = analyzeImportRows(
+        rows: [row(id: 'a'), row(id: 'b')],
+        now: now,
+      );
+      expect(issues.first, isNot(contains(ImportIssue.mukerrer)));
+      expect(issues.last, contains(ImportIssue.mukerrer));
+    });
+
+    test('duplicate key ignores Turkish spelling differences', () {
+      final issues = analyzeImportRows(
+        rows: [row(tedarikci: 'KOCTAS YAPI MARKET')],
+        existing: [row(id: 'existing')],
+        now: now,
+      );
+      expect(issues.single, contains(ImportIssue.mukerrer));
+    });
+  });
+
+  group('KasaImportFormat', () {
+    test('defines nine import columns', () {
+      expect(KasaImportFormat.headers.length, 9);
+      expect(KasaImportFormat.headers.first, 'Tarih');
+      expect(KasaImportFormat.headers.last, 'Ek Açıklama');
+    });
+  });
+
+  group('KasaOcrNormalize', () {
+    test('parses Turkish money with thousands separator', () {
+      expect(KasaOcrNormalize.parseMoney('₺5.429,83'), closeTo(5429.83, 0.01));
+      expect(KasaOcrNormalize.parseMoney('350,00'), 350);
+    });
+
+    test('matchOdeme maps OCR variants', () {
+      expect(KasaOcrNormalize.matchOdeme('ŞAHSI K.KARTI'), OdemeSekli.sahsiKart);
+      expect(KasaOcrNormalize.matchOdeme('HAVALE'), OdemeSekli.havale);
+    });
+
+    test('splitAmounts prefers gider for expense rows', () {
+      final split = KasaOcrNormalize.splitAmounts(
+        amounts: [350],
+        context: 'CIVATA SOMUN KOÇTAŞ',
+        odeme: OdemeSekli.sahsiKart,
+      );
+      expect(split.gelir, isNull);
+      expect(split.gider, 350);
+    });
+
+    test('splitAmounts detects income from context', () {
+      final split = KasaOcrNormalize.splitAmounts(
+        amounts: [5429.83],
+        context: 'KADİR BEY HESABIMA GÖNDERDİ',
+        odeme: OdemeSekli.havale,
+      );
+      expect(split.gelir, closeTo(5429.83, 0.01));
+      expect(split.gider, isNull);
+    });
+  });
+
+  group('KasaImportTemplateService', () {
+    test('builds excel with header row', () {
+      final bytes = kasaImportTemplateService.buildTemplateExcelBytes();
+      expect(bytes, isNotEmpty);
+      final result = KasaImportService().parseExcelBytes(bytes);
+      expect(result.hareketler, isNotEmpty);
     });
   });
 

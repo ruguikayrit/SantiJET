@@ -14,10 +14,12 @@ import '../../data/hareketler_store.dart';
 import '../../data/import_draft_provider.dart';
 import '../../data/kasa_export_service.dart';
 import '../../data/kasa_import_service.dart';
+import '../../data/kasa_import_template_service.dart';
 import '../../data/kasa_ocr_service.dart';
 import '../../data/settings_store.dart';
 import '../../domain/hareket_filters.dart';
 import '../../domain/kasa_hareket.dart';
+import '../../domain/kasa_import_format.dart';
 import '../../domain/kasa_rules.dart';
 import '../../domain/kasa_transfer_format.dart';
 import '../../domain/money_format.dart';
@@ -87,26 +89,89 @@ class _RaporScreenState extends ConsumerState<RaporScreen> {
       return;
     }
     if (!mounted) return;
+    // OCR/Excel şantiye sütunu aktif seçimden farklı olabilir — önizlemede de
+    // kaydedilecek hâli görünsün diye aktif şantiyeyi baştan yaz.
+    final active = ref.read(activeSantiyeProvider).trim();
+    final stamped = rows.map((h) => h.copyWith(santiye: active)).toList();
+
     final chosen = await Navigator.of(context).push<List<KasaHareket>>(
       MaterialPageRoute(
         builder: (_) => ImportPreviewScreen(
           title: title,
-          hareketler: rows,
+          hareketler: stamped,
           skipped: skipped,
+          existing: ref.read(santiyeScopedHareketlerProvider),
           rawHint: rawHint,
         ),
       ),
     );
     if (chosen == null || chosen.isEmpty) return;
-    // OCR/Excel şantiye sütunu aktif seçimden farklı olabilir — aktif şantiyeye yaz.
-    final active = ref.read(activeSantiyeProvider).trim();
-    final stamped = chosen.map((h) => h.copyWith(santiye: active)).toList();
-    await ref.read(hareketlerProvider.notifier).appendImported(stamped);
+    await ref.read(hareketlerProvider.notifier).appendImported(chosen);
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          '${stamped.length} satır $active şantiyesine eklendi.',
+          '${chosen.length} satır $active şantiyesine eklendi.',
+        ),
+      ),
+    );
+  }
+
+  Future<void> _showImportTemplateSheet() async {
+    if (_busy) return;
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.md,
+                AppSpacing.sm,
+                AppSpacing.md,
+                AppSpacing.xs,
+              ),
+              child: Text(
+                'Örnek format indir',
+                style: AppTypography.cardLabelMedium,
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.table_chart_outlined),
+              title: const Text('Excel şablonu (.xlsx)'),
+              subtitle: const Text('Hatasız aktarım için önerilir'),
+              onTap: () async {
+                Navigator.pop(ctx);
+                try {
+                  await kasaImportTemplateService.shareExampleExcel();
+                } catch (e) {
+                  if (!mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Şablon indirilemedi: $e')),
+                  );
+                }
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.image_outlined),
+              title: const Text('Örnek tablo görseli (.jpg)'),
+              subtitle: const Text('JPG/PDF OCR için referans tablo'),
+              onTap: () async {
+                Navigator.pop(ctx);
+                try {
+                  await kasaImportTemplateService.shareExampleJpg();
+                } catch (e) {
+                  if (!mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Görsel indirilemedi: $e')),
+                  );
+                }
+              },
+            ),
+            const SizedBox(height: AppSpacing.sm),
+          ],
         ),
       ),
     );
@@ -364,9 +429,17 @@ class _RaporScreenState extends ConsumerState<RaporScreen> {
                     onSelected: _import,
                   ),
                   const SizedBox(height: AppSpacing.sm),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: _busy ? null : _showImportTemplateSheet,
+                      icon: const Icon(Icons.download_outlined, size: 20),
+                      label: const Text('Örnek format indir'),
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
                   Text(
-                    'Excel tercih edilir. JPG/PDF: ön işleme + tablo OCR, '
-                    'sonra önizlemede satır seçip onaylarsınız.',
+                    KasaImportFormat.userHint,
                     style: AppTypography.bodySmall.copyWith(
                       color: AppColors.textMuted,
                     ),

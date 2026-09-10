@@ -31,10 +31,30 @@ Satır alanları: tarih, tedarikçi, açıklama, gelir, gider, ödeme şekli, be
 - Arama: tedarikçi + açıklama + ek açıklama.
 - Rapor dışa aktarım: **JPG · PDF · Excel** (sayfa en altı)
 - Rapor içe aktarım: **JPG · PDF · Excel** (sayfa en altı)
-  - Excel: tablo satır parse → **önizleme** (satır seç / ele / onayla)
+  - Excel: tablo satır parse → **önizleme**
   - JPG/PDF: görüntü ön işleme + OCR.space (`isOverlayRequired` + `isTable`) →
     sütun hizalı tablo parse (yoksa satır soyma / heuristic) → **önizleme**
   - Yoğun Excel tablosu JPG’sinde OCR sınırlı; Excel dosyası tercih edilir
+
+## İçe aktarım formatı ve önizleme (kilitli)
+
+Kabul edilen şablon 9 sütun: `KasaImportFormat.headers` — Tarih · Tedarikçi ·
+Açıklama · Gelir · Gider · Ödeme Şekli · Belge Türü · Şantiye · Ek Açıklama.
+Dışa aktarım 8 sütun (Ek Açıklama yok); ikisini eşitleme.
+
+Rapor içe aktarım bloğunun altında **Örnek format indir** var: Excel şablonu
+(`KasaImportTemplateService`) ve referans görsel
+(`assets/images/kasa_import_ornek.jpg`). Kaldırma.
+
+Önizleme (`import_preview_screen.dart`) sadece seç/ele değil:
+
+- Satıra dokununca **düzeltme sayfası** açılır (tarih, tedarikçi, açıklama,
+  gelir/gider, tutar, ödeme, belge, ek açıklama).
+- `analyzeImportRows` şüpheli satırları rozetler: tarih okunamadı, tutar yok,
+  ödeme/belge tanınmadı, açıklama kısa, mükerrer. “Sadece bunlar” filtresi var.
+- Altta seçili satırların **gelir/gider toplamı** görünür (kaynak tabloyla
+  karşılaştırma içindir).
+- Aktif şantiye önizlemeden **önce** yazılır; ekranda görünen hâli kaydedilir.
 
 ## Bilinçli sınırlar (v1)
 

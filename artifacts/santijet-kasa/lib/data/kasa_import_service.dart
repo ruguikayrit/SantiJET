@@ -5,6 +5,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:uuid/uuid.dart';
 
 import '../domain/kasa_hareket.dart';
+import '../domain/kasa_import_format.dart';
 import '../domain/kasa_lookups.dart';
 import '../domain/kasa_rules.dart';
 import '../domain/kasa_transfer_format.dart';
@@ -97,7 +98,7 @@ class KasaImportService {
     if (headerIndex < 0) {
       throw StateError(
         'Excel’de başlık satırı bulunamadı. '
-        'Beklenen sütunlar: Tarih, Açıklama, Gelir, Gider…',
+        'Beklenen sütunlar: ${KasaImportFormat.headers.join(', ')}',
       );
     }
 
