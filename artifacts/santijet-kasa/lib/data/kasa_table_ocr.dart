@@ -171,7 +171,9 @@ abstract final class KasaTableOcr {
     for (final w in header) {
       final t = _fold(w.text);
       final key = _headerKey(t);
-      if (key != null) {
+      // İlk eşleşme sütun merkezidir; ikinci "AÇIKLAMA" (Ek Açıklama)
+      // asıl açıklama sütununu kaydırmasın.
+      if (key != null && !map.containsKey(key)) {
         map[key] = w.centerX;
       }
     }
@@ -263,33 +265,30 @@ abstract final class KasaTableOcr {
     if (aciklama.isEmpty) aciklama = tedarikci;
     if (aciklama.isEmpty) return null;
 
-    var odemeRaw = (cells['odeme'] ?? '').trim();
-    final odeme = KasaOcrNormalize.matchOdeme(odemeRaw);
-    final context = '${cells.values.join(' ')} $aciklama $tedarikci';
-
-    var gIn = KasaOcrNormalize.parseMoney(cells['gelir']);
-    var gOut = KasaOcrNormalize.parseMoney(cells['gider']);
-    if (gIn == null && gOut == null) {
-      final amounts = KasaOcrNormalize.allAmounts(cells.values.join(' '));
-      final split = KasaOcrNormalize.splitAmounts(
-        amounts: amounts,
-        context: context,
-        odeme: odeme,
-      );
-      gIn = split.gelir;
-      gOut = split.gider;
-    } else {
-      final split = KasaOcrNormalize.splitAmounts(
-        amounts: [
-          if (gIn != null) gIn,
-          if (gOut != null) gOut,
-        ],
-        context: context,
-        odeme: odeme,
-      );
-      gIn = split.gelir;
-      gOut = split.gider;
+    // Sütun tutarları kaynak kabul edilir; satırdaki adet/kg sayıları
+    // (1 PAKET, 10 ADET) tutarı ezmesin.
+    double? gIn = KasaOcrNormalize.parseMoney(cells['gelir']);
+    double? gOut = KasaOcrNormalize.parseMoney(cells['gider']);
+    if (gIn != null && gIn <= 0) gIn = null;
+    if (gOut != null && gOut <= 0) gOut = null;
+    if (gIn != null && gOut != null) {
+      if (gIn >= gOut) {
+        gOut = null;
+      } else {
+        gIn = null;
+      }
     }
+    if (gIn == null && gOut == null) {
+      for (final key in ['aciklama', 'odeme', 'ek', 'tedarikci']) {
+        final v = KasaOcrNormalize.parseMoney(cells[key]);
+        if (v != null && v > 0) {
+          gOut = v;
+          break;
+        }
+      }
+    }
+
+    final odeme = KasaOcrNormalize.matchOdeme((cells['odeme'] ?? '').trim());
 
     final err = validateHareket(aciklama: aciklama, gelir: gIn, gider: gOut);
     if (err != null) return null;
@@ -427,8 +426,11 @@ abstract final class KasaTableOcr {
       }
     }
 
-    final amounts = KasaOcrNormalize.allAmounts(rest);
-    for (final m in KasaOcrNormalize.moneyPattern.allMatches(rest)) {
+    final amounts = <double>[];
+    for (final m in KasaOcrNormalize.moneyPattern.allMatches(rest).toList()) {
+      final rawAmt = m.group(1) ?? m.group(2) ?? m.group(0);
+      final v = KasaOcrNormalize.parseMoney(rawAmt);
+      if (v != null && v > 0) amounts.add(v);
       rest = rest.replaceFirst(m.group(0)!, ' ');
     }
     rest = rest.replaceAll(RegExp(r'\s+'), ' ').trim();

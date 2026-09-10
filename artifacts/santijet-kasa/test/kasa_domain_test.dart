@@ -434,6 +434,14 @@ void main() {
       expect(KasaOcrNormalize.matchOdeme('HAVALE'), OdemeSekli.havale);
     });
 
+    test('allAmounts ignores quantity numbers like 1 PAKET / 10 ADET', () {
+      final amounts = KasaOcrNormalize.allAmounts(
+        '10 ADET HOKUM SUZGEÇ-48 KG 4 PAKET ₺6.143,00 ŞAHSİ K.KARTI '
+        'İZMİT/EFSANE 1 PAKET',
+      );
+      expect(amounts, [6143]);
+    });
+
     test('splitAmounts prefers gider for expense rows', () {
       final split = KasaOcrNormalize.splitAmounts(
         amounts: [350],
@@ -481,7 +489,21 @@ TARİH TEDARİKÇİ AÇIKLAMA GELİR GİDER ÖDEME BELGE ŞANTİYE
       expect(h.santiye, contains('İZMİT'));
     });
 
-    test('overlay column alignment', () {
+    test('peels expense line without treating quantities as money', () {
+      const raw = '''
+TARİH TEDARİKÇİ AÇIKLAMA GELİR GİDER ÖDEME BELGE ŞANTİYE EK AÇIKLAMA
+14.08.2026 MNG KARGO 10 ADET HOKUM SUZGEÇ-48 KG 4 PAKET ₺6.143,00 ŞAHSI K.KARTI FİŞ İZMİT/EFSANE 1 PAKET
+''';
+      final parsed = KasaTableOcr.parse(
+        rawText: raw,
+        now: DateTime(2026, 9, 8),
+      );
+      expect(parsed.hareketler, isNotEmpty);
+      expect(parsed.hareketler.first.gider, 6143);
+      expect(parsed.hareketler.first.gelir, isNull);
+    });
+
+    test('overlay keeps gider column even when ek has 1 PAKET', () {
       final header = [
         const OcrWord(text: 'TARİH', left: 10, top: 10, width: 40, height: 12),
         const OcrWord(
@@ -505,6 +527,20 @@ TARİH TEDARİKÇİ AÇIKLAMA GELİR GİDER ÖDEME BELGE ŞANTİYE
         const OcrWord(
           text: 'ŞANTİYE',
           left: 660,
+          top: 10,
+          width: 50,
+          height: 12,
+        ),
+        const OcrWord(
+          text: 'EK',
+          left: 760,
+          top: 10,
+          width: 20,
+          height: 12,
+        ),
+        const OcrWord(
+          text: 'AÇIKLAMA',
+          left: 785,
           top: 10,
           width: 50,
           height: 12,
@@ -548,6 +584,8 @@ TARİH TEDARİKÇİ AÇIKLAMA GELİR GİDER ÖDEME BELGE ŞANTİYE
           width: 70,
           height: 12,
         ),
+        const OcrWord(text: '1', left: 770, top: 40, width: 10, height: 12),
+        const OcrWord(text: 'PAKET', left: 790, top: 40, width: 40, height: 12),
       ];
       final parsed = KasaTableOcr.parse(
         rawText: '',

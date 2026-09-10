@@ -3,8 +3,11 @@ import '../domain/money_format.dart';
 
 /// OCR hücre metnini kasa alanlarına normalize eder.
 abstract final class KasaOcrNormalize {
+  /// Yalnız gerçek tutarlar: ₺… veya `1.234,56` / `350,00`.
+  /// Çıplak `1`, `10`, `48` (adet/kg) para değildir.
   static final moneyPattern = RegExp(
-    r'₺?\s*(-?\d{1,3}(?:\.\d{3})*(?:,\d{2})?|-?\d+,\d{2})',
+    r'₺\s*(-?\d{1,3}(?:\.\d{3})*(?:,\d{2})?|-?\d+,\d{2})|'
+    r'(-?\d{1,3}(?:\.\d{3})*,\d{2})\s*(?:₺|TL)?',
     caseSensitive: false,
   );
 
@@ -20,14 +23,25 @@ abstract final class KasaOcrNormalize {
 
   static double? parseMoney(String? raw) {
     if (raw == null || raw.trim().isEmpty) return null;
-    return MoneyFormat.tryParse(raw);
+    final extracted = allAmounts(raw);
+    if (extracted.isNotEmpty) {
+      return extracted.reduce((a, b) => a > b ? a : b);
+    }
+    final t = raw.trim();
+    if (!RegExp(r'^-?[\d.,\s₺TL]+$', caseSensitive: false).hasMatch(t)) {
+      return null;
+    }
+    final v = MoneyFormat.tryParse(t);
+    if (v != null && v > 0) return v;
+    return null;
   }
 
-  /// Metindeki tüm tutarları bul (soldan sağa).
+  /// Metindeki tüm tutarları bul (soldan sağa) — adet/tarih sayıları yok.
   static List<double> allAmounts(String raw) {
     final out = <double>[];
     for (final m in moneyPattern.allMatches(raw)) {
-      final v = MoneyFormat.tryParse(m.group(0));
+      final rawAmt = m.group(1) ?? m.group(2) ?? m.group(0);
+      final v = MoneyFormat.tryParse(rawAmt);
       if (v != null && v > 0) out.add(v);
     }
     return out;
@@ -80,33 +94,28 @@ abstract final class KasaOcrNormalize {
       'santiye',
       'şantiye',
     ].where(lower.contains).length;
-    return hits >= 4;
+    return hits >= 3 ||
+        lower.contains('iş avansı') ||
+        lower.contains('harcama tablosu');
   }
 
-  /// Gelir / gider — şablondaki tek tutar veya iki sütun.
+  /// Satır soyma: tek tutar giderdir; gelir yalnız havale + gelir ipucu.
   static ({double? gelir, double? gider}) splitAmounts({
     required List<double> amounts,
     required String context,
     required String odeme,
   }) {
     if (amounts.isEmpty) return (gelir: null, gider: null);
-    final income = isIncomeHint(context) ||
-        (odeme == OdemeSekli.havale && isIncomeHint(context));
+    final income = isIncomeHint(context) && odeme == OdemeSekli.havale;
 
     if (amounts.length >= 2) {
-      double? gIn = amounts[amounts.length - 2];
-      double? gOut = amounts.last;
+      var gIn = amounts[amounts.length - 2];
+      var gOut = amounts.last;
       if ((gIn - gOut).abs() < 0.01) {
-        gIn = null;
-      } else if (!income) {
-        gIn = null;
-      } else if (gOut > gIn) {
-        // OCR kayması: gelir sütunu boş, gider dolu
-        gIn = gOut;
-        gOut = null;
+        return (gelir: null, gider: gOut);
       }
-      if (gIn != null && gOut != null) gOut = null;
-      return (gelir: gIn, gider: gOut);
+      if (!income) return (gelir: null, gider: gOut);
+      return (gelir: gIn, gider: null);
     }
 
     final only = amounts.first;
