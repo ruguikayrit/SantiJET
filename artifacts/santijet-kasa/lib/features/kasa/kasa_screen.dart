@@ -154,7 +154,7 @@ class _OzetKart extends StatelessWidget {
           Text(
             value,
             style: (large
-                    ? AppTypography.displaySmall
+                    ? AppTypography.displayMedium
                     : AppTypography.headlineLarge)
                 .copyWith(color: accent),
             maxLines: 1,
