@@ -1,4 +1,4 @@
-name: Deploy ŞantiJET GitHub Pages (DEMİR + Maliyet + Puantaj + Beton + Malzeme + PRO + Mühendis + Staging)
+name: Deploy ŞantiJET GitHub Pages
 
 on:
   push:
@@ -15,6 +15,7 @@ on:
       - 'artifacts/santijet-muhendis/**'
       - 'artifacts/santijet-tahvil/**'
       - 'artifacts/santijet-kasa/**'
+      - 'artifacts/santijet-is-programi/**'
       - '.github/workflows/deploy-github-pages.yml'
       - '.github/scripts/**'
   workflow_dispatch:
@@ -260,6 +261,20 @@ jobs:
             echo "::warning::build-kasa-pages.sh missing; skipping /kasa/."
           fi
 
+      - name: Build İş Programı web (staging preview)
+        id: is_programi_build
+        env:
+          GITHUB_REPOSITORY_NAME: ${{ github.event.repository.name }}
+        run: |
+          if [ -f staging-src/.github/scripts/build-is-programi-pages.sh ]; then
+            bash staging-src/.github/scripts/build-is-programi-pages.sh
+          elif [ -f .github/scripts/build-is-programi-pages.sh ]; then
+            bash .github/scripts/build-is-programi-pages.sh
+          else
+            echo "::error::build-is-programi-pages.sh missing on main and staging"
+            exit 1
+          fi
+
       - name: Verify site bundle
         run: |
           test -f site/index.html
@@ -304,6 +319,10 @@ jobs:
           if [ ! -f site/kasa/index.html ]; then
             echo "::warning::Kasa bundle missing (site/kasa/index.html)."
           fi
+          if [ ! -f site/is-programi/index.html ]; then
+            echo "::error::İş Programı bundle missing (site/is-programi/index.html)."
+            exit 1
+          fi
           echo "Site bundle OK:"
           find site -maxdepth 3 -type f -name 'index.html' | sort
 
@@ -331,3 +350,4 @@ jobs:
           echo "Mühendis staging: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/muhendis/"
           echo "Tahvil staging: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/tahvil/"
           echo "Kasa staging: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/kasa/"
+          echo "İş Programı staging: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/is-programi/"

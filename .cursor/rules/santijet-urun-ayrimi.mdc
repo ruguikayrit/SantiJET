@@ -73,3 +73,18 @@ PRO işinde ayrıntı: `artifacts/santijet-ana/AGENTS.md` ve `.cursor/rules/sant
   başka ürüne taşıma.
 
 Kasa işinde ayrıntı: `artifacts/santijet-kasa/AGENTS.md` ve `.cursor/rules/santijet-kasa.mdc`.
+
+## İş Programı — zarar verme
+
+ŞantiJET İş Programı (`artifacts/santijet-is-programi`, Pages
+`/is-programi/`) bağımsız ve sıfırdan geliştirilmiş üründür:
+
+- Alt nav: Program · Takvim · Özet. Ayarlar navda yok, sağ üst dişlidir.
+- Bildirim zili, avatar, hesap, bulut ve abonelik yoktur.
+- Hive kutuları `isprog_` öneklidir; lisans tek seferliktir.
+- Turuncu STAGING şeridi ve `flutter-view { top:28px }` yoktur.
+- Başka üründeki iş programı, schedule, gantt veya plan kodunu bu ürüne
+  kopyalama; bu ürünün kodunu da başka ürüne taşıma.
+
+İş Programı ayrıntısı: `artifacts/santijet-is-programi/AGENTS.md` ve
+`.cursor/rules/santijet-is-programi.mdc`.

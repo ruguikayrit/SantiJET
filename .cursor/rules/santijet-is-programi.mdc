@@ -1,0 +1,20 @@
+---
+description: ŞantiJET İş Programı ürün sınırlarını ve bağımsızlığını koru.
+globs: artifacts/santijet-is-programi/**
+alwaysApply: false
+---
+
+# ŞantiJET İş Programı
+
+`artifacts/santijet-is-programi` bağımsız, sıfırdan geliştirilmiş üründür.
+
+- Başka üründeki iş programı, schedule, gantt, plan, entity, provider veya
+  özellik kodunu açma, okuma, kopyalama ya da referans alma.
+- Kod ve veriyi başka ŞantiJET ürünleriyle bağlama veya senkronlama.
+- Yalnız yerel veri kullan; Hive kutuları `isprog_` ile başlamalıdır.
+- Login, hesap, bulut ve abonelik ekleme. Lisans yalnız tek seferliktir.
+- Alt nav: Program · Takvim · Özet. Ayarlar yalnız sağ üst dişlidir.
+- Bildirim zili, avatar, turuncu staging şeridi ve `flutter-view` üst
+  kaydırması ekleme.
+- Pages hedefi `/is-programi/`; ürün satırı **İŞ PROGRAMI**.
+- Ayrıntılar için `artifacts/santijet-is-programi/AGENTS.md` dosyasını izle.
