@@ -14,8 +14,12 @@ Bu klasör bağımsız **ŞantiJET İş Programı** ürünüdür.
   kopyalanmaz ve referans alınmaz.
 - Ürünün kodu başka `artifacts/santijet-*` ağacına taşınmaz.
 - Login, hesap, bulut, abonelik, senkron ve başka ürüne bağlantı eklenmez.
+  Ayarlar’daki Hesap yalnız cihazdaki ad/unvandır. İş kodu yereldir;
+  kod varsa o şantiye açılır, yoksa boş şantiye yazılır.
+- Şantiye seçimi Ayarlar → Projelerim’dedir. Program ana sayfasında
+  açılır liste yoktur; aktif proje çubuğu Projelerim’e gider.
 - Yerel Hive kutularının tamamı `isprog_` önekini kullanır; çıplak
-  `settings` kutusu açılmaz.
+  `settings` kutusu açılmaz. Projeler `isprog_projects` kutusundadır.
 - Alt navigasyon yalnız Program, Takvim ve Özet'tir. Ayarlar sağ üst
   dişlidedir; zil ve avatar yoktur.
 - Turuncu staging şeridi ve `flutter-view { top:28px }` kullanılmaz.

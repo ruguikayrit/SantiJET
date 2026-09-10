@@ -1,9 +1,11 @@
+import 'package:file_picker/file_picker.dart';
+import 'package:file_saver/file_saver.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../data/backup/program_backup.dart';
 import '../../state/app_state.dart';
-import '../../state/license_state.dart';
 import '../../ui/design_system.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -12,12 +14,8 @@ class SettingsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final themeMode = ref.watch(themeModeProvider);
-    final activeSite = ref.watch(activeSiteProvider);
-    final sites = {
-      activeSite,
-      ...ref.watch(programItemsProvider).map((item) => item.santiyeId),
-    }.toList()..sort();
-    final license = ref.watch(licenseProvider);
+    final project = ref.watch(activeProjectProvider);
+    final profile = ref.watch(profileProvider);
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
@@ -48,224 +46,202 @@ class SettingsScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 40),
         children: [
-          const _SectionLabel('LİSANS'),
-          SJCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Tek fiyat. Abonelik yok.',
-                  style: AppTypography.onCard(AppTypography.headlineMedium),
-                ),
-                const SizedBox(height: 6),
-                Text(AppInfo.pricingLine, style: AppTypography.cardBodySmall),
-                const SizedBox(height: AppSpacing.md),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: AppColors.cardInsetSurface,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        license.licensed
-                            ? Icons.verified_outlined
-                            : Icons.lock_outline,
-                        size: 20,
-                        color: license.licensed
-                            ? AppColors.success
-                            : AppColors.cardTextMuted,
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Tek seferlik lisans',
-                              style: AppTypography.cardTitleMedium,
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              license.licensed
-                                  ? 'Lisans etkin'
-                                  : (license.message ??
-                                        license.product?.price ??
-                                        'Kilitli — mağaza sonra'),
-                              style: AppTypography.cardBodySmall,
-                            ),
-                          ],
-                        ),
-                      ),
-                      if (license.loading)
-                        const SizedBox.square(
-                          dimension: 22,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      else if (!license.licensed && license.product != null)
-                        TextButton(
-                          onPressed: () =>
-                              ref.read(licenseProvider.notifier).buy(),
-                          child: const Text('Satın al'),
-                        ),
-                    ],
-                  ),
-                ),
-                if (!license.licensed) ...[
-                  const SizedBox(height: AppSpacing.sm),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: TextButton(
-                      onPressed: license.storeAvailable
-                          ? () => ref.read(licenseProvider.notifier).restore()
-                          : null,
-                      child: const Text('Satın almayı geri yükle'),
-                    ),
-                  ),
-                ],
-              ],
-            ),
+          _SettingsTile(
+            icon: Icons.account_circle_outlined,
+            title: 'Hesap',
+            subtitle: profile.isEmpty
+                ? 'Cihazdaki ad ve unvan — giriş yok'
+                : [
+                    if (profile.displayName.trim().isNotEmpty)
+                      profile.displayName.trim(),
+                    if (profile.role.trim().isNotEmpty) profile.role.trim(),
+                  ].join(' · '),
+            onTap: () => context.push('/settings/hesap'),
           ),
-          const SizedBox(height: AppSpacing.lg),
-          const _SectionLabel('GÖRÜNÜM'),
-          SJCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  themeLabel(themeMode),
-                  style: AppTypography.cardTitleMedium,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Tema seçimi cihazda saklanır.',
-                  style: AppTypography.cardBodySmall,
-                ),
-                const SizedBox(height: AppSpacing.md),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    for (final option in const [
-                      ('santijet_pro', 'ŞantiJET Pro'),
-                      ('santijet', 'ŞantiJET'),
-                      ('light', 'Açık'),
-                      ('dark', 'Koyu'),
-                    ])
-                      _ThemeChip(
-                        label: option.$2,
-                        selected: themeMode == option.$1,
-                        onTap: () => ref
-                            .read(themeModeProvider.notifier)
-                            .select(option.$1),
-                      ),
-                  ],
-                ),
-              ],
-            ),
+          _SettingsTile(
+            icon: Icons.qr_code_2_outlined,
+            title: 'İş kodu',
+            subtitle: project == null
+                ? 'Şantiye kodunu gör veya koda geç'
+                : project.code,
+            onTap: () => context.push('/settings/is-kodu'),
           ),
-          const SizedBox(height: AppSpacing.lg),
-          const _SectionLabel('ŞANTİYE'),
-          SJCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Varsayılan şantiye',
-                  style: AppTypography.cardLabelMedium,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Program, Takvim ve Özet bu şantiyeyi kullanır.',
-                  style: AppTypography.cardBodySmall,
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                DropdownButtonFormField<String>(
-                  initialValue: activeSite,
-                  items: sites
-                      .map(
-                        (site) =>
-                            DropdownMenuItem(value: site, child: Text(site)),
-                      )
-                      .toList(),
-                  onChanged: (value) {
-                    if (value != null) {
-                      ref.read(activeSiteProvider.notifier).select(value);
-                    }
-                  },
-                ),
-              ],
-            ),
+          _SettingsTile(
+            icon: Icons.folder_copy_outlined,
+            title: 'Projelerim',
+            subtitle: project?.name ?? 'Proje seç veya oluştur',
+            onTap: () => context.push('/settings/projeler'),
           ),
-          const SizedBox(height: AppSpacing.lg),
-          const _SectionLabel('VERİ'),
-          _ActionTile(
+          _SettingsTile(
+            icon: Icons.dark_mode_outlined,
+            title: 'Tema',
+            subtitle: themeLabel(themeMode),
+            onTap: () => _showThemePicker(context, ref, themeMode),
+          ),
+          _SettingsTile(
+            icon: Icons.backup_outlined,
+            title: 'Yedekleme',
+            subtitle: 'Programı JSON olarak cihaza kaydet',
+            onTap: () => _exportBackup(context, ref),
+          ),
+          _SettingsTile(
+            icon: Icons.settings_backup_restore_outlined,
+            title: 'Geri yükleme',
+            subtitle: 'JSON yedekten programı geri yaz',
+            onTap: () => _importBackup(context, ref),
+          ),
+          _SettingsTile(
             icon: Icons.swap_vert_rounded,
-            title: 'MS Project · Excel · PDF aktarımı',
-            subtitle: 'Programı dışa aktar ya da Project dosyası oku.',
+            title: 'MS Project · Excel · PDF',
+            subtitle: 'İş programı dosya alışverişi',
             onTap: () => context.push('/aktar'),
           ),
-          const SizedBox(height: AppSpacing.sm),
-          _ActionTile(
-            icon: Icons.dataset_outlined,
-            title: 'Demo veri yükle',
-            subtitle: '10 örnek imalat, adam-gün ve saha kaydı.',
+          _SettingsTile(
+            icon: Icons.play_circle_outline,
+            title: 'Uygulama tanıtımı',
+            subtitle: 'Adam-gün, saha kaydı ve mukayese',
+            onTap: () => context.push('/settings/tanitim'),
+          ),
+          _SettingsTile(
+            icon: Icons.science_outlined,
+            title: 'Demo veriyi yükle',
+            subtitle: 'İki şantiye, imalat ve günlük adam kaydı',
             onTap: () => _loadDemo(context, ref),
           ),
-          const SizedBox(height: AppSpacing.sm),
-          _ActionTile(
-            icon: Icons.delete_outline,
+          _SettingsTile(
+            icon: Icons.info_outline,
+            title: 'Hakkında',
+            subtitle: '${AppInfo.displayName} v${AppInfo.version}',
+            onTap: () => context.push('/settings/hakkinda'),
+          ),
+          const SizedBox(height: 8),
+          _SettingsTile(
+            icon: Icons.delete_forever_outlined,
             title: 'Tüm veriyi sil',
-            subtitle: 'Bu cihazdaki faaliyetler silinir.',
+            subtitle: 'Projeler, imalatlar ve saha kayıtları silinir',
             destructive: true,
             onTap: () => _clearData(context, ref),
-          ),
-          const SizedBox(height: AppSpacing.lg),
-          const _SectionLabel('HAKKINDA'),
-          SJCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  AppInfo.displayName,
-                  style: AppTypography.onCard(AppTypography.headlineMedium),
-                ),
-                const SizedBox(height: 6),
-                Text(AppInfo.tagline, style: AppTypography.cardBodySmall),
-              ],
-            ),
-          ),
-          const SizedBox(height: AppSpacing.lg),
-          Text(
-            '${AppInfo.displayName}  ·  v${AppInfo.version}',
-            style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            AppInfo.supportEmail,
-            style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
           ),
         ],
       ),
     );
   }
 
+  Future<void> _showThemePicker(
+    BuildContext context,
+    WidgetRef ref,
+    String current,
+  ) async {
+    final next = await showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: AppColors.surfaceElevated,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (final option in const [
+              ('santijet_pro', 'ŞantiJET Pro'),
+              ('santijet', 'ŞantiJET'),
+              ('light', 'Açık'),
+              ('dark', 'Koyu'),
+            ])
+              ListTile(
+                title: Text(option.$2),
+                trailing: current == option.$1
+                    ? Icon(Icons.check, color: AppColors.electricBlue)
+                    : null,
+                onTap: () => Navigator.pop(context, option.$1),
+              ),
+          ],
+        ),
+      ),
+    );
+    if (next != null) await ref.read(themeModeProvider.notifier).select(next);
+  }
+
+  Future<void> _exportBackup(BuildContext context, WidgetRef ref) async {
+    try {
+      final backup = ProgramBackup(
+        projects: ref.read(projectsProvider),
+        items: ref.read(programItemsProvider),
+        dailyCrew: ref.read(dailyCrewProvider),
+        profile: ref.read(profileProvider),
+        activeProjectId: ref.read(activeProjectProvider)?.id,
+        themeMode: ref.read(themeModeProvider),
+      );
+      await FileSaver.instance.saveFile(
+        name: 'santijet-is-programi-yedek',
+        bytes: backup.encode(),
+        fileExtension: 'json',
+        mimeType: MimeType.json,
+      );
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Yedek dosyası hazırlandı.')),
+        );
+      }
+    } catch (error) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Yedek alınamadı: $error')),
+        );
+      }
+    }
+  }
+
+  Future<void> _importBackup(BuildContext context, WidgetRef ref) async {
+    final accepted = await _confirm(
+      context,
+      title: 'Yedek geri yüklensin mi?',
+      message: 'Mevcut projeler ve imalatlar bu dosyayla değişir.',
+      action: 'Geri yükle',
+    );
+    if (!accepted) return;
+    try {
+      final file = await FilePicker.pickFile(
+        dialogTitle: 'İş Programı yedeği seç',
+        type: FileType.custom,
+        allowedExtensions: const ['json'],
+      );
+      if (file == null) return;
+      final backup = ProgramBackup.decode(await file.readAsBytes());
+      await ref.read(programItemsProvider.notifier).replaceItems(backup.items);
+      await ref.read(dailyCrewProvider.notifier).replaceAll(backup.dailyCrew);
+      await ref.read(projectsProvider.notifier).replaceAll(
+        backup.projects,
+        activeProjectId: backup.activeProjectId,
+      );
+      await ref.read(profileProvider.notifier).save(backup.profile);
+      if (backup.themeMode != null) {
+        await ref.read(themeModeProvider.notifier).select(backup.themeMode!);
+      }
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Yedek geri yüklendi.')),
+        );
+      }
+    } catch (error) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Geri yükleme olmadı: $error')),
+        );
+      }
+    }
+  }
+
   Future<void> _loadDemo(BuildContext context, WidgetRef ref) async {
     final accepted = await _confirm(
       context,
       title: 'Demo veri yüklensin mi?',
-      message: 'Mevcut faaliyetler silinip örnek program yüklenecek.',
+      message: 'Mevcut imalatlar silinip örnek program yazılacak.',
       action: 'Yükle',
     );
     if (!accepted) return;
     await ref.read(programItemsProvider.notifier).loadDemo();
-    await ref.read(activeSiteProvider.notifier).select('Merkez Şantiyesi');
     if (context.mounted) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Demo program yüklendi.')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Demo program yüklendi.')),
+      );
     }
   }
 
@@ -273,11 +249,12 @@ class SettingsScreen extends ConsumerWidget {
     final accepted = await _confirm(
       context,
       title: 'Tüm veriler silinsin mi?',
-      message: 'Cihazdaki faaliyetler kalıcı olarak silinecek.',
+      message: 'Projeler, imalatlar ve saha kayıtları kalıcı olarak silinir.',
       action: 'Tümünü sil',
     );
     if (!accepted) return;
     await ref.read(programItemsProvider.notifier).clear();
+    await ref.read(projectsProvider.notifier).resetToDefault();
     if (context.mounted) Navigator.of(context).pop();
   }
 
@@ -311,27 +288,8 @@ class SettingsScreen extends ConsumerWidget {
       false;
 }
 
-class _SectionLabel extends StatelessWidget {
-  const _SectionLabel(this.title);
-  final String title;
-
-  @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.only(bottom: 10),
-    child: Text(
-      title,
-      style: AppTypography.labelSmall.copyWith(
-        color: AppColors.textMuted,
-        fontWeight: FontWeight.w700,
-        letterSpacing: 0.5,
-        fontSize: 12,
-      ),
-    ),
-  );
-}
-
-class _ActionTile extends StatelessWidget {
-  const _ActionTile({
+class _SettingsTile extends StatelessWidget {
+  const _SettingsTile({
     required this.icon,
     required this.title,
     required this.subtitle,
@@ -354,67 +312,39 @@ class _ActionTile extends StatelessWidget {
         ? AppColors.critical.withValues(alpha: 0.8)
         : AppColors.cardTextSecondary;
 
-    return SJCard(
-      onTap: onTap,
-      child: Row(
-        children: [
-          Icon(
-            icon,
-            color: destructive ? AppColors.critical : AppColors.electricBlue,
-          ),
-          const SizedBox(width: AppSpacing.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: AppTypography.cardTitleMedium.copyWith(
-                    color: titleColor,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  subtitle,
-                  style: AppTypography.cardBodySmall.copyWith(color: subColor),
-                ),
-              ],
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: SJCard(
+        onTap: onTap,
+        child: Row(
+          children: [
+            Icon(
+              icon,
+              color: destructive ? AppColors.critical : AppColors.electricBlue,
             ),
-          ),
-          Icon(Icons.chevron_right, color: AppColors.cardTextMuted, size: 20),
-        ],
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: AppTypography.cardTitleMedium.copyWith(
+                      color: titleColor,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: AppTypography.cardBodySmall.copyWith(color: subColor),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right, color: AppColors.cardTextMuted, size: 20),
+          ],
+        ),
       ),
     );
   }
-}
-
-class _ThemeChip extends StatelessWidget {
-  const _ThemeChip({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) => GestureDetector(
-    onTap: onTap,
-    child: Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: selected ? AppColors.electricBlue : AppColors.cardInsetSurface,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Text(
-        label,
-        style: AppTypography.cardLabelLarge.copyWith(
-          color: selected ? Colors.white : AppColors.cardTextPrimary,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-    ),
-  );
 }

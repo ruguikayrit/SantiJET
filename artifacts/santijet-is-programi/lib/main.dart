@@ -9,10 +9,16 @@ import 'core/theme/app_theme.dart';
 import 'core/theme/theme_rebuild_gate.dart';
 import 'data/daily_crew_repository.dart';
 import 'data/program_repository.dart';
+import 'data/project_repository.dart';
 import 'domain/program_item.dart';
 import 'features/form/program_form_screen.dart';
 import 'features/interop/transfer_screen.dart';
+import 'features/settings/about_screen.dart';
+import 'features/settings/account_screen.dart';
+import 'features/settings/app_intro_screen.dart';
+import 'features/settings/projects_screen.dart';
 import 'features/settings/settings_screen.dart';
+import 'features/settings/work_code_screen.dart';
 import 'features/splash/splash_screen.dart';
 import 'state/app_state.dart';
 import 'ui/app_shell.dart';
@@ -24,6 +30,7 @@ Future<void> main() async {
   final settings = await Hive.openBox<dynamic>(settingsBoxName);
   await Hive.openBox<dynamic>(licenseBoxName);
   await Hive.openBox<String>(dailyCrewBoxName);
+  final projects = await Hive.openBox<String>(projectBoxName);
 
   final programBox = Hive.box<String>(programBoxName);
   final crewBox = Hive.box<String>(dailyCrewBoxName);
@@ -40,6 +47,15 @@ Future<void> main() async {
       await crew.save(entry);
     }
     await settings.put('demoInitialized', true);
+  }
+  final projectRepo = ProjectRepository(projects);
+  if (projectRepo.readAll().isEmpty) {
+    final names = ProgramRepository(programBox).readAll().map((item) => item.santiyeId);
+    final created = await projectRepo.migrateFromSiteNames(names);
+    final preferred = settings.get('defaultSite') as String?;
+    final active = created.where((project) => project.name == preferred).firstOrNull ??
+        created.firstOrNull;
+    if (active != null) await settings.put('activeProjectId', active.id);
   }
   runApp(const ProviderScope(child: SantijetIsProgramiApp()));
 }
@@ -61,6 +77,26 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/settings',
       builder: (context, state) => const SettingsScreen(),
+    ),
+    GoRoute(
+      path: '/settings/hesap',
+      builder: (context, state) => const AccountScreen(),
+    ),
+    GoRoute(
+      path: '/settings/is-kodu',
+      builder: (context, state) => const WorkCodeScreen(),
+    ),
+    GoRoute(
+      path: '/settings/projeler',
+      builder: (context, state) => const ProjectsScreen(),
+    ),
+    GoRoute(
+      path: '/settings/tanitim',
+      builder: (context, state) => const AppIntroScreen(),
+    ),
+    GoRoute(
+      path: '/settings/hakkinda',
+      builder: (context, state) => const AboutScreen(),
     ),
   ],
 );

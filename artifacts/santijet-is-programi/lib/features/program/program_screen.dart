@@ -16,8 +16,7 @@ class ProgramScreen extends ConsumerWidget {
     final all = ref.watch(programItemsProvider);
     final logs = ref.watch(dailyCrewProvider);
     final selectedSite = ref.watch(activeSiteProvider);
-    final sites = {selectedSite, ...all.map((item) => item.santiyeId)}.toList()
-      ..sort();
+    final project = ref.watch(activeProjectProvider);
     final items = all.where((item) => item.santiyeId == selectedSite).toList();
     ManDayProgress row(ProgramItem item) =>
         ManDayProgress.of(item, logs);
@@ -40,23 +39,40 @@ class ProgramScreen extends ConsumerWidget {
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(16, 4, 16, 100),
                 children: [
-                  DropdownButtonFormField<String>(
-                    initialValue: selectedSite,
-                    decoration: const InputDecoration(
-                      labelText: 'Aktif şantiye',
-                      prefixIcon: Icon(Icons.apartment_rounded),
+                  SJCard(
+                    onTap: () => context.push('/settings/projeler'),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.apartment_rounded,
+                          color: AppColors.electricBlue,
+                        ),
+                        const SizedBox(width: AppSpacing.md),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                project?.name ?? selectedSite,
+                                style: AppTypography.cardTitleMedium,
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                project == null
+                                    ? 'Proje seç veya oluştur'
+                                    : 'İş kodu ${project.code}',
+                                style: AppTypography.cardBodySmall,
+                              ),
+                            ],
+                          ),
+                        ),
+                        Icon(
+                          Icons.chevron_right,
+                          color: AppColors.cardTextMuted,
+                          size: 20,
+                        ),
+                      ],
                     ),
-                    items: sites
-                        .map(
-                          (site) =>
-                              DropdownMenuItem(value: site, child: Text(site)),
-                        )
-                        .toList(),
-                    onChanged: (value) {
-                      if (value != null) {
-                        ref.read(activeSiteProvider.notifier).select(value);
-                      }
-                    },
                   ),
                   const SizedBox(height: AppSpacing.md),
                   Row(

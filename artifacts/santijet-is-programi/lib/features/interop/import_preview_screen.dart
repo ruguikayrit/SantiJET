@@ -238,7 +238,7 @@ class _ImportPreviewScreenState extends ConsumerState<ImportPreviewScreen> {
       if (!ref
           .read(programItemsProvider)
           .any((item) => item.santiyeId == ref.read(activeSiteProvider))) {
-        await ref.read(activeSiteProvider.notifier).select(firstSite);
+        await ref.read(projectsProvider.notifier).selectByName(firstSite);
       }
       if (!mounted) return;
       Navigator.of(context).pop();

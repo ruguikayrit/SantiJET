@@ -8,6 +8,7 @@ anında görmek için bağımsız Flutter uygulaması.
 - Takvim: liste/Gantt görünümü, bugün çizgisi ve filtreler
 - Özet: plan AG / gerçek AG / kalan AG, gecikenler
 - Aktar: MS Project, Excel ve PDF alışverişi
+- Ayarlar: Hesap, İş kodu, Projelerim, tema, yedek, tanıtım
 - Yerel Hive veri deposu (`isprog_` kutuları)
 - 10 faaliyetli iki şantiye demo programı
 - Açık/koyu tema ve tek seferlik IAP lisans iskeleti
