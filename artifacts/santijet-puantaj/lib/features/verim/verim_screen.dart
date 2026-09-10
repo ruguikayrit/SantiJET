@@ -11,8 +11,8 @@ import '../../core/widgets/production_triple_progress.dart';
 import '../../core/widgets/santijet_header.dart';
 import '../../data/providers/app_data_provider.dart';
 import '../../data/providers/verim_provider.dart';
-import '../imalat/imalat_screen.dart';
 import '../imalat/widgets/production_chart_panel.dart';
+import 'widgets/verim_production_detail_sheet.dart';
 
 /// Verim — grafik + ekip özeti + ad/% listesi (detay İmalat kartında).
 class VerimScreen extends ConsumerStatefulWidget {
@@ -240,20 +240,19 @@ class _TeamVerimSummaryStrip extends StatelessWidget {
   }
 }
 
-class _VerimNamePercentCard extends ConsumerWidget {
+class _VerimNamePercentCard extends StatelessWidget {
   const _VerimNamePercentCard({required this.row});
 
   final VerimRow row;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final efficiency = row.unitEfficiency;
 
     return SJCard.builder(
-      onTap: () => openImalatProductionDetail(
+      onTap: () => openVerimProductionChartSheet(
         context,
-        ref,
-        productionId: row.production.id,
+        production: row.production,
       ),
       builder: (context, theme) {
         return Row(
@@ -297,6 +296,12 @@ class _VerimNamePercentCard extends ConsumerWidget {
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
               ),
+            const SizedBox(width: AppSpacing.xs),
+            Icon(
+              Icons.show_chart_outlined,
+              size: 20,
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
           ],
         );
       },
