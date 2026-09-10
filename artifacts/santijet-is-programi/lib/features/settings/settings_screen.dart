@@ -211,7 +211,7 @@ class SettingsScreen extends ConsumerWidget {
           _ActionTile(
             icon: Icons.dataset_outlined,
             title: 'Demo veri yükle',
-            subtitle: '10 örnek faaliyet, iki şantiye.',
+            subtitle: '10 örnek imalat, adam-gün ve saha kaydı.',
             onTap: () => _loadDemo(context, ref),
           ),
           const SizedBox(height: AppSpacing.sm),

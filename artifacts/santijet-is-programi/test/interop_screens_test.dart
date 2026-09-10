@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hive/hive.dart';
+import 'package:santijet_is_programi/data/daily_crew_repository.dart';
 import 'package:santijet_is_programi/data/interop/msproject_xml_codec.dart';
 import 'package:santijet_is_programi/data/program_repository.dart';
 import 'package:santijet_is_programi/features/interop/import_preview_screen.dart';
@@ -19,11 +20,13 @@ void main() {
     Hive.init(hiveDir.path);
     await Hive.openBox<String>(programBoxName);
     await Hive.openBox<dynamic>(settingsBoxName);
+    await Hive.openBox<String>(dailyCrewBoxName);
   });
 
   setUp(() async {
     await Hive.box<String>(programBoxName).clear();
     await Hive.box<dynamic>(settingsBoxName).clear();
+    await Hive.box<String>(dailyCrewBoxName).clear();
     await ProgramRepository(
       Hive.box<String>(programBoxName),
     ).replaceWithDemo(today: DateTime(2026, 3, 10));

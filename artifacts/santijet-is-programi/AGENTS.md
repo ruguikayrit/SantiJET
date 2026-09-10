@@ -39,7 +39,19 @@ yoktur.
 - PDF Türkçe karakterler için Inter'i gömer; yazı tipi yüklenemezse
   bozuk dosya üretmek yerine hata verilir.
 
+## Adam-gün kurgusu
+İş programı süredir. Bir imalatın birimi adam-gündür: süre × ekip.
+
+- Plan: imalat adı, başlangıç, süre (gün), ekip (adam). Bitiş süreye göre
+  hesaplanır. Form Project sütunlarının kopyası değildir.
+- Gerçekleşen: günlük çalışan adam sayısı `isprog_daily_crew` kutusuna
+  yazılır. İlerleme yüzdesi bu kayıtlardan doğar.
+- Özet: plan AG / gerçek AG / kalan AG. Kalan, işçilik hakedişi ve
+  malzeme nakit ihtiyacına işarettir; ödeme veya satınalma tutulmaz.
+- MS Project dosyasında süre Duration, ekip atanan kaynak sayısı / Number1
+  olarak taşınır. Günlük saha kaydı Project'e yazılmaz.
+
 ## V1 sınırı
 CPM, kritik yol hesabı, faaliyet bağımlılığı çözümleme, kaynak dengeleme,
-çoklu kullanıcı ve başka ŞantiJET ürünüyle içe aktarım köprüsü kapsam
-dışıdır.
+çoklu kullanıcı, satınalma, hakediş bordrosu ve başka ŞantiJET ürünüyle
+içe aktarım köprüsü kapsam dışıdır.

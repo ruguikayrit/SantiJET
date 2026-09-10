@@ -86,6 +86,13 @@ void main() {
       expect(ProgramItemValidator.progress(101), isNotNull);
       expect(ProgramItemValidator.progress(40), isNull);
     });
+
+    test('süre ve ekip en az 1 olmalıdır', () {
+      expect(ProgramItemValidator.duration(0), isNotNull);
+      expect(ProgramItemValidator.crew(0), isNotNull);
+      expect(ProgramItemValidator.duration(5), isNull);
+      expect(ProgramItemValidator.crew(3), isNull);
+    });
   });
 }
 

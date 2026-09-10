@@ -4,9 +4,9 @@
 anında görmek için bağımsız Flutter uygulaması.
 
 ## V1
-- Program: şantiye seçimi, KPI'lar ve faaliyet listesi
+- Program: süre × ekip = adam-gün, plan/gerçekleşen imalat listesi
 - Takvim: liste/Gantt görünümü, bugün çizgisi ve filtreler
-- Özet: durum kırılımı ve gecikenler
+- Özet: plan AG / gerçek AG / kalan AG, gecikenler
 - Aktar: MS Project, Excel ve PDF alışverişi
 - Yerel Hive veri deposu (`isprog_` kutuları)
 - 10 faaliyetli iki şantiye demo programı

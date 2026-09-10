@@ -30,6 +30,7 @@ class ProgramItem {
     required this.startDate,
     required this.endDate,
     this.plannedDays,
+    this.plannedCrew = 1,
     required this.progress,
     required this.status,
     required this.responsible,
@@ -48,6 +49,9 @@ class ProgramItem {
   final DateTime startDate;
   final DateTime endDate;
   final int? plannedDays;
+
+  /// Planlanan günlük ekip. Adam-gün = süre × ekip.
+  final int plannedCrew;
   final int progress;
   final ProgramStatus status;
   final String responsible;
@@ -75,6 +79,17 @@ class ProgramItem {
   int get calculatedDays =>
       plannedDays ?? endDate.difference(startDate).inDays + 1;
 
+  /// İş programının birimi: süre × ekip.
+  int get plannedManDays =>
+      isMilestone ? 0 : calculatedDays * (plannedCrew < 1 ? 1 : plannedCrew);
+
+  /// Süre değişince bitiş, başlangıç + süre − 1 olur.
+  static DateTime endDateFromDuration(DateTime start, int days) {
+    final safe = days < 1 ? 1 : days;
+    return DateTime(start.year, start.month, start.day)
+        .add(Duration(days: safe - 1));
+  }
+
   ProgramStatus effectiveStatus({DateTime? today}) {
     if (isStatusManual) return status;
     final day = _dateOnly(today ?? DateTime.now());
@@ -92,6 +107,7 @@ class ProgramItem {
     DateTime? startDate,
     DateTime? endDate,
     int? plannedDays,
+    int? plannedCrew,
     int? progress,
     ProgramStatus? status,
     String? responsible,
@@ -109,6 +125,7 @@ class ProgramItem {
     startDate: startDate ?? this.startDate,
     endDate: endDate ?? this.endDate,
     plannedDays: plannedDays ?? this.plannedDays,
+    plannedCrew: plannedCrew ?? this.plannedCrew,
     progress: progress ?? this.progress,
     status: status ?? this.status,
     responsible: responsible ?? this.responsible,
@@ -128,6 +145,7 @@ class ProgramItem {
     'startDate': _date(startDate),
     'endDate': _date(endDate),
     'plannedDays': plannedDays,
+    'plannedCrew': plannedCrew,
     'progress': progress,
     'status': status.storageValue,
     'responsible': responsible,
@@ -147,6 +165,7 @@ class ProgramItem {
     startDate: DateTime.parse(json['startDate'] as String),
     endDate: DateTime.parse(json['endDate'] as String),
     plannedDays: json['plannedDays'] as int?,
+    plannedCrew: json['plannedCrew'] as int? ?? 1,
     progress: json['progress'] as int,
     status: ProgramStatus.fromStorage(json['status'] as String),
     responsible: json['responsible'] as String? ?? '',
@@ -175,4 +194,10 @@ class ProgramItemValidator {
 
   static String? progress(int value) =>
       value < 0 || value > 100 ? 'İlerleme 0–100 arasında olmalıdır.' : null;
+
+  static String? duration(int value) =>
+      value < 1 ? 'Süre en az 1 gün olmalıdır.' : null;
+
+  static String? crew(int value) =>
+      value < 1 ? 'Ekip en az 1 adam olmalıdır.' : null;
 }

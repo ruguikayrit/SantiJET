@@ -7,6 +7,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 import 'core/constants/app_info.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/theme_rebuild_gate.dart';
+import 'data/daily_crew_repository.dart';
 import 'data/program_repository.dart';
 import 'domain/program_item.dart';
 import 'features/form/program_form_screen.dart';
@@ -22,11 +23,22 @@ Future<void> main() async {
   await Hive.openBox<String>(programBoxName);
   final settings = await Hive.openBox<dynamic>(settingsBoxName);
   await Hive.openBox<dynamic>(licenseBoxName);
+  await Hive.openBox<String>(dailyCrewBoxName);
 
   final programBox = Hive.box<String>(programBoxName);
+  final crewBox = Hive.box<String>(dailyCrewBoxName);
   if (programBox.isEmpty &&
       !(settings.get('demoInitialized', defaultValue: false) as bool)) {
-    await ProgramRepository(programBox).replaceWithDemo();
+    final repository = ProgramRepository(programBox);
+    await repository.replaceWithDemo();
+    final crew = DailyCrewRepository(crewBox);
+    await crew.clear();
+    for (final entry in demoDailyCrew(
+      repository.readAll(),
+      today: DateTime.now(),
+    )) {
+      await crew.save(entry);
+    }
     await settings.put('demoInitialized', true);
   }
   runApp(const ProviderScope(child: SantijetIsProgramiApp()));

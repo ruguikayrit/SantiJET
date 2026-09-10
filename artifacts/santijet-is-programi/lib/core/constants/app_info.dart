@@ -9,7 +9,8 @@ abstract final class AppInfo {
   /// Açılış ekranı ürün adı.
   static const String splashProductLabel = 'İŞ PROGRAMI';
 
-  static const String tagline = 'Planı sade tut. Sahada takip et.';
+  static const String tagline =
+      'Süre × ekip = adam-gün. Planı sahada gerçekleşenle karşılaştır.';
 
   static const String codeLabel = 'Tek fiyat · Abonelik yok';
   static const String pricingLine =

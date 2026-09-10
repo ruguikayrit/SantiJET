@@ -27,6 +27,7 @@ const _headers = <String>[
   'Text1',
   'Text2',
   'Notes',
+  'Number1',
 ];
 
 /// Program faaliyetlerini `.xlsx` dosyasına yazar ve aynı düzeni geri okur.
@@ -66,6 +67,7 @@ class ProgramExcelCodec {
         TextCellValue(item.effectiveStatus(today: today).label),
         TextCellValue(item.santiyeId),
         TextCellValue(item.notes ?? ''),
+        IntCellValue(item.plannedCrew < 1 ? 1 : item.plannedCrew),
       ];
       for (var column = 0; column < values.length; column++) {
         _write(sheet, column, row, values[column]);
@@ -171,6 +173,7 @@ class ProgramExcelCodec {
           startDate: start,
           endDate: end,
           plannedDays: duration == null || duration <= 0 ? null : duration,
+          plannedCrew: (_int(row, columns[_Field.crew]) ?? 1).clamp(1, 200),
           progress: progress,
           status: label ?? derived,
           isStatusManual: label != null && label != derived,
@@ -339,6 +342,7 @@ enum _Field {
   status,
   site,
   notes,
+  crew,
 }
 
 /// Excel başlıklarının Türkçe ve Project karşılıkları.
@@ -399,4 +403,9 @@ const _fieldAliases = <String, _Field>{
   'note': _Field.notes,
   'not': _Field.notes,
   'aciklama': _Field.notes,
+  'number1': _Field.crew,
+  'crew': _Field.crew,
+  'units': _Field.crew,
+  'adam': _Field.crew,
+  'ekipsayisi': _Field.crew,
 };

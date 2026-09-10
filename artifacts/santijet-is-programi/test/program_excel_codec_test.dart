@@ -53,7 +53,7 @@ void main() {
 
       final sheet = book.tables['Task_Table']!;
       final header = [
-        for (var column = 0; column < 14; column++) cell(sheet, column, 0),
+        for (var column = 0; column < 15; column++) cell(sheet, column, 0),
       ];
       expect(header, [
         'ID',
@@ -70,6 +70,7 @@ void main() {
         'Text1',
         'Text2',
         'Notes',
+        'Number1',
       ]);
     });
 

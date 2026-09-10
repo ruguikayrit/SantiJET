@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../domain/daily_crew_entry.dart';
+import '../../domain/man_day_progress.dart';
 import '../../domain/program_item.dart';
 import '../../state/app_state.dart';
 import '../../ui/design_system.dart';
@@ -28,6 +30,8 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   @override
   Widget build(BuildContext context) {
     final site = ref.watch(activeSiteProvider);
+    final logs = ref.watch(dailyCrewProvider);
+    ManDayProgress row(ProgramItem item) => ManDayProgress.of(item, logs);
     final source = ref
         .watch(programItemsProvider)
         .where((item) => item.santiyeId == site)
@@ -42,13 +46,13 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     final now = DateTime.now();
     final weekEnd = now.add(const Duration(days: 7));
     final items = source.where((item) {
-      if (status != null && item.effectiveStatus() != status) return false;
+      if (status != null && row(item).effectiveStatus != status) return false;
       if (responsible != null && item.responsible != responsible) return false;
       return switch (dateFilter) {
         _DateFilter.all => true,
         _DateFilter.thisWeek =>
           !item.endDate.isBefore(now) && !item.startDate.isAfter(weekEnd),
-        _DateFilter.overdue => item.effectiveStatus() == ProgramStatus.delayed,
+        _DateFilter.overdue => row(item).effectiveStatus == ProgramStatus.delayed,
       };
     }).toList();
 
@@ -151,8 +155,8 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
               child: items.isEmpty
                   ? const Center(child: Text('Filtreye uyan faaliyet yok.'))
                   : view == _CalendarView.list
-                  ? _CalendarList(items: items)
-                  : _GanttView(items: items),
+                  ? _CalendarList(items: items, logs: logs)
+                  : _GanttView(items: items, logs: logs),
             ),
           ],
         ),
@@ -188,8 +192,9 @@ class _FilterMenu<T> extends StatelessWidget {
 }
 
 class _CalendarList extends StatelessWidget {
-  const _CalendarList({required this.items});
+  const _CalendarList({required this.items, required this.logs});
   final List<ProgramItem> items;
+  final List<DailyCrewEntry> logs;
 
   @override
   Widget build(BuildContext context) {
@@ -200,19 +205,20 @@ class _CalendarList extends StatelessWidget {
       separatorBuilder: (_, _) => const SizedBox(height: 10),
       itemBuilder: (context, index) {
         final item = items[index];
+        final progress = ManDayProgress.of(item, logs);
         return SJCard(
           child: Row(
             children: [
               SizedBox(
-                width: 52,
+                width: 58,
                 child: Column(
                   children: [
                     Text(
-                      '%${item.progress}',
+                      '%${progress.progress}',
                       style: AppTypography.kpiValue.copyWith(fontSize: 20),
                     ),
                     Text(
-                      '${item.calculatedDays} gün',
+                      '${progress.plannedManDays} AG',
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                   ],
@@ -246,8 +252,9 @@ class _CalendarList extends StatelessWidget {
 }
 
 class _GanttView extends StatelessWidget {
-  const _GanttView({required this.items});
+  const _GanttView({required this.items, required this.logs});
   final List<ProgramItem> items;
+  final List<DailyCrewEntry> logs;
 
   @override
   Widget build(BuildContext context) {
@@ -289,6 +296,7 @@ class _GanttView extends StatelessWidget {
                       ...items.map(
                         (item) => _GanttRow(
                           item: item,
+                          logs: logs,
                           start: start,
                           span: span,
                           width: timelineWidth,
@@ -326,22 +334,25 @@ class _GanttView extends StatelessWidget {
 class _GanttRow extends StatelessWidget {
   const _GanttRow({
     required this.item,
+    required this.logs,
     required this.start,
     required this.span,
     required this.width,
   });
   final ProgramItem item;
+  final List<DailyCrewEntry> logs;
   final DateTime start;
   final int span;
   final double width;
 
   @override
   Widget build(BuildContext context) {
+    final progress = ManDayProgress.of(item, logs);
     final left = item.startDate.difference(start).inDays / span * width;
     final barWidth = math
         .max(12.0, item.calculatedDays / span * width)
         .toDouble();
-    final color = switch (item.effectiveStatus()) {
+    final color = switch (progress.effectiveStatus) {
       ProgramStatus.delayed => AppColors.critical,
       ProgramStatus.completed => AppColors.success,
       ProgramStatus.inProgress => AppColors.electricBlue,
@@ -375,7 +386,8 @@ class _GanttRow extends StatelessWidget {
                 Positioned(
                   left: left,
                   child: Tooltip(
-                    message: '${item.name} · %${item.progress}',
+                    message:
+                        '${item.name} · ${progress.realizedManDays}/${progress.plannedManDays} AG',
                     child: Container(
                       width: barWidth,
                       height: 22,
@@ -385,7 +397,7 @@ class _GanttRow extends StatelessWidget {
                       ),
                       alignment: Alignment.center,
                       child: Text(
-                        '%${item.progress}',
+                        '%${progress.progress}',
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 10,

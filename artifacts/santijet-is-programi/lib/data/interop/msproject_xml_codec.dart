@@ -203,6 +203,7 @@ class MsProjectXmlCodec {
               ? null
               : durationDays,
           progress: progress,
+          plannedCrew: _crewFor(uid, assignments),
           status: statusFromProgress(
             progress: progress,
             startDate: start,
@@ -411,7 +412,8 @@ class MsProjectXmlCodec {
               : resources.indexOf(row.responsible!);
           if (row.isSummary || resourceIndex < 0) continue;
 
-          final totalMinutes = row.durationDays * minutesPerWorkDay;
+          final totalMinutes =
+              row.durationDays * minutesPerWorkDay * row.crew;
           final actualMinutes = (totalMinutes * row.progress / 100).round();
           builder.element(
             'Assignment',
@@ -507,6 +509,7 @@ class MsProjectXmlCodec {
             finish: item.isMilestone ? itemStart : itemFinish,
             durationDays: item.isMilestone ? 0 : item.calculatedDays,
             progress: item.progress,
+            crew: item.plannedCrew < 1 ? 1 : item.plannedCrew,
             isMilestone: item.isMilestone,
             responsible: item.responsible.trim().isEmpty
                 ? null
@@ -570,6 +573,12 @@ class MsProjectXmlCodec {
         .whereType<String>()
         .toSet()
         .join(', ');
+  }
+
+  /// Atanan kaynak sayısı ekip büyüklüğüdür; kaynak yoksa 1 adam.
+  int _crewFor(int taskUid, Map<int, List<int>> assignments) {
+    final count = assignments[taskUid]?.length ?? 0;
+    return count < 1 ? 1 : count;
   }
 
   /// Faaliyetin şantiyesi, üstündeki özet görevin adıdır. Özet görev yoksa
@@ -672,6 +681,7 @@ class _TaskRow {
     required this.progress,
     this.isSummary = false,
     this.isMilestone = false,
+    this.crew = 1,
     this.responsible,
     this.notes,
     this.originalUid,
@@ -688,6 +698,7 @@ class _TaskRow {
   final int progress;
   final bool isSummary;
   final bool isMilestone;
+  final int crew;
   final String? responsible;
   final String? notes;
   final int? originalUid;
