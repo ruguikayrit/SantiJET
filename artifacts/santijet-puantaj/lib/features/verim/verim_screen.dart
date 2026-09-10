@@ -248,60 +248,63 @@ class _VerimNamePercentCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final efficiency = row.unitEfficiency;
+    final hasEntries = row.production.dailyEntries.isNotEmpty;
 
     return SJCard.builder(
-      onTap: () => openVerimProductionChartSheet(
-        context,
-        production: row.production,
-      ),
       builder: (context, theme) {
-        return Row(
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    row.imalatName.trim().isEmpty
-                        ? 'İmalat'
-                        : row.imalatName.trim(),
-                    style: theme.textTheme.titleMedium,
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        row.imalatName.trim().isEmpty
+                            ? 'İmalat'
+                            : row.imalatName.trim(),
+                        style: theme.textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        row.teamName,
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: theme.colorScheme.primary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 2),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                if (efficiency != null)
                   Text(
-                    row.teamName,
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: theme.colorScheme.primary,
-                      fontWeight: FontWeight.w600,
+                    '%${(efficiency * 100).toStringAsFixed(0)}',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.statusInkOnCard(
+                        efficiencyColorForRatio(efficiency),
+                      ),
+                    ),
+                  )
+                else
+                  Text(
+                    '—',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
                     ),
                   ),
-                ],
-              ),
+              ],
             ),
-            const SizedBox(width: AppSpacing.sm),
-            if (efficiency != null)
-              Text(
-                '%${(efficiency * 100).toStringAsFixed(0)}',
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.statusInkOnCard(
-                    efficiencyColorForRatio(efficiency),
-                  ),
-                ),
-              )
-            else
-              Text(
-                '—',
-                style: theme.textTheme.titleMedium?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
+            if (hasEntries) ...[
+              const SizedBox(height: AppSpacing.md),
+              VerimProductionCharts(
+                production: row.production,
+                inline: true,
               ),
-            const SizedBox(width: AppSpacing.xs),
-            Icon(
-              Icons.show_chart_outlined,
-              size: 20,
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
+            ],
           ],
         );
       },

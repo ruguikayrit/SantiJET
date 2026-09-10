@@ -24,7 +24,8 @@ import '../../domain/entities/production_day_entry.dart';
 import '../../domain/entities/santijet_plan_pack.dart';
 import '../../domain/catalogs/imalat_units.dart';
 import '../../domain/yevmiye/yevmiye_calculator.dart';
-import 'widgets/production_performance_chart.dart';
+import 'widgets/production_performance_bar_chart.dart';
+import 'widgets/production_performance_line_chart.dart';
 
 enum _ImalatPhase {
   bekleyen,
@@ -213,7 +214,7 @@ class _ImalatScreenState extends ConsumerState<ImalatScreen> {
               ProductionTripleProgress(metrics: p.metrics),
               if (p.dailyEntries.isNotEmpty) ...[
                 const SizedBox(height: AppSpacing.sm),
-                ProductionPerformanceChart(production: p),
+                ProductionPerformanceBarChart(production: p),
               ],
               if (!p.isComplete) ...[
                 const SizedBox(height: AppSpacing.sm),
@@ -1221,6 +1222,10 @@ class _ImalatDetailSheetState extends ConsumerState<_ImalatDetailSheet> {
             ),
             const SizedBox(height: AppSpacing.sm),
             ProductionTripleProgress(metrics: p.metrics, dense: false),
+            if (p.dailyEntries.isNotEmpty) ...[
+              const SizedBox(height: AppSpacing.md),
+              ProductionPerformanceLineChart(production: p),
+            ],
             const SizedBox(height: AppSpacing.md),
             Row(
               children: [

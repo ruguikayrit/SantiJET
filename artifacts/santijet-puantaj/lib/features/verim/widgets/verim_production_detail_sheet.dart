@@ -1,7 +1,6 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
-import '../../../core/design_system/sj_modal.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/utils/puantaj_date.dart';
@@ -9,22 +8,18 @@ import '../../../core/widgets/production_triple_progress.dart';
 import '../../../domain/entities/production.dart';
 import '../../../domain/models/production_metrics.dart';
 
-/// Verim listesinden imalat satırı — zaman + birim verim çizgi grafikleri.
-Future<void> openVerimProductionChartSheet(
-  BuildContext context, {
-  required Production production,
-}) {
-  return SJModal.showSheet<void>(
-    context: context,
-    title: production.name.trim().isEmpty ? 'İmalat verimi' : production.name.trim(),
-    child: _VerimProductionChartBody(production: production),
-  );
-}
-
-class _VerimProductionChartBody extends StatelessWidget {
-  const _VerimProductionChartBody({required this.production});
+/// Verim imalat satırı — zaman + birim verim çizgi grafikleri (alt alta).
+class VerimProductionCharts extends StatelessWidget {
+  const VerimProductionCharts({
+    required this.production,
+    super.key,
+    this.inline = false,
+  });
 
   final Production production;
+
+  /// Liste kartında üst bilgi zaten gösteriliyorsa ekip/rozet gizlenir.
+  final bool inline;
 
   List<_VerimTimelinePoint> _timeline() {
     final byDay = <DateTime, ({double qty, double labor})>{};
@@ -97,18 +92,23 @@ class _VerimProductionChartBody extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(
-          team,
-          style: theme.textTheme.labelMedium?.copyWith(
-            color: theme.colorScheme.primary,
-            fontWeight: FontWeight.w600,
+        if (!inline) ...[
+          Text(
+            team,
+            style: theme.textTheme.labelMedium?.copyWith(
+              color: theme.colorScheme.primary,
+              fontWeight: FontWeight.w600,
+            ),
           ),
-        ),
-        if (metrics.unitEfficiency != null) ...[
-          const SizedBox(height: AppSpacing.xs),
-          UnitEfficiencyBadge(efficiency: metrics.unitEfficiency, compact: true),
+          if (metrics.unitEfficiency != null) ...[
+            const SizedBox(height: AppSpacing.xs),
+            UnitEfficiencyBadge(
+              efficiency: metrics.unitEfficiency,
+              compact: true,
+            ),
+          ],
+          const SizedBox(height: AppSpacing.md),
         ],
-        const SizedBox(height: AppSpacing.md),
         Text(
           'Zaman · Kümülatif metraj',
           style: theme.textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700),
