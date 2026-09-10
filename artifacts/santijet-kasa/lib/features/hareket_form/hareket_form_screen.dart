@@ -16,7 +16,7 @@ import '../../domain/kasa_lookups.dart';
 import '../../domain/kasa_rules.dart';
 import '../../domain/money_format.dart';
 
-/// Hareket ekle / düzenle — Excel sütunlarıyla birebir.
+/// Hareket ekle / düzenle — şantiye ana sayfadaki aktif seçimden gelir.
 class HareketFormScreen extends ConsumerStatefulWidget {
   const HareketFormScreen({this.hareketId, super.key});
 
@@ -34,7 +34,6 @@ class _HareketFormScreenState extends ConsumerState<HareketFormScreen> {
   late final TextEditingController _gelir;
   late final TextEditingController _gider;
   late final TextEditingController _ek;
-  late final TextEditingController _yeniSantiye;
   String _odemeSekli = OdemeSekli.sahsiKart;
   String _belgeTuru = BelgeTuru.fis;
   String _santiye = '';
@@ -53,10 +52,9 @@ class _HareketFormScreenState extends ConsumerState<HareketFormScreen> {
     _gelir = TextEditingController();
     _gider = TextEditingController();
     _ek = TextEditingController();
-    _yeniSantiye = TextEditingController();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _santiye = ref.read(defaultSantiyeProvider);
+      _santiye = ref.read(activeSantiyeProvider);
       final draft = ref.read(belgeImportDraftProvider.notifier).take();
       if (draft != null && widget.hareketId == null) {
         _aciklama.text = draft.aciklama;
@@ -106,7 +104,6 @@ class _HareketFormScreenState extends ConsumerState<HareketFormScreen> {
     _gelir.dispose();
     _gider.dispose();
     _ek.dispose();
-    _yeniSantiye.dispose();
     super.dispose();
   }
 
@@ -133,6 +130,10 @@ class _HareketFormScreenState extends ConsumerState<HareketFormScreen> {
       return;
     }
 
+    final santiye = _isEdit
+        ? _santiye
+        : ref.read(activeSantiyeProvider);
+
     final now = DateTime.now();
     final hareket = KasaHareket(
       id: _existingId ?? const Uuid().v4(),
@@ -143,7 +144,7 @@ class _HareketFormScreenState extends ConsumerState<HareketFormScreen> {
       gider: (gider != null && gider > 0) ? gider : null,
       odemeSekli: _odemeSekli,
       belgeTuru: _belgeTuru,
-      santiye: _santiye,
+      santiye: santiye,
       ekAciklama: _ek.text.trim(),
       createdAt: _createdAt ?? now,
       updatedAt: now,
@@ -186,7 +187,7 @@ class _HareketFormScreenState extends ConsumerState<HareketFormScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final santiyeler = ref.watch(santiyelerProvider);
+    final activeSantiye = ref.watch(activeSantiyeProvider);
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
@@ -221,6 +222,28 @@ class _HareketFormScreenState extends ConsumerState<HareketFormScreen> {
               ),
               const SizedBox(height: AppSpacing.sm),
             ],
+            if (!_isEdit)
+              Padding(
+                padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.apartment,
+                      size: 18,
+                      color: AppColors.textMuted,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Şantiye: $activeSantiye (ana sayfadan değiştirilir)',
+                        style: AppTypography.bodySmall.copyWith(
+                          color: AppColors.textMuted,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ListTile(
               contentPadding: EdgeInsets.zero,
               title: Text('Tarih', style: AppTypography.labelMedium),
@@ -314,42 +337,6 @@ class _HareketFormScreenState extends ConsumerState<HareketFormScreen> {
                   .map((e) => DropdownMenuItem(value: e, child: Text(e)))
                   .toList(),
               onChanged: (v) => setState(() => _belgeTuru = v ?? _belgeTuru),
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            DropdownButtonFormField<String>(
-              key: ValueKey('santiye-$_santiye'),
-              initialValue: santiyeler.contains(_santiye)
-                  ? _santiye
-                  : (santiyeler.isNotEmpty ? santiyeler.first : null),
-              decoration: const InputDecoration(labelText: 'Şantiye'),
-              items: santiyeler
-                  .map((e) => DropdownMenuItem(value: e, child: Text(e)))
-                  .toList(),
-              onChanged: (v) => setState(() => _santiye = v ?? _santiye),
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _yeniSantiye,
-                    decoration: const InputDecoration(
-                      labelText: 'Yeni şantiye ekle',
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                IconButton.filled(
-                  onPressed: () async {
-                    final name = _yeniSantiye.text.trim();
-                    if (name.isEmpty) return;
-                    await ref.read(santiyelerProvider.notifier).add(name);
-                    _yeniSantiye.clear();
-                    setState(() => _santiye = name);
-                  },
-                  icon: const Icon(Icons.add),
-                ),
-              ],
             ),
             const SizedBox(height: AppSpacing.sm),
             TextField(

@@ -14,6 +14,7 @@ import '../../data/hareketler_store.dart';
 import '../../domain/kasa_hareket.dart';
 import '../../domain/money_format.dart';
 import '../hareketler/hareket_tile.dart';
+import '../santiye/santiye_switcher.dart';
 
 /// Ana kasa — 3 özet + son hareketler + FAB.
 class KasaScreen extends ConsumerWidget {
@@ -22,7 +23,7 @@ class KasaScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final ozet = ref.watch(kasaOzetProvider);
-    final hareketler = ref.watch(hareketlerProvider);
+    final hareketler = ref.watch(santiyeScopedHareketlerProvider);
     final son = hareketler.take(8).toList();
 
     return Scaffold(
@@ -45,6 +46,8 @@ class KasaScreen extends ConsumerWidget {
                   100,
                 ),
                 children: [
+                  const SantiyeSwitcher(),
+                  const SizedBox(height: AppSpacing.md),
                   Text(
                     'Güncel kasa',
                     style: AppTypography.labelMedium.copyWith(

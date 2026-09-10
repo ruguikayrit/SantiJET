@@ -11,7 +11,6 @@ import '../../core/theme/app_typography.dart';
 import '../../core/widgets/santijet_header.dart';
 import '../../data/filters_provider.dart';
 import '../../data/hareketler_store.dart';
-import '../../data/settings_store.dart';
 import '../../domain/kasa_lookups.dart';
 import 'hareket_tile.dart';
 
@@ -23,9 +22,8 @@ class HareketlerScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final filters = ref.watch(hareketFiltersProvider);
     final filtered = ref.watch(filteredHareketlerProvider);
-    final all = ref.watch(hareketlerProvider);
-    final santiyeler = ref.watch(santiyelerProvider);
-    final tedarikciler = all
+    final scoped = ref.watch(santiyeScopedHareketlerProvider);
+    final tedarikciler = scoped
         .map((h) => h.tedarikci.trim())
         .where((t) => t.isNotEmpty)
         .toSet()
@@ -76,17 +74,6 @@ class HareketlerScreen extends ConsumerWidget {
                     onTap: () => ref
                         .read(hareketFiltersProvider.notifier)
                         .setOnlyGider(!filters.onlyGider),
-                  ),
-                  _MenuChip(
-                    label: filters.santiye ?? 'Şantiye',
-                    selected: filters.santiye != null,
-                    items: santiyeler,
-                    onSelected: (v) => ref
-                        .read(hareketFiltersProvider.notifier)
-                        .setSantiye(v),
-                    onClear: () => ref
-                        .read(hareketFiltersProvider.notifier)
-                        .setSantiye(null),
                   ),
                   _MenuChip(
                     label: filters.odemeSekli ?? 'Ödeme',
@@ -246,6 +233,7 @@ class _MenuChip extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(right: 8),
       child: PopupMenuButton<String>(
+        tooltip: label,
         onSelected: (v) {
           if (v == '__clear__') {
             onClear();
@@ -258,19 +246,25 @@ class _MenuChip extends StatelessWidget {
             const PopupMenuItem(value: '__clear__', child: Text('Temizle')),
           ...items.map((e) => PopupMenuItem(value: e, child: Text(e))),
         ],
-        child: FilterChip(
-          label: Text(label),
-          selected: selected,
-          onSelected: (_) {},
-          selectedColor: AppColors.electricBlue.withValues(alpha: 0.2),
-          checkmarkColor: AppColors.electricBlue,
-          labelStyle: AppTypography.labelMedium.copyWith(
-            color: selected ? AppColors.electricBlue : AppColors.textSecondary,
+        // FilterChip kendi tıklamasını yutmasın — menü açılsın.
+        child: AbsorbPointer(
+          child: FilterChip(
+            label: Text(
+              label,
+              overflow: TextOverflow.ellipsis,
+            ),
+            selected: selected,
+            onSelected: (_) {},
+            selectedColor: AppColors.electricBlue.withValues(alpha: 0.2),
+            checkmarkColor: AppColors.electricBlue,
+            labelStyle: AppTypography.labelMedium.copyWith(
+              color: selected ? AppColors.electricBlue : AppColors.textSecondary,
+            ),
+            side: BorderSide(
+              color: selected ? AppColors.electricBlue : AppColors.border,
+            ),
+            backgroundColor: AppColors.surface,
           ),
-          side: BorderSide(
-            color: selected ? AppColors.electricBlue : AppColors.border,
-          ),
-          backgroundColor: AppColors.surface,
         ),
       ),
     );

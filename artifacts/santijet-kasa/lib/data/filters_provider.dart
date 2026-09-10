@@ -49,7 +49,7 @@ final hareketFiltersProvider =
 );
 
 final filteredHareketlerProvider = Provider<List<KasaHareket>>((ref) {
-  final all = ref.watch(hareketlerProvider);
+  final scoped = ref.watch(santiyeScopedHareketlerProvider);
   final filters = ref.watch(hareketFiltersProvider);
-  return filterHareketler(all, filters);
+  return filterHareketler(scoped, filters);
 });

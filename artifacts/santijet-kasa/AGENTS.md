@@ -17,8 +17,9 @@ Turuncu **STAGING ÖNİZLEME** şeridi yok: `build-kasa-pages.sh` `#santijet-sta
 - Alt nav: **Kasa · Hareketler · Rapor**. Ayarlar navda yok (sağ üst dişli).
 - Bildirim zili ve avatar yok.
 - Üst özet: TOPLAM GELİR · TOPLAM GİDER · GÜNCEL KASA (= gelir − gider; negatif kırmızı).
+- Ana sayfa **Şantiye seçin** kartı (Beton ProjectSwitcher deseni): aktif şantiye Hive’da; özet/hareketler/rapor bu kapsama göre filtrelenir. Hareket formunda şantiye alanı yok — aktif şantiye otomatik yazılır.
 
-Kaynak: `lib/features/shell/main_shell.dart`, `lib/core/widgets/santijet_header.dart`.
+Kaynak: `lib/features/shell/main_shell.dart`, `lib/features/santiye/santiye_switcher.dart`.
 
 ## Hareket modeli (kilitli)
 

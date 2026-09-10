@@ -53,29 +53,47 @@ final santiyelerProvider =
   (ref) => SantiyelerNotifier(ref.watch(santiyelerBoxProvider)),
 );
 
-class DefaultSantiyeNotifier extends StateNotifier<String> {
-  DefaultSantiyeNotifier(this._box) : super(_read(_box));
+/// Ana sayfada seçili şantiye — hareket ekleme ve liste kapsamı buna bağlı.
+class ActiveSantiyeNotifier extends StateNotifier<String> {
+  ActiveSantiyeNotifier(this._box) : super(_read(_box));
 
   final Box _box;
-  static const _key = 'defaultSantiye';
+  static const _activeKey = 'activeSantiye';
+  static const _legacyKey = 'defaultSantiye';
 
-  static String _read(Box box) =>
-      (box.get(_key) as String?)?.trim().isNotEmpty == true
-          ? box.get(_key) as String
-          : 'İZMİT/EFSANE';
+  static String _read(Box box) {
+    final active = (box.get(_activeKey) as String?)?.trim();
+    if (active != null && active.isNotEmpty) return active;
+    final legacy = (box.get(_legacyKey) as String?)?.trim();
+    if (legacy != null && legacy.isNotEmpty) return legacy;
+    return 'İZMİT/EFSANE';
+  }
 
-  Future<void> setDefault(String name) async {
+  Future<void> setActive(String name) async {
     final trimmed = name.trim();
     if (trimmed.isEmpty) return;
     state = trimmed;
-    await _box.put(_key, trimmed);
+    await _box.put(_activeKey, trimmed);
+    await _box.put(_legacyKey, trimmed);
+  }
+
+  /// Liste değişince aktif şantiye hâlâ geçerli mi?
+  Future<void> ensureValid(List<String> santiyeler) async {
+    if (santiyeler.contains(state)) return;
+    final next =
+        santiyeler.isNotEmpty ? santiyeler.first : 'İZMİT/EFSANE';
+    await setActive(next);
   }
 }
 
-final defaultSantiyeProvider =
-    StateNotifierProvider<DefaultSantiyeNotifier, String>(
-  (ref) => DefaultSantiyeNotifier(ref.watch(settingsBoxProvider)),
+final activeSantiyeProvider =
+    StateNotifierProvider<ActiveSantiyeNotifier, String>(
+  (ref) => ActiveSantiyeNotifier(ref.watch(settingsBoxProvider)),
 );
+
+/// Geriye dönük — activeSantiye ile aynı.
+@Deprecated('activeSantiyeProvider kullanın')
+final defaultSantiyeProvider = activeSantiyeProvider;
 
 /// Tek seferlik lisans iskeleti — store bağlama sonra.
 class LicenseNotifier extends StateNotifier<bool> {

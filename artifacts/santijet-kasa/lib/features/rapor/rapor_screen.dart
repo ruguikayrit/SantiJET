@@ -124,7 +124,7 @@ class _RaporScreenState extends ConsumerState<RaporScreen> {
       if (bytes == null) {
         throw StateError('Dosya okunamadı.');
       }
-      final santiye = ref.read(defaultSantiyeProvider);
+      final santiye = ref.read(activeSantiyeProvider);
 
       if (format == KasaTransferFormat.excel) {
         final result = kasaImportService.parseExcelBytes(
@@ -232,9 +232,9 @@ class _RaporScreenState extends ConsumerState<RaporScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final all = ref.watch(hareketlerProvider);
+    final base = ref.watch(santiyeScopedHareketlerProvider);
     final scoped = filterHareketler(
-      all,
+      base,
       HareketFilters(from: _from, to: _to),
     );
     final ozet = hesaplaOzet(scoped);

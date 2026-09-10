@@ -149,6 +149,80 @@ void main() {
       expect(found, isNotEmpty);
       expect(found.first.tedarikci.toUpperCase(), contains('YEŞİLLER'));
     });
+
+    test('santiye scope filters rows', () {
+      final now = DateTime(2026, 9, 8);
+      final rows = [
+        KasaHareket(
+          id: '1',
+          tarih: now,
+          aciklama: 'A',
+          gider: 10,
+          santiye: 'İZMİT/EFSANE',
+          createdAt: now,
+          updatedAt: now,
+        ),
+        KasaHareket(
+          id: '2',
+          tarih: now,
+          aciklama: 'B',
+          gider: 20,
+          santiye: 'ANKARA/X',
+          createdAt: now,
+          updatedAt: now,
+        ),
+      ];
+      final izmit = filterHareketler(
+        rows,
+        const HareketFilters(santiye: 'İZMİT/EFSANE'),
+      );
+      expect(izmit.length, 1);
+      expect(izmit.first.santiye, 'İZMİT/EFSANE');
+    });
+
+    test('odeme, belge, gelir/gider and date filters', () {
+      final demo = buildDemoHareketler(now: DateTime(2026, 9, 8));
+      final havale = filterHareketler(
+        demo,
+        const HareketFilters(odemeSekli: OdemeSekli.havale),
+      );
+      expect(havale, isNotEmpty);
+      expect(havale.every((h) => h.odemeSekli == OdemeSekli.havale), isTrue);
+
+      final fis = filterHareketler(
+        demo,
+        const HareketFilters(belgeTuru: BelgeTuru.fis),
+      );
+      expect(fis, isNotEmpty);
+      expect(fis.every((h) => h.belgeTuru == BelgeTuru.fis), isTrue);
+
+      final gelir = filterHareketler(
+        demo,
+        const HareketFilters(onlyGelir: true),
+      );
+      expect(gelir, isNotEmpty);
+      expect(gelir.every((h) => h.isGelir), isTrue);
+
+      final gider = filterHareketler(
+        demo,
+        const HareketFilters(onlyGider: true),
+      );
+      expect(gider, isNotEmpty);
+      expect(gider.every((h) => h.isGider), isTrue);
+
+      final aug2024 = filterHareketler(
+        demo,
+        HareketFilters(
+          from: DateTime(2024, 8, 1),
+          to: DateTime(2024, 8, 31),
+        ),
+      );
+      expect(aug2024, isNotEmpty);
+      expect(
+        aug2024.every((h) => h.tarih.year == 2024 && h.tarih.month == 8),
+        isTrue,
+      );
+    });
   });
 
   group('CsvExport', () {

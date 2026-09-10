@@ -3,6 +3,7 @@ import 'package:hive/hive.dart';
 
 import '../domain/kasa_hareket.dart';
 import '../domain/kasa_rules.dart';
+import 'settings_store.dart';
 
 final hareketlerBoxProvider = Provider<Box>(
   (ref) => throw UnimplementedError('hareketlerBoxProvider override edilmeli'),
@@ -61,6 +62,13 @@ final hareketlerProvider =
   (ref) => HareketlerNotifier(ref.watch(hareketlerBoxProvider)),
 );
 
+/// Aktif şantiyeye göre hareketler.
+final santiyeScopedHareketlerProvider = Provider<List<KasaHareket>>((ref) {
+  final all = ref.watch(hareketlerProvider);
+  final active = ref.watch(activeSantiyeProvider).trim();
+  return all.where((h) => h.santiye.trim() == active).toList();
+});
+
 final kasaOzetProvider = Provider<KasaOzet>((ref) {
-  return hesaplaOzet(ref.watch(hareketlerProvider));
+  return hesaplaOzet(ref.watch(santiyeScopedHareketlerProvider));
 });

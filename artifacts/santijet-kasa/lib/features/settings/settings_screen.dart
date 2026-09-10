@@ -21,7 +21,7 @@ class SettingsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final mode = ref.watch(themeModeProvider);
     final santiyeler = ref.watch(santiyelerProvider);
-    final defaultSantiye = ref.watch(defaultSantiyeProvider);
+    final activeSantiye = ref.watch(activeSantiyeProvider);
     final licensed = ref.watch(licenseUnlockedProvider);
 
     return Scaffold(
@@ -168,21 +168,26 @@ class SettingsScreen extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Varsayılan şantiye',
+                  'Aktif şantiye',
                   style: AppTypography.cardLabelMedium,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Ana sayfadaki seçimle aynıdır. Yeni hareketler bu şantiyeye yazılır.',
+                  style: AppTypography.cardBodySmall,
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 DropdownButtonFormField<String>(
-                  key: ValueKey('default-$defaultSantiye'),
-                  initialValue: santiyeler.contains(defaultSantiye)
-                      ? defaultSantiye
+                  key: ValueKey('active-$activeSantiye'),
+                  initialValue: santiyeler.contains(activeSantiye)
+                      ? activeSantiye
                       : (santiyeler.isNotEmpty ? santiyeler.first : null),
                   items: santiyeler
                       .map((e) => DropdownMenuItem(value: e, child: Text(e)))
                       .toList(),
                   onChanged: (v) {
                     if (v != null) {
-                      ref.read(defaultSantiyeProvider.notifier).setDefault(v);
+                      ref.read(activeSantiyeProvider.notifier).setActive(v);
                     }
                   },
                 ),
@@ -200,8 +205,12 @@ class SettingsScreen extends ConsumerWidget {
                         size: 20,
                         color: AppColors.cardTextMuted,
                       ),
-                      onPressed: () =>
-                          ref.read(santiyelerProvider.notifier).remove(s),
+                      onPressed: () async {
+                        await ref.read(santiyelerProvider.notifier).remove(s);
+                        await ref
+                            .read(activeSantiyeProvider.notifier)
+                            .ensureValid(ref.read(santiyelerProvider));
+                      },
                     ),
                   ),
                 ),
@@ -283,6 +292,9 @@ class SettingsScreen extends ConsumerWidget {
                 await ref
                     .read(santiyelerProvider.notifier)
                     .replaceAll(['İZMİT/EFSANE']);
+                await ref
+                    .read(activeSantiyeProvider.notifier)
+                    .setActive('İZMİT/EFSANE');
               }
             },
           ),
