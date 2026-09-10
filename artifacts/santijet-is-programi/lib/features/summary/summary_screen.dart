@@ -1,9 +1,6 @@
-import 'dart:convert';
-import 'dart:typed_data';
-
-import 'package:file_saver/file_saver.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../domain/program_item.dart';
@@ -89,12 +86,10 @@ class SummaryScreen extends ConsumerWidget {
                           ),
                         ),
                         SJButton(
-                          label: 'CSV Aktar',
-                          icon: Icons.download_rounded,
+                          label: 'Aktar',
+                          icon: Icons.swap_vert_rounded,
                           variant: SJButtonVariant.secondary,
-                          onPressed: items.isEmpty
-                              ? null
-                              : () => _exportCsv(context, site, items),
+                          onPressed: () => context.push('/aktar'),
                         ),
                       ],
                     ),
@@ -158,47 +153,6 @@ class SummaryScreen extends ConsumerWidget {
     );
   }
 
-  Future<void> _exportCsv(
-    BuildContext context,
-    String site,
-    List<ProgramItem> items,
-  ) async {
-    final rows = <String>[
-      'Şantiye,Faaliyet,Başlangıç,Bitiş,Planlanan Gün,İlerleme,Durum,Sorumlu,Not',
-      ...items.map(
-        (item) => [
-          site,
-          item.name,
-          _date(item.startDate),
-          _date(item.endDate),
-          item.calculatedDays,
-          item.progress,
-          item.effectiveStatus().label,
-          item.responsible,
-          item.notes ?? '',
-        ].map(_csvCell).join(','),
-      ),
-    ];
-    final bytes = Uint8List.fromList(utf8.encode('\uFEFF${rows.join('\n')}'));
-    await FileSaver.instance.saveFile(
-      name: 'santijet-is-programi-${_date(DateTime.now())}',
-      bytes: bytes,
-      fileExtension: 'csv',
-      mimeType: MimeType.csv,
-    );
-    if (context.mounted) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('CSV dosyası hazırlandı.')));
-    }
-  }
-
-  String _csvCell(Object value) {
-    final text = value.toString().replaceAll('"', '""');
-    return '"$text"';
-  }
-
-  String _date(DateTime value) => value.toIso8601String().substring(0, 10);
 }
 
 class _BreakdownRow extends StatelessWidget {

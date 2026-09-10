@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
 
+import '../data/interop/program_interop_service.dart';
 import '../data/program_repository.dart';
 import '../domain/program_item.dart';
 
@@ -39,7 +40,25 @@ class ProgramController extends Notifier<List<ProgramItem>> {
     await _repository.clear();
     state = const [];
   }
+
+  /// İçe aktarılan faaliyetleri yazar. [replace] doğruysa mevcut program
+  /// silinir; değilse aynı kimlikli satırlar güncellenir, yenileri eklenir.
+  Future<void> importItems(
+    List<ProgramItem> items, {
+    required bool replace,
+  }) async {
+    if (replace) {
+      await _repository.replaceAll(items);
+    } else {
+      await _repository.saveAll(items);
+    }
+    state = _repository.readAll();
+  }
 }
+
+final programInteropServiceProvider = Provider<ProgramInteropService>(
+  (ref) => ProgramInteropService(),
+);
 
 final activeSiteProvider = NotifierProvider<ActiveSiteController, String>(
   ActiveSiteController.new,

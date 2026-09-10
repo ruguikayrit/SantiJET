@@ -202,6 +202,13 @@ class SettingsScreen extends ConsumerWidget {
           const SizedBox(height: AppSpacing.lg),
           const _SectionLabel('VERİ'),
           _ActionTile(
+            icon: Icons.swap_vert_rounded,
+            title: 'MS Project · Excel · PDF aktarımı',
+            subtitle: 'Programı dışa aktar ya da Project dosyası oku.',
+            onTap: () => context.push('/aktar'),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          _ActionTile(
             icon: Icons.dataset_outlined,
             title: 'Demo veri yükle',
             subtitle: '10 örnek faaliyet, iki şantiye.',

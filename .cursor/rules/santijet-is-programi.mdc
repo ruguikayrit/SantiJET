@@ -17,4 +17,7 @@ alwaysApply: false
 - Bildirim zili, avatar, turuncu staging şeridi ve `flutter-view` üst
   kaydırması ekleme.
 - Pages hedefi `/is-programi/`; ürün satırı **İŞ PROGRAMI**.
+- MS Project alışverişi yalnız dosya üzerindendir: dışa aktarım MS Project
+  XML, Excel ve PDF; içe aktarım MS Project XML ve Excel. `.mpp` yazılmaz,
+  okunmaz. Canlı bağlantı veya senkron eklenmez.
 - Ayrıntılar için `artifacts/santijet-is-programi/AGENTS.md` dosyasını izle.

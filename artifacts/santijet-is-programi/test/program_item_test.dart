@@ -50,12 +50,22 @@ void main() {
         end: DateTime(2026, 9, 5),
         progress: 35,
         status: ProgramStatus.inProgress,
+      ).copyWith(
+        wbs: '1.2',
+        outlineLevel: 2,
+        isMilestone: false,
+        msProjectUid: 14,
+        predecessors: '3FS+2 gün',
       );
       final restored = ProgramItem.fromJson(item.toJson());
       expect(restored.id, item.id);
       expect(restored.status, ProgramStatus.inProgress);
       expect(restored.progress, 35);
       expect(restored.startDate, DateTime(2026, 9, 1));
+      expect(restored.wbs, '1.2');
+      expect(restored.outlineLevel, 2);
+      expect(restored.msProjectUid, 14);
+      expect(restored.predecessors, '3FS+2 gün');
     });
   });
 

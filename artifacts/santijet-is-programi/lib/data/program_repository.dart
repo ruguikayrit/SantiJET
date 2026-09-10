@@ -31,6 +31,16 @@ class ProgramRepository {
 
   Future<void> clear() => _box.clear();
 
+  /// İçe aktarılan faaliyetleri yazar. Aynı kimlikli satır varsa üzerine yazar.
+  Future<void> saveAll(List<ProgramItem> items) =>
+      _box.putAll({for (final item in items) item.id: jsonEncode(item.toJson())});
+
+  /// Mevcut programı siler ve içe aktarılan listeyi tek kaynak yapar.
+  Future<void> replaceAll(List<ProgramItem> items) async {
+    await clear();
+    await saveAll(items);
+  }
+
   Future<void> replaceWithDemo({DateTime? today}) async {
     final now = _dateOnly(today ?? DateTime.now());
     await clear();

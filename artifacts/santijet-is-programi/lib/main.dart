@@ -10,6 +10,7 @@ import 'core/theme/theme_rebuild_gate.dart';
 import 'data/program_repository.dart';
 import 'domain/program_item.dart';
 import 'features/form/program_form_screen.dart';
+import 'features/interop/transfer_screen.dart';
 import 'features/settings/settings_screen.dart';
 import 'features/splash/splash_screen.dart';
 import 'state/app_state.dart';
@@ -40,6 +41,10 @@ final appRouter = GoRouter(
       path: '/form',
       builder: (context, state) =>
           ProgramFormScreen(item: state.extra as ProgramItem?),
+    ),
+    GoRoute(
+      path: '/aktar',
+      builder: (context, state) => const TransferScreen(),
     ),
     GoRoute(
       path: '/settings',

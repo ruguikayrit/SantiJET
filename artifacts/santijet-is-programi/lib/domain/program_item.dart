@@ -35,6 +35,11 @@ class ProgramItem {
     required this.responsible,
     this.notes,
     this.isStatusManual = false,
+    this.wbs,
+    this.outlineLevel = 1,
+    this.isMilestone = false,
+    this.msProjectUid,
+    this.predecessors,
   });
 
   final String id;
@@ -50,6 +55,22 @@ class ProgramItem {
 
   /// Otomatik gecikme kararını kullanıcının durum seçimiyle ezmeye yarar.
   final bool isStatusManual;
+
+  /// MS Project WBS / anahat kodu, ör. `1.2`.
+  final String? wbs;
+
+  /// MS Project anahat düzeyi. Kök faaliyetler 1'dir.
+  final int outlineLevel;
+
+  /// Süresi sıfır olan kilometre taşı faaliyeti.
+  final bool isMilestone;
+
+  /// İçe aktarılan dosyadaki görev kimliği; dışa aktarımda korunur.
+  final int? msProjectUid;
+
+  /// MS Project öncül metni, ör. `2FS+3 gün`. Uygulama hesaplamaz,
+  /// yalnız dosyalar arasında taşır.
+  final String? predecessors;
 
   int get calculatedDays =>
       plannedDays ?? endDate.difference(startDate).inDays + 1;
@@ -76,6 +97,11 @@ class ProgramItem {
     String? responsible,
     String? notes,
     bool? isStatusManual,
+    String? wbs,
+    int? outlineLevel,
+    bool? isMilestone,
+    int? msProjectUid,
+    String? predecessors,
   }) => ProgramItem(
     id: id ?? this.id,
     santiyeId: santiyeId ?? this.santiyeId,
@@ -88,6 +114,11 @@ class ProgramItem {
     responsible: responsible ?? this.responsible,
     notes: notes ?? this.notes,
     isStatusManual: isStatusManual ?? this.isStatusManual,
+    wbs: wbs ?? this.wbs,
+    outlineLevel: outlineLevel ?? this.outlineLevel,
+    isMilestone: isMilestone ?? this.isMilestone,
+    msProjectUid: msProjectUid ?? this.msProjectUid,
+    predecessors: predecessors ?? this.predecessors,
   );
 
   Map<String, dynamic> toJson() => {
@@ -102,6 +133,11 @@ class ProgramItem {
     'responsible': responsible,
     'notes': notes,
     'isStatusManual': isStatusManual,
+    'wbs': wbs,
+    'outlineLevel': outlineLevel,
+    'isMilestone': isMilestone,
+    'msProjectUid': msProjectUid,
+    'predecessors': predecessors,
   };
 
   factory ProgramItem.fromJson(Map<String, dynamic> json) => ProgramItem(
@@ -116,6 +152,11 @@ class ProgramItem {
     responsible: json['responsible'] as String? ?? '',
     notes: json['notes'] as String?,
     isStatusManual: json['isStatusManual'] as bool? ?? false,
+    wbs: json['wbs'] as String?,
+    outlineLevel: json['outlineLevel'] as int? ?? 1,
+    isMilestone: json['isMilestone'] as bool? ?? false,
+    msProjectUid: json['msProjectUid'] as int?,
+    predecessors: json['predecessors'] as String?,
   );
 
   static String _date(DateTime value) =>
