@@ -125,18 +125,6 @@ class VerimProductionCharts extends StatelessWidget {
           const SizedBox(height: AppSpacing.md),
         ],
         _VerimChartSection(
-          title: 'Metraj · Kümülatif',
-          points: points,
-          height: chartHeight,
-          unitSuffix: unit.isEmpty ? '' : ' $unit',
-          primaryValue: (p) => p.cumulativeQty,
-          secondaryValue: (p) => p.plannedCumulativeQty,
-          showSecondary: metrics.metraj.hasPlan,
-          primaryLabel: 'Gerçek',
-          secondaryLabel: 'Plan',
-        ),
-        const SizedBox(height: AppSpacing.lg),
-        _VerimChartSection(
           title: 'Süre · Çalışılan gün',
           points: points,
           height: chartHeight,
@@ -144,6 +132,18 @@ class VerimProductionCharts extends StatelessWidget {
           primaryValue: (p) => p.cumulativeWorkedDays,
           secondaryValue: (p) => p.plannedCumulativeWorkedDays,
           showSecondary: metrics.sure.hasPlan,
+          primaryLabel: 'Gerçek',
+          secondaryLabel: 'Plan',
+        ),
+        const SizedBox(height: AppSpacing.lg),
+        _VerimChartSection(
+          title: 'Metraj · Kümülatif',
+          points: points,
+          height: chartHeight,
+          unitSuffix: unit.isEmpty ? '' : ' $unit',
+          primaryValue: (p) => p.cumulativeQty,
+          secondaryValue: (p) => p.plannedCumulativeQty,
+          showSecondary: metrics.metraj.hasPlan,
           primaryLabel: 'Gerçek',
           secondaryLabel: 'Plan',
         ),
@@ -174,7 +174,7 @@ class VerimProductionCharts extends StatelessWidget {
         ),
         const SizedBox(height: AppSpacing.sm),
         Text(
-          'Her nokta o güne kadar kümülatif metraj, süre, adam-gün ve birim '
+          'Her nokta o güne kadar kümülatif süre, metraj, adam-gün ve birim '
           'verimi gösterir.',
           style: theme.textTheme.labelSmall?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
