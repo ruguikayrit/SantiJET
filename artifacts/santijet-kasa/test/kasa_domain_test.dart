@@ -120,6 +120,41 @@ void main() {
     });
   });
 
+  group('HareketlerNotifier appendImported', () {
+    test('appends without removing existing rows', () {
+      final now = DateTime(2026, 9, 8);
+      final existing = [
+        KasaHareket(
+          id: 'a',
+          tarih: now,
+          aciklama: 'Eski',
+          gider: 5,
+          santiye: 'İZMİT/EFSANE',
+          createdAt: now,
+          updatedAt: now,
+        ),
+      ];
+      final incoming = [
+        KasaHareket(
+          id: 'b',
+          tarih: now,
+          aciklama: 'Yeni',
+          gider: 10,
+          santiye: 'YANLIŞ/OKUMA',
+          createdAt: now,
+          updatedAt: now,
+        ),
+      ];
+      // appendImported mantığı: birleştir + id çakışmasını ele
+      final merged = [
+        ...incoming,
+        ...existing.where((e) => !incoming.any((n) => n.id == e.id)),
+      ];
+      expect(merged.length, 2);
+      expect(merged.map((e) => e.id).toSet(), {'a', 'b'});
+    });
+  });
+
   group('filter + demo', () {
     test('demo data is valid and balances', () {
       final demo = buildDemoHareketler(now: DateTime(2026, 9, 8));

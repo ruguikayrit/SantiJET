@@ -98,13 +98,17 @@ class _RaporScreenState extends ConsumerState<RaporScreen> {
       ),
     );
     if (chosen == null || chosen.isEmpty) return;
-    final current = ref.read(hareketlerProvider);
-    await ref
-        .read(hareketlerProvider.notifier)
-        .replaceAll([...chosen, ...current]);
+    // OCR/Excel şantiye sütunu aktif seçimden farklı olabilir — aktif şantiyeye yaz.
+    final active = ref.read(activeSantiyeProvider).trim();
+    final stamped = chosen.map((h) => h.copyWith(santiye: active)).toList();
+    await ref.read(hareketlerProvider.notifier).appendImported(stamped);
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('${chosen.length} satır içe aktarıldı.')),
+      SnackBar(
+        content: Text(
+          '${stamped.length} satır $active şantiyesine eklendi.',
+        ),
+      ),
     );
   }
 

@@ -51,6 +51,20 @@ class HareketlerNotifier extends StateNotifier<List<KasaHareket>> {
     await _persist();
   }
 
+  /// İçe aktarım — mevcut kayıtların üzerine ekle (silmez).
+  Future<void> appendImported(List<KasaHareket> incoming) async {
+    for (final item in incoming) {
+      assertValidHareket(item);
+    }
+    if (incoming.isEmpty) return;
+    final existingIds = incoming.map((e) => e.id).toSet();
+    state = [
+      ...incoming,
+      ...state.where((e) => !existingIds.contains(e.id)),
+    ]..sort((a, b) => b.tarih.compareTo(a.tarih));
+    await _persist();
+  }
+
   Future<void> clear() async {
     state = const [];
     await _persist();

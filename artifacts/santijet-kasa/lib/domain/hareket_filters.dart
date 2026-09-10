@@ -66,22 +66,31 @@ class HareketFilters {
   }
 }
 
+String _foldTr(String s) => s
+    .toLowerCase()
+    .replaceAll('ı', 'i')
+    .replaceAll('İ', 'i')
+    .replaceAll('ş', 's')
+    .replaceAll('ğ', 'g')
+    .replaceAll('ü', 'u')
+    .replaceAll('ö', 'o')
+    .replaceAll('ç', 'c');
+
+bool _eqField(String? filter, String value) {
+  if (filter == null) return true;
+  return value.trim() == filter.trim();
+}
+
 List<KasaHareket> filterHareketler(
   Iterable<KasaHareket> source,
   HareketFilters filters,
 ) {
-  final q = filters.query.trim().toLowerCase();
+  final q = _foldTr(filters.query.trim());
   return source.where((h) {
-    if (filters.santiye != null && h.santiye != filters.santiye) return false;
-    if (filters.tedarikci != null && h.tedarikci != filters.tedarikci) {
-      return false;
-    }
-    if (filters.odemeSekli != null && h.odemeSekli != filters.odemeSekli) {
-      return false;
-    }
-    if (filters.belgeTuru != null && h.belgeTuru != filters.belgeTuru) {
-      return false;
-    }
+    if (!_eqField(filters.santiye, h.santiye)) return false;
+    if (!_eqField(filters.tedarikci, h.tedarikci)) return false;
+    if (!_eqField(filters.odemeSekli, h.odemeSekli)) return false;
+    if (!_eqField(filters.belgeTuru, h.belgeTuru)) return false;
     if (filters.onlyGelir && !h.isGelir) return false;
     if (filters.onlyGider && !h.isGider) return false;
     if (filters.from != null) {
@@ -103,8 +112,9 @@ List<KasaHareket> filterHareketler(
       if (d.isAfter(t)) return false;
     }
     if (q.isNotEmpty) {
-      final haystack =
-          '${h.tedarikci} ${h.aciklama} ${h.ekAciklama}'.toLowerCase();
+      final haystack = _foldTr(
+        '${h.tedarikci} ${h.aciklama} ${h.ekAciklama}',
+      );
       if (!haystack.contains(q)) return false;
     }
     return true;
