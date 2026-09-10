@@ -63,6 +63,7 @@ class KesifCloudService {
     String? projectName,
   }) async {
     await Future<void>.delayed(const Duration(milliseconds: 400));
+    final label = projectName ?? 'Demo Şantiye';
     final snap = KesifSnapshot(
       projectId: projectId,
       updatedAt: DateTime.now(),
@@ -71,32 +72,79 @@ class KesifCloudService {
         KesifItem(
           id: 'ks-demo-1',
           imalatId: 'im-1',
-          imalatName: 'Kolon demiri',
+          imalatName: 'Kolon Demiri',
           plannedQty: 20,
           unit: 'ton',
-          notes: projectName == null
-              ? 'Keşif demo — kolon demiri'
-              : '$projectName — Kolon demiri keşfi',
+          notes: '$label — bodrum kolon demiri keşfi',
         ),
         KesifItem(
           id: 'ks-demo-2',
           imalatId: 'im-2',
-          imalatName: 'Kiriş demiri',
+          imalatName: 'Kiriş Demiri',
           plannedQty: 15,
           unit: 'ton',
         ),
         KesifItem(
           id: 'ks-demo-3',
           imalatId: 'im-3',
-          imalatName: 'Temel demiri',
+          imalatName: 'Temel Demiri',
           plannedQty: 40,
           unit: 'ton',
         ),
         KesifItem(
           id: 'ks-demo-4',
           imalatId: 'im-4',
-          imalatName: 'Alçı sıva',
+          imalatName: 'Alçı Sıva',
           plannedQty: 850,
+          unit: 'm²',
+        ),
+        KesifItem(
+          id: 'ks-demo-5',
+          imalatId: 'im-5',
+          imalatName: 'Perde Betonu',
+          plannedQty: 180,
+          unit: 'm³',
+        ),
+        KesifItem(
+          id: 'ks-demo-6',
+          imalatId: 'im-6',
+          imalatName: 'Asansör Boşluğu Kalıbı',
+          plannedQty: 120,
+          unit: 'm²',
+        ),
+        KesifItem(
+          id: 'ks-demo-7',
+          imalatId: 'im-7',
+          imalatName: 'Aydınlatma Hattı',
+          plannedQty: 420,
+          unit: 'm',
+        ),
+        KesifItem(
+          id: 'ks-demo-8',
+          imalatId: 'im-8',
+          imalatName: 'Havalandırma Kanalı',
+          plannedQty: 260,
+          unit: 'm',
+        ),
+        KesifItem(
+          id: 'ks-demo-9',
+          imalatId: 'im-9',
+          imalatName: 'Döşeme Betonu',
+          plannedQty: 320,
+          unit: 'm³',
+        ),
+        KesifItem(
+          id: 'ks-demo-10',
+          imalatId: 'im-10',
+          imalatName: 'Yangın Sprinkler Hattı',
+          plannedQty: 180,
+          unit: 'm',
+        ),
+        KesifItem(
+          id: 'ks-demo-11',
+          imalatId: 'im-11',
+          imalatName: 'Cephe İskelesi',
+          plannedQty: 450,
           unit: 'm²',
         ),
       ],

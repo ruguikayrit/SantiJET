@@ -54,7 +54,6 @@ class DemoSeedController {
     _replaceDailyReports(projectId: project.id);
     _replaceYevmiyeli(projectId: project.id, people: people);
     _replaceTasks(projectId: project.id, people: people);
-    _ref.read(productionProvider.notifier).seedYearlyChartDemo(project.id);
     await _ref.read(planCloudSyncControllerProvider).syncDemoForProject(
           projectId: project.id,
           projectName: project.name,
@@ -80,6 +79,7 @@ class DemoSeedController {
     _ref.read(attendanceProvider.notifier).deleteForProject(projectId);
     _ref.read(productionProvider.notifier).deleteForProject(projectId);
     _ref.read(productionProvider.notifier).removeYearlyChartDemo(projectId);
+    _ref.read(productionProvider.notifier).clearAllYearlyChartDemoFlags();
     _ref.read(tasksProvider.notifier).deleteForProject(projectId);
     _ref.read(dailyReportsProvider.notifier).deleteForProject(projectId);
     _ref.read(yevmiyeliIsProvider.notifier).deleteForProject(projectId);
@@ -203,6 +203,24 @@ class DemoSeedController {
         team: 'Mekanik',
         company: 'Mekanik Taşeron',
       ),
+      (
+        name: 'Zeynep Güven',
+        profession: 'İş Güvenliği Uzmanı',
+        team: 'Ofis',
+        company: 'Demo İnşaat A.Ş.',
+      ),
+      (
+        name: 'Okan Demirbaş',
+        profession: 'Betonarme Demircisi',
+        team: 'Demir',
+        company: 'Tiryaki İnşaat',
+      ),
+      (
+        name: 'Fatma Boyacı',
+        profession: 'Boyacı',
+        team: 'Kalıp',
+        company: 'Boya Taşeron',
+      ),
     ];
 
     final created = <Person>[];
@@ -230,7 +248,7 @@ class DemoSeedController {
     final attendance = _ref.read(attendanceProvider.notifier);
     attendance.deleteForProject(project.id);
 
-    final dates = _recentWeekdays(count: 20);
+    final dates = _recentWeekdays(count: 28);
     for (var di = 0; di < dates.length; di++) {
       final date = dates[di];
       for (var pi = 0; pi < people.length; pi++) {
@@ -291,185 +309,246 @@ class DemoSeedController {
     }
   }
 
+  List<ProductionDayEntry> _prodEntries(
+    List<({int daysAgo, double qty, double usta, double duz})> spec,
+  ) {
+    return [
+      for (final s in spec)
+        ProductionDayEntry(
+          id: IdGen.make('prd'),
+          date: _pastDay(s.daysAgo),
+          ustaCount: s.usta,
+          duzIsciCount: s.duz,
+          completedQty: s.qty,
+        ),
+    ];
+  }
+
   void _replaceProductions({required String projectId}) {
     final production = _ref.read(productionProvider.notifier);
     production.deleteForProject(projectId);
 
-    ProductionDayEntry entry(
-      int dayOffset, {
-      required double qty,
-      double usta = 3,
-      double duz = 1,
+    void add({
+      required String name,
+      required String floor,
+      required String section,
+      required String teamName,
+      required String unit,
+      required double plannedQty,
+      required int plannedDays,
+      required double plannedLabor,
+      String note = '',
+      List<({int daysAgo, double qty, double usta, double duz})> days =
+          const [],
     }) {
-      return ProductionDayEntry(
-        id: IdGen.make('prd'),
-        date: _pastDay(dayOffset),
-        ustaCount: usta,
-        duzIsciCount: duz,
-        completedQty: qty,
+      production.add(
+        Production(
+          id: '',
+          projectId: projectId,
+          name: name,
+          floor: floor,
+          section: section,
+          teamName: teamName,
+          unit: unit,
+          plannedQty: plannedQty,
+          plannedDays: plannedDays,
+          plannedLabor: plannedLabor,
+          note: note,
+          dailyEntries: _prodEntries(days),
+        ),
       );
     }
 
-    production.add(
-      Production(
-        id: '',
-        projectId: projectId,
-        name: 'Kolon Demiri',
-        floor: 'Bodrum Kat',
-        section: '1. Kısım',
-        teamName: 'Demir',
-        unit: 'ton',
-        plannedQty: 20,
-        plannedDays: 7,
-        plannedLabor: 6,
-        note: '[DEMO] Kolon demiri',
-        dailyEntries: [
-          entry(12, qty: 4),
-          entry(8, qty: 3.5),
-          entry(3, qty: 5),
-          entry(1, qty: 2),
-        ],
-      ),
+    add(
+      name: 'Kolon Demiri',
+      floor: 'Bodrum Kat',
+      section: '1. Kısım',
+      teamName: 'Demir',
+      unit: 'ton',
+      plannedQty: 20,
+      plannedDays: 7,
+      plannedLabor: 6,
+      note: 'Bodrum kolon demiri — verim grafikleri için çok günlü kayıt',
+      days: [
+        (daysAgo: 18, qty: 1.5, usta: 3, duz: 1),
+        (daysAgo: 16, qty: 2, usta: 3, duz: 2),
+        (daysAgo: 14, qty: 2, usta: 4, duz: 1),
+        (daysAgo: 12, qty: 2.5, usta: 3, duz: 2),
+        (daysAgo: 10, qty: 2, usta: 3, duz: 1),
+        (daysAgo: 8, qty: 2, usta: 4, duz: 2),
+        (daysAgo: 5, qty: 1.5, usta: 3, duz: 1),
+        (daysAgo: 2, qty: 1, usta: 2, duz: 1),
+      ],
     );
-    production.add(
-      Production(
-        id: '',
-        projectId: projectId,
-        name: 'Kiriş Demiri',
-        floor: 'Bodrum Kat',
-        section: '2. Kısım',
-        teamName: 'Demir',
-        unit: 'ton',
-        plannedQty: 15,
-        plannedDays: 10,
-        plannedLabor: 4,
-        note: '[DEMO] Kiriş demiri',
-        dailyEntries: [
-          entry(10, qty: 2),
-          entry(5, qty: 2.5),
-          entry(2, qty: 1.5),
-        ],
-      ),
+    add(
+      name: 'Kiriş Demiri',
+      floor: 'Bodrum Kat',
+      section: '2. Kısım',
+      teamName: 'Demir',
+      unit: 'ton',
+      plannedQty: 15,
+      plannedDays: 10,
+      plannedLabor: 4,
+      days: [
+        (daysAgo: 15, qty: 1.5, usta: 2, duz: 1),
+        (daysAgo: 12, qty: 2, usta: 2, duz: 2),
+        (daysAgo: 9, qty: 1.5, usta: 3, duz: 1),
+        (daysAgo: 7, qty: 2, usta: 2, duz: 1),
+        (daysAgo: 4, qty: 1, usta: 2, duz: 2),
+        (daysAgo: 1, qty: 0.5, usta: 1, duz: 1),
+      ],
     );
-    production.add(
-      Production(
-        id: '',
-        projectId: projectId,
-        name: 'Temel Demiri',
-        floor: 'Temel',
-        section: 'A Blok',
-        teamName: 'Demir',
-        unit: 'ton',
-        plannedQty: 40,
-        plannedDays: 14,
-        plannedLabor: 8,
-        note: '[DEMO] Temel demiri',
-        dailyEntries: [
-          entry(14, qty: 6),
-          entry(7, qty: 8),
-          entry(4, qty: 5),
-          entry(0, qty: 6),
-        ],
-      ),
+    add(
+      name: 'Temel Demiri',
+      floor: 'Temel',
+      section: 'A Blok',
+      teamName: 'Demir',
+      unit: 'ton',
+      plannedQty: 40,
+      plannedDays: 14,
+      plannedLabor: 8,
+      note: 'Plan metrajına yakın — tamamlanmaya hazır',
+      days: [
+        (daysAgo: 20, qty: 4, usta: 5, duz: 3),
+        (daysAgo: 17, qty: 5, usta: 6, duz: 2),
+        (daysAgo: 14, qty: 4.5, usta: 5, duz: 3),
+        (daysAgo: 11, qty: 5, usta: 6, duz: 2),
+        (daysAgo: 8, qty: 4, usta: 5, duz: 3),
+        (daysAgo: 6, qty: 4.5, usta: 6, duz: 2),
+        (daysAgo: 4, qty: 3.5, usta: 4, duz: 3),
+        (daysAgo: 2, qty: 3.5, usta: 5, duz: 2),
+        (daysAgo: 0, qty: 4, usta: 6, duz: 3),
+      ],
     );
-    production.add(
-      Production(
-        id: '',
-        projectId: projectId,
-        name: 'Alçı Sıva',
-        floor: 'Zemin Kat',
-        section: 'Koridor',
-        teamName: 'Kalıp',
-        unit: 'm²',
-        plannedQty: 850,
-        plannedDays: 12,
-        plannedLabor: 5,
-        note: '[DEMO] Alçı sıva',
-        dailyEntries: [
-          entry(6, qty: 120, usta: 2, duz: 3),
-          entry(2, qty: 95, usta: 2, duz: 2),
-        ],
-      ),
+    add(
+      name: 'Alçı Sıva',
+      floor: 'Zemin Kat',
+      section: 'Koridor',
+      teamName: 'Kalıp',
+      unit: 'm²',
+      plannedQty: 850,
+      plannedDays: 12,
+      plannedLabor: 5,
+      days: [
+        (daysAgo: 11, qty: 95, usta: 2, duz: 3),
+        (daysAgo: 9, qty: 110, usta: 2, duz: 3),
+        (daysAgo: 7, qty: 105, usta: 3, duz: 2),
+        (daysAgo: 5, qty: 120, usta: 2, duz: 3),
+        (daysAgo: 3, qty: 90, usta: 2, duz: 2),
+        (daysAgo: 1, qty: 85, usta: 2, duz: 3),
+      ],
     );
-    production.add(
-      Production(
-        id: '',
-        projectId: projectId,
-        name: 'Perde Betonu',
-        floor: 'Bodrum Kat',
-        section: 'Perde A',
-        teamName: 'Demo Ekip',
-        unit: 'm³',
-        plannedQty: 180,
-        plannedDays: 5,
-        plannedLabor: 10,
-        note: '[DEMO] Perde betonu dökümü',
-        dailyEntries: [
-          entry(4, qty: 45, usta: 4, duz: 4),
-          entry(2, qty: 50, usta: 4, duz: 5),
-          entry(0, qty: 35, usta: 3, duz: 4),
-        ],
-      ),
+    add(
+      name: 'Perde Betonu',
+      floor: 'Bodrum Kat',
+      section: 'Perde A',
+      teamName: 'Demo Ekip',
+      unit: 'm³',
+      plannedQty: 180,
+      plannedDays: 5,
+      plannedLabor: 10,
+      note: 'Tamamlandı — %100 metraj',
+      days: [
+        (daysAgo: 8, qty: 40, usta: 4, duz: 4),
+        (daysAgo: 6, qty: 45, usta: 4, duz: 5),
+        (daysAgo: 4, qty: 50, usta: 5, duz: 4),
+        (daysAgo: 2, qty: 45, usta: 4, duz: 5),
+      ],
     );
-    production.add(
-      Production(
-        id: '',
-        projectId: projectId,
-        name: 'Asansör Boşluğu Kalıbı',
-        floor: 'Zemin Kat',
-        section: 'Çekirdek',
-        teamName: 'Kalıp',
-        unit: 'm²',
-        plannedQty: 120,
-        plannedDays: 4,
-        plannedLabor: 6,
-        note: '[DEMO] Tamamlanan imalat',
-        dailyEntries: [
-          entry(8, qty: 40, usta: 3, duz: 2),
-          entry(5, qty: 35, usta: 3, duz: 2),
-          entry(2, qty: 45, usta: 2, duz: 3),
-        ],
-      ),
+    add(
+      name: 'Asansör Boşluğu Kalıbı',
+      floor: 'Zemin Kat',
+      section: 'Çekirdek',
+      teamName: 'Kalıp',
+      unit: 'm²',
+      plannedQty: 120,
+      plannedDays: 4,
+      plannedLabor: 6,
+      note: 'Tamamlandı imalat örneği',
+      days: [
+        (daysAgo: 10, qty: 35, usta: 3, duz: 2),
+        (daysAgo: 8, qty: 40, usta: 3, duz: 2),
+        (daysAgo: 5, qty: 45, usta: 2, duz: 3),
+      ],
     );
-    production.add(
-      Production(
-        id: '',
-        projectId: projectId,
-        name: 'Aydınlatma Hattı',
-        floor: 'Zemin Kat',
-        section: 'Koridor',
-        teamName: 'Elektrik',
-        unit: 'm',
-        plannedQty: 420,
-        plannedDays: 8,
-        plannedLabor: 3,
-        note: '[DEMO] Elektrik imalat',
-        dailyEntries: [
-          entry(5, qty: 80, usta: 1, duz: 1),
-          entry(2, qty: 95, usta: 1, duz: 2),
-          entry(0, qty: 60, usta: 1, duz: 1),
-        ],
-      ),
+    add(
+      name: 'Aydınlatma Hattı',
+      floor: 'Zemin Kat',
+      section: 'Koridor',
+      teamName: 'Elektrik',
+      unit: 'm',
+      plannedQty: 420,
+      plannedDays: 8,
+      plannedLabor: 3,
+      days: [
+        (daysAgo: 10, qty: 55, usta: 1, duz: 1),
+        (daysAgo: 8, qty: 60, usta: 1, duz: 2),
+        (daysAgo: 6, qty: 70, usta: 1, duz: 1),
+        (daysAgo: 4, qty: 65, usta: 1, duz: 2),
+        (daysAgo: 2, qty: 80, usta: 1, duz: 1),
+        (daysAgo: 0, qty: 50, usta: 1, duz: 1),
+      ],
     );
-    production.add(
-      Production(
-        id: '',
-        projectId: projectId,
-        name: 'Havalandırma Kanalı',
-        floor: 'Bodrum Kat',
-        section: 'Teknik Galeri',
-        teamName: 'Mekanik',
-        unit: 'm',
-        plannedQty: 260,
-        plannedDays: 9,
-        plannedLabor: 4,
-        note: '[DEMO] Mekanik imalat',
-        dailyEntries: [
-          entry(6, qty: 40, usta: 2, duz: 1),
-          entry(3, qty: 55, usta: 2, duz: 2),
-          entry(1, qty: 35, usta: 1, duz: 2),
-        ],
-      ),
+    add(
+      name: 'Havalandırma Kanalı',
+      floor: 'Bodrum Kat',
+      section: 'Teknik Galeri',
+      teamName: 'Mekanik',
+      unit: 'm',
+      plannedQty: 260,
+      plannedDays: 9,
+      plannedLabor: 4,
+      days: [
+        (daysAgo: 12, qty: 30, usta: 2, duz: 1),
+        (daysAgo: 10, qty: 35, usta: 2, duz: 2),
+        (daysAgo: 8, qty: 40, usta: 2, duz: 1),
+        (daysAgo: 6, qty: 45, usta: 2, duz: 2),
+        (daysAgo: 4, qty: 38, usta: 1, duz: 2),
+        (daysAgo: 2, qty: 42, usta: 2, duz: 1),
+      ],
+    );
+    add(
+      name: 'Döşeme Betonu',
+      floor: 'Zemin Kat',
+      section: 'Salon',
+      teamName: 'Demo Ekip',
+      unit: 'm³',
+      plannedQty: 320,
+      plannedDays: 6,
+      plannedLabor: 12,
+      days: [
+        (daysAgo: 7, qty: 55, usta: 5, duz: 5),
+        (daysAgo: 5, qty: 60, usta: 6, duz: 4),
+        (daysAgo: 3, qty: 58, usta: 5, duz: 5),
+        (daysAgo: 1, qty: 52, usta: 5, duz: 4),
+      ],
+    );
+    add(
+      name: 'Yangın Sprinkler Hattı',
+      floor: 'Bodrum Kat',
+      section: 'Otopark',
+      teamName: 'Mekanik',
+      unit: 'm',
+      plannedQty: 180,
+      plannedDays: 7,
+      plannedLabor: 3,
+      days: [
+        (daysAgo: 9, qty: 25, usta: 1, duz: 1),
+        (daysAgo: 7, qty: 30, usta: 1, duz: 2),
+        (daysAgo: 5, qty: 28, usta: 1, duz: 1),
+        (daysAgo: 3, qty: 32, usta: 1, duz: 1),
+      ],
+    );
+    add(
+      name: 'Cephe İskelesi',
+      floor: 'Dış Cephe',
+      section: 'A Blok',
+      teamName: 'Kalıp',
+      unit: 'm²',
+      plannedQty: 450,
+      plannedDays: 10,
+      plannedLabor: 8,
+      note: 'Bekleyen imalat — günlük kayıt yok',
     );
   }
 
@@ -477,7 +556,7 @@ class DemoSeedController {
     final reports = _ref.read(dailyReportsProvider.notifier);
     reports.deleteForProject(projectId);
 
-    final dates = _recentWeekdays(count: 8);
+    final dates = _recentWeekdays(count: 12);
     for (var i = 0; i < dates.length; i++) {
       final date = dates[i];
       final now = DateTime.now();
@@ -758,7 +837,6 @@ class DemoSeedController {
         person: person,
         workDescription: s.work,
         yevmiyeCount: s.yevmiye,
-        note: '[DEMO]',
       );
     }
   }
@@ -933,7 +1011,7 @@ class DemoSeedController {
         startOffset: -5,
         dueOffset: -3,
         status: TaskStatus.done,
-        description: '[DEMO] Tamamlanan — gerçekleşen başlangıç/bitiş dolu.',
+        description: 'Tamamlanan görev — gerçekleşen başlangıç/bitiş dolu.',
         withPhoto: true,
         pendingStarted: false,
       ),

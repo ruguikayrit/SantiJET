@@ -106,9 +106,8 @@ class DemoGuideBanner extends ConsumerWidget {
             ),
             const SizedBox(height: AppSpacing.xs),
             Text(
-              'Not: Görevde kategori ve etiket zorunlu. Atanan değişince '
-              'atayana onay satırı düşer. Plan / keşif paketi için '
-              'Ayarlar → Plan dosyası.',
+              'Verim sekmesinde her imalatın metraj, süre, adam-gün ve verim '
+              'grafikleri hazır. Cephe İskelesi bekleyen imalat örneğidir.',
               style: theme.textTheme.labelSmall?.copyWith(
                 color: AppColors.cardTextMuted,
               ),

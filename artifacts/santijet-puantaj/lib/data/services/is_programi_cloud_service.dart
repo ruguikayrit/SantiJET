@@ -65,52 +65,106 @@ class IsProgramiCloudService {
   }) async {
     await Future<void>.delayed(const Duration(milliseconds: 500));
     final today = DateTime.now();
-    final start = today.subtract(const Duration(days: 3));
-    final end = today.add(const Duration(days: 10));
+    final start = today.subtract(const Duration(days: 21));
+    final end = today.add(const Duration(days: 28));
     String iso(DateTime d) =>
         '${d.year.toString().padLeft(4, '0')}-'
         '${d.month.toString().padLeft(2, '0')}-'
         '${d.day.toString().padLeft(2, '0')}';
 
+    WorkScheduleItem item({
+      required String id,
+      required String name,
+      required int plannedDays,
+      required int workers,
+      String? notes,
+    }) {
+      final itemStart = start;
+      final itemEnd = start.add(Duration(days: plannedDays - 1));
+      return WorkScheduleItem(
+        id: id,
+        imalatId: id,
+        imalatName: name,
+        startDate: iso(itemStart),
+        endDate: iso(itemEnd.isAfter(end) ? end : itemEnd),
+        plannedDays: plannedDays,
+        plannedWorkerCount: workers,
+        notes: notes,
+      );
+    }
+
+    final label = projectName ?? 'Demo Şantiye';
     final snap = WorkScheduleSnapshot(
       projectId: projectId,
       updatedAt: DateTime.now(),
       source: 'program_file_demo',
       items: [
-        WorkScheduleItem(
+        item(
           id: 'ws-demo-1',
-          imalatId: 'im-1',
-          imalatName: 'Kolon demiri',
-          startDate: iso(start),
-          endDate: iso(end),
-          plannedWorkerCount: 6,
-          notes: projectName == null
-              ? 'İş Programı demo — kolon demiri'
-              : '$projectName — Kolon demiri programı',
+          name: 'Kolon Demiri',
+          plannedDays: 7,
+          workers: 6,
+          notes: '$label — kolon demiri programı',
         ),
-        WorkScheduleItem(
+        item(
           id: 'ws-demo-2',
-          imalatId: 'im-2',
-          imalatName: 'Kiriş demiri',
-          startDate: iso(start),
-          endDate: iso(end),
-          plannedWorkerCount: 4,
+          name: 'Kiriş Demiri',
+          plannedDays: 10,
+          workers: 4,
         ),
-        WorkScheduleItem(
+        item(
           id: 'ws-demo-3',
-          imalatId: 'im-3',
-          imalatName: 'Temel demiri',
-          startDate: iso(start),
-          endDate: iso(end),
-          plannedWorkerCount: 8,
+          name: 'Temel Demiri',
+          plannedDays: 14,
+          workers: 8,
         ),
-        WorkScheduleItem(
+        item(
           id: 'ws-demo-4',
-          imalatId: 'im-4',
-          imalatName: 'Alçı sıva',
-          startDate: iso(start),
-          endDate: iso(end),
-          plannedWorkerCount: 5,
+          name: 'Alçı Sıva',
+          plannedDays: 12,
+          workers: 5,
+        ),
+        item(
+          id: 'ws-demo-5',
+          name: 'Perde Betonu',
+          plannedDays: 5,
+          workers: 10,
+        ),
+        item(
+          id: 'ws-demo-6',
+          name: 'Asansör Boşluğu Kalıbı',
+          plannedDays: 4,
+          workers: 6,
+        ),
+        item(
+          id: 'ws-demo-7',
+          name: 'Aydınlatma Hattı',
+          plannedDays: 8,
+          workers: 3,
+        ),
+        item(
+          id: 'ws-demo-8',
+          name: 'Havalandırma Kanalı',
+          plannedDays: 9,
+          workers: 4,
+        ),
+        item(
+          id: 'ws-demo-9',
+          name: 'Döşeme Betonu',
+          plannedDays: 6,
+          workers: 12,
+        ),
+        item(
+          id: 'ws-demo-10',
+          name: 'Yangın Sprinkler Hattı',
+          plannedDays: 7,
+          workers: 3,
+        ),
+        item(
+          id: 'ws-demo-11',
+          name: 'Cephe İskelesi',
+          plannedDays: 10,
+          workers: 8,
         ),
       ],
     );
