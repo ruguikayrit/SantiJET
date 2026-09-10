@@ -6,6 +6,7 @@ import '../../core/design_system/sj_card.dart';
 import '../../core/design_system/sj_empty_state.dart';
 import '../../core/routing/app_routes.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_radii.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/widgets/production_triple_progress.dart';
 import '../../core/widgets/santijet_header.dart';
@@ -244,7 +245,7 @@ class _TeamVerimSummaryStrip extends StatelessWidget {
   }
 }
 
-class _VerimNamePercentCard extends StatelessWidget {
+class _VerimNamePercentCard extends StatefulWidget {
   const _VerimNamePercentCard({
     required this.row,
     required this.colorIndex,
@@ -254,10 +255,18 @@ class _VerimNamePercentCard extends StatelessWidget {
   final int colorIndex;
 
   @override
+  State<_VerimNamePercentCard> createState() => _VerimNamePercentCardState();
+}
+
+class _VerimNamePercentCardState extends State<_VerimNamePercentCard> {
+  bool _chartsExpanded = false;
+
+  @override
   Widget build(BuildContext context) {
+    final row = widget.row;
     final efficiency = row.unitEfficiency;
     final hasEntries = row.production.dailyEntries.isNotEmpty;
-    final cardBg = VerimCardColors.at(colorIndex);
+    final cardBg = VerimCardColors.at(widget.colorIndex);
 
     return SJCard.builder(
       backgroundColor: cardBg,
@@ -265,51 +274,70 @@ class _VerimNamePercentCard extends StatelessWidget {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        row.imalatName.trim().isEmpty
-                            ? 'İmalat'
-                            : row.imalatName.trim(),
-                        style: theme.textTheme.titleMedium,
+            InkWell(
+              onTap: hasEntries
+                  ? () => setState(() => _chartsExpanded = !_chartsExpanded)
+                  : null,
+              borderRadius: AppRadii.sm,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            row.imalatName.trim().isEmpty
+                                ? 'İmalat'
+                                : row.imalatName.trim(),
+                            style: theme.textTheme.titleMedium,
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            row.teamName,
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: theme.colorScheme.primary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 2),
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    if (efficiency != null)
                       Text(
-                        row.teamName,
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          color: theme.colorScheme.primary,
-                          fontWeight: FontWeight.w600,
+                        '%${(efficiency * 100).toStringAsFixed(0)}',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.statusInk(
+                            efficiencyColorForRatio(efficiency),
+                            surface: cardBg,
+                          ),
+                        ),
+                      )
+                    else
+                      Text(
+                        '—',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
                         ),
                       ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.sm),
-                if (efficiency != null)
-                  Text(
-                    '%${(efficiency * 100).toStringAsFixed(0)}',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.statusInk(
-                        efficiencyColorForRatio(efficiency),
-                        surface: cardBg,
+                    if (hasEntries) ...[
+                      const SizedBox(width: AppSpacing.xs),
+                      Icon(
+                        _chartsExpanded
+                            ? Icons.expand_less
+                            : Icons.expand_more,
+                        size: 22,
+                        color: theme.colorScheme.onSurfaceVariant,
                       ),
-                    ),
-                  )
-                else
-                  Text(
-                    '—',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-              ],
+                    ],
+                  ],
+                ),
+              ),
             ),
-            if (hasEntries) ...[
+            if (hasEntries && _chartsExpanded) ...[
               const SizedBox(height: AppSpacing.md),
               VerimProductionCharts(
                 production: row.production,
