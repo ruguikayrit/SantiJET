@@ -26,7 +26,7 @@ class SummaryScreen extends ConsumerWidget {
         .toList();
     final behind = items.where((item) {
       final progress = row(item);
-      return progress.hasLogs && progress.varianceToDate < 0;
+      return progress.hasActuals && progress.varianceToDate < 0;
     }).toList();
 
     return Scaffold(
@@ -45,7 +45,7 @@ class SummaryScreen extends ConsumerWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'PLAN / GERÇEKLEŞEN',
+                          'İŞ / FİİLİ İŞ',
                           style: AppTypography.onCard(
                             AppTypography.labelSmall,
                           ).copyWith(
@@ -58,13 +58,13 @@ class SummaryScreen extends ConsumerWidget {
                           children: [
                             Expanded(
                               child: _AgKpi(
-                                label: 'PLAN',
+                                label: 'İŞ',
                                 value: totals.planned,
                               ),
                             ),
                             Expanded(
                               child: _AgKpi(
-                                label: 'GERÇEK',
+                                label: 'FİİLİ',
                                 value: totals.realized,
                                 color: AppColors.electricBlue,
                               ),

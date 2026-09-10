@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:xml/xml.dart';
 
 import '../../domain/program_item.dart';
+import '../../domain/project_tracking.dart';
 import 'program_interop.dart';
 
 /// MS Project'in içe/dışa aktarımda kullandığı MSPDI ad alanı.
@@ -191,6 +192,13 @@ class MsProjectXmlCodec {
         int.tryParse(_child(task, 'PercentComplete') ?? ''),
       );
       final site = _siteFor(task, summaryNames, fallbackSite);
+      final crew = _crewFor(uid, assignments);
+      final actualWorkDays = parseMsProjectDurationDays(
+        _child(task, 'ActualWork'),
+      );
+      final remainingWorkDays = parseMsProjectDurationDays(
+        _child(task, 'RemainingWork'),
+      );
 
       items.add(
         ProgramItem(
@@ -203,7 +211,7 @@ class MsProjectXmlCodec {
               ? null
               : durationDays,
           progress: progress,
-          plannedCrew: _crewFor(uid, assignments),
+          plannedCrew: crew,
           status: statusFromProgress(
             progress: progress,
             startDate: start,
@@ -217,6 +225,16 @@ class MsProjectXmlCodec {
           isMilestone: isMilestone,
           msProjectUid: uid,
           predecessors: _predecessorText(task),
+          actualStart: parseInteropDate(_child(task, 'ActualStart')),
+          actualFinish: parseInteropDate(_child(task, 'ActualFinish')),
+          actualDuration: parseMsProjectDurationDays(
+            _child(task, 'ActualDuration'),
+          ),
+          remainingDuration: parseMsProjectDurationDays(
+            _child(task, 'RemainingDuration'),
+          ),
+          actualWork: actualWorkDays,
+          remainingWork: remainingWorkDays,
         ),
       );
     }
@@ -316,6 +334,37 @@ class MsProjectXmlCodec {
               _text(builder, 'Summary', row.isSummary ? '1' : '0');
               _text(builder, 'PercentComplete', '${row.progress}');
               _text(builder, 'PercentWorkComplete', '${row.progress}');
+              _text(builder, 'Work', _minutes(row.workMinutes));
+              if (row.actualStart != null) {
+                _text(
+                  builder,
+                  'ActualStart',
+                  _dateTime(row.actualStart!, _dayStart),
+                );
+              }
+              if (row.actualFinish != null) {
+                _text(
+                  builder,
+                  'ActualFinish',
+                  _dateTime(row.actualFinish!, _dayFinish),
+                );
+              }
+              _text(
+                builder,
+                'ActualDuration',
+                msProjectDuration(row.actualDuration),
+              );
+              _text(
+                builder,
+                'RemainingDuration',
+                msProjectDuration(row.remainingDuration),
+              );
+              _text(builder, 'ActualWork', _minutes(row.actualWorkMinutes));
+              _text(
+                builder,
+                'RemainingWork',
+                _minutes(row.remainingWorkMinutes),
+              );
               if (row.isSummary) {
                 // Özet görevin tarihleri alt faaliyetlerden gelir.
                 _text(builder, 'ConstraintType', '0');
@@ -412,9 +461,8 @@ class MsProjectXmlCodec {
               : resources.indexOf(row.responsible!);
           if (row.isSummary || resourceIndex < 0) continue;
 
-          final totalMinutes =
-              row.durationDays * minutesPerWorkDay * row.crew;
-          final actualMinutes = (totalMinutes * row.progress / 100).round();
+          final totalMinutes = row.workMinutes;
+          final actualMinutes = row.actualWorkMinutes;
           builder.element(
             'Assignment',
             nest: () {
@@ -499,6 +547,7 @@ class MsProjectXmlCodec {
         final item = children[index];
         final itemStart = dateOnly(item.startDate);
         final itemFinish = dateOnly(item.endDate);
+        final tracking = ProjectTracking.fromItem(item);
         rows.add(
           _TaskRow(
             uid: uid++,
@@ -508,7 +557,7 @@ class MsProjectXmlCodec {
             start: itemStart,
             finish: item.isMilestone ? itemStart : itemFinish,
             durationDays: item.isMilestone ? 0 : item.calculatedDays,
-            progress: item.progress,
+            progress: tracking.percentComplete,
             crew: item.plannedCrew < 1 ? 1 : item.plannedCrew,
             isMilestone: item.isMilestone,
             responsible: item.responsible.trim().isEmpty
@@ -517,6 +566,13 @@ class MsProjectXmlCodec {
             notes: item.notes,
             originalUid: item.msProjectUid,
             predecessors: item.predecessors,
+            actualStart: tracking.actualStart,
+            actualFinish: tracking.actualFinish,
+            actualDuration: tracking.actualDuration,
+            remainingDuration: tracking.remainingDuration,
+            workMinutes: tracking.work * minutesPerWorkDay,
+            actualWorkMinutes: tracking.actualWork * minutesPerWorkDay,
+            remainingWorkMinutes: tracking.remainingWork * minutesPerWorkDay,
           ),
         );
       }
@@ -686,6 +742,13 @@ class _TaskRow {
     this.notes,
     this.originalUid,
     this.predecessors,
+    this.actualStart,
+    this.actualFinish,
+    this.actualDuration = 0,
+    this.remainingDuration = 0,
+    this.workMinutes = 0,
+    this.actualWorkMinutes = 0,
+    this.remainingWorkMinutes = 0,
   });
 
   final int uid;
@@ -703,4 +766,11 @@ class _TaskRow {
   final String? notes;
   final int? originalUid;
   final String? predecessors;
+  final DateTime? actualStart;
+  final DateTime? actualFinish;
+  final int actualDuration;
+  final int remainingDuration;
+  final int workMinutes;
+  final int actualWorkMinutes;
+  final int remainingWorkMinutes;
 }

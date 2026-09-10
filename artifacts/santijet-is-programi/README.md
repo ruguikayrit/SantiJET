@@ -4,7 +4,8 @@
 anında görmek için bağımsız Flutter uygulaması.
 
 ## V1
-- Program: süre × ekip = adam-gün, plan/gerçekleşen imalat listesi
+- Program: MS Project Giriş tablosu (Ad, Süre, Başlangıç, Bitiş, Öncüller)
+- İzleme: % Tamamlanma, fiili/kalan süre ve iş
 - Takvim: liste/Gantt görünümü, bugün çizgisi ve filtreler
 - Özet: plan AG / gerçek AG / kalan AG, gecikenler
 - Aktar: MS Project, Excel ve PDF alışverişi

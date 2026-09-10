@@ -82,7 +82,7 @@ void main() {
     await tester.pumpWidget(host(const AppIntroScreen()));
     await tester.pump();
 
-    expect(find.text('Plan adam-gündür'), findsOneWidget);
+    expect(find.text('Giriş tablosu'), findsOneWidget);
     expect(find.text('Cihazda kalır'), findsOneWidget);
   });
 

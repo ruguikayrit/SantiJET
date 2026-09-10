@@ -21,27 +21,27 @@ class AppIntroScreen extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.lg),
           const _IntroCard(
-            icon: Icons.timelapse_rounded,
-            title: 'Plan adam-gündür',
+            icon: Icons.table_chart_outlined,
+            title: 'Giriş tablosu',
             body:
-                'İmalat adı, başlangıç, süre (gün) ve ekip (adam) yazılır. '
-                'Bitiş süreye göre hesaplanır. Birim: süre × ekip = adam-gün.',
+                'Ad, Süre, Başlangıç, Bitiş, Öncüller, Kaynak Adları. '
+                'Bitiş süreye göre, iş süre × birimdir. Kilometre taşı '
+                'süresi sıfırdır.',
           ),
           const _IntroCard(
-            icon: Icons.groups_outlined,
-            title: 'Saha kaydı',
+            icon: Icons.fact_check_outlined,
+            title: 'İzleme tablosu',
             body:
-                'Her gün “bugün kaç adam çalıştı?” sorusu yazılır. '
-                'İlerleme yüzdesi bu kayıtlardan doğar; kaydırıcı ile '
-                'ilerleme girilmez.',
+                '% Tamamlanma fiili süre, kalan süre, fiili iş ve kalan '
+                'işi birlikte günceller. Fiili süre planı aşarsa süre uzar. '
+                'Kalan süre yazılınca süre = fiili + kalan olur.',
           ),
           const _IntroCard(
             icon: Icons.compare_arrows_rounded,
             title: 'Mukayese',
             body:
-                'Özet, plan AG / gerçek AG / kalan AG gösterir. Kalan, '
-                'işçilik ve nakit ihtiyacına işarettir; ödeme veya satınalma '
-                'tutulmaz.',
+                'Özet, İş / Fiili İş / Kalan İş gösterir. Kalan, işçilik '
+                've nakit ihtiyacına işarettir; ödeme veya satınalma tutulmaz.',
           ),
           const _IntroCard(
             icon: Icons.swap_vert_rounded,

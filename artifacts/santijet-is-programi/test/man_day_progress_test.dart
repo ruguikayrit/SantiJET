@@ -26,15 +26,15 @@ void main() {
     );
   });
 
-  test('saha kaydı yoksa kayıtlı yüzde kullanılır', () {
+  test('kayıtlı yüzde fiili işi Project gibi üretir', () {
     final row = ManDayProgress.of(
       item.copyWith(progress: 30),
       const [],
       today: DateTime(2026, 9, 5),
     );
-    expect(row.hasLogs, isFalse);
     expect(row.progress, 30);
-    expect(row.realizedManDays, 0);
+    expect(row.realizedManDays, 12);
+    expect(row.remainingManDays, 28);
   });
 
   test('günlük adam kayıtları gerçekleşen adam-günü ve ilerlemeyi üretir', () {

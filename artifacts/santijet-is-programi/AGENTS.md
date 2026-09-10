@@ -43,17 +43,19 @@ yoktur.
 - PDF Türkçe karakterler için Inter'i gömer; yazı tipi yüklenemezse
   bozuk dosya üretmek yerine hata verilir.
 
-## Adam-gün kurgusu
-İş programı süredir. Bir imalatın birimi adam-gündür: süre × ekip.
+## Giriş ve izleme
+Veri girişi ve takip MS Project Giriş / İzleme tablosuyla aynı kurgudadır.
 
-- Plan: imalat adı, başlangıç, süre (gün), ekip (adam). Bitiş süreye göre
-  hesaplanır. Form Project sütunlarının kopyası değildir.
-- Gerçekleşen: günlük çalışan adam sayısı `isprog_daily_crew` kutusuna
-  yazılır. İlerleme yüzdesi bu kayıtlardan doğar.
-- Özet: plan AG / gerçek AG / kalan AG. Kalan, işçilik hakedişi ve
-  malzeme nakit ihtiyacına işarettir; ödeme veya satınalma tutulmaz.
-- MS Project dosyasında süre Duration, ekip atanan kaynak sayısı / Number1
-  olarak taşınır. Günlük saha kaydı Project'e yazılmaz.
+- Giriş: Ad, Süre, Başlangıç, Bitiş, Öncüller, Kaynak Adları, WBS,
+  kilometre taşı. Bitiş = başlangıç + süre − 1. İş = süre × birim.
+- İzleme: % Tamamlanma, Fiili Başlangıç/Bitiş, Fiili/Kalan Süre,
+  Fiili/Kalan İş. % yazılınca fiili ve kalan birlikte güncellenir.
+  Fiili süre planı aşarsa süre uzar. Kalan süre yazılınca
+  süre = fiili + kalan olur.
+- Görev tipi sabit birimdir. CPM / öncül hesabı yoktur; öncül metni
+  yalnız taşınır.
+- MS Project dosyasında Duration, Start, Finish, % Complete, Actual*
+  ve Work alanları gider gelir.
 
 ## V1 sınırı
 CPM, kritik yol hesabı, faaliyet bağımlılığı çözümleme, kaynak dengeleme,

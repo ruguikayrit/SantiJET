@@ -7,9 +7,9 @@ import '../data/interop/program_interop_service.dart';
 import '../data/program_repository.dart';
 import '../data/project_repository.dart';
 import '../domain/daily_crew_entry.dart';
-import '../domain/man_day_progress.dart';
 import '../domain/program_item.dart';
 import '../domain/program_project.dart';
+import '../domain/project_tracking.dart';
 
 final programRepositoryProvider = Provider<ProgramRepository>(
   (ref) => ProgramRepository(Hive.box<String>(programBoxName)),
@@ -123,15 +123,15 @@ class ProgramController extends Notifier<List<ProgramItem>> {
     state = const [];
   }
 
-  /// Saha kayıtlarından ilerleme yüzdesini faaliyete işler; aktarım
-  /// dosyaları da aynı sayıyı görür.
+  /// İzleme alanlarını Project hesabına göre doldurur; aktarım aynı sayıyı görür.
   Future<void> syncProgress(String itemId) async {
     final item = state.where((found) => found.id == itemId).firstOrNull;
     if (item == null) return;
-    final row = ManDayProgress.of(item, ref.read(dailyCrewProvider));
-    await _repository.save(
-      item.copyWith(progress: row.progress, status: row.effectiveStatus),
+    final tracking = ProjectTracking.fromItem(
+      item,
+      logs: ref.read(dailyCrewProvider),
     );
+    await _repository.save(tracking.applyTo(item));
     state = _repository.readAll();
   }
 

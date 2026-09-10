@@ -1,19 +1,17 @@
 import 'daily_crew_entry.dart';
 import 'program_item.dart';
+import 'project_tracking.dart';
 
-/// Planlanan imalat ile sahadaki gerçekleşeni adam-gün üzerinden karşılaştırır.
-/// İlerleme yüzdesi kaydırıcıdan değil, günlük adam kayıtlarından doğar.
+/// Planlanan iş ile fiili işi Project izleme hesabıyla karşılaştırır.
 class ManDayProgress {
   const ManDayProgress({
     required this.item,
-    required this.realizedManDays,
-    required this.hasLogs,
+    required this.tracking,
     this.today,
   });
 
   final ProgramItem item;
-  final int realizedManDays;
-  final bool hasLogs;
+  final ProjectTracking tracking;
   final DateTime? today;
 
   factory ManDayProgress.of(
@@ -21,27 +19,23 @@ class ManDayProgress {
     List<DailyCrewEntry> logs, {
     DateTime? today,
   }) {
-    var realized = 0;
-    var hasLogs = false;
-    for (final log in logs) {
-      if (log.itemId != item.id) continue;
-      hasLogs = true;
-      realized += log.workers;
-    }
     return ManDayProgress(
       item: item,
-      realizedManDays: realized,
-      hasLogs: hasLogs,
+      tracking: ProjectTracking.fromItem(item, logs: logs),
       today: today,
     );
   }
 
   DateTime get _day => _dateOnly(today ?? DateTime.now());
 
-  /// Süre × ekip. İşin plan birimi.
-  int get plannedManDays => item.plannedManDays;
+  int get plannedManDays => tracking.work;
+  int get realizedManDays => tracking.actualWork;
+  int get remainingManDays => tracking.remainingWork;
+  int get progress => tracking.percentComplete;
+  bool get hasActuals =>
+      tracking.percentComplete > 0 || tracking.actualWork > 0;
 
-  /// Bugüne kadar planlanan adam-gün. İş henüz başlamadıysa 0,
+  /// Bugüne kadar planlanan iş. İş henüz başlamadıysa 0,
   /// süresi dolduysa tüm plandır.
   int get plannedToDate {
     if (plannedManDays <= 0) return 0;
@@ -51,37 +45,15 @@ class ManDayProgress {
     return capped * item.plannedCrew;
   }
 
-  /// Gerçek − bugüne kadar plan. Eksi değer planın gerisinde demektir.
   int get varianceToDate => realizedManDays - plannedToDate;
 
-  /// Saha kaydı varsa adam-günden, yoksa dosyadan/elle girilen yüzdeden.
-  int get progress {
-    if (hasLogs) {
-      if (plannedManDays <= 0) return realizedManDays > 0 ? 100 : 0;
-      return ((realizedManDays / plannedManDays) * 100).round().clamp(0, 100);
-    }
-    return item.progress.clamp(0, 100);
-  }
-
-  ProgramStatus get effectiveStatus {
-    if (item.isStatusManual) return item.status;
-    if (progress >= 100) return ProgramStatus.completed;
-    if (_day.isAfter(_dateOnly(item.endDate))) return ProgramStatus.delayed;
-    if (progress > 0 || !_day.isBefore(_dateOnly(item.startDate))) {
-      return ProgramStatus.inProgress;
-    }
-    return ProgramStatus.planned;
-  }
-
-  /// Malzeme alımı ve işçilik hakedişi için kalan işçilik.
-  int get remainingManDays =>
-      (plannedManDays - realizedManDays).clamp(0, plannedManDays);
+  ProgramStatus get effectiveStatus => tracking.status(today: today);
 
   static DateTime _dateOnly(DateTime value) =>
       DateTime(value.year, value.month, value.day);
 }
 
-/// Bir listedeki faaliyetlerin toplam plan / gerçekleşen kırılımı.
+/// Bir listedeki faaliyetlerin toplam iş / fiili / kalan kırılımı.
 class SiteManDaySummary {
   const SiteManDaySummary({
     required this.planned,

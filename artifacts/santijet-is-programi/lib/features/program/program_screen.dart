@@ -79,14 +79,14 @@ class ProgramScreen extends ConsumerWidget {
                     children: [
                       Expanded(
                         child: _Kpi(
-                          label: 'Plan AG',
+                          label: 'İş',
                           value: summary.planned,
                         ),
                       ),
                       const SizedBox(width: 10),
                       Expanded(
                         child: _Kpi(
-                          label: 'Gerçek AG',
+                          label: 'Fiili İş',
                           value: summary.realized,
                           color: AppColors.electricBlue,
                         ),
@@ -105,7 +105,7 @@ class ProgramScreen extends ConsumerWidget {
                     Padding(
                       padding: const EdgeInsets.only(top: 8),
                       child: Text(
-                        '$active imalat devam ediyor',
+                        '$active görev devam ediyor',
                         style: AppTypography.bodySmall.copyWith(
                           color: AppColors.textMuted,
                         ),
@@ -113,7 +113,7 @@ class ProgramScreen extends ConsumerWidget {
                     ),
                   const SizedBox(height: AppSpacing.lg),
                   Text(
-                    'İMALATLAR',
+                    'GİRİŞ',
                     style: AppTypography.labelSmall.copyWith(
                       color: AppColors.textMuted,
                       fontWeight: FontWeight.w700,
@@ -125,15 +125,10 @@ class ProgramScreen extends ConsumerWidget {
                   if (items.isEmpty)
                     const _EmptyProgram()
                   else
-                    ...items.map(
-                      (item) => Padding(
-                        padding: const EdgeInsets.only(bottom: 10),
-                        child: _ProgramItemCard(
-                          item: item,
-                          progress: row(item),
-                          onTap: () => context.push('/form', extra: item),
-                        ),
-                      ),
+                    _EntryTable(
+                      items: items,
+                      row: row,
+                      onTap: (item) => context.push('/form', extra: item),
                     ),
                 ],
               ),
@@ -175,71 +170,73 @@ class _Kpi extends StatelessWidget {
   );
 }
 
-class _ProgramItemCard extends StatelessWidget {
-  const _ProgramItemCard({
-    required this.item,
-    required this.progress,
+class _EntryTable extends StatelessWidget {
+  const _EntryTable({
+    required this.items,
+    required this.row,
     required this.onTap,
   });
-  final ProgramItem item;
-  final ManDayProgress progress;
-  final VoidCallback onTap;
+
+  final List<ProgramItem> items;
+  final ManDayProgress Function(ProgramItem item) row;
+  final ValueChanged<ProgramItem> onTap;
 
   @override
   Widget build(BuildContext context) {
-    final date = DateFormat('dd.MM');
-    final status = progress.effectiveStatus;
-    final behind = progress.varianceToDate < 0 && progress.hasLogs;
+    final date = DateFormat('dd.MM.yyyy');
     return SJCard(
-      onTap: onTap,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Text(item.name, style: AppTypography.cardTitleMedium),
+      padding: EdgeInsets.zero,
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: DataTable(
+          showCheckboxColumn: false,
+          headingTextStyle: AppTypography.cardBodySmall.copyWith(
+            fontWeight: FontWeight.w700,
+          ),
+          dataTextStyle: AppTypography.cardBodySmall,
+          columnSpacing: 18,
+          columns: const [
+            DataColumn(label: Text('ID')),
+            DataColumn(label: Text('Ad')),
+            DataColumn(label: Text('Süre')),
+            DataColumn(label: Text('Başlangıç')),
+            DataColumn(label: Text('Bitiş')),
+            DataColumn(label: Text('Öncüller')),
+            DataColumn(label: Text('Kaynak Adları')),
+            DataColumn(label: Text('% Tamamlanma')),
+          ],
+          rows: [
+            for (var index = 0; index < items.length; index++)
+              DataRow(
+                onSelectChanged: (_) => onTap(items[index]),
+                cells: [
+                  DataCell(Text('${index + 1}')),
+                  DataCell(
+                    SizedBox(
+                      width: 160,
+                      child: Text(
+                        items[index].name,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ),
+                  DataCell(
+                    Text(
+                      items[index].isMilestone
+                          ? '0 gün'
+                          : '${items[index].calculatedDays} gün',
+                    ),
+                  ),
+                  DataCell(Text(date.format(items[index].startDate))),
+                  DataCell(Text(date.format(items[index].endDate))),
+                  DataCell(Text(items[index].predecessors ?? '')),
+                  DataCell(Text(items[index].responsible)),
+                  DataCell(Text('%${row(items[index]).progress}')),
+                ],
               ),
-              const SizedBox(width: 8),
-              ProgramStatusBadge(status: status),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            '${item.calculatedDays} gün · ${item.plannedCrew} adam · '
-            '${progress.plannedManDays} AG',
-            style: AppTypography.cardBodySmall,
-          ),
-          const SizedBox(height: 12),
-          ClipRRect(
-            borderRadius: AppRadii.sm,
-            child: LinearProgressIndicator(
-              value: progress.progress / 100,
-              minHeight: 7,
-              backgroundColor: AppColors.cardBorder,
-              color: programStatusColor(status),
-            ),
-          ),
-          const SizedBox(height: 9),
-          Row(
-            children: [
-              Text(
-                '${progress.realizedManDays} / ${progress.plannedManDays} AG',
-                style: AppTypography.cardTitleMedium.copyWith(
-                  color: behind ? AppColors.critical : null,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Text('%${progress.progress}', style: AppTypography.cardBodySmall),
-              const Spacer(),
-              Text(
-                '${date.format(item.startDate)} – ${date.format(item.endDate)}',
-                style: AppTypography.cardBodySmall,
-              ),
-            ],
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -261,7 +258,7 @@ class _EmptyProgram extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           Text(
-            'Bu şantiye için henüz imalat yok.',
+            'Bu şantiye için henüz görev yok.',
             style: AppTypography.cardBodyMedium,
           ),
         ],

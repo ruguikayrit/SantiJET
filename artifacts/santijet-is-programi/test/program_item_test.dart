@@ -56,6 +56,11 @@ void main() {
         isMilestone: false,
         msProjectUid: 14,
         predecessors: '3FS+2 gün',
+        actualStart: DateTime(2026, 9, 1),
+        actualDuration: 2,
+        remainingDuration: 3,
+        actualWork: 8,
+        remainingWork: 12,
       );
       final restored = ProgramItem.fromJson(item.toJson());
       expect(restored.id, item.id);
@@ -66,6 +71,9 @@ void main() {
       expect(restored.outlineLevel, 2);
       expect(restored.msProjectUid, 14);
       expect(restored.predecessors, '3FS+2 gün');
+      expect(restored.actualStart, DateTime(2026, 9, 1));
+      expect(restored.actualDuration, 2);
+      expect(restored.actualWork, 8);
     });
   });
 

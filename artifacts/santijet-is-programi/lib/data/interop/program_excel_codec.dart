@@ -28,6 +28,12 @@ const _headers = <String>[
   'Text2',
   'Notes',
   'Number1',
+  'Actual Start',
+  'Actual Finish',
+  'Actual Duration',
+  'Remaining Duration',
+  'Actual Work',
+  'Remaining Work',
 ];
 
 /// Program faaliyetlerini `.xlsx` dosyasına yazar ve aynı düzeni geri okur.
@@ -68,6 +74,12 @@ class ProgramExcelCodec {
         TextCellValue(item.santiyeId),
         TextCellValue(item.notes ?? ''),
         IntCellValue(item.plannedCrew < 1 ? 1 : item.plannedCrew),
+        item.actualStart == null ? null : _date(item.actualStart!),
+        item.actualFinish == null ? null : _date(item.actualFinish!),
+        IntCellValue(item.actualDuration ?? 0),
+        IntCellValue(item.remainingDuration ?? item.calculatedDays),
+        IntCellValue(item.actualWork ?? 0),
+        IntCellValue(item.remainingWork ?? item.plannedManDays),
       ];
       for (var column = 0; column < values.length; column++) {
         _write(sheet, column, row, values[column]);
@@ -183,6 +195,12 @@ class ProgramExcelCodec {
           outlineLevel: outlineLevel < 1 ? 1 : outlineLevel,
           isMilestone: isMilestone,
           predecessors: _optional(row, columns[_Field.predecessors]),
+          actualStart: parseInteropDate(_raw(row, columns[_Field.actualStart])),
+          actualFinish: parseInteropDate(_raw(row, columns[_Field.actualFinish])),
+          actualDuration: _int(row, columns[_Field.actualDuration]),
+          remainingDuration: _int(row, columns[_Field.remainingDuration]),
+          actualWork: _int(row, columns[_Field.actualWork]),
+          remainingWork: _int(row, columns[_Field.remainingWork]),
         ),
       );
     }
@@ -343,6 +361,12 @@ enum _Field {
   site,
   notes,
   crew,
+  actualStart,
+  actualFinish,
+  actualDuration,
+  remainingDuration,
+  actualWork,
+  remainingWork,
 }
 
 /// Excel başlıklarının Türkçe ve Project karşılıkları.
@@ -408,4 +432,16 @@ const _fieldAliases = <String, _Field>{
   'units': _Field.crew,
   'adam': _Field.crew,
   'ekipsayisi': _Field.crew,
+  'actualstart': _Field.actualStart,
+  'fiilibaslangic': _Field.actualStart,
+  'actualfinish': _Field.actualFinish,
+  'fiilibitis': _Field.actualFinish,
+  'actualduration': _Field.actualDuration,
+  'fiilisure': _Field.actualDuration,
+  'remainingduration': _Field.remainingDuration,
+  'kalansure': _Field.remainingDuration,
+  'actualwork': _Field.actualWork,
+  'fiiliis': _Field.actualWork,
+  'remainingwork': _Field.remainingWork,
+  'kalanis': _Field.remainingWork,
 };

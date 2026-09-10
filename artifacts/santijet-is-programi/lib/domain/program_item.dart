@@ -41,6 +41,12 @@ class ProgramItem {
     this.isMilestone = false,
     this.msProjectUid,
     this.predecessors,
+    this.actualStart,
+    this.actualFinish,
+    this.actualDuration,
+    this.remainingDuration,
+    this.actualWork,
+    this.remainingWork,
   });
 
   final String id;
@@ -76,6 +82,14 @@ class ProgramItem {
   /// yalnız dosyalar arasında taşır.
   final String? predecessors;
 
+  /// İzleme tablosu — Project Actual Start / Finish / Duration / Work.
+  final DateTime? actualStart;
+  final DateTime? actualFinish;
+  final int? actualDuration;
+  final int? remainingDuration;
+  final int? actualWork;
+  final int? remainingWork;
+
   int get calculatedDays =>
       plannedDays ?? endDate.difference(startDate).inDays + 1;
 
@@ -83,11 +97,12 @@ class ProgramItem {
   int get plannedManDays =>
       isMilestone ? 0 : calculatedDays * (plannedCrew < 1 ? 1 : plannedCrew);
 
-  /// Süre değişince bitiş, başlangıç + süre − 1 olur.
+  /// Süre değişince bitiş, başlangıç + süre − 1 olur. Süre 0 ise bitiş
+  /// başlangıçtır (kilometre taşı).
   static DateTime endDateFromDuration(DateTime start, int days) {
-    final safe = days < 1 ? 1 : days;
-    return DateTime(start.year, start.month, start.day)
-        .add(Duration(days: safe - 1));
+    final day = DateTime(start.year, start.month, start.day);
+    if (days <= 0) return day;
+    return day.add(Duration(days: days - 1));
   }
 
   ProgramStatus effectiveStatus({DateTime? today}) {
@@ -118,6 +133,12 @@ class ProgramItem {
     bool? isMilestone,
     int? msProjectUid,
     String? predecessors,
+    Object? actualStart = _keep,
+    Object? actualFinish = _keep,
+    Object? actualDuration = _keep,
+    Object? remainingDuration = _keep,
+    Object? actualWork = _keep,
+    Object? remainingWork = _keep,
   }) => ProgramItem(
     id: id ?? this.id,
     santiyeId: santiyeId ?? this.santiyeId,
@@ -136,7 +157,27 @@ class ProgramItem {
     isMilestone: isMilestone ?? this.isMilestone,
     msProjectUid: msProjectUid ?? this.msProjectUid,
     predecessors: predecessors ?? this.predecessors,
+    actualStart: identical(actualStart, _keep)
+        ? this.actualStart
+        : actualStart as DateTime?,
+    actualFinish: identical(actualFinish, _keep)
+        ? this.actualFinish
+        : actualFinish as DateTime?,
+    actualDuration: identical(actualDuration, _keep)
+        ? this.actualDuration
+        : actualDuration as int?,
+    remainingDuration: identical(remainingDuration, _keep)
+        ? this.remainingDuration
+        : remainingDuration as int?,
+    actualWork: identical(actualWork, _keep)
+        ? this.actualWork
+        : actualWork as int?,
+    remainingWork: identical(remainingWork, _keep)
+        ? this.remainingWork
+        : remainingWork as int?,
   );
+
+  static const _keep = Object();
 
   Map<String, dynamic> toJson() => {
     'id': id,
@@ -156,6 +197,12 @@ class ProgramItem {
     'isMilestone': isMilestone,
     'msProjectUid': msProjectUid,
     'predecessors': predecessors,
+    'actualStart': actualStart == null ? null : _date(actualStart!),
+    'actualFinish': actualFinish == null ? null : _date(actualFinish!),
+    'actualDuration': actualDuration,
+    'remainingDuration': remainingDuration,
+    'actualWork': actualWork,
+    'remainingWork': remainingWork,
   };
 
   factory ProgramItem.fromJson(Map<String, dynamic> json) => ProgramItem(
@@ -176,6 +223,16 @@ class ProgramItem {
     isMilestone: json['isMilestone'] as bool? ?? false,
     msProjectUid: json['msProjectUid'] as int?,
     predecessors: json['predecessors'] as String?,
+    actualStart: json['actualStart'] == null
+        ? null
+        : DateTime.tryParse(json['actualStart'] as String),
+    actualFinish: json['actualFinish'] == null
+        ? null
+        : DateTime.tryParse(json['actualFinish'] as String),
+    actualDuration: json['actualDuration'] as int?,
+    remainingDuration: json['remainingDuration'] as int?,
+    actualWork: json['actualWork'] as int?,
+    remainingWork: json['remainingWork'] as int?,
   );
 
   static String _date(DateTime value) =>
@@ -195,8 +252,12 @@ class ProgramItemValidator {
   static String? progress(int value) =>
       value < 0 || value > 100 ? 'İlerleme 0–100 arasında olmalıdır.' : null;
 
-  static String? duration(int value) =>
-      value < 1 ? 'Süre en az 1 gün olmalıdır.' : null;
+  static String? duration(int value, {bool milestone = false}) {
+    if (milestone) {
+      return value < 0 ? 'Süre negatif olamaz.' : null;
+    }
+    return value < 1 ? 'Süre en az 1 gün olmalıdır.' : null;
+  }
 
   static String? crew(int value) =>
       value < 1 ? 'Ekip en az 1 adam olmalıdır.' : null;

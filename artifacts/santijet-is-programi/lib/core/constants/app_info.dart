@@ -10,7 +10,7 @@ abstract final class AppInfo {
   static const String splashProductLabel = 'İŞ PROGRAMI';
 
   static const String tagline =
-      'Süre × ekip = adam-gün. Planı sahada gerçekleşenle karşılaştır.';
+      'Giriş ve izleme MS Project ile aynıdır. İş = süre × birim.';
 
   static const String codeLabel = 'Tek fiyat · Abonelik yok';
   static const String pricingLine =
