@@ -1,0 +1,23 @@
+import 'package:flutter/material.dart';
+
+import 'app_colors.dart';
+import 'page_background.dart';
+
+/// Tema modunu [AppColors] ile senkronlar.
+class AppColorsThemeSync extends StatelessWidget {
+  const AppColorsThemeSync({
+    super.key,
+    required this.themeMode,
+    required this.child,
+  });
+
+  final String themeMode;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    AppColors.applyPaletteFromMode(themeMode, Theme.of(context).brightness);
+    syncPageBackground(AppColors.surface);
+    return KeyedSubtree(key: ValueKey(AppColors.palette), child: child);
+  }
+}

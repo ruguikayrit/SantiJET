@@ -4,6 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
+import 'core/constants/app_info.dart';
+import 'core/theme/app_theme.dart';
+import 'core/theme/theme_rebuild_gate.dart';
 import 'data/program_repository.dart';
 import 'domain/program_item.dart';
 import 'features/form/program_form_screen.dart';
@@ -11,7 +14,6 @@ import 'features/settings/settings_screen.dart';
 import 'features/splash/splash_screen.dart';
 import 'state/app_state.dart';
 import 'ui/app_shell.dart';
-import 'ui/design_system.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -50,19 +52,26 @@ class SantijetIsProgramiApp extends ConsumerWidget {
   const SantijetIsProgramiApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) => MaterialApp.router(
-    debugShowCheckedModeBanner: false,
-    title: 'ŞantiJET İş Programı',
-    theme: buildTheme(Brightness.light),
-    darkTheme: buildTheme(Brightness.dark),
-    themeMode: ref.watch(themeModeProvider),
-    routerConfig: appRouter,
-    locale: const Locale('tr', 'TR'),
-    supportedLocales: const [Locale('tr', 'TR')],
-    localizationsDelegates: const [
-      GlobalMaterialLocalizations.delegate,
-      GlobalWidgetsLocalizations.delegate,
-      GlobalCupertinoLocalizations.delegate,
-    ],
-  );
+  Widget build(BuildContext context, WidgetRef ref) {
+    final modeKey = ref.watch(themeModeProvider);
+    return MaterialApp.router(
+      debugShowCheckedModeBanner: false,
+      title: AppInfo.legalName,
+      theme: AppTheme.light,
+      darkTheme: AppTheme.dark,
+      themeMode: themeModeFromSettings(modeKey),
+      routerConfig: appRouter,
+      locale: const Locale('tr', 'TR'),
+      supportedLocales: const [Locale('tr', 'TR')],
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      builder: (context, child) => AppColorsThemeSync(
+        themeMode: modeKey,
+        child: child ?? const SizedBox.shrink(),
+      ),
+    );
+  }
 }

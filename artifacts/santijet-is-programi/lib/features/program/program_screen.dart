@@ -25,85 +25,86 @@ class ProgramScreen extends ConsumerWidget {
         .length;
 
     return Scaffold(
-      body: Column(
-        children: [
-          SantijetHeader(
-            title: 'İŞ PROGRAMI',
-            subtitle: 'Planla · Takip et · Gecikmeyi gör',
-            onSettings: () => context.push('/settings'),
-          ),
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(16, 4, 16, 100),
-              children: [
-                DropdownButtonFormField<String>(
-                  initialValue: selectedSite,
-                  decoration: const InputDecoration(
-                    labelText: 'Aktif şantiye',
-                    prefixIcon: Icon(Icons.apartment_rounded),
+      backgroundColor: AppColors.canvas,
+      body: SafeArea(
+        bottom: false,
+        child: Column(
+          children: [
+            const SantijetHeader(showWordmark: true),
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(16, 4, 16, 100),
+                children: [
+                  DropdownButtonFormField<String>(
+                    initialValue: selectedSite,
+                    decoration: const InputDecoration(
+                      labelText: 'Aktif şantiye',
+                      prefixIcon: Icon(Icons.apartment_rounded),
+                    ),
+                    items: sites
+                        .map(
+                          (site) =>
+                              DropdownMenuItem(value: site, child: Text(site)),
+                        )
+                        .toList(),
+                    onChanged: (value) {
+                      if (value != null) {
+                        ref.read(activeSiteProvider.notifier).select(value);
+                      }
+                    },
                   ),
-                  items: sites
-                      .map(
-                        (site) =>
-                            DropdownMenuItem(value: site, child: Text(site)),
-                      )
-                      .toList(),
-                  onChanged: (value) {
-                    if (value != null) {
-                      ref.read(activeSiteProvider.notifier).select(value);
-                    }
-                  },
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _Kpi(label: 'Toplam', value: items.length),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: _Kpi(
-                        label: 'Devam',
-                        value: active,
-                        color: AppColors.electricBlue,
+                  const SizedBox(height: AppSpacing.md),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _Kpi(label: 'Toplam', value: items.length),
                       ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: _Kpi(
-                        label: 'Geciken',
-                        value: delayed,
-                        color: AppColors.danger,
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: _Kpi(
+                          label: 'Devam',
+                          value: active,
+                          color: AppColors.electricBlue,
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 22),
-                Text(
-                  'FAALİYETLER',
-                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    fontFamily: AppTypography.displayFont,
-                    letterSpacing: 1.2,
-                    fontWeight: FontWeight.w700,
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: _Kpi(
+                          label: 'Geciken',
+                          value: delayed,
+                          color: AppColors.critical,
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-                const SizedBox(height: 10),
-                if (items.isEmpty)
-                  const _EmptyProgram()
-                else
-                  ...items.map(
-                    (item) => Padding(
-                      padding: const EdgeInsets.only(bottom: 10),
-                      child: _ProgramItemCard(
-                        item: item,
-                        onTap: () => context.push('/form', extra: item),
-                      ),
+                  const SizedBox(height: AppSpacing.lg),
+                  Text(
+                    'FAALİYETLER',
+                    style: AppTypography.labelSmall.copyWith(
+                      color: AppColors.textMuted,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.5,
+                      fontSize: 12,
                     ),
                   ),
-              ],
+                  const SizedBox(height: 10),
+                  if (items.isEmpty)
+                    const _EmptyProgram()
+                  else
+                    ...items.map(
+                      (item) => Padding(
+                        padding: const EdgeInsets.only(bottom: 10),
+                        child: _ProgramItemCard(
+                          item: item,
+                          onTap: () => context.push('/form', extra: item),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => context.push('/form'),
@@ -128,16 +129,12 @@ class _Kpi extends StatelessWidget {
       children: [
         Text(
           '$value',
-          style: TextStyle(
-            fontFamily: AppTypography.displayFont,
-            fontSize: 29,
-            height: 1,
-            fontWeight: FontWeight.w700,
-            color: color,
+          style: AppTypography.kpiValue.copyWith(
+            color: color ?? AppColors.cardTextPrimary,
           ),
         ),
         const SizedBox(height: 6),
-        Text(label, style: Theme.of(context).textTheme.bodySmall),
+        Text(label, style: AppTypography.cardBodySmall),
       ],
     ),
   );
@@ -152,68 +149,57 @@ class _ProgramItemCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final date = DateFormat('dd.MM');
     final status = item.effectiveStatus();
-    return InkWell(
-      borderRadius: BorderRadius.circular(18),
+    return SJCard(
       onTap: onTap,
-      child: SJCard(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Text(
-                    item.name,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 15,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                SJStatusBadge(status: status),
-              ],
-            ),
-            const SizedBox(height: 12),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: LinearProgressIndicator(
-                value: item.progress / 100,
-                minHeight: 7,
-                backgroundColor: AppColors.line,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Text(item.name, style: AppTypography.cardTitleMedium),
               ),
+              const SizedBox(width: 8),
+              ProgramStatusBadge(status: status),
+            ],
+          ),
+          const SizedBox(height: 12),
+          ClipRRect(
+            borderRadius: AppRadii.sm,
+            child: LinearProgressIndicator(
+              value: item.progress / 100,
+              minHeight: 7,
+              backgroundColor: AppColors.cardBorder,
+              color: programStatusColor(status),
             ),
-            const SizedBox(height: 9),
-            Row(
-              children: [
-                Text(
-                  '%${item.progress}',
-                  style: const TextStyle(fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 9),
+          Row(
+            children: [
+              Text('%${item.progress}', style: AppTypography.cardTitleMedium),
+              const Spacer(),
+              Icon(
+                Icons.person_outline,
+                size: 15,
+                color: AppColors.cardTextMuted,
+              ),
+              const SizedBox(width: 4),
+              Flexible(
+                child: Text(
+                  item.responsible.isEmpty ? 'Atanmadı' : item.responsible,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTypography.cardBodySmall,
                 ),
-                const Spacer(),
-                Icon(
-                  Icons.person_outline,
-                  size: 15,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-                const SizedBox(width: 4),
-                Flexible(
-                  child: Text(
-                    item.responsible.isEmpty ? 'Atanmadı' : item.responsible,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  '${date.format(item.startDate)} – ${date.format(item.endDate)}',
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-              ],
-            ),
-          ],
-        ),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                '${date.format(item.startDate)} – ${date.format(item.endDate)}',
+                style: AppTypography.cardBodySmall,
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -223,14 +209,21 @@ class _EmptyProgram extends StatelessWidget {
   const _EmptyProgram();
 
   @override
-  Widget build(BuildContext context) => const SJCard(
+  Widget build(BuildContext context) => SJCard(
     child: Padding(
-      padding: EdgeInsets.symmetric(vertical: 24),
+      padding: const EdgeInsets.symmetric(vertical: 24),
       child: Column(
         children: [
-          Icon(Icons.event_note_rounded, size: 38),
-          SizedBox(height: 10),
-          Text('Bu şantiye için henüz faaliyet yok.'),
+          Icon(
+            Icons.event_note_rounded,
+            size: 38,
+            color: AppColors.cardTextMuted,
+          ),
+          const SizedBox(height: 10),
+          Text(
+            'Bu şantiye için henüz faaliyet yok.',
+            style: AppTypography.cardBodyMedium,
+          ),
         ],
       ),
     ),

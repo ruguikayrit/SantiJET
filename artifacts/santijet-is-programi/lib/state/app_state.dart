@@ -58,25 +58,41 @@ class ActiveSiteController extends Notifier<String> {
   }
 }
 
-final themeModeProvider = NotifierProvider<ThemeModeController, ThemeMode>(
+final themeModeProvider = NotifierProvider<ThemeModeController, String>(
   ThemeModeController.new,
 );
 
-class ThemeModeController extends Notifier<ThemeMode> {
+class ThemeModeController extends Notifier<String> {
   Box<dynamic> get _settings => Hive.box<dynamic>(settingsBoxName);
 
   @override
-  ThemeMode build() {
-    final value = _settings.get('themeMode', defaultValue: 'system') as String;
+  String build() {
+    final raw = _settings.get('themeMode', defaultValue: 'santijet_pro');
+    final value = raw == 'gecejet' ? 'santijet_pro' : raw as String;
     return switch (value) {
-      'light' => ThemeMode.light,
-      'dark' => ThemeMode.dark,
-      _ => ThemeMode.system,
+      'light' || 'dark' || 'santijet' || 'santijet_pro' => value,
+      _ => 'santijet_pro',
     };
   }
 
-  Future<void> select(ThemeMode mode) async {
-    state = mode;
-    await _settings.put('themeMode', mode.name);
+  Future<void> select(String mode) async {
+    final next = switch (mode) {
+      'light' || 'dark' || 'santijet' || 'santijet_pro' => mode,
+      _ => 'santijet_pro',
+    };
+    state = next;
+    await _settings.put('themeMode', next);
   }
 }
+
+ThemeMode themeModeFromSettings(String mode) => switch (mode) {
+  'light' || 'santijet' => ThemeMode.light,
+  _ => ThemeMode.dark,
+};
+
+String themeLabel(String mode) => switch (mode) {
+  'light' => 'Açık',
+  'dark' => 'Koyu',
+  'santijet' => 'ŞantiJET',
+  _ => 'ŞantiJET Pro',
+};

@@ -2,7 +2,6 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../domain/program_item.dart';
@@ -54,109 +53,109 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     }).toList();
 
     return Scaffold(
-      body: Column(
-        children: [
-          SantijetHeader(
-            title: 'TAKVİM',
-            subtitle: site,
-            onSettings: () => context.push('/settings'),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-            child: Column(
-              children: [
-                SegmentedButton<_CalendarView>(
-                  segments: const [
-                    ButtonSegment(
-                      value: _CalendarView.list,
-                      icon: Icon(Icons.view_agenda_outlined),
-                      label: Text('Liste'),
-                    ),
-                    ButtonSegment(
-                      value: _CalendarView.gantt,
-                      icon: Icon(Icons.view_timeline_outlined),
-                      label: Text('Gantt'),
-                    ),
-                  ],
-                  selected: {view},
-                  onSelectionChanged: (value) =>
-                      setState(() => view = value.first),
-                ),
-                const SizedBox(height: 10),
-                SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: [
-                      _FilterMenu<ProgramStatus?>(
-                        label: status?.label ?? 'Durum',
-                        value: status,
-                        entries: [
-                          const DropdownMenuEntry(value: null, label: 'Tümü'),
-                          ...ProgramStatus.values.map(
-                            (value) => DropdownMenuEntry(
-                              value: value,
-                              label: value.label,
-                            ),
-                          ),
-                        ],
-                        onChanged: (value) => setState(() => status = value),
+      backgroundColor: AppColors.canvas,
+      body: SafeArea(
+        bottom: false,
+        child: Column(
+          children: [
+            const SantijetHeader(subtitle: 'Takvim'),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+              child: Column(
+                children: [
+                  SegmentedButton<_CalendarView>(
+                    segments: const [
+                      ButtonSegment(
+                        value: _CalendarView.list,
+                        icon: Icon(Icons.view_agenda_outlined),
+                        label: Text('Liste'),
                       ),
-                      const SizedBox(width: 8),
-                      _FilterMenu<String?>(
-                        label: responsible ?? 'Sorumlu',
-                        value: responsible,
-                        entries: [
-                          const DropdownMenuEntry(value: null, label: 'Tümü'),
-                          ...people.map(
-                            (name) =>
-                                DropdownMenuEntry(value: name, label: name),
-                          ),
-                        ],
-                        onChanged: (value) =>
-                            setState(() => responsible = value),
-                      ),
-                      const SizedBox(width: 8),
-                      _FilterMenu<_DateFilter>(
-                        label: switch (dateFilter) {
-                          _DateFilter.all => 'Tarih',
-                          _DateFilter.thisWeek => 'Önümüzdeki 7 gün',
-                          _DateFilter.overdue => 'Süresi geçen',
-                        },
-                        value: dateFilter,
-                        entries: const [
-                          DropdownMenuEntry(
-                            value: _DateFilter.all,
-                            label: 'Tümü',
-                          ),
-                          DropdownMenuEntry(
-                            value: _DateFilter.thisWeek,
-                            label: 'Önümüzdeki 7 gün',
-                          ),
-                          DropdownMenuEntry(
-                            value: _DateFilter.overdue,
-                            label: 'Süresi geçen',
-                          ),
-                        ],
-                        onChanged: (value) {
-                          if (value != null) {
-                            setState(() => dateFilter = value);
-                          }
-                        },
+                      ButtonSegment(
+                        value: _CalendarView.gantt,
+                        icon: Icon(Icons.view_timeline_outlined),
+                        label: Text('Gantt'),
                       ),
                     ],
+                    selected: {view},
+                    onSelectionChanged: (value) =>
+                        setState(() => view = value.first),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 10),
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        _FilterMenu<ProgramStatus?>(
+                          label: status?.label ?? 'Durum',
+                          value: status,
+                          entries: [
+                            const DropdownMenuEntry(value: null, label: 'Tümü'),
+                            ...ProgramStatus.values.map(
+                              (value) => DropdownMenuEntry(
+                                value: value,
+                                label: value.label,
+                              ),
+                            ),
+                          ],
+                          onChanged: (value) => setState(() => status = value),
+                        ),
+                        const SizedBox(width: 8),
+                        _FilterMenu<String?>(
+                          label: responsible ?? 'Sorumlu',
+                          value: responsible,
+                          entries: [
+                            const DropdownMenuEntry(value: null, label: 'Tümü'),
+                            ...people.map(
+                              (name) =>
+                                  DropdownMenuEntry(value: name, label: name),
+                            ),
+                          ],
+                          onChanged: (value) =>
+                              setState(() => responsible = value),
+                        ),
+                        const SizedBox(width: 8),
+                        _FilterMenu<_DateFilter>(
+                          label: switch (dateFilter) {
+                            _DateFilter.all => 'Tarih',
+                            _DateFilter.thisWeek => 'Önümüzdeki 7 gün',
+                            _DateFilter.overdue => 'Süresi geçen',
+                          },
+                          value: dateFilter,
+                          entries: const [
+                            DropdownMenuEntry(
+                              value: _DateFilter.all,
+                              label: 'Tümü',
+                            ),
+                            DropdownMenuEntry(
+                              value: _DateFilter.thisWeek,
+                              label: 'Önümüzdeki 7 gün',
+                            ),
+                            DropdownMenuEntry(
+                              value: _DateFilter.overdue,
+                              label: 'Süresi geçen',
+                            ),
+                          ],
+                          onChanged: (value) {
+                            if (value != null) {
+                              setState(() => dateFilter = value);
+                            }
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-          Expanded(
-            child: items.isEmpty
-                ? const Center(child: Text('Filtreye uyan faaliyet yok.'))
-                : view == _CalendarView.list
-                ? _CalendarList(items: items)
-                : _GanttView(items: items),
-          ),
-        ],
+            Expanded(
+              child: items.isEmpty
+                  ? const Center(child: Text('Filtreye uyan faaliyet yok.'))
+                  : view == _CalendarView.list
+                  ? _CalendarList(items: items)
+                  : _GanttView(items: items),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -210,11 +209,7 @@ class _CalendarList extends StatelessWidget {
                   children: [
                     Text(
                       '%${item.progress}',
-                      style: const TextStyle(
-                        fontFamily: AppTypography.displayFont,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 20,
-                      ),
+                      style: AppTypography.kpiValue.copyWith(fontSize: 20),
                     ),
                     Text(
                       '${item.calculatedDays} gün',
@@ -241,7 +236,7 @@ class _CalendarList extends StatelessWidget {
                   ],
                 ),
               ),
-              SJStatusBadge(status: item.effectiveStatus()),
+              ProgramStatusBadge(status: item.effectiveStatus()),
             ],
           ),
         );
@@ -308,12 +303,12 @@ class _GanttView extends StatelessWidget {
                       bottom: 0,
                       child: Container(
                         width: 2,
-                        color: AppColors.danger,
+                        color: AppColors.critical,
                         child: const Align(
                           alignment: Alignment.topCenter,
                           child: Icon(
                             Icons.arrow_drop_down,
-                            color: AppColors.danger,
+                            color: AppColors.critical,
                           ),
                         ),
                       ),
@@ -347,7 +342,7 @@ class _GanttRow extends StatelessWidget {
         .max(12.0, item.calculatedDays / span * width)
         .toDouble();
     final color = switch (item.effectiveStatus()) {
-      ProgramStatus.delayed => AppColors.danger,
+      ProgramStatus.delayed => AppColors.critical,
       ProgramStatus.completed => AppColors.success,
       ProgramStatus.inProgress => AppColors.electricBlue,
       ProgramStatus.planned => const Color(0xFF8B95A7),
