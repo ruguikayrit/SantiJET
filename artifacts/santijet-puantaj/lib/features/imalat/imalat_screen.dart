@@ -526,10 +526,12 @@ class _ImalatScreenState extends ConsumerState<ImalatScreen> {
     WidgetRef ref, {
     required Production production,
   }) {
-    return openImalatProductionDetail(
+    return _openJobEditor(
       context,
       ref,
-      productionId: production.id,
+      projectId: production.projectId,
+      teams: imalatTeamOptions(ref),
+      existing: production,
     );
   }
 
@@ -548,7 +550,15 @@ class _ImalatScreenState extends ConsumerState<ImalatScreen> {
   }
 }
 
-/// Verim vb. ekranlardan aynı imalat detay kartını açar.
+List<String> imalatTeamOptions(WidgetRef ref) {
+  return {
+    ...ref.read(teamsProvider),
+    ...YevmiyeCalculator.teamNames(ref.read(activePersonnelProvider)),
+  }.toList()
+    ..sort();
+}
+
+/// Günlük kayıtlar, ilerleme ve çizgi grafik — imalat bilgileri formundan ayrı.
 Future<void> openImalatProductionDetail(
   BuildContext context,
   WidgetRef ref, {
@@ -574,16 +584,11 @@ Future<void> openImalatProductionDetail(
                 .where((p) => p.id == productionId)
                 .firstOrNull ??
             seed;
-        final teams = {
-          ...ref.read(teamsProvider),
-          ...YevmiyeCalculator.teamNames(ref.read(activePersonnelProvider)),
-        }.toList()
-          ..sort();
         openImalatJobEditor(
           context,
           ref,
           projectId: current.projectId,
-          teams: teams,
+          teams: imalatTeamOptions(ref),
           existing: current,
         );
       },
@@ -1040,6 +1045,28 @@ class _ImalatJobSheetState extends ConsumerState<_ImalatJobSheet> {
               decoration: const InputDecoration(labelText: 'Not'),
               maxLines: 2,
             ),
+            if (widget.existing != null) ...[
+              const SizedBox(height: AppSpacing.sm),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(
+                  onPressed: () {
+                    final id = widget.existing!.id;
+                    Navigator.pop(context);
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      if (!context.mounted) return;
+                      openImalatProductionDetail(
+                        context,
+                        ref,
+                        productionId: id,
+                      );
+                    });
+                  },
+                  icon: const Icon(Icons.timeline_outlined, size: 18),
+                  label: const Text('Günlük kayıtlar ve ilerleme'),
+                ),
+              ),
+            ],
             const SizedBox(height: AppSpacing.md),
             Row(
               children: [
