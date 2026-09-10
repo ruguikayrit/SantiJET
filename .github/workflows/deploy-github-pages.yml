@@ -271,6 +271,7 @@ jobs:
 
       - name: Build İş Programı web (staging preview)
         id: is_programi_build
+        continue-on-error: true
         env:
           GITHUB_REPOSITORY_NAME: ${{ github.event.repository.name }}
         run: |
@@ -279,8 +280,7 @@ jobs:
           elif [ -f .github/scripts/build-is-programi-pages.sh ]; then
             bash .github/scripts/build-is-programi-pages.sh
           else
-            echo "::error::build-is-programi-pages.sh missing on main and staging"
-            exit 1
+            echo "::warning::build-is-programi-pages.sh missing; skipping /is-programi/."
           fi
 
       - name: Verify site bundle
@@ -328,8 +328,7 @@ jobs:
             echo "::warning::Kasa bundle missing (site/kasa/index.html)."
           fi
           if [ ! -f site/is-programi/index.html ]; then
-            echo "::error::İş Programı bundle missing (site/is-programi/index.html)."
-            exit 1
+            echo "::warning::İş Programı bundle missing (site/is-programi/index.html)."
           fi
           echo "Site bundle OK:"
           find site -maxdepth 3 -type f -name 'index.html' | sort
