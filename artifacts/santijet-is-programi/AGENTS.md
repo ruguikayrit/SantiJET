@@ -20,7 +20,7 @@ Bu klasör bağımsız **ŞantiJET İş Programı** ürünüdür.
   açılır liste yoktur; aktif proje çubuğu Projelerim’e gider.
 - Yerel Hive kutularının tamamı `isprog_` önekini kullanır; çıplak
   `settings` kutusu açılmaz. Projeler `isprog_projects` kutusundadır.
-- Alt navigasyon yalnız Program, Takvim ve Özet'tir. Ayarlar sağ üst
+- Alt navigasyon yalnız Program, Gantt ve Özet'tir. Ayarlar sağ üst
   dişlidedir; zil ve avatar yoktur.
 - Turuncu staging şeridi ve `flutter-view { top:28px }` kullanılmaz.
 

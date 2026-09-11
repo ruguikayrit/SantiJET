@@ -62,7 +62,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         bottom: false,
         child: Column(
           children: [
-            const SantijetHeader(subtitle: 'Takvim'),
+            const SantijetHeader(subtitle: 'Gantt'),
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
               child: Column(

@@ -25,9 +25,9 @@ class _AppShellState extends State<AppShell> {
       label: 'Program',
     ),
     SJNavItem(
-      icon: Icons.calendar_month_outlined,
-      activeIcon: Icons.calendar_month_rounded,
-      label: 'Takvim',
+      icon: Icons.view_timeline_outlined,
+      activeIcon: Icons.view_timeline_rounded,
+      label: 'Gantt',
     ),
     SJNavItem(
       icon: Icons.donut_large_outlined,

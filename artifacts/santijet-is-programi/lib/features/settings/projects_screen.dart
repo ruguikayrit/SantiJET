@@ -20,7 +20,7 @@ class ProjectsScreen extends ConsumerWidget {
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 40),
         children: [
           Text(
-            'Aktif şantiye Program, Takvim ve Özet’te kullanılır. '
+            'Aktif şantiye Program, Gantt ve Özet’te kullanılır. '
             'Seçim bu cihazda kalır.',
             style: AppTypography.bodySmall.copyWith(
               color: AppColors.textSecondary,

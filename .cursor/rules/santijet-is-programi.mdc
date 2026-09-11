@@ -16,7 +16,7 @@ alwaysApply: false
   Ayarlar’daki Hesap ve İş kodu yerel kalır; SAHA bulut girişini kopyalama.
 - Aktif şantiye Ayarlar → Projelerim’de seçilir. Program sayfasına
   şantiye açılır listesi koyma.
-- Alt nav: Program · Takvim · Özet. Ayarlar yalnız sağ üst dişlidir.
+- Alt nav: Program · Gantt · Özet. Ayarlar yalnız sağ üst dişlidir.
 - Bildirim zili, avatar, turuncu staging şeridi ve `flutter-view` üst
   kaydırması ekleme.
 - Pages hedefi `/is-programi/`; ürün satırı **İŞ PROGRAMI**.

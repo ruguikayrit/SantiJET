@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 
 import '../../domain/man_day_progress.dart';
 import '../../domain/program_item.dart';
 import '../../state/app_state.dart';
 import '../../ui/design_system.dart';
+import 'program_entry_grid.dart';
 
 class ProgramScreen extends ConsumerWidget {
   const ProgramScreen({super.key});
@@ -125,19 +125,11 @@ class ProgramScreen extends ConsumerWidget {
                   if (items.isEmpty)
                     const _EmptyProgram()
                   else
-                    ...[
-                      for (var index = 0; index < items.length; index++)
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 8),
-                          child: _EntryCard(
-                            index: index + 1,
-                            item: items[index],
-                            progress: row(items[index]),
-                            onTap: () =>
-                                context.push('/form', extra: items[index]),
-                          ),
-                        ),
-                    ],
+                    ProgramEntryGrid(
+                      items: items,
+                      progressFor: row,
+                      onTap: (item) => context.push('/form', extra: item),
+                    ),
                 ],
               ),
             ),
@@ -176,122 +168,6 @@ class _Kpi extends StatelessWidget {
       ],
     ),
   );
-}
-
-class _EntryCard extends StatelessWidget {
-  const _EntryCard({
-    required this.index,
-    required this.item,
-    required this.progress,
-    required this.onTap,
-  });
-
-  final int index;
-  final ProgramItem item;
-  final ManDayProgress progress;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final date = DateFormat('dd.MM');
-    final status = progress.effectiveStatus;
-    final color = programStatusColor(status);
-    final duration = item.isMilestone ? '0g' : '${item.calculatedDays}g';
-    final predecessors = (item.predecessors ?? '').trim();
-    final resource = item.responsible.trim();
-    final meta = [
-      if (predecessors.isNotEmpty) predecessors,
-      if (resource.isNotEmpty) resource,
-    ].join('  ·  ');
-
-    return SJCard(
-      onTap: onTap,
-      accentColor: color,
-      padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SizedBox(
-                width: 22,
-                child: Text(
-                  '$index',
-                  style: AppTypography.cardBodySmall.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.cardTextMuted,
-                  ),
-                ),
-              ),
-              Expanded(
-                child: Text(
-                  item.name,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTypography.cardTitleMedium,
-                ),
-              ),
-              const SizedBox(width: 8),
-              _PercentPill(value: progress.progress, color: color),
-            ],
-          ),
-          const SizedBox(height: 6),
-          Text(
-            '$duration  ·  ${date.format(item.startDate)} – '
-            '${date.format(item.endDate)}',
-            style: AppTypography.cardBodySmall,
-          ),
-          if (meta.isNotEmpty) ...[
-            const SizedBox(height: 2),
-            Text(
-              meta,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: AppTypography.cardBodySmall.copyWith(
-                color: AppColors.cardTextMuted,
-              ),
-            ),
-          ],
-          const SizedBox(height: 10),
-          ClipRRect(
-            borderRadius: AppRadii.sm,
-            child: LinearProgressIndicator(
-              value: progress.progress / 100,
-              minHeight: 5,
-              backgroundColor: AppColors.cardBorder,
-              color: color,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _PercentPill extends StatelessWidget {
-  const _PercentPill({required this.value, required this.color});
-
-  final int value;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.14),
-        borderRadius: AppRadii.full,
-      ),
-      child: Text(
-        '%$value',
-        style: AppTypography.cardBodySmall.copyWith(
-          color: color,
-          fontWeight: FontWeight.w700,
-        ),
-      ),
-    );
-  }
 }
 
 class _EmptyProgram extends StatelessWidget {
