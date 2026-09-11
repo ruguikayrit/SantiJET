@@ -19,6 +19,12 @@ on:
       - '.github/workflows/deploy-github-pages.yml'
       - '.github/scripts/**'
   workflow_dispatch:
+    inputs:
+      full_rebuild:
+        description: 'Tüm uygulamaları yeniden derle (önbelleği yoksay)'
+        required: false
+        type: boolean
+        default: false
 
 concurrency:
   group: pages-santijet
@@ -40,8 +46,9 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: main
+          fetch-depth: 2
 
-      - name: Checkout staging (preview DEMİR)
+      - name: Checkout staging (preview kaynakları)
         uses: actions/checkout@v4
         with:
           ref: staging
@@ -49,7 +56,94 @@ jobs:
           fetch-depth: 1
         continue-on-error: true
 
+      - name: Detect changed apps
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            demir:
+              - 'artifacts/santijet-demir/**'
+            maliyet:
+              - 'artifacts/santijet-bfa-flutter/**'
+            puantaj:
+              - 'artifacts/santijet-puantaj/**'
+            beton:
+              - 'artifacts/santijet-beton/**'
+            malzeme:
+              - 'artifacts/santijet-malzeme/**'
+            pro:
+              - 'artifacts/santijet-ana/**'
+            muhendis:
+              - 'artifacts/santijet-muhendis/**'
+            tahvil:
+              - 'artifacts/santijet-tahvil/**'
+            kasa:
+              - 'artifacts/santijet-kasa/**'
+            is_programi:
+              - 'artifacts/santijet-is-programi/**'
+            deploy_infra:
+              - '.github/workflows/deploy-github-pages.yml'
+              - '.github/scripts/**'
+
+      - name: Prepare site directory
+        run: mkdir -p site pages-cache/demir-root
+
+      # --- DEMİR (production kök + /demir/ + /staging/ yönlendirme) ---
+      - name: Restore DEMİR root cache
+        id: cache-demir-root
+        uses: actions/cache/restore@v4
+        with:
+          path: pages-cache/demir-root
+          key: pages-demir-root-v1-${{ hashFiles('.github/scripts/build-santijet-pages.sh', '.github/scripts/pages-demir-root-cache.sh', 'artifacts/santijet-demir/**') }}
+          restore-keys: |
+            pages-demir-root-v1-
+
+      - name: Restore DEMİR /demir/ cache
+        id: cache-demir-preview
+        uses: actions/cache/restore@v4
+        with:
+          path: site/demir
+          key: pages-demir-preview-v1-${{ hashFiles('.github/scripts/build-santijet-pages.sh', 'staging-src/artifacts/santijet-demir/**', 'artifacts/santijet-demir/**') }}
+          restore-keys: |
+            pages-demir-preview-v1-
+
+      - name: Restore DEMİR /staging/ redirect cache
+        id: cache-demir-staging
+        uses: actions/cache/restore@v4
+        with:
+          path: site/staging
+          key: pages-demir-staging-v1-${{ hashFiles('.github/scripts/build-santijet-pages.sh', 'staging-src/artifacts/santijet-demir/**') }}
+          restore-keys: |
+            pages-demir-staging-v1-
+
+      - name: Plan DEMİR build
+        id: plan-demir
+        env:
+          CHANGED: ${{ steps.filter.outputs.demir }}
+          INFRA: ${{ steps.filter.outputs.deploy_infra }}
+          FULL: ${{ github.event_name == 'workflow_dispatch' && inputs.full_rebuild }}
+          ROOT_HIT: ${{ steps.cache-demir-root.outputs.cache-hit }}
+          PREVIEW_HIT: ${{ steps.cache-demir-preview.outputs.cache-hit }}
+          STAGING_HIT: ${{ steps.cache-demir-staging.outputs.cache-hit }}
+        run: |
+          if [ "$FULL" = "true" ] || [ "$INFRA" = "true" ] || [ "$CHANGED" = "true" ] || \
+             [ "$ROOT_HIT" != "true" ] || [ "$PREVIEW_HIT" != "true" ] || [ "$STAGING_HIT" != "true" ]; then
+            echo "build=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "build=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Apply cached DEMİR root
+        if: steps.plan-demir.outputs.build != 'true'
+        run: |
+          if [ -f staging-src/.github/scripts/pages-demir-root-cache.sh ]; then
+            bash staging-src/.github/scripts/pages-demir-root-cache.sh "${{ github.workspace }}" restore
+          else
+            bash .github/scripts/pages-demir-root-cache.sh "${{ github.workspace }}" restore
+          fi
+
       - name: Setup Flutter (DEMİR)
+        if: steps.plan-demir.outputs.build == 'true'
         uses: subosito/flutter-action@v2
         with:
           channel: stable
@@ -58,18 +152,22 @@ jobs:
           cache-key: flutter-demir-3.27.4
 
       - name: Setup Node (DEMİR DWG)
+        if: steps.plan-demir.outputs.build == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
       - name: Install LibreDWG web assets (production)
+        if: steps.plan-demir.outputs.build == 'true'
         run: bash artifacts/santijet-demir/scripts/setup-libredwg-web.sh
 
       - name: Install LibreDWG web assets (staging preview)
-        if: hashFiles('staging-src/artifacts/santijet-demir/scripts/setup-libredwg-web.sh') != ''
+        if: steps.plan-demir.outputs.build == 'true' && hashFiles('staging-src/artifacts/santijet-demir/scripts/setup-libredwg-web.sh') != ''
         run: bash staging-src/artifacts/santijet-demir/scripts/setup-libredwg-web.sh
 
       - name: Build DEMİR (production + /demir/ preview)
+        if: steps.plan-demir.outputs.build == 'true'
+        id: demir_build
         env:
           GITHUB_REPOSITORY_NAME: ${{ github.event.repository.name }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
@@ -80,8 +178,71 @@ jobs:
           else
             bash .github/scripts/build-santijet-pages.sh
           fi
+          if [ -f staging-src/.github/scripts/pages-demir-root-cache.sh ]; then
+            bash staging-src/.github/scripts/pages-demir-root-cache.sh "${{ github.workspace }}" save
+          else
+            bash .github/scripts/pages-demir-root-cache.sh "${{ github.workspace }}" save
+          fi
+
+      - name: Save DEMİR root cache
+        if: steps.plan-demir.outputs.build == 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: pages-cache/demir-root
+          key: pages-demir-root-v1-${{ hashFiles('.github/scripts/build-santijet-pages.sh', '.github/scripts/pages-demir-root-cache.sh', 'artifacts/santijet-demir/**') }}
+
+      - name: Save DEMİR /demir/ cache
+        if: steps.plan-demir.outputs.build == 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: site/demir
+          key: pages-demir-preview-v1-${{ hashFiles('.github/scripts/build-santijet-pages.sh', 'staging-src/artifacts/santijet-demir/**', 'artifacts/santijet-demir/**') }}
+
+      - name: Save DEMİR /staging/ redirect cache
+        if: steps.plan-demir.outputs.build == 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: site/staging
+          key: pages-demir-staging-v1-${{ hashFiles('.github/scripts/build-santijet-pages.sh', 'staging-src/artifacts/santijet-demir/**') }}
+
+      # --- Maliyet (/maliyet/ + /bfa/ yönlendirme) ---
+      - name: Restore Maliyet bundle cache
+        id: cache-maliyet
+        uses: actions/cache/restore@v4
+        with:
+          path: pages-cache/maliyet-bundle
+          key: pages-maliyet-v1-${{ hashFiles('.github/scripts/build-bfa-pages.sh', 'artifacts/santijet-bfa-flutter/**', 'staging-src/artifacts/santijet-bfa-flutter/**') }}
+          restore-keys: |
+            pages-maliyet-v1-
+
+      - name: Plan Maliyet build
+        id: plan-maliyet
+        env:
+          CHANGED: ${{ steps.filter.outputs.maliyet }}
+          INFRA: ${{ steps.filter.outputs.deploy_infra }}
+          FULL: ${{ github.event_name == 'workflow_dispatch' && inputs.full_rebuild }}
+          CACHE_HIT: ${{ steps.cache-maliyet.outputs.cache-hit }}
+        run: |
+          if [ "$FULL" = "true" ] || [ "$INFRA" = "true" ] || [ "$CHANGED" = "true" ] || [ "$CACHE_HIT" != "true" ]; then
+            echo "build=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "build=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Apply cached Maliyet bundle
+        if: steps.plan-maliyet.outputs.build != 'true'
+        run: |
+          if [ -d pages-cache/maliyet-bundle/maliyet ]; then
+            rm -rf site/maliyet site/bfa
+            mkdir -p site
+            cp -a pages-cache/maliyet-bundle/maliyet site/maliyet
+            if [ -d pages-cache/maliyet-bundle/bfa ]; then
+              cp -a pages-cache/maliyet-bundle/bfa site/bfa
+            fi
+          fi
 
       - name: Setup Flutter (Maliyet)
+        if: steps.plan-maliyet.outputs.build == 'true'
         uses: subosito/flutter-action@v2
         with:
           channel: stable
@@ -90,22 +251,60 @@ jobs:
           cache-key: flutter-maliyet-3.44.3
 
       - name: Build Maliyet web
+        if: steps.plan-maliyet.outputs.build == 'true'
         id: maliyet_build
         continue-on-error: true
         env:
           GITHUB_REPOSITORY_NAME: ${{ github.event.repository.name }}
         run: |
-          # staging push'larında staging betiği + kaynak öncelikli.
-          # Script adı geçici: build-bfa-pages.sh (çıktı: /maliyet/)
           if [ -f staging-src/.github/scripts/build-bfa-pages.sh ]; then
             bash staging-src/.github/scripts/build-bfa-pages.sh
           elif [ -f .github/scripts/build-bfa-pages.sh ]; then
             bash .github/scripts/build-bfa-pages.sh
           else
             echo "::warning::build-bfa-pages.sh missing; skipping /maliyet/."
+            exit 0
+          fi
+          rm -rf pages-cache/maliyet-bundle
+          mkdir -p pages-cache/maliyet-bundle
+          cp -a site/maliyet pages-cache/maliyet-bundle/maliyet
+          if [ -d site/bfa ]; then
+            cp -a site/bfa pages-cache/maliyet-bundle/bfa
+          fi
+
+      - name: Save Maliyet bundle cache
+        if: steps.plan-maliyet.outputs.build == 'true' && steps.maliyet_build.outcome == 'success'
+        uses: actions/cache/save@v4
+        with:
+          path: pages-cache/maliyet-bundle
+          key: pages-maliyet-v1-${{ hashFiles('.github/scripts/build-bfa-pages.sh', 'artifacts/santijet-bfa-flutter/**', 'staging-src/artifacts/santijet-bfa-flutter/**') }}
+
+      # --- Puantaj ---
+      - name: Restore Puantaj bundle cache
+        id: cache-puantaj
+        uses: actions/cache/restore@v4
+        with:
+          path: site/puantaj
+          key: pages-puantaj-v1-${{ hashFiles('.github/scripts/build-puantaj-pages.sh', 'artifacts/santijet-puantaj/**', 'staging-src/artifacts/santijet-puantaj/**') }}
+          restore-keys: |
+            pages-puantaj-v1-
+
+      - name: Plan Puantaj build
+        id: plan-puantaj
+        env:
+          CHANGED: ${{ steps.filter.outputs.puantaj }}
+          INFRA: ${{ steps.filter.outputs.deploy_infra }}
+          FULL: ${{ github.event_name == 'workflow_dispatch' && inputs.full_rebuild }}
+          CACHE_HIT: ${{ steps.cache-puantaj.outputs.cache-hit }}
+        run: |
+          if [ "$FULL" = "true" ] || [ "$INFRA" = "true" ] || [ "$CHANGED" = "true" ] || [ "$CACHE_HIT" != "true" ]; then
+            echo "build=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "build=false" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Setup Flutter (Puantaj)
+        if: steps.plan-puantaj.outputs.build == 'true'
         uses: subosito/flutter-action@v2
         with:
           channel: stable
@@ -114,13 +313,13 @@ jobs:
           cache-key: flutter-puantaj-3.27.4
 
       - name: Build Puantaj web (staging preview)
+        if: steps.plan-puantaj.outputs.build == 'true'
         id: puantaj_build
         env:
           GITHUB_REPOSITORY_NAME: ${{ github.event.repository.name }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: |
-          # staging push'larında staging betiği öncelikli (main checkout üzerine yazar).
           if [ -f staging-src/.github/scripts/build-puantaj-pages.sh ]; then
             bash staging-src/.github/scripts/build-puantaj-pages.sh
           elif [ -f .github/scripts/build-puantaj-pages.sh ]; then
@@ -130,7 +329,39 @@ jobs:
             exit 1
           fi
 
+      - name: Save Puantaj bundle cache
+        if: steps.plan-puantaj.outputs.build == 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: site/puantaj
+          key: pages-puantaj-v1-${{ hashFiles('.github/scripts/build-puantaj-pages.sh', 'artifacts/santijet-puantaj/**', 'staging-src/artifacts/santijet-puantaj/**') }}
+
+      # --- Beton ---
+      - name: Restore Beton bundle cache
+        id: cache-beton
+        uses: actions/cache/restore@v4
+        with:
+          path: site/beton
+          key: pages-beton-v1-${{ hashFiles('.github/scripts/build-beton-pages.sh', 'artifacts/santijet-beton/**', 'staging-src/artifacts/santijet-beton/**') }}
+          restore-keys: |
+            pages-beton-v1-
+
+      - name: Plan Beton build
+        id: plan-beton
+        env:
+          CHANGED: ${{ steps.filter.outputs.beton }}
+          INFRA: ${{ steps.filter.outputs.deploy_infra }}
+          FULL: ${{ github.event_name == 'workflow_dispatch' && inputs.full_rebuild }}
+          CACHE_HIT: ${{ steps.cache-beton.outputs.cache-hit }}
+        run: |
+          if [ "$FULL" = "true" ] || [ "$INFRA" = "true" ] || [ "$CHANGED" = "true" ] || [ "$CACHE_HIT" != "true" ]; then
+            echo "build=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "build=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Setup Flutter (Beton)
+        if: steps.plan-beton.outputs.build == 'true'
         uses: subosito/flutter-action@v2
         with:
           channel: stable
@@ -139,6 +370,7 @@ jobs:
           cache-key: flutter-beton-3.27.4
 
       - name: Build Beton web (staging preview)
+        if: steps.plan-beton.outputs.build == 'true'
         id: beton_build
         env:
           GITHUB_REPOSITORY_NAME: ${{ github.event.repository.name }}
@@ -152,7 +384,39 @@ jobs:
             exit 1
           fi
 
+      - name: Save Beton bundle cache
+        if: steps.plan-beton.outputs.build == 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: site/beton
+          key: pages-beton-v1-${{ hashFiles('.github/scripts/build-beton-pages.sh', 'artifacts/santijet-beton/**', 'staging-src/artifacts/santijet-beton/**') }}
+
+      # --- Malzeme ---
+      - name: Restore Malzeme bundle cache
+        id: cache-malzeme
+        uses: actions/cache/restore@v4
+        with:
+          path: site/malzeme
+          key: pages-malzeme-v1-${{ hashFiles('.github/scripts/build-malzeme-pages.sh', 'artifacts/santijet-malzeme/**', 'staging-src/artifacts/santijet-malzeme/**') }}
+          restore-keys: |
+            pages-malzeme-v1-
+
+      - name: Plan Malzeme build
+        id: plan-malzeme
+        env:
+          CHANGED: ${{ steps.filter.outputs.malzeme }}
+          INFRA: ${{ steps.filter.outputs.deploy_infra }}
+          FULL: ${{ github.event_name == 'workflow_dispatch' && inputs.full_rebuild }}
+          CACHE_HIT: ${{ steps.cache-malzeme.outputs.cache-hit }}
+        run: |
+          if [ "$FULL" = "true" ] || [ "$INFRA" = "true" ] || [ "$CHANGED" = "true" ] || [ "$CACHE_HIT" != "true" ]; then
+            echo "build=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "build=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Setup Flutter (Malzeme)
+        if: steps.plan-malzeme.outputs.build == 'true'
         uses: subosito/flutter-action@v2
         with:
           channel: stable
@@ -161,6 +425,7 @@ jobs:
           cache-key: flutter-malzeme-3.27.4
 
       - name: Build Malzeme web (staging preview)
+        if: steps.plan-malzeme.outputs.build == 'true'
         id: malzeme_build
         env:
           GITHUB_REPOSITORY_NAME: ${{ github.event.repository.name }}
@@ -174,7 +439,39 @@ jobs:
             exit 1
           fi
 
+      - name: Save Malzeme bundle cache
+        if: steps.plan-malzeme.outputs.build == 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: site/malzeme
+          key: pages-malzeme-v1-${{ hashFiles('.github/scripts/build-malzeme-pages.sh', 'artifacts/santijet-malzeme/**', 'staging-src/artifacts/santijet-malzeme/**') }}
+
+      # --- PRO ---
+      - name: Restore PRO bundle cache
+        id: cache-pro
+        uses: actions/cache/restore@v4
+        with:
+          path: site/pro
+          key: pages-pro-v1-${{ hashFiles('.github/scripts/build-pro-pages.sh', 'artifacts/santijet-ana/**', 'staging-src/artifacts/santijet-ana/**') }}
+          restore-keys: |
+            pages-pro-v1-
+
+      - name: Plan PRO build
+        id: plan-pro
+        env:
+          CHANGED: ${{ steps.filter.outputs.pro }}
+          INFRA: ${{ steps.filter.outputs.deploy_infra }}
+          FULL: ${{ github.event_name == 'workflow_dispatch' && inputs.full_rebuild }}
+          CACHE_HIT: ${{ steps.cache-pro.outputs.cache-hit }}
+        run: |
+          if [ "$FULL" = "true" ] || [ "$INFRA" = "true" ] || [ "$CHANGED" = "true" ] || [ "$CACHE_HIT" != "true" ]; then
+            echo "build=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "build=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Setup Flutter (PRO)
+        if: steps.plan-pro.outputs.build == 'true'
         uses: subosito/flutter-action@v2
         with:
           channel: stable
@@ -183,6 +480,7 @@ jobs:
           cache-key: flutter-pro-3.27.4
 
       - name: Build PRO web (staging preview)
+        if: steps.plan-pro.outputs.build == 'true'
         id: pro_build
         env:
           GITHUB_REPOSITORY_NAME: ${{ github.event.repository.name }}
@@ -196,7 +494,39 @@ jobs:
             exit 1
           fi
 
+      - name: Save PRO bundle cache
+        if: steps.plan-pro.outputs.build == 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: site/pro
+          key: pages-pro-v1-${{ hashFiles('.github/scripts/build-pro-pages.sh', 'artifacts/santijet-ana/**', 'staging-src/artifacts/santijet-ana/**') }}
+
+      # --- Mühendis ---
+      - name: Restore Mühendis bundle cache
+        id: cache-muhendis
+        uses: actions/cache/restore@v4
+        with:
+          path: site/muhendis
+          key: pages-muhendis-v1-${{ hashFiles('.github/scripts/build-muhendis-pages.sh', 'artifacts/santijet-muhendis/**', 'staging-src/artifacts/santijet-muhendis/**') }}
+          restore-keys: |
+            pages-muhendis-v1-
+
+      - name: Plan Mühendis build
+        id: plan-muhendis
+        env:
+          CHANGED: ${{ steps.filter.outputs.muhendis }}
+          INFRA: ${{ steps.filter.outputs.deploy_infra }}
+          FULL: ${{ github.event_name == 'workflow_dispatch' && inputs.full_rebuild }}
+          CACHE_HIT: ${{ steps.cache-muhendis.outputs.cache-hit }}
+        run: |
+          if [ "$FULL" = "true" ] || [ "$INFRA" = "true" ] || [ "$CHANGED" = "true" ] || [ "$CACHE_HIT" != "true" ]; then
+            echo "build=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "build=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Setup Flutter (Mühendis)
+        if: steps.plan-muhendis.outputs.build == 'true'
         uses: subosito/flutter-action@v2
         with:
           channel: stable
@@ -205,6 +535,7 @@ jobs:
           cache-key: flutter-muhendis-3.44.3
 
       - name: Build Mühendis web (staging preview)
+        if: steps.plan-muhendis.outputs.build == 'true'
         id: muhendis_build
         env:
           GITHUB_REPOSITORY_NAME: ${{ github.event.repository.name }}
@@ -218,7 +549,39 @@ jobs:
             exit 1
           fi
 
+      - name: Save Mühendis bundle cache
+        if: steps.plan-muhendis.outputs.build == 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: site/muhendis
+          key: pages-muhendis-v1-${{ hashFiles('.github/scripts/build-muhendis-pages.sh', 'artifacts/santijet-muhendis/**', 'staging-src/artifacts/santijet-muhendis/**') }}
+
+      # --- Tahvil ---
+      - name: Restore Tahvil bundle cache
+        id: cache-tahvil
+        uses: actions/cache/restore@v4
+        with:
+          path: site/tahvil
+          key: pages-tahvil-v1-${{ hashFiles('.github/scripts/build-tahvil-pages.sh', 'artifacts/santijet-tahvil/**', 'staging-src/artifacts/santijet-tahvil/**') }}
+          restore-keys: |
+            pages-tahvil-v1-
+
+      - name: Plan Tahvil build
+        id: plan-tahvil
+        env:
+          CHANGED: ${{ steps.filter.outputs.tahvil }}
+          INFRA: ${{ steps.filter.outputs.deploy_infra }}
+          FULL: ${{ github.event_name == 'workflow_dispatch' && inputs.full_rebuild }}
+          CACHE_HIT: ${{ steps.cache-tahvil.outputs.cache-hit }}
+        run: |
+          if [ "$FULL" = "true" ] || [ "$INFRA" = "true" ] || [ "$CHANGED" = "true" ] || [ "$CACHE_HIT" != "true" ]; then
+            echo "build=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "build=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Setup Flutter (Tahvil)
+        if: steps.plan-tahvil.outputs.build == 'true'
         uses: subosito/flutter-action@v2
         with:
           channel: stable
@@ -227,6 +590,7 @@ jobs:
           cache-key: flutter-tahvil-3.44.3
 
       - name: Build Tahvil web (staging preview)
+        if: steps.plan-tahvil.outputs.build == 'true'
         id: tahvil_build
         env:
           GITHUB_REPOSITORY_NAME: ${{ github.event.repository.name }}
@@ -240,7 +604,39 @@ jobs:
             exit 1
           fi
 
+      - name: Save Tahvil bundle cache
+        if: steps.plan-tahvil.outputs.build == 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: site/tahvil
+          key: pages-tahvil-v1-${{ hashFiles('.github/scripts/build-tahvil-pages.sh', 'artifacts/santijet-tahvil/**', 'staging-src/artifacts/santijet-tahvil/**') }}
+
+      # --- Kasa ---
+      - name: Restore Kasa bundle cache
+        id: cache-kasa
+        uses: actions/cache/restore@v4
+        with:
+          path: site/kasa
+          key: pages-kasa-v1-${{ hashFiles('.github/scripts/build-kasa-pages.sh', 'artifacts/santijet-kasa/**', 'staging-src/artifacts/santijet-kasa/**') }}
+          restore-keys: |
+            pages-kasa-v1-
+
+      - name: Plan Kasa build
+        id: plan-kasa
+        env:
+          CHANGED: ${{ steps.filter.outputs.kasa }}
+          INFRA: ${{ steps.filter.outputs.deploy_infra }}
+          FULL: ${{ github.event_name == 'workflow_dispatch' && inputs.full_rebuild }}
+          CACHE_HIT: ${{ steps.cache-kasa.outputs.cache-hit }}
+        run: |
+          if [ "$FULL" = "true" ] || [ "$INFRA" = "true" ] || [ "$CHANGED" = "true" ] || [ "$CACHE_HIT" != "true" ]; then
+            echo "build=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "build=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Setup Flutter for Kasa
+        if: steps.plan-kasa.outputs.build == 'true'
         uses: subosito/flutter-action@v2
         with:
           channel: stable
@@ -249,6 +645,7 @@ jobs:
           cache-key: flutter-kasa-3.44.3
 
       - name: Build Kasa web (staging preview)
+        if: steps.plan-kasa.outputs.build == 'true'
         id: kasa_build
         env:
           GITHUB_REPOSITORY_NAME: ${{ github.event.repository.name }}
@@ -259,9 +656,42 @@ jobs:
             bash .github/scripts/build-kasa-pages.sh
           else
             echo "::warning::build-kasa-pages.sh missing; skipping /kasa/."
+            exit 0
+          fi
+
+      - name: Save Kasa bundle cache
+        if: steps.plan-kasa.outputs.build == 'true' && steps.kasa_build.outcome == 'success'
+        uses: actions/cache/save@v4
+        with:
+          path: site/kasa
+          key: pages-kasa-v1-${{ hashFiles('.github/scripts/build-kasa-pages.sh', 'artifacts/santijet-kasa/**', 'staging-src/artifacts/santijet-kasa/**') }}
+
+      # --- İş Programı ---
+      - name: Restore İş Programı bundle cache
+        id: cache-is-programi
+        uses: actions/cache/restore@v4
+        with:
+          path: site/is-programi
+          key: pages-is-programi-v1-${{ hashFiles('.github/scripts/build-is-programi-pages.sh', 'artifacts/santijet-is-programi/**', 'staging-src/artifacts/santijet-is-programi/**') }}
+          restore-keys: |
+            pages-is-programi-v1-
+
+      - name: Plan İş Programı build
+        id: plan-is-programi
+        env:
+          CHANGED: ${{ steps.filter.outputs.is_programi }}
+          INFRA: ${{ steps.filter.outputs.deploy_infra }}
+          FULL: ${{ github.event_name == 'workflow_dispatch' && inputs.full_rebuild }}
+          CACHE_HIT: ${{ steps.cache-is-programi.outputs.cache-hit }}
+        run: |
+          if [ "$FULL" = "true" ] || [ "$INFRA" = "true" ] || [ "$CHANGED" = "true" ] || [ "$CACHE_HIT" != "true" ]; then
+            echo "build=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "build=false" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Setup Flutter for İş Programı
+        if: steps.plan-is-programi.outputs.build == 'true'
         uses: subosito/flutter-action@v2
         with:
           channel: stable
@@ -270,6 +700,7 @@ jobs:
           cache-key: flutter-is-programi-3.47.3
 
       - name: Build İş Programı web (staging preview)
+        if: steps.plan-is-programi.outputs.build == 'true'
         id: is_programi_build
         continue-on-error: true
         env:
@@ -281,7 +712,29 @@ jobs:
             bash .github/scripts/build-is-programi-pages.sh
           else
             echo "::warning::build-is-programi-pages.sh missing; skipping /is-programi/."
+            exit 0
           fi
+
+      - name: Save İş Programı bundle cache
+        if: steps.plan-is-programi.outputs.build == 'true' && steps.is_programi_build.outcome == 'success'
+        uses: actions/cache/save@v4
+        with:
+          path: site/is-programi
+          key: pages-is-programi-v1-${{ hashFiles('.github/scripts/build-is-programi-pages.sh', 'artifacts/santijet-is-programi/**', 'staging-src/artifacts/santijet-is-programi/**') }}
+
+      - name: Incremental build plan summary
+        run: |
+          echo "Deploy plan (build=true → derlendi, build=false → önbellekten alındı):"
+          echo "  DEMİR:        ${{ steps.plan-demir.outputs.build }}"
+          echo "  Maliyet:      ${{ steps.plan-maliyet.outputs.build }}"
+          echo "  Puantaj:      ${{ steps.plan-puantaj.outputs.build }}"
+          echo "  Beton:        ${{ steps.plan-beton.outputs.build }}"
+          echo "  Malzeme:      ${{ steps.plan-malzeme.outputs.build }}"
+          echo "  PRO:          ${{ steps.plan-pro.outputs.build }}"
+          echo "  Mühendis:     ${{ steps.plan-muhendis.outputs.build }}"
+          echo "  Tahvil:       ${{ steps.plan-tahvil.outputs.build }}"
+          echo "  Kasa:         ${{ steps.plan-kasa.outputs.build }}"
+          echo "  İş Programı:  ${{ steps.plan-is-programi.outputs.build }}"
 
       - name: Verify site bundle
         run: |
@@ -293,10 +746,8 @@ jobs:
             echo "::endgroup::"
             exit 1
           fi
-          if [ "${{ steps.maliyet_build.outcome }}" != "success" ]; then
-            echo "::warning::Maliyet build failed; /maliyet/ may be unavailable in this deploy."
-          elif [ ! -f site/maliyet/index.html ]; then
-            echo "::warning::Maliyet bundle missing after build step."
+          if [ ! -f site/maliyet/index.html ]; then
+            echo "::warning::Maliyet bundle missing (site/maliyet/index.html)."
           fi
           if [ ! -f site/puantaj/index.html ]; then
             echo "::error::Puantaj bundle missing (site/puantaj/index.html). Refusing to deploy a broken /puantaj/."
@@ -312,9 +763,6 @@ jobs:
           fi
           if [ ! -f site/pro/index.html ]; then
             echo "::error::PRO bundle missing (site/pro/index.html). Refusing to deploy a broken /pro/."
-            echo "::group::site tree"
-            find site -maxdepth 3 -type f -name 'index.html' | sort || true
-            echo "::endgroup::"
             exit 1
           fi
           if [ ! -f site/muhendis/index.html ]; then
@@ -342,7 +790,6 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@v4
         with:
-          # Büyük site paketinde Pages status reporting 10 dk'yı aşabiliyor.
           timeout: 1800000
 
       - name: Published URLs

@@ -19,8 +19,14 @@ MAIN_SRC="${ROOT_DIR}"
 STAGING_SRC="${ROOT_DIR}/staging-src"
 REPO_NAME="${GITHUB_REPOSITORY_NAME:-SantiJET}"
 
-rm -rf "${SITE_DIR}"
 mkdir -p "${SITE_DIR}"
+
+clean_demir_production_root() {
+  find "${SITE_DIR}" -maxdepth 1 -type f -exec rm -f {} +
+  for dir in assets canvaskit icons; do
+    rm -rf "${SITE_DIR}/${dir}"
+  done
+}
 
 normalize_supabase_url() {
   local raw="$1"
@@ -84,6 +90,7 @@ build_demir_web() {
 }
 
 echo "Building production DEMİR from main..."
+clean_demir_production_root
 build_demir_web "${MAIN_SRC}" "" "production"
 
 if [[ -d "${STAGING_SRC}/artifacts/santijet-demir" ]]; then
