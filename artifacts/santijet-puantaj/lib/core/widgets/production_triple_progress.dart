@@ -22,20 +22,47 @@ enum ProductionProgressColorMode {
   axisFillIntensity,
 }
 
-Color axisBaseColor(String label) {
-  return switch (label) {
-    'Metraj' => AppColors.electricBlueLight,
-    'Süre' => AppColors.info,
-    'Adam-gün' => AppColors.partial,
-    _ => AppColors.electricBlue,
-  };
+/// Ekip özet kartı — eksen gradyanı (sol soft → sağ doygun).
+LinearGradient axisFillGradient(String label, double fillRatio) {
+  final t = fillRatio.clamp(0.0, 1.0);
+  final whiteBlend = AppColors.useDarkCards ? 0.68 : 0.58;
+
+  late Color start;
+  late Color end;
+  switch (label) {
+    case 'Metraj':
+      start = const Color(0xFF6EE7B7);
+      end = AppColors.success;
+    case 'Süre':
+      start = AppColors.info;
+      end = AppColors.electricBlue;
+    case 'Adam-gün':
+      start = const Color(0xFFFDBA74);
+      end = AppColors.warning;
+    default:
+      start = AppColors.info;
+      end = AppColors.electricBlue;
+  }
+
+  final softStart = Color.lerp(start, Colors.white, whiteBlend) ?? start;
+  final softEnd = Color.lerp(end, Colors.white, whiteBlend) ?? end;
+  return LinearGradient(
+    begin: Alignment.centerLeft,
+    end: Alignment.centerRight,
+    colors: [
+      Color.lerp(softStart, start, t)!,
+      Color.lerp(softEnd, end, t)!,
+    ],
+  );
 }
 
-/// Doluluk 0→1 arttıkça eksen rengi yumuşaktan doygun tona geçer.
-Color axisFillIntensityColor(Color base, double fillRatio) {
-  final t = fillRatio.clamp(0.0, 1.0);
-  final soft = Color.lerp(base, Colors.white, AppColors.useDarkCards ? 0.72 : 0.62) ?? base;
-  return Color.lerp(soft, base, t) ?? base;
+Color axisFillAccentColor(String label) {
+  return switch (label) {
+    'Metraj' => AppColors.success,
+    'Süre' => AppColors.electricBlue,
+    'Adam-gün' => AppColors.warning,
+    _ => AppColors.electricBlue,
+  };
 }
 
 /// Birim verim oranı (1.0 = plan) — yeşil / amber / kırmızı skala.
@@ -126,20 +153,18 @@ class _CompletionProgressLine extends StatelessWidget {
     return switch (colorMode) {
       ProductionProgressColorMode.completionThreshold =>
         completionColorForPct(pct),
-      ProductionProgressColorMode.axisFillIntensity => axisFillIntensityColor(
-          axisBaseColor(axis.label),
-          pct / 100,
-        ),
+      ProductionProgressColorMode.axisFillIntensity =>
+        axisFillAccentColor(axis.label),
     };
   }
 
   @override
   Widget build(BuildContext context) {
     final pct = axis.progressPct;
-    final base = axisBaseColor(axis.label);
+    final fill = axis.hasPlan ? (pct / 100).clamp(0.0, 1.0) : 0.0;
     final color = _barColor(pct);
     final trackBg = colorMode == ProductionProgressColorMode.axisFillIntensity
-        ? base.withValues(alpha: 0.14)
+        ? axisFillAccentColor(axis.label).withValues(alpha: 0.14)
         : color.withValues(alpha: 0.12);
 
     return Column(
@@ -175,16 +200,62 @@ class _CompletionProgressLine extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 4),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(4),
-          child: LinearProgressIndicator(
-            value: axis.hasPlan ? (pct / 100).clamp(0.0, 1.0) : 0,
-            minHeight: barHeight,
-            backgroundColor: trackBg,
-            color: axis.hasPlan ? color : AppColors.cardTextMuted,
+        if (colorMode == ProductionProgressColorMode.axisFillIntensity &&
+            axis.hasPlan)
+          _AxisGradientProgressBar(
+            value: fill,
+            height: barHeight,
+            gradient: axisFillGradient(axis.label, fill),
+            trackColor: trackBg,
+          )
+        else
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              value: fill,
+              minHeight: barHeight,
+              backgroundColor: trackBg,
+              color: axis.hasPlan ? color : AppColors.cardTextMuted,
+            ),
           ),
-        ),
       ],
+    );
+  }
+}
+
+class _AxisGradientProgressBar extends StatelessWidget {
+  const _AxisGradientProgressBar({
+    required this.value,
+    required this.height,
+    required this.gradient,
+    required this.trackColor,
+  });
+
+  final double value;
+  final double height;
+  final Gradient gradient;
+  final Color trackColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(4),
+      child: SizedBox(
+        height: height,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            ColoredBox(color: trackColor),
+            FractionallySizedBox(
+              widthFactor: value.clamp(0.0, 1.0),
+              alignment: Alignment.centerLeft,
+              child: DecoratedBox(
+                decoration: BoxDecoration(gradient: gradient),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
