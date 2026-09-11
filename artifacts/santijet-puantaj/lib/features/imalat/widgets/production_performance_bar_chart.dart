@@ -696,6 +696,64 @@ class _ProductionPerformanceBarChartState
   }
 }
 
+/// İmalat kartı — performans grafiği aç/kapa (varsayılan kapalı).
+class ProductionPerformanceBarChartSection extends StatefulWidget {
+  const ProductionPerformanceBarChartSection({
+    required this.production,
+    super.key,
+  });
+
+  final Production production;
+
+  @override
+  State<ProductionPerformanceBarChartSection> createState() =>
+      _ProductionPerformanceBarChartSectionState();
+}
+
+class _ProductionPerformanceBarChartSectionState
+    extends State<ProductionPerformanceBarChartSection> {
+  bool _expanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () => setState(() => _expanded = !_expanded),
+            borderRadius: AppRadii.sm,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Performans grafiği',
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  Icon(
+                    _expanded ? Icons.expand_less : Icons.expand_more,
+                    size: 22,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        if (_expanded)
+          ProductionPerformanceBarChart(production: widget.production),
+      ],
+    );
+  }
+}
+
 class _PeriodBucket {
   const _PeriodBucket({
     required this.label,

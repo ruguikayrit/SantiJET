@@ -164,57 +164,73 @@ class _ImalatScreenState extends ConsumerState<ImalatScreen> {
   Widget _productionCard(Production p) {
     final title = p.name.trim().isEmpty ? 'İmalat' : p.name.trim();
     return SJCard(
-      onTap: () => _openDetail(context, ref, production: p),
       child: Builder(
         builder: (context) {
           final theme = Theme.of(context);
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      title,
-                      style: theme.textTheme.titleMedium,
+              Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () => _openDetail(context, ref, production: p),
+                  borderRadius: AppRadii.sm,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      vertical: AppSpacing.xs,
                     ),
-                  ),
-                  if (_updatedToday(p))
-                    Padding(
-                      padding: const EdgeInsets.only(right: 8),
-                      child: SJStatusBadge(
-                        label: 'Bugün',
-                        color: AppColors.info,
-                      ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                title,
+                                style: theme.textTheme.titleMedium,
+                              ),
+                            ),
+                            if (_updatedToday(p))
+                              Padding(
+                                padding: const EdgeInsets.only(right: 8),
+                                child: SJStatusBadge(
+                                  label: 'Bugün',
+                                  color: AppColors.info,
+                                ),
+                              ),
+                            if (p.isComplete)
+                              SJStatusBadge(
+                                label: 'Tamamlandı',
+                                color: AppColors.success,
+                              ),
+                          ],
+                        ),
+                        if (p.locationLabel.isNotEmpty) ...[
+                          const SizedBox(height: AppSpacing.xs),
+                          Text(
+                            p.locationLabel,
+                            style: theme.textTheme.labelMedium?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                        const SizedBox(height: 4),
+                        Text(
+                          'Toplam çalışan: ${_fmt(p.ustaCount)} usta · '
+                          '${_fmt(p.duzIsciCount)} düz',
+                          style: theme.textTheme.labelSmall,
+                        ),
+                        const SizedBox(height: AppSpacing.sm),
+                        ProductionTripleProgress(metrics: p.metrics),
+                      ],
                     ),
-                  if (p.isComplete)
-                    SJStatusBadge(
-                      label: 'Tamamlandı',
-                      color: AppColors.success,
-                    ),
-                ],
-              ),
-              if (p.locationLabel.isNotEmpty) ...[
-                const SizedBox(height: AppSpacing.xs),
-                Text(
-                  p.locationLabel,
-                  style: theme.textTheme.labelMedium?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                    fontWeight: FontWeight.w600,
                   ),
                 ),
-              ],
-              const SizedBox(height: 4),
-              Text(
-                'Toplam çalışan: ${_fmt(p.ustaCount)} usta · '
-                '${_fmt(p.duzIsciCount)} düz',
-                style: theme.textTheme.labelSmall,
               ),
-              const SizedBox(height: AppSpacing.sm),
-              ProductionTripleProgress(metrics: p.metrics),
               if (p.dailyEntries.isNotEmpty) ...[
                 const SizedBox(height: AppSpacing.sm),
-                ProductionPerformanceBarChart(production: p),
+                ProductionPerformanceBarChartSection(production: p),
               ],
               if (!p.isComplete) ...[
                 const SizedBox(height: AppSpacing.sm),
