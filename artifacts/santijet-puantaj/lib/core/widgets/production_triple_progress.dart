@@ -13,6 +13,31 @@ Color completionColorForPct(double pct) {
   return AppColors.cardTextMuted;
 }
 
+/// Ekip özet kartları — eksen başına sabit renk; doluluk arttıkça soft → doygun.
+enum ProductionProgressColorMode {
+  /// Tamamlanma % eşiğine göre yeşil / mavi / gri (imalat kartı).
+  completionThreshold,
+
+  /// Metraj / Süre / AG kendi rengi; yoğunluk doluluk oranına bağlı.
+  axisFillIntensity,
+}
+
+Color axisBaseColor(String label) {
+  return switch (label) {
+    'Metraj' => AppColors.electricBlueLight,
+    'Süre' => AppColors.info,
+    'Adam-gün' => AppColors.partial,
+    _ => AppColors.electricBlue,
+  };
+}
+
+/// Doluluk 0→1 arttıkça eksen rengi yumuşaktan doygun tona geçer.
+Color axisFillIntensityColor(Color base, double fillRatio) {
+  final t = fillRatio.clamp(0.0, 1.0);
+  final soft = Color.lerp(base, Colors.white, AppColors.useDarkCards ? 0.72 : 0.62) ?? base;
+  return Color.lerp(soft, base, t) ?? base;
+}
+
 /// Birim verim oranı (1.0 = plan) — yeşil / amber / kırmızı skala.
 Color efficiencyColorForRatio(double? ratio) {
   if (ratio == null) return AppColors.cardTextMuted;
@@ -29,6 +54,7 @@ class ProductionTripleProgress extends StatelessWidget {
     List<ProductionProgressAxis>? axes,
     this.dense = true,
     this.showPctLabels = true,
+    this.colorMode = ProductionProgressColorMode.completionThreshold,
   })  : assert(metrics != null || axes != null),
         _metrics = metrics,
         _axes = axes;
@@ -49,6 +75,7 @@ class ProductionTripleProgress extends StatelessWidget {
   final List<ProductionProgressAxis>? _axes;
   final bool dense;
   final bool showPctLabels;
+  final ProductionProgressColorMode colorMode;
 
   List<ProductionProgressAxis> get _resolvedAxes =>
       _axes ?? _metrics!.axes;
@@ -71,6 +98,7 @@ class ProductionTripleProgress extends StatelessWidget {
             barHeight: barH,
             labelStyle: labelStyle,
             showPct: showPctLabels,
+            colorMode: colorMode,
           ),
         ],
       ],
@@ -84,17 +112,35 @@ class _CompletionProgressLine extends StatelessWidget {
     required this.barHeight,
     required this.labelStyle,
     required this.showPct,
+    required this.colorMode,
   });
 
   final ProductionProgressAxis axis;
   final double barHeight;
   final TextStyle? labelStyle;
   final bool showPct;
+  final ProductionProgressColorMode colorMode;
+
+  Color _barColor(double pct) {
+    if (!axis.hasPlan) return AppColors.cardTextMuted;
+    return switch (colorMode) {
+      ProductionProgressColorMode.completionThreshold =>
+        completionColorForPct(pct),
+      ProductionProgressColorMode.axisFillIntensity => axisFillIntensityColor(
+          axisBaseColor(axis.label),
+          pct / 100,
+        ),
+    };
+  }
 
   @override
   Widget build(BuildContext context) {
     final pct = axis.progressPct;
-    final color = completionColorForPct(pct);
+    final base = axisBaseColor(axis.label);
+    final color = _barColor(pct);
+    final trackBg = colorMode == ProductionProgressColorMode.axisFillIntensity
+        ? base.withValues(alpha: 0.14)
+        : color.withValues(alpha: 0.12);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -134,7 +180,7 @@ class _CompletionProgressLine extends StatelessWidget {
           child: LinearProgressIndicator(
             value: axis.hasPlan ? (pct / 100).clamp(0.0, 1.0) : 0,
             minHeight: barHeight,
-            backgroundColor: color.withValues(alpha: 0.12),
+            backgroundColor: trackBg,
             color: axis.hasPlan ? color : AppColors.cardTextMuted,
           ),
         ),

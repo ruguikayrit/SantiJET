@@ -23,7 +23,7 @@ class ImalatTeamSummaryStrip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 136,
+      height: 168,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: summaries.length,
@@ -72,6 +72,7 @@ class ImalatTeamSummaryStrip extends StatelessWidget {
                         axes: s.axes,
                         dense: true,
                         showPctLabels: false,
+                        colorMode: ProductionProgressColorMode.axisFillIntensity,
                       ),
                     ),
                   ],
