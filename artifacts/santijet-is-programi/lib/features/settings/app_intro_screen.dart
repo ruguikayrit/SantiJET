@@ -24,9 +24,9 @@ class AppIntroScreen extends StatelessWidget {
             icon: Icons.table_chart_outlined,
             title: 'Giriş tablosu',
             body:
-                'Ad, Süre, Başlangıç, Bitiş, Öncüller, Kaynak Adları. '
-                'Bitiş süreye göre, iş süre × birimdir. Kilometre taşı '
-                'süresi sıfırdır.',
+                'Hücreye dokunup yaz: Ad, Süre, Başlangıç, Bitiş, '
+                'Öncüller, Kaynak Adları, WBS. Bitiş süreye göre, iş '
+                'süre × birimdir. Kilometre taşı süresi sıfırdır.',
           ),
           const _IntroCard(
             icon: Icons.fact_check_outlined,
@@ -35,6 +35,13 @@ class AppIntroScreen extends StatelessWidget {
                 '% Tamamlanma fiili süre, kalan süre, fiili iş ve kalan '
                 'işi birlikte günceller. Fiili süre planı aşarsa süre uzar. '
                 'Kalan süre yazılınca süre = fiili + kalan olur.',
+          ),
+          const _IntroCard(
+            icon: Icons.view_timeline_outlined,
+            title: 'Gantt',
+            body:
+                'Gantt sayfasında yalnız çubuk grafik vardır. '
+                'Liste ve filtre yoktur; giriş İzleme Program’dadır.',
           ),
           const _IntroCard(
             icon: Icons.compare_arrows_rounded,

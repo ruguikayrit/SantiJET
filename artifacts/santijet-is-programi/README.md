@@ -4,9 +4,9 @@
 anında görmek için bağımsız Flutter uygulaması.
 
 ## V1
-- Program: MS Project Giriş tablosu (Ad, Süre, Başlangıç, Bitiş, Öncüller)
+- Program: MS Project Giriş / İzleme tablosu, hücreden hızlı giriş
 - İzleme: % Tamamlanma, fiili/kalan süre ve iş
-- Gantt: liste/Gantt görünümü, bugün çizgisi ve filtreler
+- Gantt: yalnız Gantt grafiği ve bugün çizgisi
 - Özet: plan AG / gerçek AG / kalan AG, gecikenler
 - Aktar: MS Project, Excel ve PDF alışverişi
 - Ayarlar: Hesap, İş kodu, Projelerim, tema, yedek, tanıtım

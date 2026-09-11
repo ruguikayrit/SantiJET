@@ -83,6 +83,8 @@ void main() {
     await tester.pump();
 
     expect(find.text('Giriş tablosu'), findsOneWidget);
+    expect(find.text('Gantt'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('Cihazda kalır'), 400);
     expect(find.text('Cihazda kalır'), findsOneWidget);
   });
 

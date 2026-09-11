@@ -2,195 +2,204 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../domain/man_day_progress.dart';
-import '../../domain/program_item.dart';
 import '../../state/app_state.dart';
 import '../../ui/design_system.dart';
-import 'program_entry_grid.dart';
+import 'program_table.dart';
 
-class ProgramScreen extends ConsumerWidget {
+class ProgramScreen extends ConsumerStatefulWidget {
   const ProgramScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ProgramScreen> createState() => _ProgramScreenState();
+}
+
+class _ProgramScreenState extends ConsumerState<ProgramScreen> {
+  ProgramTableView _view = ProgramTableView.entry;
+
+  @override
+  Widget build(BuildContext context) {
     final all = ref.watch(programItemsProvider);
-    final logs = ref.watch(dailyCrewProvider);
     final selectedSite = ref.watch(activeSiteProvider);
     final project = ref.watch(activeProjectProvider);
     final items = all.where((item) => item.santiyeId == selectedSite).toList();
-    ManDayProgress row(ProgramItem item) =>
-        ManDayProgress.of(item, logs);
-    final delayed = items
-        .where((item) => row(item).effectiveStatus == ProgramStatus.delayed)
-        .length;
-    final active = items
-        .where((item) => row(item).effectiveStatus == ProgramStatus.inProgress)
-        .length;
-    final summary = SiteManDaySummary.of(items, logs);
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
+      resizeToAvoidBottomInset: true,
       body: SafeArea(
         bottom: false,
         child: Column(
           children: [
             const SantijetHeader(showWordmark: true),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+              child: _ProjectStrip(
+                name: project?.name ?? selectedSite,
+                code: project?.code,
+                onTap: () => context.push('/settings/projeler'),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+              child: _TableTabs(
+                view: _view,
+                onChanged: (value) => setState(() => _view = value),
+              ),
+            ),
             Expanded(
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(16, 4, 16, 100),
-                children: [
-                  SJCard(
-                    onTap: () => context.push('/settings/projeler'),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.apartment_rounded,
-                          color: AppColors.electricBlue,
-                        ),
-                        const SizedBox(width: AppSpacing.md),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                project?.name ?? selectedSite,
-                                style: AppTypography.cardTitleMedium,
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                project == null
-                                    ? 'Proje seç veya oluştur'
-                                    : 'İş kodu ${project.code}',
-                                style: AppTypography.cardBodySmall,
-                              ),
-                            ],
-                          ),
-                        ),
-                        Icon(
-                          Icons.chevron_right,
-                          color: AppColors.cardTextMuted,
-                          size: 20,
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _Kpi(
-                          label: 'İş',
-                          value: summary.planned,
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: _Kpi(
-                          label: 'Fiili İş',
-                          value: summary.realized,
-                          color: AppColors.electricBlue,
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: _Kpi(
-                          label: 'Geciken',
-                          value: delayed,
-                          color: AppColors.critical,
-                        ),
-                      ),
-                    ],
-                  ),
-                  if (active > 0)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 8),
-                      child: Text(
-                        '$active görev devam ediyor',
-                        style: AppTypography.bodySmall.copyWith(
-                          color: AppColors.textMuted,
-                        ),
-                      ),
-                    ),
-                  const SizedBox(height: AppSpacing.lg),
-                  Text(
-                    'GİRİŞ',
-                    style: AppTypography.labelSmall.copyWith(
-                      color: AppColors.textMuted,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.5,
-                      fontSize: 12,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  if (items.isEmpty)
-                    const _EmptyProgram()
-                  else
-                    ProgramEntryGrid(
-                      items: items,
-                      progressFor: row,
-                      onTap: (item) => context.push('/form', extra: item),
-                    ),
-                ],
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+                child: ProgramTable(
+                  items: items,
+                  view: _view,
+                  siteId: selectedSite,
+                  onOpenDetails: (item) => context.push('/form', extra: item),
+                ),
               ),
             ),
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.push('/form'),
-        icon: const Icon(Icons.add_rounded),
-        label: const Text('Ekle'),
+    );
+  }
+}
+
+class _ProjectStrip extends StatelessWidget {
+  const _ProjectStrip({
+    required this.name,
+    required this.code,
+    required this.onTap,
+  });
+
+  final String name;
+  final String? code;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: AppColors.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: AppRadii.md,
+        side: BorderSide(color: AppColors.border),
+      ),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: AppRadii.md,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(10, 8, 8, 8),
+          child: Row(
+            children: [
+              Icon(
+                Icons.apartment_rounded,
+                size: 18,
+                color: AppColors.electricBlue,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text.rich(
+                  TextSpan(
+                    children: [
+                      TextSpan(
+                        text: name,
+                        style: AppTypography.cardTitleMedium.copyWith(
+                          fontSize: 14,
+                        ),
+                      ),
+                      if (code != null)
+                        TextSpan(
+                          text: '  ·  $code',
+                          style: AppTypography.cardBodySmall,
+                        ),
+                    ],
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              Icon(
+                Icons.chevron_right,
+                size: 18,
+                color: AppColors.cardTextMuted,
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
 }
 
-class _Kpi extends StatelessWidget {
-  const _Kpi({required this.label, required this.value, this.color});
-  final String label;
-  final int value;
-  final Color? color;
+class _TableTabs extends StatelessWidget {
+  const _TableTabs({required this.view, required this.onChanged});
+
+  final ProgramTableView view;
+  final ValueChanged<ProgramTableView> onChanged;
 
   @override
-  Widget build(BuildContext context) => SJCard(
-    padding: const EdgeInsets.all(14),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          '$value',
-          style: AppTypography.kpiValue.copyWith(
-            color: color ?? AppColors.cardTextPrimary,
-          ),
-        ),
-        const SizedBox(height: 6),
-        Text(label, style: AppTypography.cardBodySmall),
-      ],
-    ),
-  );
-}
-
-class _EmptyProgram extends StatelessWidget {
-  const _EmptyProgram();
-
-  @override
-  Widget build(BuildContext context) => SJCard(
-    child: Padding(
-      padding: const EdgeInsets.symmetric(vertical: 24),
-      child: Column(
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: AppRadii.md,
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Row(
         children: [
-          Icon(
-            Icons.event_note_rounded,
-            size: 38,
-            color: AppColors.cardTextMuted,
+          _Tab(
+            label: 'GİRİŞ',
+            selected: view == ProgramTableView.entry,
+            onTap: () => onChanged(ProgramTableView.entry),
           ),
-          const SizedBox(height: 10),
-          Text(
-            'Bu şantiye için henüz görev yok.',
-            style: AppTypography.cardBodyMedium,
+          _Tab(
+            label: 'İZLEME',
+            selected: view == ProgramTableView.tracking,
+            onTap: () => onChanged(ProgramTableView.tracking),
           ),
         ],
       ),
-    ),
-  );
+    );
+  }
+}
+
+class _Tab extends StatelessWidget {
+  const _Tab({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: AppRadii.md,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: selected
+                ? AppColors.electricBlue.withValues(alpha: 0.14)
+                : Colors.transparent,
+            borderRadius: AppRadii.md,
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 9),
+            child: Text(
+              label,
+              textAlign: TextAlign.center,
+              style: AppTypography.labelSmall.copyWith(
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.7,
+                color: selected ? AppColors.electricBlue : AppColors.textMuted,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }

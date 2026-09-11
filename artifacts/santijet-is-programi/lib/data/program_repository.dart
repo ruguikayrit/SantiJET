@@ -32,8 +32,9 @@ class ProgramRepository {
   Future<void> clear() => _box.clear();
 
   /// İçe aktarılan faaliyetleri yazar. Aynı kimlikli satır varsa üzerine yazar.
-  Future<void> saveAll(List<ProgramItem> items) =>
-      _box.putAll({for (final item in items) item.id: jsonEncode(item.toJson())});
+  Future<void> saveAll(List<ProgramItem> items) => _box.putAll({
+    for (final item in items) item.id: jsonEncode(item.toJson()),
+  });
 
   /// Mevcut programı siler ve içe aktarılan listeyi tek kaynak yapar.
   Future<void> replaceAll(List<ProgramItem> items) async {
@@ -65,6 +66,7 @@ List<ProgramItem> demoProgramItems(DateTime today) {
       progress: 100,
       status: ProgramStatus.completed,
       responsible: 'Saha Ekibi',
+      wbs: '1',
     ),
     ProgramItem(
       id: 'demo-02',
@@ -77,6 +79,8 @@ List<ProgramItem> demoProgramItems(DateTime today) {
       progress: 100,
       status: ProgramStatus.completed,
       responsible: 'Beton Ekibi',
+      wbs: '2',
+      predecessors: '1',
     ),
     ProgramItem(
       id: 'demo-03',
@@ -90,6 +94,8 @@ List<ProgramItem> demoProgramItems(DateTime today) {
       status: ProgramStatus.inProgress,
       responsible: 'Ahmet Usta',
       notes: 'B blok filizleri bekleniyor.',
+      wbs: '3',
+      predecessors: '2',
     ),
     ProgramItem(
       id: 'demo-04',
@@ -102,6 +108,8 @@ List<ProgramItem> demoProgramItems(DateTime today) {
       progress: 45,
       status: ProgramStatus.inProgress,
       responsible: 'Kalıp Ekibi',
+      wbs: '4',
+      predecessors: '3',
     ),
     ProgramItem(
       id: 'demo-05',
@@ -114,6 +122,8 @@ List<ProgramItem> demoProgramItems(DateTime today) {
       progress: 55,
       status: ProgramStatus.inProgress,
       responsible: 'Yalıtım Ekibi',
+      wbs: '5',
+      predecessors: '2',
     ),
     ProgramItem(
       id: 'demo-06',
@@ -126,6 +136,8 @@ List<ProgramItem> demoProgramItems(DateTime today) {
       progress: 0,
       status: ProgramStatus.planned,
       responsible: 'Mehmet Usta',
+      wbs: '6',
+      predecessors: '4',
     ),
     ProgramItem(
       id: 'demo-07',
@@ -138,6 +150,8 @@ List<ProgramItem> demoProgramItems(DateTime today) {
       progress: 0,
       status: ProgramStatus.planned,
       responsible: 'Kalıp Ekibi',
+      wbs: '7',
+      predecessors: '6',
     ),
     ProgramItem(
       id: 'demo-08',
@@ -150,6 +164,7 @@ List<ProgramItem> demoProgramItems(DateTime today) {
       progress: 25,
       status: ProgramStatus.inProgress,
       responsible: 'Montaj Ekibi',
+      wbs: '1',
     ),
     ProgramItem(
       id: 'demo-09',
@@ -162,6 +177,8 @@ List<ProgramItem> demoProgramItems(DateTime today) {
       progress: 0,
       status: ProgramStatus.planned,
       responsible: 'Montaj Ekibi',
+      wbs: '2',
+      predecessors: '1',
     ),
     ProgramItem(
       id: 'demo-10',
@@ -174,6 +191,8 @@ List<ProgramItem> demoProgramItems(DateTime today) {
       progress: 0,
       status: ProgramStatus.planned,
       responsible: 'Beton Ekibi',
+      wbs: '3',
+      predecessors: '2',
     ),
   ];
 }

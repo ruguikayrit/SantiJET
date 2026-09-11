@@ -21,7 +21,8 @@ Bu klasör bağımsız **ŞantiJET İş Programı** ürünüdür.
 - Yerel Hive kutularının tamamı `isprog_` önekini kullanır; çıplak
   `settings` kutusu açılmaz. Projeler `isprog_projects` kutusundadır.
 - Alt navigasyon yalnız Program, Gantt ve Özet'tir. Ayarlar sağ üst
-  dişlidedir; zil ve avatar yoktur.
+  dişlidedir; zil ve avatar yoktur. Gantt sayfasında yalnız Gantt
+  grafiği vardır; liste, filtre ve giriş tablosu yoktur.
 - Turuncu staging şeridi ve `flutter-view { top:28px }` kullanılmaz.
 
 ## MS Project alışverişi
@@ -45,6 +46,7 @@ yoktur.
 
 ## Giriş ve izleme
 Veri girişi ve takip MS Project Giriş / İzleme tablosuyla aynı kurgudadır.
+Program ana sayfası bu iki tablodur; hücreye dokunup yazılır.
 
 - Giriş: Ad, Süre, Başlangıç, Bitiş, Öncüller, Kaynak Adları, WBS,
   kilometre taşı. Bitiş = başlangıç + süre − 1. İş = süre × birim.
