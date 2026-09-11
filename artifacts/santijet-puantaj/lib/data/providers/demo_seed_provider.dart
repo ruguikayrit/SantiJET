@@ -25,8 +25,9 @@ import 'tasks_provider.dart';
 import 'uninsured_teams_provider.dart';
 import 'yevmiyeli_is_provider.dart';
 
-/// Ayarlar → Demo: puantaj, imalat, verim, görev, rapor ve yevmiyeli dahil
-/// tüm modülleri test etmeye yetecek örnek veri.
+/// Ayarlar → Demo: tüm modülleri (puantaj, ekip/grup özeti, imalat fazları,
+/// verim, görev durumları, günlük rapor, yevmiyeli, sigortasız ekip) kapsayan
+/// örnek veri — her yüklemede demo proje sıfırlanır.
 class DemoSeedController {
   DemoSeedController(this._ref);
 
@@ -34,6 +35,27 @@ class DemoSeedController {
 
   static const demoProjectName = 'Demo Şantiye';
   static const demoProjectCode = 'DEMO-001';
+
+  /// İmalat ekip alanı — geniş disiplin değil, alt uygulama ekipleri.
+  static const demoTeams = [
+    'Demir',
+    'Kalıp',
+    'Beton',
+    'Alçı Sıva',
+    'Boya',
+    'Havalandırma',
+    'Sıhhi Tesisat',
+    'Su Tesisatı',
+    'Klima',
+    'Isıtma',
+    'Yangın Tesisatı',
+    'Aydınlatma',
+    'Kablo Taşıma',
+    'Zayıf Akım',
+    'Pano & Dağıtım',
+    'Ofis',
+    'Genel',
+  ];
 
   /// Mevcut demo projesini temizleyip baştan yükler.
   Future<Project> loadAll() async {
@@ -110,22 +132,10 @@ class DemoSeedController {
   }
 
   void _ensureTeams() {
-    final teams = _ref.read(teamsProvider.notifier);
-    for (final t in const [
-      'Demir',
-      'Demo Ekip',
-      'Kalıp',
-      'Havalandırma',
-      'Yangın Tesisatı',
-      'Aydınlatma',
-      'Ofis',
-    ]) {
-      teams.add(t);
-    }
-    final categories = _ref.read(taskCategoriesProvider.notifier);
-    for (final c in TaskCategoryCatalog.defaults) {
-      categories.add(c);
-    }
+    _ref.read(teamsProvider.notifier).resetToDefaults(demoTeams);
+    _ref
+        .read(taskCategoriesProvider.notifier)
+        .resetToDefaults(TaskCategoryCatalog.defaults);
   }
 
   List<Person> _replacePersonnel(String projectId) {
@@ -151,6 +161,12 @@ class DemoSeedController {
         company: 'Demo İnşaat A.Ş.',
       ),
       (
+        name: 'Zeynep Güven',
+        profession: 'İş Güvenliği Uzmanı',
+        team: 'Ofis',
+        company: 'Demo İnşaat A.Ş.',
+      ),
+      (
         name: 'Ahmet Usta',
         profession: 'Betonarme Demircisi',
         team: 'Demir',
@@ -169,57 +185,93 @@ class DemoSeedController {
         company: 'Tiryaki İnşaat',
       ),
       (
-        name: 'Can Demir',
-        profession: 'Kalıpçı',
-        team: 'Demo Ekip',
-        company: 'Demo Taşeron',
-      ),
-      (
-        name: 'Burak Yılmaz',
-        profession: 'Kalıpçı',
-        team: 'Demo Ekip',
-        company: 'Demo Taşeron',
-      ),
-      (
-        name: 'Emre Kaya',
-        profession: 'İnşaat İşçisi',
-        team: 'Kalıp',
-        company: 'Demo Taşeron',
-      ),
-      (
-        name: 'Hasan Öz',
-        profession: 'Saha Düz İşçi',
-        team: 'Kalıp',
-        company: 'Demo Taşeron',
-      ),
-      (
-        name: 'Murat Elektrik',
-        profession: 'Elektrikçi',
-        team: 'Elektrik',
-        company: 'Elektrik Taşeron',
-      ),
-      (
-        name: 'Serkan Mekanik',
-        profession: 'Havalandırma Tesisatçısı',
-        team: 'Mekanik',
-        company: 'Mekanik Taşeron',
-      ),
-      (
-        name: 'Zeynep Güven',
-        profession: 'İş Güvenliği Uzmanı',
-        team: 'Ofis',
-        company: 'Demo İnşaat A.Ş.',
-      ),
-      (
         name: 'Okan Demirbaş',
         profession: 'Betonarme Demircisi',
         team: 'Demir',
         company: 'Tiryaki İnşaat',
       ),
       (
+        name: 'Can Demir',
+        profession: 'Kalıpçı',
+        team: 'Kalıp',
+        company: 'Demo Taşeron',
+      ),
+      (
+        name: 'Burak Yılmaz',
+        profession: 'Kalıpçı',
+        team: 'Kalıp',
+        company: 'Demo Taşeron',
+      ),
+      (
+        name: 'Emre Kaya',
+        profession: 'İnşaat İşçisi',
+        team: 'Beton',
+        company: 'Demo Taşeron',
+      ),
+      (
+        name: 'Hasan Öz',
+        profession: 'Saha Düz İşçi',
+        team: 'Beton',
+        company: 'Demo Taşeron',
+      ),
+      (
         name: 'Fatma Boyacı',
         profession: 'Boyacı',
-        team: 'Kalıp',
+        team: 'Boya',
+        company: 'Boya Taşeron',
+      ),
+      (
+        name: 'Murat Aydın',
+        profession: 'Elektrikçi',
+        team: 'Aydınlatma',
+        company: 'Elektrik Taşeron',
+      ),
+      (
+        name: 'Deniz Kablo',
+        profession: 'Elektrik Tesisatçısı',
+        team: 'Kablo Taşıma',
+        company: 'Elektrik Taşeron',
+      ),
+      (
+        name: 'Ece Zayıf',
+        profession: 'Elektrik Tesisatçısı',
+        team: 'Zayıf Akım',
+        company: 'Elektrik Taşeron',
+      ),
+      (
+        name: 'Serkan Hava',
+        profession: 'Havalandırma Tesisatçısı',
+        team: 'Havalandırma',
+        company: 'Mekanik Taşeron',
+      ),
+      (
+        name: 'Leyla Sıhhi',
+        profession: 'Tesisatçı',
+        team: 'Sıhhi Tesisat',
+        company: 'Mekanik Taşeron',
+      ),
+      (
+        name: 'Kerem Klima',
+        profession: 'Havalandırma Tesisatçısı',
+        team: 'Klima',
+        company: 'Mekanik Taşeron',
+      ),
+      (
+        name: 'Onur Isıtma',
+        profession: 'Tesisatçı',
+        team: 'Isıtma',
+        company: 'Mekanik Taşeron',
+      ),
+      (
+        name: 'Selim Yangın',
+        profession: 'Yangın Tesisatçısı',
+        team: 'Yangın Tesisatı',
+        company: 'Mekanik Taşeron',
+      ),
+      (
+        name: 'Ayşe Alçı',
+        profession: 'Alçı Sıvacı',
+        team: 'Alçı Sıva',
         company: 'Boya Taşeron',
       ),
     ];
@@ -289,22 +341,24 @@ class DemoSeedController {
     final teams = _ref.read(uninsuredTeamsProvider.notifier);
     teams.deleteForProject(projectId);
 
-    final dates = _recentWeekdays(count: 8);
-    for (final date in dates) {
-      teams.add(
-        projectId: projectId,
-        date: date,
-        teamName: 'Dış Demir Ekibi',
-        workerCount: 4 + dates.indexOf(date),
-        company: 'Demo Taşeron',
-      );
-      if (dates.indexOf(date).isEven) {
+    final dates = _recentWeekdays(count: 10);
+    const rows = [
+      ('Dış Demir Ekibi', 'Tiryaki İnşaat'),
+      ('Alçı Levha Uyg.', 'Boya Taşeron'),
+      ('Aydınlatma Ekibi', 'Elektrik Taşeron'),
+      ('Havalandırma Montaj', 'Mekanik Taşeron'),
+    ];
+    for (var di = 0; di < dates.length; di++) {
+      final date = dates[di];
+      for (var ri = 0; ri < rows.length; ri++) {
+        if ((di + ri) % 3 == 0) continue;
+        final (teamName, company) = rows[ri];
         teams.add(
           projectId: projectId,
           date: date,
-          teamName: 'Boyama Ekibi',
-          workerCount: 3,
-          company: 'Boya Taşeron',
+          teamName: teamName,
+          workerCount: 2 + (di + ri) % 6,
+          company: company,
         );
       }
     }
@@ -425,7 +479,7 @@ class DemoSeedController {
       name: 'Alçı Sıva',
       floor: 'Zemin Kat',
       section: 'Koridor',
-      teamName: 'Kalıp',
+      teamName: 'Alçı Sıva',
       unit: 'm²',
       plannedQty: 850,
       plannedDays: 12,
@@ -443,7 +497,7 @@ class DemoSeedController {
       name: 'Perde Betonu',
       floor: 'Bodrum Kat',
       section: 'Perde A',
-      teamName: 'Demo Ekip',
+      teamName: 'Beton',
       unit: 'm³',
       plannedQty: 180,
       plannedDays: 5,
@@ -512,7 +566,7 @@ class DemoSeedController {
       name: 'Döşeme Betonu',
       floor: 'Zemin Kat',
       section: 'Salon',
-      teamName: 'Demo Ekip',
+      teamName: 'Beton',
       unit: 'm³',
       plannedQty: 320,
       plannedDays: 6,
@@ -550,6 +604,136 @@ class DemoSeedController {
       plannedDays: 10,
       plannedLabor: 8,
       note: 'Bekleyen imalat — günlük kayıt yok',
+    );
+    add(
+      name: 'Kalıp Tie Rod',
+      floor: 'Zemin Kat',
+      section: 'Perde B',
+      teamName: 'Kalıp',
+      unit: 'adet',
+      plannedQty: 480,
+      plannedDays: 6,
+      plannedLabor: 4,
+      note: 'Aynı ekip — farklı birim (ekip özeti ayrı kart)',
+      days: [
+        (daysAgo: 6, qty: 80, usta: 2, duz: 2),
+        (daysAgo: 4, qty: 90, usta: 2, duz: 3),
+        (daysAgo: 2, qty: 85, usta: 2, duz: 2),
+        (daysAgo: 0, qty: 70, usta: 2, duz: 2),
+      ],
+    );
+    add(
+      name: 'Banyo Batarya Montajı',
+      floor: '1. Kat',
+      section: 'Islak Hacim',
+      teamName: 'Sıhhi Tesisat',
+      unit: 'adet',
+      plannedQty: 36,
+      plannedDays: 5,
+      plannedLabor: 2,
+      days: [
+        (daysAgo: 8, qty: 6, usta: 1, duz: 1),
+        (daysAgo: 5, qty: 8, usta: 1, duz: 1),
+        (daysAgo: 2, qty: 7, usta: 1, duz: 0),
+      ],
+    );
+    add(
+      name: 'VRV Dış Ünite',
+      floor: 'Çatı',
+      section: 'Mekanik',
+      teamName: 'Klima',
+      unit: 'adet',
+      plannedQty: 4,
+      plannedDays: 3,
+      plannedLabor: 3,
+      days: [
+        (daysAgo: 4, qty: 1, usta: 2, duz: 1),
+        (daysAgo: 2, qty: 1, usta: 2, duz: 0),
+      ],
+    );
+    add(
+      name: 'Yerden Isıtma Kollektör',
+      floor: 'Bodrum Kat',
+      section: 'Isı Merkezi',
+      teamName: 'Isıtma',
+      unit: 'adet',
+      plannedQty: 2,
+      plannedDays: 2,
+      plannedLabor: 2,
+      days: [
+        (daysAgo: 3, qty: 1, usta: 1, duz: 1),
+      ],
+    );
+    add(
+      name: 'Ana Dağıtım Kablo',
+      floor: 'Bodrum Kat',
+      section: 'Elektrik Odası',
+      teamName: 'Kablo Taşıma',
+      unit: 'm',
+      plannedQty: 620,
+      plannedDays: 10,
+      plannedLabor: 4,
+      days: [
+        (daysAgo: 9, qty: 70, usta: 2, duz: 1),
+        (daysAgo: 6, qty: 85, usta: 2, duz: 2),
+        (daysAgo: 3, qty: 90, usta: 2, duz: 1),
+        (daysAgo: 0, qty: 55, usta: 1, duz: 1),
+      ],
+    );
+    add(
+      name: 'Yangın Algılama Dedektörü',
+      floor: 'Zemin Kat',
+      section: 'Koridor',
+      teamName: 'Zayıf Akım',
+      unit: 'adet',
+      plannedQty: 48,
+      plannedDays: 4,
+      plannedLabor: 2,
+      days: [
+        (daysAgo: 7, qty: 12, usta: 1, duz: 1),
+        (daysAgo: 4, qty: 14, usta: 1, duz: 0),
+        (daysAgo: 1, qty: 10, usta: 1, duz: 1),
+      ],
+    );
+    add(
+      name: 'Ana Pano Montajı',
+      floor: 'Bodrum Kat',
+      section: 'Elektrik Odası',
+      teamName: 'Pano & Dağıtım',
+      unit: 'adet',
+      plannedQty: 1,
+      plannedDays: 2,
+      plannedLabor: 3,
+      note: 'Tek kalem — tamamlanmış örnek',
+      days: [
+        (daysAgo: 5, qty: 1, usta: 2, duz: 1),
+      ],
+    );
+    add(
+      name: 'Su Tesisatı Boru Hattı',
+      floor: 'Bodrum Kat',
+      section: 'Teknik',
+      teamName: 'Su Tesisatı',
+      unit: 'm',
+      plannedQty: 140,
+      plannedDays: 6,
+      plannedLabor: 3,
+      days: [
+        (daysAgo: 8, qty: 25, usta: 1, duz: 1),
+        (daysAgo: 5, qty: 28, usta: 1, duz: 2),
+        (daysAgo: 2, qty: 30, usta: 1, duz: 1),
+      ],
+    );
+    add(
+      name: 'İç Cephe Boyası',
+      floor: '1. Kat',
+      section: 'Daireler',
+      teamName: 'Boya',
+      unit: 'm²',
+      plannedQty: 1200,
+      plannedDays: 14,
+      plannedLabor: 6,
+      note: 'Plan var — henüz kayıt yok (bekleyen)',
     );
   }
 
@@ -827,6 +1011,18 @@ class DemoSeedController {
         work: 'Moloz yükleme',
         yevmiye: 1.0,
       ),
+      (
+        person: byName('Leyla Sıhhi'),
+        day: 2,
+        work: 'Batarya montaj destek',
+        yevmiye: 1.0,
+      ),
+      (
+        person: byName('Murat Aydın'),
+        day: 0,
+        work: 'Koridor armatür kablo çekimi',
+        yevmiye: 1.0,
+      ),
     ];
 
     for (final s in specs) {
@@ -840,6 +1036,16 @@ class DemoSeedController {
         yevmiyeCount: s.yevmiye,
       );
     }
+
+    yevmiyeli.addManual(
+      projectId: projectId,
+      date: _pastDay(1),
+      personName: 'Taşeron Geçici Eleman',
+      company: 'Elektrik Taşeron',
+      workDescription: 'Manuel yevmiyeli kayıt örneği',
+      yevmiyeCount: 1.0,
+      team: 'Aydınlatma Ekibi',
+    );
   }
 
   void _replaceTasks({
@@ -888,7 +1094,7 @@ class DemoSeedController {
         title: 'Havalandırma kanalı tedarik',
         category: 'Satın Alma',
         tag: TaskTagCatalog.mekanik,
-        assigneeName: 'Serkan Mekanik',
+        assigneeName: 'Serkan Hava',
         startOffset: 1,
         dueOffset: 5,
         status: TaskStatus.todo,
@@ -984,7 +1190,7 @@ class DemoSeedController {
         title: 'Havalandırma tesisatı montaj',
         category: 'Saha',
         tag: TaskTagCatalog.mekanik,
-        assigneeName: 'Serkan Mekanik',
+        assigneeName: 'Serkan Hava',
         startOffset: -1,
         dueOffset: 2,
         status: TaskStatus.doing,
@@ -996,7 +1202,7 @@ class DemoSeedController {
         title: 'Klima santrali bağlantı',
         category: 'Saha',
         tag: TaskTagCatalog.mekanik,
-        assigneeName: 'Serkan Mekanik',
+        assigneeName: 'Serkan Hava',
         startOffset: 0,
         dueOffset: 4,
         status: TaskStatus.todo,
@@ -1020,7 +1226,7 @@ class DemoSeedController {
         title: 'Zemin kat aydınlatma tesisatı',
         category: 'Saha',
         tag: TaskTagCatalog.elektrik,
-        assigneeName: 'Murat Elektrik',
+        assigneeName: 'Murat Aydın',
         startOffset: 0,
         dueOffset: 2,
         status: TaskStatus.todo,
@@ -1032,7 +1238,7 @@ class DemoSeedController {
         title: 'Pano topraklama ölçümü',
         category: 'Saha',
         tag: TaskTagCatalog.elektrik,
-        assigneeName: 'Murat Elektrik',
+        assigneeName: 'Murat Aydın',
         startOffset: -1,
         dueOffset: 1,
         status: TaskStatus.doing,
@@ -1044,7 +1250,7 @@ class DemoSeedController {
         title: 'Trafo odası kablo çekimi',
         category: 'Saha',
         tag: TaskTagCatalog.elektrik,
-        assigneeName: 'Murat Elektrik',
+        assigneeName: 'Murat Aydın',
         startOffset: 0,
         dueOffset: 3,
         status: TaskStatus.started,
@@ -1061,6 +1267,54 @@ class DemoSeedController {
         dueOffset: 1,
         status: TaskStatus.todo,
         description: 'Ofis kategorisi + Mekanik etiket acil örneği.',
+        withPhoto: false,
+        pendingStarted: false,
+      ),
+      (
+        title: 'Sıhhi tesisat basınç testi',
+        category: 'Saha',
+        tag: TaskTagCatalog.mekanik,
+        assigneeName: 'Leyla Sıhhi',
+        startOffset: 0,
+        dueOffset: 2,
+        status: TaskStatus.todo,
+        description: '1. kat ıslak hacim hat testi.',
+        withPhoto: false,
+        pendingStarted: false,
+      ),
+      (
+        title: 'VRV gaz dolumu',
+        category: 'Saha',
+        tag: TaskTagCatalog.mekanik,
+        assigneeName: 'Kerem Klima',
+        startOffset: -1,
+        dueOffset: 1,
+        status: TaskStatus.started,
+        description: 'Çatı üniteleri devreye alma öncesi.',
+        withPhoto: true,
+        pendingStarted: false,
+      ),
+      (
+        title: 'Ana dağıtım kablo etiketleme',
+        category: 'Saha',
+        tag: TaskTagCatalog.elektrik,
+        assigneeName: 'Deniz Kablo',
+        startOffset: 0,
+        dueOffset: 3,
+        status: TaskStatus.todo,
+        description: 'Bodrum elektrik odası kablo grupları.',
+        withPhoto: false,
+        pendingStarted: false,
+      ),
+      (
+        title: 'Yangın algılama loop testi',
+        category: 'Saha',
+        tag: TaskTagCatalog.elektrik,
+        assigneeName: 'Ece Zayıf',
+        startOffset: 1,
+        dueOffset: 4,
+        status: TaskStatus.todo,
+        description: 'Zayıf akım dedektör loop kontrolü.',
         withPhoto: false,
         pendingStarted: false,
       ),
