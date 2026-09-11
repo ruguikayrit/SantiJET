@@ -379,6 +379,8 @@ class _DualLineChart extends StatelessWidget {
     this.minY = 0,
   });
 
+  static const tooltipReservePx = 72.0;
+
   final List<_VerimTimelinePoint> points;
   final double height;
   final String unitSuffix;
@@ -436,8 +438,10 @@ class _DualLineChart extends StatelessWidget {
 
     return SizedBox(
       height: height,
-      child: LineChart(
-        LineChartData(
+      child: ClipRect(
+        clipper: const _VerimChartTooltipClipper(),
+        child: LineChart(
+          LineChartData(
           minX: 0,
           maxX: (points.length - 1).toDouble(),
           minY: minY,
@@ -499,8 +503,15 @@ class _DualLineChart extends StatelessWidget {
           ),
           lineTouchData: LineTouchData(
             touchTooltipData: LineTouchTooltipData(
+              showOnTopOfTheChartBoxArea: true,
               fitInsideHorizontally: true,
-              fitInsideVertically: true,
+              fitInsideVertically: false,
+              tooltipMargin: 6,
+              tooltipPadding: const EdgeInsets.symmetric(
+                horizontal: 10,
+                vertical: 6,
+              ),
+              maxContentWidth: 168,
               getTooltipColor: (_) =>
                   theme.colorScheme.inverseSurface.withValues(alpha: 0.94),
               getTooltipItems: (spots) {
@@ -570,7 +581,26 @@ class _DualLineChart extends StatelessWidget {
             ),
           ],
         ),
+        ),
       ),
     );
   }
+}
+
+/// Tooltip üst bantta çizilsin — yatay kırpma yok, dikey taşma serbest.
+class _VerimChartTooltipClipper extends CustomClipper<Rect> {
+  const _VerimChartTooltipClipper();
+
+  @override
+  Rect getClip(Size size) {
+    return Rect.fromLTRB(
+      0,
+      -_DualLineChart.tooltipReservePx,
+      size.width,
+      size.height,
+    );
+  }
+
+  @override
+  bool shouldReclip(covariant CustomClipper<Rect> oldClipper) => false;
 }
