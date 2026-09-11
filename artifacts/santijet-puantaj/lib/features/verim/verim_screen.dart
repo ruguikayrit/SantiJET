@@ -64,7 +64,14 @@ class _VerimScreenState extends ConsumerState<VerimScreen> {
 
     final filteredRows = _teamFilter == null
         ? rows
-        : rows.where((r) => r.teamName == _teamFilter).toList();
+        : rows.where((r) => r.summaryGroupKey == _teamFilter).toList();
+
+    final teamFilterLabel = _teamFilter == null
+        ? null
+        : teamSummaries
+            .where((s) => s.groupKey == _teamFilter)
+            .map((s) => s.teamName)
+            .firstOrNull;
 
     final body = rows.isEmpty
         ? SJEmptyState(
@@ -109,7 +116,7 @@ class _VerimScreenState extends ConsumerState<VerimScreen> {
                     child: Text(
                       _teamFilter == null
                           ? 'İmalatlar'
-                          : 'İmalatlar · $_teamFilter',
+                          : 'İmalatlar · ${teamFilterLabel ?? _teamFilter}',
                       style: theme.textTheme.titleSmall,
                     ),
                   ),
@@ -178,14 +185,14 @@ class _TeamVerimSummaryStrip extends StatelessWidget {
         itemBuilder: (context, i) {
           final s = summaries[i];
           final efficiency = s.unitEfficiency;
-          final selected = selectedTeam == s.teamName;
+          final selected = selectedTeam == s.groupKey;
 
           return SizedBox(
             width: 168,
             child: SJCard.builder(
               selected: selected,
               accentColor: selected ? AppColors.electricBlue : null,
-              onTap: () => onTeamTap(s.teamName),
+              onTap: () => onTeamTap(s.groupKey),
               builder: (context, theme) {
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -200,7 +207,7 @@ class _TeamVerimSummaryStrip extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '${s.planLineCount} imalat',
+                      '${s.planLineCount} imalat · ${s.unit}',
                       style: theme.textTheme.labelSmall,
                     ),
                     const Spacer(),

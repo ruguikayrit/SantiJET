@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/utils/puantaj_date.dart';
 import '../../domain/entities/production.dart';
 import '../../domain/models/production_metrics.dart';
+import '../../domain/models/production_team_group.dart';
 import 'app_data_provider.dart';
 import 'production_provider.dart';
 
@@ -18,6 +19,9 @@ class VerimRow {
   String get unit => production.unit;
   String get teamName =>
       production.teamName.trim().isEmpty ? 'Diğer' : production.teamName.trim();
+
+  String get summaryGroupKey =>
+      ProductionTeamGroup.fromProduction(production).groupKey;
   String get locationLabel => production.locationLabel;
 
   double get plannedWorkerDays => metrics.labor.planned;
@@ -58,7 +62,9 @@ final todayWorkerDaysProvider = Provider<double>((ref) {
 /// Ekip bazında toplu birim verim.
 class TeamVerimSummary {
   const TeamVerimSummary({
+    required this.groupKey,
     required this.teamName,
+    required this.unit,
     required this.actualWorkerDays,
     required this.plannedWorkerDays,
     required this.actualQty,
@@ -66,7 +72,9 @@ class TeamVerimSummary {
     required this.planLineCount,
   });
 
+  final String groupKey;
   final String teamName;
+  final String unit;
   final double actualWorkerDays;
   final double plannedWorkerDays;
   final double actualQty;
@@ -85,37 +93,40 @@ final teamVerimSummariesProvider = Provider<List<TeamVerimSummary>>((ref) {
   final rows = ref.watch(verimRowsProvider);
   if (rows.isEmpty) return const [];
 
-  final plannedAgByTeam = <String, double>{};
-  final actualAgByTeam = <String, double>{};
-  final plannedQtyByTeam = <String, double>{};
-  final actualQtyByTeam = <String, double>{};
-  final linesByTeam = <String, int>{};
+  final plannedAgByGroup = <String, double>{};
+  final actualAgByGroup = <String, double>{};
+  final plannedQtyByGroup = <String, double>{};
+  final actualQtyByGroup = <String, double>{};
+  final linesByGroup = <String, int>{};
+  final groupMeta = <String, ProductionTeamGroup>{};
 
   for (final row in rows) {
-    final team = row.teamName;
-    plannedAgByTeam[team] =
-        (plannedAgByTeam[team] ?? 0) + row.plannedWorkerDays;
-    actualAgByTeam[team] =
-        (actualAgByTeam[team] ?? 0) + row.actualWorkerDays;
-    plannedQtyByTeam[team] =
-        (plannedQtyByTeam[team] ?? 0) + (row.plannedQty ?? 0);
-    actualQtyByTeam[team] = (actualQtyByTeam[team] ?? 0) + row.actualQty;
-    linesByTeam[team] = (linesByTeam[team] ?? 0) + 1;
+    final group = ProductionTeamGroup.fromProduction(row.production);
+    final key = group.groupKey;
+    groupMeta[key] = group;
+    plannedAgByGroup[key] =
+        (plannedAgByGroup[key] ?? 0) + row.plannedWorkerDays;
+    actualAgByGroup[key] =
+        (actualAgByGroup[key] ?? 0) + row.actualWorkerDays;
+    plannedQtyByGroup[key] =
+        (plannedQtyByGroup[key] ?? 0) + (row.plannedQty ?? 0);
+    actualQtyByGroup[key] = (actualQtyByGroup[key] ?? 0) + row.actualQty;
+    linesByGroup[key] = (linesByGroup[key] ?? 0) + 1;
   }
 
-  final teams = plannedAgByTeam.keys.toList()
+  final teams = plannedAgByGroup.keys.toList()
     ..sort((a, b) {
       final aEff = ProductionMetrics.computeUnitEfficiency(
-        plannedQty: plannedQtyByTeam[a] ?? 0,
-        plannedWorkerDays: plannedAgByTeam[a] ?? 0,
-        actualQty: actualQtyByTeam[a] ?? 0,
-        actualWorkerDays: actualAgByTeam[a] ?? 0,
+        plannedQty: plannedQtyByGroup[a] ?? 0,
+        plannedWorkerDays: plannedAgByGroup[a] ?? 0,
+        actualQty: actualQtyByGroup[a] ?? 0,
+        actualWorkerDays: actualAgByGroup[a] ?? 0,
       );
       final bEff = ProductionMetrics.computeUnitEfficiency(
-        plannedQty: plannedQtyByTeam[b] ?? 0,
-        plannedWorkerDays: plannedAgByTeam[b] ?? 0,
-        actualQty: actualQtyByTeam[b] ?? 0,
-        actualWorkerDays: actualAgByTeam[b] ?? 0,
+        plannedQty: plannedQtyByGroup[b] ?? 0,
+        plannedWorkerDays: plannedAgByGroup[b] ?? 0,
+        actualQty: actualQtyByGroup[b] ?? 0,
+        actualWorkerDays: actualAgByGroup[b] ?? 0,
       );
       if (aEff != null && bEff != null && aEff != bEff) {
         return bEff.compareTo(aEff);
@@ -124,14 +135,16 @@ final teamVerimSummariesProvider = Provider<List<TeamVerimSummary>>((ref) {
     });
 
   return [
-    for (final team in teams)
+    for (final key in teams)
       TeamVerimSummary(
-        teamName: team,
-        actualWorkerDays: actualAgByTeam[team] ?? 0,
-        plannedWorkerDays: plannedAgByTeam[team] ?? 0,
-        actualQty: actualQtyByTeam[team] ?? 0,
-        plannedQty: plannedQtyByTeam[team] ?? 0,
-        planLineCount: linesByTeam[team] ?? 0,
+        groupKey: key,
+        teamName: groupMeta[key]!.cardTitle,
+        unit: groupMeta[key]!.unit,
+        actualWorkerDays: actualAgByGroup[key] ?? 0,
+        plannedWorkerDays: plannedAgByGroup[key] ?? 0,
+        actualQty: actualQtyByGroup[key] ?? 0,
+        plannedQty: plannedQtyByGroup[key] ?? 0,
+        planLineCount: linesByGroup[key] ?? 0,
       ),
   ];
 });

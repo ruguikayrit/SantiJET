@@ -193,12 +193,12 @@ class ProductionChartPanel extends ConsumerWidget {
         );
         return [
           _ChartSlice(
-            label: 'Plan AG',
+            label: 'Plan Adam-gün',
             value: planned,
             color: AppColors.electricBlue.withValues(alpha: 0.55),
           ),
           _ChartSlice(
-            label: 'Gerçek AG',
+            label: 'Gerçek Adam-gün',
             value: actual,
             color: AppColors.success,
           ),
@@ -519,21 +519,45 @@ class _ChartSettingsSheetState extends State<_ChartSettingsSheet> {
           const SizedBox(height: AppSpacing.md),
           Text('Veri', style: theme.textTheme.labelLarge),
           const SizedBox(height: AppSpacing.sm),
-          Wrap(
-            spacing: AppSpacing.xs,
-            runSpacing: AppSpacing.xs,
-            children: [
-              if (widget.forVerim)
-                for (final m in VerimChartMetric.values)
-                  FilterChip(
-                    showCheckmark: false,
-                    label: Text(m.label),
-                    selected: _options.verimMetric == m,
-                    onSelected: (_) => setState(
-                      () => _options = _options.copyWith(verimMetric: m),
+          if (widget.forVerim)
+            Row(
+              children: [
+                for (var i = 0; i < VerimChartMetric.values.length; i++)
+                  Expanded(
+                    child: Padding(
+                      padding: EdgeInsets.only(
+                        right: i < VerimChartMetric.values.length - 1
+                            ? AppSpacing.xs
+                            : 0,
+                      ),
+                      child: FilterChip(
+                        showCheckmark: false,
+                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        visualDensity: VisualDensity.compact,
+                        label: Text(
+                          VerimChartMetric.values[i].label,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.center,
+                          style: theme.textTheme.labelSmall,
+                        ),
+                        selected:
+                            _options.verimMetric == VerimChartMetric.values[i],
+                        onSelected: (_) => setState(
+                          () => _options = _options.copyWith(
+                            verimMetric: VerimChartMetric.values[i],
+                          ),
+                        ),
+                      ),
                     ),
-                  )
-              else
+                  ),
+              ],
+            )
+          else
+            Wrap(
+              spacing: AppSpacing.xs,
+              runSpacing: AppSpacing.xs,
+              children: [
                 for (final m in ImalatChartMetric.values)
                   FilterChip(
                     showCheckmark: false,
@@ -543,8 +567,8 @@ class _ChartSettingsSheetState extends State<_ChartSettingsSheet> {
                       () => _options = _options.copyWith(imalatMetric: m),
                     ),
                   ),
-            ],
-          ),
+              ],
+            ),
           const SizedBox(height: AppSpacing.md),
           SJButton(
             label: 'Uygula',

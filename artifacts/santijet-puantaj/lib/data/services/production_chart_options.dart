@@ -35,7 +35,7 @@ enum VerimChartMetric {
 
   String get label => switch (this) {
         teamEfficiency => 'Ekip verimi',
-        laborPlanActual => 'Adam-gün plan / gerçek',
+        laborPlanActual => 'Adam-gün',
         rowEfficiency => 'İmalat verimi',
       };
 }

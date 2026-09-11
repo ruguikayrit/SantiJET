@@ -244,6 +244,13 @@ class _ImalatScreenState extends ConsumerState<ImalatScreen> {
             .where((p) => TeamImalatSummary.teamKey(p) == _teamFilter)
             .toList();
 
+    final teamFilterLabel = _teamFilter == null
+        ? null
+        : teamSummaries
+            .where((s) => s.groupKey == _teamFilter)
+            .map((s) => s.teamName)
+            .firstOrNull;
+
     filteredItems.sort((a, b) {
       final name = a.name.toLowerCase().compareTo(b.name.toLowerCase());
       if (name != 0) return name;
@@ -276,7 +283,7 @@ class _ImalatScreenState extends ConsumerState<ImalatScreen> {
               child: Text(
                 _teamFilter == null
                     ? 'İmalatlar'
-                    : 'İmalatlar · $_teamFilter',
+                    : 'İmalatlar · ${teamFilterLabel ?? _teamFilter}',
                 style: theme.textTheme.titleSmall,
               ),
             ),

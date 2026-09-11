@@ -1,32 +1,36 @@
 import '../../core/utils/puantaj_date.dart';
 import '../entities/production.dart';
 import 'production_metrics.dart';
+import 'production_team_group.dart';
 
-/// İmalat sekmesi — ekip bazında kümülatif metraj · süre · adam-gün özeti.
+/// İmalat sekmesi — ekip + metraj birimi bazında kümülatif özet.
 class TeamImalatSummary {
   const TeamImalatSummary({
+    required this.groupKey,
     required this.teamName,
+    required this.unit,
     required this.imalatCount,
     required this.axes,
     required this.updatedToday,
   });
 
+  final String groupKey;
   final String teamName;
+  final String unit;
   final int imalatCount;
   final List<ProductionProgressAxis> axes;
   final bool updatedToday;
 
-  static String teamKey(Production p) {
-    final t = p.teamName.trim();
-    return t.isEmpty ? 'Ekip seçilmedi' : t;
-  }
+  static String teamKey(Production p) =>
+      ProductionTeamGroup.fromProduction(p).groupKey;
 
   static List<TeamImalatSummary> fromProductions(List<Production> items) {
     if (items.isEmpty) return const [];
 
-    final byTeam = <String, List<Production>>{};
+    final byGroup = <String, List<Production>>{};
     for (final p in items) {
-      byTeam.putIfAbsent(teamKey(p), () => []).add(p);
+      final key = teamKey(p);
+      byGroup.putIfAbsent(key, () => []).add(p);
     }
 
     bool updatedToday(List<Production> teamItems) {
@@ -36,18 +40,11 @@ class TeamImalatSummary {
       );
     }
 
-    String unitLabel(List<Production> teamItems) {
-      final units = teamItems
-          .map((p) => p.unit.trim())
-          .where((u) => u.isNotEmpty)
-          .toSet();
-      if (units.length == 1) return units.single;
-      return '';
-    }
-
     final summaries = <TeamImalatSummary>[];
-    for (final entry in byTeam.entries) {
+    for (final entry in byGroup.entries) {
       final teamItems = entry.value;
+      final group = ProductionTeamGroup.fromProduction(teamItems.first);
+
       var plannedQty = 0.0;
       var actualQty = 0.0;
       var plannedDays = 0.0;
@@ -65,10 +62,11 @@ class TeamImalatSummary {
         actualAg += m.labor.actual;
       }
 
-      final unit = unitLabel(teamItems);
       summaries.add(
         TeamImalatSummary(
-          teamName: entry.key,
+          groupKey: entry.key,
+          teamName: group.cardTitle,
+          unit: group.unit,
           imalatCount: teamItems.length,
           updatedToday: updatedToday(teamItems),
           axes: [
@@ -76,7 +74,7 @@ class TeamImalatSummary {
               label: 'Metraj',
               planned: plannedQty,
               actual: actualQty,
-              unit: unit,
+              unit: group.unit,
             ),
             ProductionProgressAxis(
               label: 'Süre',

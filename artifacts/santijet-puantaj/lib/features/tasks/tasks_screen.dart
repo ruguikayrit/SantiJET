@@ -2406,12 +2406,12 @@ class _TaskFilterDropdown<T> extends StatelessWidget {
     final borderColor = hasSelection && activeAccent != null
         ? activeAccent.withValues(alpha: 0.65)
         : AppColors.cardBorderSubtle;
-    final captionColor = hasSelection && activeAccent != null
-        ? AppColors.readableSecondaryOn(surfaceColor)
-        : theme.colorScheme.onSurfaceVariant;
+    // Kart yüzeyi chrome temasından bağımsız — mürekkep luminance ile seçilir.
+    final captionColor = AppColors.readableMutedOn(surfaceColor);
     final valueColor = hasSelection && activeAccent != null
-        ? AppColors.statusInkOnCard(activeAccent)
-        : theme.colorScheme.onSurface;
+        ? AppColors.statusInk(activeAccent, surface: surfaceColor)
+        : AppColors.readableOn(surfaceColor);
+    final chevronColor = AppColors.readableSecondaryOn(surfaceColor);
 
     // PopupMenuButton null value'yu "iptal" sayar; "Tümü" (null) için indeks kullan.
     return PopupMenuButton<int>(
@@ -2511,7 +2511,7 @@ class _TaskFilterDropdown<T> extends StatelessWidget {
                 Icon(
                   Icons.expand_more,
                   size: 18,
-                  color: captionColor,
+                  color: chevronColor,
                 ),
               ],
             ),

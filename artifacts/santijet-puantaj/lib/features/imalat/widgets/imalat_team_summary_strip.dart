@@ -30,14 +30,14 @@ class ImalatTeamSummaryStrip extends StatelessWidget {
         separatorBuilder: (_, __) => const SizedBox(width: AppSpacing.sm),
         itemBuilder: (context, i) {
           final s = summaries[i];
-          final selected = selectedTeam == s.teamName;
+          final selected = selectedTeam == s.groupKey;
 
           return SizedBox(
             width: 200,
             child: SJCard.builder(
               selected: selected,
               accentColor: selected ? AppColors.electricBlue : null,
-              onTap: () => onTeamTap(s.teamName),
+              onTap: () => onTeamTap(s.groupKey),
               builder: (context, theme) {
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -63,7 +63,7 @@ class ImalatTeamSummaryStrip extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      '${s.imalatCount} imalat',
+                      '${s.imalatCount} imalat · ${s.unit}',
                       style: theme.textTheme.labelSmall,
                     ),
                     const SizedBox(height: 6),

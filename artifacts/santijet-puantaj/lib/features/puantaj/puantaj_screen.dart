@@ -1917,20 +1917,27 @@ class _DayTeamsSection extends ConsumerWidget {
       final card = SJCard.builder(
         onTap: openEditor,
         builder: (context, cardTheme) {
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Text(
-                entry.teamName,
-                style: cardTheme.textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                '${entry.workerCount} çalışan',
-                style: cardTheme.textTheme.bodySmall?.copyWith(
-                  color: cardTheme.colorScheme.onSurfaceVariant,
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      entry.teamName,
+                      style: cardTheme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '${entry.workerCount} çalışan',
+                      style: cardTheme.textTheme.bodySmall?.copyWith(
+                        color: cardTheme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -1940,8 +1947,10 @@ class _DayTeamsSection extends ConsumerWidget {
 
       return Padding(
         padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-        child: canEdit
-            ? Dismissible(
+        child: SizedBox(
+          width: double.infinity,
+          child: canEdit
+              ? Dismissible(
                 key: ValueKey('uninsured-team-${entry.id}'),
                 direction: DismissDirection.endToStart,
                 confirmDismiss: (_) => confirmDelete(),
@@ -1980,7 +1989,8 @@ class _DayTeamsSection extends ConsumerWidget {
                 ),
                 child: card,
               )
-            : card,
+              : card,
+        ),
       );
     }
 
@@ -1999,7 +2009,6 @@ class _DayTeamsSection extends ConsumerWidget {
         const SizedBox(height: AppSpacing.sm),
         for (final company in companyKeys)
           _ExpandableSection(
-            indent: AppSpacing.sm,
             expanded: companyExpanded(company),
             onExpandedChanged: (v) => onCompanyExpandedChanged(company, v),
             title: Row(
