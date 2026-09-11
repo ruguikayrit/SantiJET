@@ -48,6 +48,7 @@ void main() {
     await tester.pump();
 
     expect(find.text('Hafriyat ve zemin tesviyesi'), findsOneWidget);
+    expect(tester.takeException(), isNull);
     expect(find.text('Liste'), findsNothing);
     expect(find.text('Durum'), findsNothing);
     expect(find.text('Sorumlu'), findsNothing);
