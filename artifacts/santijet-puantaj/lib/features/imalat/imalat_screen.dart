@@ -161,7 +161,11 @@ class _ImalatScreenState extends ConsumerState<ImalatScreen> {
                           style: theme.textTheme.labelSmall,
                         ),
                         const SizedBox(height: AppSpacing.sm),
-                        ProductionTripleProgress(metrics: p.metrics),
+                        ProductionTripleProgress(
+                          metrics: p.metrics,
+                          colorMode:
+                              ProductionProgressColorMode.axisFillIntensity,
+                        ),
                       ],
                     ),
                   ),
@@ -1158,7 +1162,11 @@ class _ImalatDetailSheetState extends ConsumerState<_ImalatDetailSheet> {
               ),
             ),
             const SizedBox(height: AppSpacing.sm),
-            ProductionTripleProgress(metrics: p.metrics, dense: false),
+            ProductionTripleProgress(
+              metrics: p.metrics,
+              dense: false,
+              colorMode: ProductionProgressColorMode.axisFillIntensity,
+            ),
             if (p.dailyEntries.isNotEmpty) ...[
               const SizedBox(height: AppSpacing.md),
               ProductionPerformanceLineChart(production: p),
