@@ -1059,7 +1059,8 @@ class _TextCellState extends State<_TextCell> {
                       if (widget.digitsOnly)
                         FilteringTextInputFormatter.digitsOnly,
                     ],
-                    style: widget.style ?? AppTypography.cardBodySmall,
+                    style: (widget.style ?? AppTypography.cardBodySmall)
+                        .copyWith(fontSize: 16, height: 1.2),
                     cursorColor: AppColors.electricBlue,
                     textInputAction: TextInputAction.next,
                     decoration: const InputDecoration(
