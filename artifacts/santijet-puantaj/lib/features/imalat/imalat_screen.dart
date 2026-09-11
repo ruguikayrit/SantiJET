@@ -24,8 +24,11 @@ import '../../domain/entities/production_day_entry.dart';
 import '../../domain/entities/santijet_plan_pack.dart';
 import '../../domain/catalogs/imalat_units.dart';
 import '../../domain/yevmiye/yevmiye_calculator.dart';
+import '../../domain/models/production_group_summary.dart';
+import '../../domain/models/production_team_group.dart';
 import '../../domain/models/team_imalat_summary.dart';
 import 'widgets/imalat_team_summary_strip.dart';
+import 'widgets/production_group_summary_strip.dart';
 import 'widgets/production_performance_bar_chart.dart';
 import 'widgets/production_performance_line_chart.dart';
 
@@ -68,7 +71,10 @@ class _ImalatScreenState extends ConsumerState<ImalatScreen> {
   /// Seçili imalat durumu — acil görev filtre kartları gibi.
   _ImalatPhase _selectedPhase = _ImalatPhase.devamEden;
 
-  /// null = tüm ekipler; dolu = ekip özet kartı filtresi.
+  /// null = tüm gruplar; dolu = grup özet kartı filtresi (ekip adı).
+  String? _groupFilter;
+
+  /// null = tüm ekipler; dolu = ekip özet kartı filtresi (ekip + birim).
   String? _teamFilter;
 
   static bool _updatedToday(Production p) {
@@ -237,12 +243,28 @@ class _ImalatScreenState extends ConsumerState<ImalatScreen> {
       );
     }
 
+    final groupSummaries =
+        ProductionGroupSummary.fromProductions(phaseItems);
     final teamSummaries = TeamImalatSummary.fromProductions(phaseItems);
-    final filteredItems = _teamFilter == null
-        ? phaseItems
-        : phaseItems
-            .where((p) => TeamImalatSummary.teamKey(p) == _teamFilter)
-            .toList();
+
+    var filteredItems = phaseItems;
+    if (_groupFilter != null) {
+      filteredItems = filteredItems
+          .where((p) => ProductionTeamGroup.matchesTeamOnly(p, _groupFilter!))
+          .toList();
+    }
+    if (_teamFilter != null) {
+      filteredItems = filteredItems
+          .where((p) => TeamImalatSummary.teamKey(p) == _teamFilter)
+          .toList();
+    }
+
+    final groupFilterLabel = _groupFilter == null
+        ? null
+        : groupSummaries
+            .where((s) => s.teamKey == _groupFilter)
+            .map((s) => s.title)
+            .firstOrNull;
 
     final teamFilterLabel = _teamFilter == null
         ? null
@@ -250,6 +272,11 @@ class _ImalatScreenState extends ConsumerState<ImalatScreen> {
             .where((s) => s.groupKey == _teamFilter)
             .map((s) => s.teamName)
             .firstOrNull;
+
+    final listFilterActive = _groupFilter != null || _teamFilter != null;
+    final listFilterLabel = _teamFilter != null
+        ? (teamFilterLabel ?? _teamFilter)
+        : (groupFilterLabel ?? _groupFilter);
 
     filteredItems.sort((a, b) {
       final name = a.name.toLowerCase().compareTo(b.name.toLowerCase());
@@ -263,6 +290,25 @@ class _ImalatScreenState extends ConsumerState<ImalatScreen> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         const SizedBox(height: AppSpacing.sm),
+        if (groupSummaries.isNotEmpty) ...[
+          Text('Grup özeti', style: theme.textTheme.titleSmall),
+          const SizedBox(height: AppSpacing.sm),
+          ProductionGroupSummaryStrip(
+            summaries: groupSummaries,
+            selectedTeamKey: _groupFilter,
+            onTeamTap: (teamKey) {
+              setState(() {
+                if (_groupFilter == teamKey) {
+                  _groupFilter = null;
+                } else {
+                  _groupFilter = teamKey;
+                  _teamFilter = null;
+                }
+              });
+            },
+          ),
+          const SizedBox(height: AppSpacing.md),
+        ],
         if (teamSummaries.length > 1) ...[
           Text('Ekip özeti', style: theme.textTheme.titleSmall),
           const SizedBox(height: AppSpacing.sm),
@@ -271,7 +317,12 @@ class _ImalatScreenState extends ConsumerState<ImalatScreen> {
             selectedTeam: _teamFilter,
             onTeamTap: (team) {
               setState(() {
-                _teamFilter = _teamFilter == team ? null : team;
+                if (_teamFilter == team) {
+                  _teamFilter = null;
+                } else {
+                  _teamFilter = team;
+                  _groupFilter = null;
+                }
               });
             },
           ),
@@ -281,15 +332,18 @@ class _ImalatScreenState extends ConsumerState<ImalatScreen> {
           children: [
             Expanded(
               child: Text(
-                _teamFilter == null
+                !listFilterActive
                     ? 'İmalatlar'
-                    : 'İmalatlar · ${teamFilterLabel ?? _teamFilter}',
+                    : 'İmalatlar · $listFilterLabel',
                 style: theme.textTheme.titleSmall,
               ),
             ),
-            if (_teamFilter != null)
+            if (listFilterActive)
               TextButton(
-                onPressed: () => setState(() => _teamFilter = null),
+                onPressed: () => setState(() {
+                  _groupFilter = null;
+                  _teamFilter = null;
+                }),
                 child: const Text('Tümünü göster'),
               ),
           ],

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/utils/puantaj_date.dart';
 import '../../domain/entities/production.dart';
 import '../../domain/models/production_metrics.dart';
+import '../../domain/models/production_group_summary.dart';
 import '../../domain/models/production_team_group.dart';
 import 'app_data_provider.dart';
 import 'production_provider.dart';
@@ -88,6 +89,14 @@ class TeamVerimSummary {
         actualWorkerDays: actualWorkerDays,
       );
 }
+
+final groupVerimSummariesProvider = Provider<List<ProductionGroupSummary>>((ref) {
+  final rows = ref.watch(verimRowsProvider);
+  if (rows.isEmpty) return const [];
+  return ProductionGroupSummary.fromProductions(
+    [for (final r in rows) r.production],
+  );
+});
 
 final teamVerimSummariesProvider = Provider<List<TeamVerimSummary>>((ref) {
   final rows = ref.watch(verimRowsProvider);

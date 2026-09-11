@@ -12,7 +12,9 @@ import '../../core/widgets/production_triple_progress.dart';
 import '../../core/widgets/santijet_header.dart';
 import '../../data/providers/app_data_provider.dart';
 import '../../data/providers/verim_provider.dart';
+import '../../domain/models/production_team_group.dart';
 import '../imalat/widgets/production_chart_panel.dart';
+import '../imalat/widgets/production_group_summary_strip.dart';
 import 'widgets/verim_card_colors.dart';
 import 'widgets/verim_production_detail_sheet.dart';
 
@@ -28,7 +30,10 @@ class VerimScreen extends ConsumerStatefulWidget {
 }
 
 class _VerimScreenState extends ConsumerState<VerimScreen> {
-  /// null = tüm imalatlar; dolu = ekip kartı filtresi.
+  /// null = tüm gruplar; dolu = grup özet kartı filtresi.
+  String? _groupFilter;
+
+  /// null = tüm imalatlar; dolu = ekip kartı filtresi (ekip + birim).
   String? _teamFilter;
 
   @override
@@ -36,6 +41,7 @@ class _VerimScreenState extends ConsumerState<VerimScreen> {
     final theme = Theme.of(context);
     final project = ref.watch(activeProjectProvider);
     final rows = ref.watch(verimRowsProvider);
+    final groupSummaries = ref.watch(groupVerimSummariesProvider);
     final teamSummaries = ref.watch(teamVerimSummariesProvider);
 
     if (project == null) {
@@ -62,9 +68,28 @@ class _VerimScreenState extends ConsumerState<VerimScreen> {
       );
     }
 
-    final filteredRows = _teamFilter == null
-        ? rows
-        : rows.where((r) => r.summaryGroupKey == _teamFilter).toList();
+    var filteredRows = rows;
+    if (_groupFilter != null) {
+      filteredRows = filteredRows
+          .where(
+            (r) => ProductionTeamGroup.matchesTeamOnly(
+              r.production,
+              _groupFilter!,
+            ),
+          )
+          .toList();
+    }
+    if (_teamFilter != null) {
+      filteredRows =
+          filteredRows.where((r) => r.summaryGroupKey == _teamFilter).toList();
+    }
+
+    final groupFilterLabel = _groupFilter == null
+        ? null
+        : groupSummaries
+            .where((s) => s.teamKey == _groupFilter)
+            .map((s) => s.title)
+            .firstOrNull;
 
     final teamFilterLabel = _teamFilter == null
         ? null
@@ -72,6 +97,11 @@ class _VerimScreenState extends ConsumerState<VerimScreen> {
             .where((s) => s.groupKey == _teamFilter)
             .map((s) => s.teamName)
             .firstOrNull;
+
+    final listFilterActive = _groupFilter != null || _teamFilter != null;
+    final listFilterLabel = _teamFilter != null
+        ? (teamFilterLabel ?? _teamFilter)
+        : (groupFilterLabel ?? _groupFilter);
 
     final body = rows.isEmpty
         ? SJEmptyState(
@@ -96,6 +126,25 @@ class _VerimScreenState extends ConsumerState<VerimScreen> {
                 teamSummaries: teamSummaries,
               ),
               const SizedBox(height: AppSpacing.md),
+              if (groupSummaries.isNotEmpty) ...[
+                Text('Grup özeti', style: theme.textTheme.titleSmall),
+                const SizedBox(height: AppSpacing.sm),
+                ProductionGroupSummaryStrip(
+                  summaries: groupSummaries,
+                  selectedTeamKey: _groupFilter,
+                  onTeamTap: (teamKey) {
+                    setState(() {
+                      if (_groupFilter == teamKey) {
+                        _groupFilter = null;
+                      } else {
+                        _groupFilter = teamKey;
+                        _teamFilter = null;
+                      }
+                    });
+                  },
+                ),
+                const SizedBox(height: AppSpacing.md),
+              ],
               if (teamSummaries.length > 1) ...[
                 Text('Ekip özeti', style: theme.textTheme.titleSmall),
                 const SizedBox(height: AppSpacing.sm),
@@ -104,7 +153,12 @@ class _VerimScreenState extends ConsumerState<VerimScreen> {
                   selectedTeam: _teamFilter,
                   onTeamTap: (team) {
                     setState(() {
-                      _teamFilter = _teamFilter == team ? null : team;
+                      if (_teamFilter == team) {
+                        _teamFilter = null;
+                      } else {
+                        _teamFilter = team;
+                        _groupFilter = null;
+                      }
                     });
                   },
                 ),
@@ -114,15 +168,18 @@ class _VerimScreenState extends ConsumerState<VerimScreen> {
                 children: [
                   Expanded(
                     child: Text(
-                      _teamFilter == null
+                      !listFilterActive
                           ? 'İmalatlar'
-                          : 'İmalatlar · ${teamFilterLabel ?? _teamFilter}',
+                          : 'İmalatlar · $listFilterLabel',
                       style: theme.textTheme.titleSmall,
                     ),
                   ),
-                  if (_teamFilter != null)
+                  if (listFilterActive)
                     TextButton(
-                      onPressed: () => setState(() => _teamFilter = null),
+                      onPressed: () => setState(() {
+                        _groupFilter = null;
+                        _teamFilter = null;
+                      }),
                       child: const Text('Tümünü göster'),
                     ),
                 ],

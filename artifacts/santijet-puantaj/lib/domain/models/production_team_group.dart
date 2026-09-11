@@ -49,4 +49,18 @@ class ProductionTeamGroup {
 
   static bool matchesProduction(Production p, String groupKey) =>
       fromProduction(p).groupKey == groupKey;
+
+  /// Grup özeti kart başlığı (birim karışımı — yalnızca ekip adı).
+  static String teamOnlyCardTitle(String teamName) {
+    if (teamName == 'Ekip seçilmedi') return teamName;
+    if (isBroadDisciplineTeam(teamName)) {
+      return 'Disiplin özeti';
+    }
+    return teamName;
+  }
+
+  static String teamOnlyKey(Production p) => normalizeTeamName(p);
+
+  static bool matchesTeamOnly(Production p, String teamKey) =>
+      teamOnlyKey(p) == teamKey;
 }
