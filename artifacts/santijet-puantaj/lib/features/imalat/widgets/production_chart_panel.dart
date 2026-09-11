@@ -304,7 +304,7 @@ class ProductionChartPanel extends ConsumerWidget {
                 )
               else
                 SizedBox(
-                  height: 200,
+                  height: kind == ProductionChartKind.bar ? 260 : 200,
                   child: switch (kind) {
                     ProductionChartKind.pie => _PieChart(slices: slices),
                     ProductionChartKind.bar => _BarChart(
@@ -420,17 +420,21 @@ class _BarChart extends StatelessWidget {
           bottomTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true,
+              reservedSize: 72,
               getTitlesWidget: (v, meta) {
                 final i = v.toInt();
                 if (i < 0 || i >= slices.length) return const SizedBox.shrink();
-                return Padding(
-                  padding: const EdgeInsets.only(top: 4),
-                  child: Text(
-                    slices[i].label.trim(),
-                    style: Theme.of(context).textTheme.labelSmall,
-                    textAlign: TextAlign.center,
-                    maxLines: 2,
-                    softWrap: true,
+                return RotatedBox(
+                  quarterTurns: 3,
+                  child: SizedBox(
+                    width: 72,
+                    child: Text(
+                      slices[i].label.trim(),
+                      style: Theme.of(context).textTheme.labelSmall,
+                      textAlign: TextAlign.left,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                 );
               },
