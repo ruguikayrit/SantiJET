@@ -125,11 +125,19 @@ class ProgramScreen extends ConsumerWidget {
                   if (items.isEmpty)
                     const _EmptyProgram()
                   else
-                    _EntryTable(
-                      items: items,
-                      row: row,
-                      onTap: (item) => context.push('/form', extra: item),
-                    ),
+                    ...[
+                      for (var index = 0; index < items.length; index++)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: _EntryCard(
+                            index: index + 1,
+                            item: items[index],
+                            progress: row(items[index]),
+                            onTap: () =>
+                                context.push('/form', extra: items[index]),
+                          ),
+                        ),
+                    ],
                 ],
               ),
             ),
@@ -170,72 +178,116 @@ class _Kpi extends StatelessWidget {
   );
 }
 
-class _EntryTable extends StatelessWidget {
-  const _EntryTable({
-    required this.items,
-    required this.row,
+class _EntryCard extends StatelessWidget {
+  const _EntryCard({
+    required this.index,
+    required this.item,
+    required this.progress,
     required this.onTap,
   });
 
-  final List<ProgramItem> items;
-  final ManDayProgress Function(ProgramItem item) row;
-  final ValueChanged<ProgramItem> onTap;
+  final int index;
+  final ProgramItem item;
+  final ManDayProgress progress;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final date = DateFormat('dd.MM.yyyy');
+    final date = DateFormat('dd.MM');
+    final status = progress.effectiveStatus;
+    final color = programStatusColor(status);
+    final duration = item.isMilestone ? '0g' : '${item.calculatedDays}g';
+    final predecessors = (item.predecessors ?? '').trim();
+    final resource = item.responsible.trim();
+    final meta = [
+      if (predecessors.isNotEmpty) predecessors,
+      if (resource.isNotEmpty) resource,
+    ].join('  ·  ');
+
     return SJCard(
-      padding: EdgeInsets.zero,
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: DataTable(
-          showCheckboxColumn: false,
-          headingTextStyle: AppTypography.cardBodySmall.copyWith(
-            fontWeight: FontWeight.w700,
-          ),
-          dataTextStyle: AppTypography.cardBodySmall,
-          columnSpacing: 18,
-          columns: const [
-            DataColumn(label: Text('ID')),
-            DataColumn(label: Text('Ad')),
-            DataColumn(label: Text('Süre')),
-            DataColumn(label: Text('Başlangıç')),
-            DataColumn(label: Text('Bitiş')),
-            DataColumn(label: Text('Öncüller')),
-            DataColumn(label: Text('Kaynak Adları')),
-            DataColumn(label: Text('% Tamamlanma')),
-          ],
-          rows: [
-            for (var index = 0; index < items.length; index++)
-              DataRow(
-                onSelectChanged: (_) => onTap(items[index]),
-                cells: [
-                  DataCell(Text('${index + 1}')),
-                  DataCell(
-                    SizedBox(
-                      width: 160,
-                      child: Text(
-                        items[index].name,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
+      onTap: onTap,
+      accentColor: color,
+      padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(
+                width: 22,
+                child: Text(
+                  '$index',
+                  style: AppTypography.cardBodySmall.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.cardTextMuted,
                   ),
-                  DataCell(
-                    Text(
-                      items[index].isMilestone
-                          ? '0 gün'
-                          : '${items[index].calculatedDays} gün',
-                    ),
-                  ),
-                  DataCell(Text(date.format(items[index].startDate))),
-                  DataCell(Text(date.format(items[index].endDate))),
-                  DataCell(Text(items[index].predecessors ?? '')),
-                  DataCell(Text(items[index].responsible)),
-                  DataCell(Text('%${row(items[index]).progress}')),
-                ],
+                ),
               ),
+              Expanded(
+                child: Text(
+                  item.name,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTypography.cardTitleMedium,
+                ),
+              ),
+              const SizedBox(width: 8),
+              _PercentPill(value: progress.progress, color: color),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            '$duration  ·  ${date.format(item.startDate)} – '
+            '${date.format(item.endDate)}',
+            style: AppTypography.cardBodySmall,
+          ),
+          if (meta.isNotEmpty) ...[
+            const SizedBox(height: 2),
+            Text(
+              meta,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: AppTypography.cardBodySmall.copyWith(
+                color: AppColors.cardTextMuted,
+              ),
+            ),
           ],
+          const SizedBox(height: 10),
+          ClipRRect(
+            borderRadius: AppRadii.sm,
+            child: LinearProgressIndicator(
+              value: progress.progress / 100,
+              minHeight: 5,
+              backgroundColor: AppColors.cardBorder,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PercentPill extends StatelessWidget {
+  const _PercentPill({required this.value, required this.color});
+
+  final int value;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.14),
+        borderRadius: AppRadii.full,
+      ),
+      child: Text(
+        '%$value',
+        style: AppTypography.cardBodySmall.copyWith(
+          color: color,
+          fontWeight: FontWeight.w700,
         ),
       ),
     );
