@@ -8,6 +8,7 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../core/utils/puantaj_date.dart';
 import '../../../data/providers/production_performance_chart_options_provider.dart';
 import '../../../data/services/production_performance_chart_options.dart';
+import '../../../data/services/production_performance_plan.dart';
 import '../../../domain/entities/production.dart';
 
 /// İmalat kartı — gerçekleşen metraj + plan karşılaştırması.
@@ -111,7 +112,10 @@ class _ProductionPerformanceBarChartState
     final planQty = p.plannedQty;
     final planDays = p.plannedDays;
     final hasPlan = planQty > 0 && planDays > 0;
-    final dailyPlan = hasPlan ? planQty / planDays : 0.0;
+    final budget = ProductionPerformancePlanBudget(
+      planQty: planQty,
+      planDays: planDays,
+    );
 
     switch (period) {
       case ProductionPerformancePeriod.daily:
@@ -122,14 +126,19 @@ class _ProductionPerformanceBarChartState
               label: '${d.day}.${d.month}',
               tooltipTitle: PuantajDate.format(d),
               actual: daily[d]!,
-              planned: dailyPlan,
+              planned: hasPlan ? budget.allocate(workedDaysInPeriod: 1) : 0,
             ),
         ];
       case ProductionPerformancePeriod.weekly:
         final byWeek = <DateTime, double>{};
+        final daysByWeek = <DateTime, int>{};
         for (final e in daily.entries) {
           final w = _weekStart(e.key);
           byWeek[w] = (byWeek[w] ?? 0) + e.value;
+        }
+        for (final d in daily.keys) {
+          final w = _weekStart(d);
+          daysByWeek[w] = (daysByWeek[w] ?? 0) + 1;
         }
         final weeks = byWeek.keys.toList()..sort();
         return [
@@ -141,20 +150,42 @@ class _ProductionPerformanceBarChartState
                 PuantajDate.format(w.add(const Duration(days: 6))),
               ]),
               actual: byWeek[w]!,
-              planned: dailyPlan * 7,
+              planned: hasPlan
+                  ? budget.allocate(workedDaysInPeriod: daysByWeek[w] ?? 0)
+                  : 0,
             ),
         ];
       case ProductionPerformancePeriod.monthly:
         final byMonth = <(int y, int m), double>{};
+        final daysByMonth = <(int y, int m), int>{};
         for (final e in daily.entries) {
           final key = (e.key.year, e.key.month);
           byMonth[key] = (byMonth[key] ?? 0) + e.value;
+        }
+        for (final d in daily.keys) {
+          final key = (d.year, d.month);
+          daysByMonth[key] = (daysByMonth[key] ?? 0) + 1;
         }
         final months = byMonth.keys.toList()
           ..sort((a, b) {
             if (a.$1 != b.$1) return a.$1.compareTo(b.$1);
             return a.$2.compareTo(b.$2);
           });
+        // Tek ay: plan = toplam imalat metrajı (20 ton). Çok ay: planDays payı.
+        if (hasPlan && months.length == 1) {
+          final (y, m) = months.single;
+          return [
+            _PeriodBucket(
+              label: PuantajDate.trMonths[m - 1].length > 3
+                  ? PuantajDate.trMonths[m - 1].substring(0, 3)
+                  : PuantajDate.trMonths[m - 1],
+              tooltipTitle:
+                  PuantajDate.monthLabel(PuantajDate.format(DateTime(y, m, 1))),
+              actual: byMonth[(y, m)]!,
+              planned: planQty,
+            ),
+          ];
+        }
         return [
           for (final (y, m) in months)
             _PeriodBucket(
@@ -163,7 +194,9 @@ class _ProductionPerformanceBarChartState
                   : PuantajDate.trMonths[m - 1],
               tooltipTitle: PuantajDate.monthLabel(PuantajDate.format(DateTime(y, m, 1))),
               actual: byMonth[(y, m)]!,
-              planned: dailyPlan * DateTime(y, m + 1, 0).day,
+              planned: hasPlan
+                  ? budget.allocate(workedDaysInPeriod: daysByMonth[(y, m)] ?? 0)
+                  : 0,
             ),
         ];
     }
@@ -186,11 +219,10 @@ class _ProductionPerformanceBarChartState
 
     final planPerPeriod = buckets.isEmpty
         ? (hasPlan
-            ? switch (options.period) {
-                ProductionPerformancePeriod.daily => planQty / planDays,
-                ProductionPerformancePeriod.weekly => planQty / planDays * 7,
-                ProductionPerformancePeriod.monthly => planQty / planDays * 30,
-              }
+            ? ProductionPerformancePlanBudget.dailyPlan(
+                planQty: planQty,
+                planDays: planDays,
+              )
             : 0.0)
         : buckets.fold<double>(0, (s, b) => s + b.planned) / buckets.length;
 
@@ -225,12 +257,6 @@ class _ProductionPerformanceBarChartState
         paceColor = AppColors.info;
       }
     }
-
-    final periodUnit = switch (options.period) {
-      ProductionPerformancePeriod.daily => 'gün',
-      ProductionPerformancePeriod.weekly => 'hafta',
-      ProductionPerformancePeriod.monthly => 'ay',
-    };
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -279,15 +305,6 @@ class _ProductionPerformanceBarChartState
                     .save(options.copyWith(period: p)),
               ),
           ],
-        ),
-        const SizedBox(height: AppSpacing.sm),
-        Text(
-          buckets.isEmpty
-              ? 'Günlük kayıt eklenince çubuklar burada ortalanır'
-              : _hintText(hasPlan, unit, periodUnit),
-          style: theme.textTheme.labelSmall?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
         ),
         const SizedBox(height: AppSpacing.md),
         LayoutBuilder(
@@ -395,23 +412,6 @@ class _ProductionPerformanceBarChartState
             ),
           ),
         ],
-        const SizedBox(height: AppSpacing.xs),
-        Text(
-          buckets.isEmpty
-              ? 'Henüz metraj kaydı yok'
-              : hasPlan
-                  ? 'Ort. ${_fmt(avgActual)}${unit.isEmpty ? '' : ' $unit'}/$periodUnit'
-                      ' · Plan ${_fmt(planPerPeriod)}${unit.isEmpty ? '' : ' $unit'}/$periodUnit'
-                      ' · Toplam ${_fmt(totalActual)}${unit.isEmpty ? '' : ' $unit'}'
-                      '${planQty > 0 ? ' / ${_fmt(planQty)}' : ''}'
-                  : 'Ort. ${_fmt(avgActual)}${unit.isEmpty ? '' : ' $unit'}/$periodUnit'
-                      ' · Toplam ${_fmt(totalActual)}${unit.isEmpty ? '' : ' $unit'}'
-                      ' · ${buckets.length} $periodUnit',
-          style: theme.textTheme.labelSmall?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
       ],
     );
   }
@@ -422,13 +422,6 @@ class _ProductionPerformanceBarChartState
   }) {
     final usable = slotW - (hasPlan ? 12 : 8);
     return hasPlan ? (usable / 2).clamp(6.0, 14.0) : usable.clamp(8.0, 18.0);
-  }
-
-  static String _hintText(bool hasPlan, String unit, String periodUnit) {
-    if (!hasPlan) {
-      return 'Çubuk: $periodUnit gerçekleşen metraj';
-    }
-    return 'Mavi: gerçekleşen · turuncu: plan ($periodUnit)';
   }
 
   static BarChartData _chartData({

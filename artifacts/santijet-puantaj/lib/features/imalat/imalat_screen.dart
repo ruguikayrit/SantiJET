@@ -24,6 +24,8 @@ import '../../domain/entities/production_day_entry.dart';
 import '../../domain/entities/santijet_plan_pack.dart';
 import '../../domain/catalogs/imalat_units.dart';
 import '../../domain/yevmiye/yevmiye_calculator.dart';
+import '../../domain/models/team_imalat_summary.dart';
+import 'widgets/imalat_team_summary_strip.dart';
 import 'widgets/production_performance_bar_chart.dart';
 import 'widgets/production_performance_line_chart.dart';
 
@@ -66,82 +68,19 @@ class _ImalatScreenState extends ConsumerState<ImalatScreen> {
   /// Seçili imalat durumu — acil görev filtre kartları gibi.
   _ImalatPhase _selectedPhase = _ImalatPhase.devamEden;
 
-  /// Kullanıcının elle açtığı ekip başlıkları.
-  final Set<String> _manualExpand = {};
-
-  /// Kullanıcının elle kapattığı ekip başlıkları.
-  final Set<String> _manualCollapse = {};
-
-  static String _teamKey(Production p) {
-    final t = p.teamName.trim();
-    return t.isEmpty ? 'Ekip seçilmedi' : t;
-  }
+  /// null = tüm ekipler; dolu = ekip özet kartı filtresi.
+  String? _teamFilter;
 
   static bool _updatedToday(Production p) {
     final today = PuantajDate.today();
     return p.dailyEntries.any((e) => e.date.trim() == today);
   }
 
-  static bool _teamUpdatedToday(List<Production> items) =>
-      items.any(_updatedToday);
-
   /// Bekleyen = henüz günlük kayıt yok; tamamlanan = %100; aksi devam eden.
   static _ImalatPhase _phaseOf(Production p) {
     if (p.isComplete) return _ImalatPhase.tamamlanan;
     if (p.dailyEntries.isEmpty) return _ImalatPhase.bekleyen;
     return _ImalatPhase.devamEden;
-  }
-
-  bool _isTeamExpanded(String teamKey, bool updatedToday) {
-    if (_manualExpand.contains(teamKey)) return true;
-    if (_manualCollapse.contains(teamKey)) return false;
-    return false;
-  }
-
-  void _toggleTeam(String teamKey, bool currentlyExpanded) {
-    setState(() {
-      if (currentlyExpanded) {
-        _manualExpand.remove(teamKey);
-        _manualCollapse.add(teamKey);
-      } else {
-        _manualCollapse.remove(teamKey);
-        _manualExpand.add(teamKey);
-      }
-    });
-  }
-
-  /// Ekip başlıkları altında gruplar (Demir, Kalıp, Beton…).
-  List<({String team, List<Production> items, bool updatedToday})> _groupByTeam(
-    List<Production> items,
-  ) {
-    final map = <String, List<Production>>{};
-    for (final p in items) {
-      map.putIfAbsent(_teamKey(p), () => []).add(p);
-    }
-    for (final list in map.values) {
-      list.sort((a, b) {
-        final name = a.name.toLowerCase().compareTo(b.name.toLowerCase());
-        if (name != 0) return name;
-        final loc = a.locationLabel.compareTo(b.locationLabel);
-        if (loc != 0) return loc;
-        return b.latestDate.compareTo(a.latestDate);
-      });
-    }
-    final keys = map.keys.toList()
-      ..sort((a, b) {
-        final aToday = _teamUpdatedToday(map[a]!) ? 0 : 1;
-        final bToday = _teamUpdatedToday(map[b]!) ? 0 : 1;
-        if (aToday != bToday) return aToday.compareTo(bToday);
-        return a.toLowerCase().compareTo(b.toLowerCase());
-      });
-    return [
-      for (final k in keys)
-        (
-          team: k,
-          items: map[k]!,
-          updatedToday: _teamUpdatedToday(map[k]!),
-        ),
-    ];
   }
 
   Map<_ImalatPhase, List<Production>> _groupByPhase(List<Production> items) {
@@ -265,8 +204,10 @@ class _ImalatScreenState extends ConsumerState<ImalatScreen> {
               value: '${byPhase[_ImalatPhase.values[i]]!.length}',
               color: _ImalatPhase.values[i].accent,
               selected: _selectedPhase == _ImalatPhase.values[i],
-              onTap: () =>
-                  setState(() => _selectedPhase = _ImalatPhase.values[i]),
+              onTap: () => setState(() {
+                _selectedPhase = _ImalatPhase.values[i];
+                _teamFilter = null;
+              }),
             ),
           ),
         ],
@@ -278,131 +219,84 @@ class _ImalatScreenState extends ConsumerState<ImalatScreen> {
     required _ImalatPhase phase,
     required List<Production> phaseItems,
   }) {
-    final teamGroups = _groupByTeam(phaseItems);
+    final theme = Theme.of(context);
+
     if (phaseItems.isEmpty) {
       return Padding(
         padding: const EdgeInsets.only(top: AppSpacing.sm),
         child: Text(
           'Bu grupta imalat yok',
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
         ),
       );
     }
+
+    final teamSummaries = TeamImalatSummary.fromProductions(phaseItems);
+    final filteredItems = _teamFilter == null
+        ? phaseItems
+        : phaseItems
+            .where((p) => TeamImalatSummary.teamKey(p) == _teamFilter)
+            .toList();
+
+    filteredItems.sort((a, b) {
+      final name = a.name.toLowerCase().compareTo(b.name.toLowerCase());
+      if (name != 0) return name;
+      final loc = a.locationLabel.compareTo(b.locationLabel);
+      if (loc != 0) return loc;
+      return b.latestDate.compareTo(a.latestDate);
+    });
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         const SizedBox(height: AppSpacing.sm),
-        for (var gi = 0; gi < teamGroups.length; gi++) ...[
-          if (gi > 0) const SizedBox(height: AppSpacing.sm),
-          Builder(
-            builder: (context) {
-              final g = teamGroups[gi];
-              final teamKey = '${phase.name}|${g.team}';
-              final expanded = _isTeamExpanded(teamKey, g.updatedToday);
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  _teamHeader(
-                    team: g.team,
-                    count: g.items.length,
-                    expanded: expanded,
-                    updatedToday: g.updatedToday,
-                    onToggle: () => _toggleTeam(teamKey, expanded),
-                  ),
-                  if (expanded) ...[
-                    const SizedBox(height: AppSpacing.sm),
-                    for (var i = 0; i < g.items.length; i++) ...[
-                      if (i > 0) const SizedBox(height: AppSpacing.sm),
-                      _productionCard(g.items[i]),
-                    ],
-                  ],
-                ],
-              );
+        if (teamSummaries.length > 1) ...[
+          Text('Ekip özeti', style: theme.textTheme.titleSmall),
+          const SizedBox(height: AppSpacing.sm),
+          ImalatTeamSummaryStrip(
+            summaries: teamSummaries,
+            selectedTeam: _teamFilter,
+            onTeamTap: (team) {
+              setState(() {
+                _teamFilter = _teamFilter == team ? null : team;
+              });
             },
           ),
+          const SizedBox(height: AppSpacing.md),
         ],
-      ],
-    );
-  }
-
-  Widget _teamHeader({
-    required String team,
-    required int count,
-    required bool expanded,
-    required bool updatedToday,
-    required VoidCallback onToggle,
-  }) {
-    final theme = Theme.of(context);
-    final accent = AppColors.useDarkChrome
-        ? AppColors.electricBlueLight
-        : AppColors.electricBlue;
-    final headerBg = updatedToday
-        ? accent.withValues(alpha: AppColors.useDarkChrome ? 0.16 : 0.1)
-        : AppColors.surface;
-    final titleColor = AppColors.textSecondary;
-    final countColor = AppColors.readableMutedOn(headerBg);
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: AppRadii.md,
-        onTap: onToggle,
-        child: Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.sm,
-            vertical: AppSpacing.sm,
-          ),
-          decoration: BoxDecoration(
-            borderRadius: AppRadii.md,
-            border: Border.all(
-              color: updatedToday
-                  ? accent.withValues(alpha: 0.4)
-                  : AppColors.border.withValues(alpha: 0.65),
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                _teamFilter == null
+                    ? 'İmalatlar'
+                    : 'İmalatlar · $_teamFilter',
+                style: theme.textTheme.titleSmall,
+              ),
             ),
-            color: headerBg,
-          ),
-          child: Row(
-            children: [
-              Icon(
-                expanded
-                    ? Icons.keyboard_arrow_down_rounded
-                    : Icons.keyboard_arrow_right_rounded,
-                color: titleColor,
+            if (_teamFilter != null)
+              TextButton(
+                onPressed: () => setState(() => _teamFilter = null),
+                child: const Text('Tümünü göster'),
               ),
-              const SizedBox(width: 4),
-              Expanded(
-                child: Text(
-                  team,
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: titleColor,
-                  ),
-                ),
-              ),
-              if (updatedToday)
-                Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: Text(
-                    'Bugün',
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: AppColors.statusInkOnChrome(accent),
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-              Text(
-                '$count',
-                style: theme.textTheme.labelMedium?.copyWith(
-                  color: countColor,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ],
-          ),
+          ],
         ),
-      ),
+        const SizedBox(height: AppSpacing.sm),
+        if (filteredItems.isEmpty)
+          Text(
+            'Bu ekibe atanmış imalat yok',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          )
+        else
+          for (var i = 0; i < filteredItems.length; i++) ...[
+            if (i > 0) const SizedBox(height: AppSpacing.sm),
+            _productionCard(filteredItems[i]),
+          ],
+      ],
     );
   }
 

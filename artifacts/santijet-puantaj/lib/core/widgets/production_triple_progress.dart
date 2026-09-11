@@ -25,14 +25,33 @@ Color efficiencyColorForRatio(double? ratio) {
 class ProductionTripleProgress extends StatelessWidget {
   const ProductionTripleProgress({
     super.key,
-    required this.metrics,
+    ProductionMetrics? metrics,
+    List<ProductionProgressAxis>? axes,
     this.dense = true,
     this.showPctLabels = true,
-  });
+  })  : assert(metrics != null || axes != null),
+        _metrics = metrics,
+        _axes = axes;
 
-  final ProductionMetrics metrics;
+  factory ProductionTripleProgress.fromMetrics({
+    required ProductionMetrics metrics,
+    bool dense = true,
+    bool showPctLabels = true,
+  }) {
+    return ProductionTripleProgress(
+      metrics: metrics,
+      dense: dense,
+      showPctLabels: showPctLabels,
+    );
+  }
+
+  final ProductionMetrics? _metrics;
+  final List<ProductionProgressAxis>? _axes;
   final bool dense;
   final bool showPctLabels;
+
+  List<ProductionProgressAxis> get _resolvedAxes =>
+      _axes ?? _metrics!.axes;
 
   @override
   Widget build(BuildContext context) {
@@ -40,14 +59,15 @@ class ProductionTripleProgress extends StatelessWidget {
     final barH = dense ? 6.0 : 8.0;
     final gap = dense ? AppSpacing.xs : AppSpacing.sm;
     final labelStyle = theme.textTheme.labelSmall;
+    final resolved = _resolvedAxes;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        for (var i = 0; i < metrics.axes.length; i++) ...[
+        for (var i = 0; i < resolved.length; i++) ...[
           if (i > 0) SizedBox(height: gap),
           _CompletionProgressLine(
-            axis: metrics.axes[i],
+            axis: resolved[i],
             barHeight: barH,
             labelStyle: labelStyle,
             showPct: showPctLabels,

@@ -8,6 +8,7 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../core/utils/puantaj_date.dart';
 import '../../../data/providers/production_performance_chart_options_provider.dart';
 import '../../../data/services/production_performance_chart_options.dart';
+import '../../../data/services/production_performance_plan.dart';
 import '../../../domain/entities/production.dart';
 
 /// İmalat kartı — plan vs gerçekleşen çizgi grafiği (metraj · adam-gün).
@@ -123,13 +124,22 @@ class _ProductionPerformanceLineChartState
     };
     if (daily.isEmpty) return const [];
 
-    final planPerDay = switch (metric) {
-      ProductionPerformanceMetric.metraj =>
-        p.plannedQty > 0 && p.plannedDays > 0 ? p.plannedQty / p.plannedDays : 0.0,
-      ProductionPerformanceMetric.laborDays =>
-        p.plannedLabor > 0 && p.plannedDays > 0 ? p.plannedLabor.toDouble() : 0.0,
+    final (planTotal, planDays, hasPlan) = switch (metric) {
+      ProductionPerformanceMetric.metraj => (
+          p.plannedQty,
+          p.plannedDays,
+          p.plannedQty > 0 && p.plannedDays > 0,
+        ),
+      ProductionPerformanceMetric.laborDays => (
+          p.plannedWorkerDays,
+          p.plannedDays,
+          p.plannedLabor > 0 && p.plannedDays > 0,
+        ),
     };
-    final hasPlan = planPerDay > 0;
+    final budget = ProductionPerformancePlanBudget(
+      planQty: planTotal,
+      planDays: planDays,
+    );
 
     List<_PeriodBucket> incremental;
     switch (period) {
@@ -141,14 +151,19 @@ class _ProductionPerformanceLineChartState
               label: '${d.day}.${d.month}',
               tooltipTitle: PuantajDate.format(d),
               actual: daily[d]!,
-              planned: hasPlan ? planPerDay : 0,
+              planned: hasPlan ? budget.allocate(workedDaysInPeriod: 1) : 0,
             ),
         ];
       case ProductionPerformancePeriod.weekly:
         final byWeek = <DateTime, double>{};
+        final daysByWeek = <DateTime, int>{};
         for (final e in daily.entries) {
           final w = _weekStart(e.key);
           byWeek[w] = (byWeek[w] ?? 0) + e.value;
+        }
+        for (final d in daily.keys) {
+          final w = _weekStart(d);
+          daysByWeek[w] = (daysByWeek[w] ?? 0) + 1;
         }
         final weeks = byWeek.keys.toList()..sort();
         incremental = [
@@ -160,22 +175,30 @@ class _ProductionPerformanceLineChartState
                 PuantajDate.format(w.add(const Duration(days: 6))),
               ]),
               actual: byWeek[w]!,
-              planned: hasPlan ? planPerDay * 7 : 0,
+              planned: hasPlan
+                  ? budget.allocate(workedDaysInPeriod: daysByWeek[w] ?? 0)
+                  : 0,
             ),
         ];
       case ProductionPerformancePeriod.monthly:
         final byMonth = <(int y, int m), double>{};
+        final daysByMonth = <(int y, int m), int>{};
         for (final e in daily.entries) {
           final key = (e.key.year, e.key.month);
           byMonth[key] = (byMonth[key] ?? 0) + e.value;
+        }
+        for (final d in daily.keys) {
+          final key = (d.year, d.month);
+          daysByMonth[key] = (daysByMonth[key] ?? 0) + 1;
         }
         final months = byMonth.keys.toList()
           ..sort((a, b) {
             if (a.$1 != b.$1) return a.$1.compareTo(b.$1);
             return a.$2.compareTo(b.$2);
           });
-        incremental = [
-          for (final (y, m) in months)
+        if (hasPlan && months.length == 1) {
+          final (y, m) = months.single;
+          incremental = [
             _PeriodBucket(
               label: PuantajDate.trMonths[m - 1].length > 3
                   ? PuantajDate.trMonths[m - 1].substring(0, 3)
@@ -184,9 +207,26 @@ class _ProductionPerformanceLineChartState
                 PuantajDate.format(DateTime(y, m, 1)),
               ),
               actual: byMonth[(y, m)]!,
-              planned: hasPlan ? planPerDay * DateTime(y, m + 1, 0).day : 0,
+              planned: planTotal,
             ),
-        ];
+          ];
+        } else {
+          incremental = [
+            for (final (y, m) in months)
+              _PeriodBucket(
+                label: PuantajDate.trMonths[m - 1].length > 3
+                    ? PuantajDate.trMonths[m - 1].substring(0, 3)
+                    : PuantajDate.trMonths[m - 1],
+                tooltipTitle: PuantajDate.monthLabel(
+                  PuantajDate.format(DateTime(y, m, 1)),
+                ),
+                actual: byMonth[(y, m)]!,
+                planned: hasPlan
+                    ? budget.allocate(workedDaysInPeriod: daysByMonth[(y, m)] ?? 0)
+                    : 0,
+              ),
+          ];
+        }
     }
 
     return _toCumulative(incremental);
