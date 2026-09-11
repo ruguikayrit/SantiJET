@@ -304,16 +304,8 @@ class ProductionChartPanel extends ConsumerWidget {
                 )
               else
                 SizedBox(
-                  height: kind == ProductionChartKind.bar ? 260 : 200,
-                  child: switch (kind) {
-                    ProductionChartKind.pie => _PieChart(slices: slices),
-                    ProductionChartKind.bar => _BarChart(
-                        slices: slices,
-                        unitHint: unitHint,
-                      ),
-                    ProductionChartKind.horizontalBar =>
-                      const SizedBox.shrink(),
-                  },
+                  height: 200,
+                  child: _PieChart(slices: slices),
                 ),
             ],
           ],
@@ -370,100 +362,6 @@ class _PieChart extends StatelessWidget {
                 ),
               ),
               badgePositionPercentageOffset: 1.35,
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-class _BarChart extends StatelessWidget {
-  const _BarChart({required this.slices, required this.unitHint});
-
-  final List<_ChartSlice> slices;
-  final String unitHint;
-
-  @override
-  Widget build(BuildContext context) {
-    final maxY = slices.fold<double>(0, (m, s) => s.value > m ? s.value : m);
-    final top = maxY <= 0 ? 1.0 : maxY * 1.15;
-
-    return BarChart(
-      BarChartData(
-        maxY: top,
-        barTouchData: BarTouchData(
-          touchTooltipData: BarTouchTooltipData(
-            getTooltipItem: (group, groupIndex, rod, rodIndex) {
-              final s = slices[group.x.toInt()];
-              return BarTooltipItem(
-                '${s.label}\n${ProductionChartPanel._fmt(s.value)} $unitHint',
-                const TextStyle(color: Colors.white, fontSize: 12),
-              );
-            },
-          ),
-        ),
-        titlesData: FlTitlesData(
-          topTitles:
-              const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          rightTitles:
-              const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          leftTitles: AxisTitles(
-            sideTitles: SideTitles(
-              showTitles: true,
-              reservedSize: 32,
-              getTitlesWidget: (v, meta) => Text(
-                ProductionChartPanel._fmt(v),
-                style: Theme.of(context).textTheme.labelSmall,
-              ),
-            ),
-          ),
-          bottomTitles: AxisTitles(
-            sideTitles: SideTitles(
-              showTitles: true,
-              reservedSize: 72,
-              getTitlesWidget: (v, meta) {
-                final i = v.toInt();
-                if (i < 0 || i >= slices.length) return const SizedBox.shrink();
-                return RotatedBox(
-                  quarterTurns: 3,
-                  child: SizedBox(
-                    width: 72,
-                    child: Text(
-                      slices[i].label.trim(),
-                      style: Theme.of(context).textTheme.labelSmall,
-                      textAlign: TextAlign.left,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-        ),
-        gridData: FlGridData(
-          show: true,
-          drawVerticalLine: false,
-          getDrawingHorizontalLine: (_) => FlLine(
-            color: Theme.of(context).dividerColor.withValues(alpha: 0.5),
-            strokeWidth: 1,
-          ),
-        ),
-        borderData: FlBorderData(show: false),
-        barGroups: [
-          for (var i = 0; i < slices.length; i++)
-            BarChartGroupData(
-              x: i,
-              barRods: [
-                BarChartRodData(
-                  toY: slices[i].value,
-                  color: slices[i].color,
-                  width: slices.length <= 4 ? 22 : 14,
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(4),
-                  ),
-                ),
-              ],
             ),
         ],
       ),

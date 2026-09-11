@@ -1883,75 +1883,104 @@ class _DayTeamsSection extends ConsumerWidget {
     }
 
     Widget teamCard(UninsuredTeamEntry entry) {
+      void openEditor() {
+        if (!canEdit) return denyWrite();
+        _openEditor(
+          context,
+          ref,
+          projectId: project.id,
+          catalogTeams: catalogTeams,
+          usedTeamNames: usedTeamNames,
+          existing: entry,
+        );
+      }
+
+      Future<bool> confirmDelete() async {
+        if (!canEdit) {
+          denyWrite();
+          return false;
+        }
+        final ok = await SJModal.confirm(
+          context: context,
+          title: 'Ekibi sil',
+          message: entry.company.trim().isEmpty
+              ? '${entry.teamName} (${entry.workerCount} çalışan) silinsin mi?'
+              : '${entry.company} · ${entry.teamName} (${entry.workerCount} çalışan) silinsin mi?',
+          confirmLabel: 'Sil',
+          destructive: true,
+        );
+        if (!ok) return false;
+        ref.read(uninsuredTeamsProvider.notifier).remove(entry.id);
+        return true;
+      }
+
+      final card = SJCard.builder(
+        onTap: openEditor,
+        builder: (context, cardTheme) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                entry.teamName,
+                style: cardTheme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                '${entry.workerCount} çalışan',
+                style: cardTheme.textTheme.bodySmall?.copyWith(
+                  color: cardTheme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          );
+        },
+      );
+
       return Padding(
         padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-        child: SJCard.builder(
-          builder: (context, cardTheme) {
-            return Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        entry.teamName,
-                        style: cardTheme.textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        '${entry.workerCount} çalışan',
-                        style: cardTheme.textTheme.bodySmall?.copyWith(
-                          color: cardTheme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                IconButton(
-                  tooltip: 'Düzenle',
-                  visualDensity: VisualDensity.compact,
-                  onPressed: () {
-                    if (!canEdit) return denyWrite();
-                    _openEditor(
-                      context,
-                      ref,
-                      projectId: project.id,
-                      catalogTeams: catalogTeams,
-                      usedTeamNames: usedTeamNames,
-                      existing: entry,
-                    );
-                  },
-                  icon: const Icon(Icons.edit_outlined, size: 18),
-                ),
-                IconButton(
-                  tooltip: 'Sil',
-                  visualDensity: VisualDensity.compact,
-                  onPressed: () async {
-                    if (!canEdit) return denyWrite();
-                    final ok = await SJModal.confirm(
-                      context: context,
-                      title: 'Ekibi sil',
-                      message: entry.company.trim().isEmpty
-                          ? '${entry.teamName} (${entry.workerCount} çalışan) silinsin mi?'
-                          : '${entry.company} · ${entry.teamName} (${entry.workerCount} çalışan) silinsin mi?',
-                      confirmLabel: 'Sil',
-                      destructive: true,
-                    );
-                    if (!ok) return;
-                    ref.read(uninsuredTeamsProvider.notifier).remove(entry.id);
-                  },
-                  icon: Icon(
-                    Icons.delete_outline,
-                    size: 18,
+        child: canEdit
+            ? Dismissible(
+                key: ValueKey('uninsured-team-${entry.id}'),
+                direction: DismissDirection.endToStart,
+                confirmDismiss: (_) => confirmDelete(),
+                background: const SizedBox.shrink(),
+                secondaryBackground: ClipRRect(
+                  borderRadius: AppRadii.md,
+                  child: ColoredBox(
                     color: Theme.of(context).colorScheme.error,
+                    child: const Align(
+                      alignment: Alignment.centerRight,
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: AppSpacing.md,
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.delete_outline,
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                            SizedBox(width: AppSpacing.sm),
+                            Text(
+                              'Sil',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                   ),
                 ),
-              ],
-            );
-          },
-        ),
+                child: card,
+              )
+            : card,
       );
     }
 

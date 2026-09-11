@@ -205,18 +205,9 @@ class _TeamVerimSummaryStrip extends StatelessWidget {
                     ),
                     const Spacer(),
                     if (efficiency != null)
-                      Row(
-                        children: [
-                          UnitEfficiencyBadge(
-                            efficiency: efficiency,
-                            compact: true,
-                          ),
-                          const Spacer(),
-                          Text(
-                            '${_fmt(s.actualQty)} / ${_fmt(s.plannedQty)}',
-                            style: theme.textTheme.labelSmall,
-                          ),
-                        ],
+                      UnitEfficiencyBadge(
+                        efficiency: efficiency,
+                        compact: true,
                       )
                     else
                       Text(
@@ -237,11 +228,6 @@ class _TeamVerimSummaryStrip extends StatelessWidget {
         },
       ),
     );
-  }
-
-  static String _fmt(double v) {
-    if (v == v.roundToDouble()) return v.toStringAsFixed(0);
-    return v.toStringAsFixed(1);
   }
 }
 

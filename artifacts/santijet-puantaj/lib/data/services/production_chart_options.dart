@@ -1,18 +1,15 @@
 /// İmalat / Verim grafik görünümü ayarları.
 enum ProductionChartKind {
   pie,
-  bar,
   horizontalBar;
 
   String get label => switch (this) {
         pie => 'Pasta',
-        bar => 'Çubuk',
         horizontalBar => 'Yatay çubuk',
       };
 
   String get hint => switch (this) {
         pie => 'Pay dağılımı',
-        bar => 'Karşılaştırma',
         horizontalBar => 'Sıralı karşılaştırma',
       };
 }
@@ -47,7 +44,7 @@ class ProductionChartOptions {
   const ProductionChartOptions({
     this.imalatKind = ProductionChartKind.pie,
     this.imalatMetric = ImalatChartMetric.phaseShare,
-    this.verimKind = ProductionChartKind.bar,
+    this.verimKind = ProductionChartKind.horizontalBar,
     this.verimMetric = VerimChartMetric.teamEfficiency,
   });
 
@@ -79,6 +76,7 @@ class ProductionChartOptions {
 
   factory ProductionChartOptions.fromJson(Map<String, dynamic> json) {
     ProductionChartKind kind(String? name, ProductionChartKind fallback) {
+      if (name == 'bar') return ProductionChartKind.horizontalBar;
       for (final k in ProductionChartKind.values) {
         if (k.name == name) return k;
       }
@@ -102,7 +100,10 @@ class ProductionChartOptions {
     return ProductionChartOptions(
       imalatKind: kind(json['imalatKind'] as String?, ProductionChartKind.pie),
       imalatMetric: imalatMetric(json['imalatMetric'] as String?),
-      verimKind: kind(json['verimKind'] as String?, ProductionChartKind.bar),
+      verimKind: kind(
+        json['verimKind'] as String?,
+        ProductionChartKind.horizontalBar,
+      ),
       verimMetric: verimMetric(json['verimMetric'] as String?),
     );
   }

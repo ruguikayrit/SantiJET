@@ -32,6 +32,7 @@ import '../../domain/entities/person.dart';
 import '../../domain/entities/project.dart';
 import '../../domain/entities/site_task.dart';
 import '../../domain/enums/task_status.dart';
+import '../../domain/catalogs/task_categories.dart';
 import '../../domain/catalogs/task_tags.dart';
 import '../../domain/permissions/role_degree.dart';
 import 'widgets/task_actual_date_sheet.dart';
@@ -1745,6 +1746,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                         valueLabel: _filter == null
                             ? 'Tümü (${tasks.length})'
                             : '${_filter!.shortLabel} (${tasks.where((t) => t.status == _filter).length})',
+                        accent: _filter == null ? null : _statusColor(_filter!),
                         items: [
                           (
                             value: null,
@@ -1792,6 +1794,9 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                         valueLabel: _categoryFilter == null
                             ? 'Tümü'
                             : '$_categoryFilter (${tasks.where((t) => t.category.trim() == _categoryFilter).length})',
+                        accent: _categoryFilter == null
+                            ? null
+                            : TaskCategoryCatalog.accentFor(_categoryFilter!),
                         items: [
                           (value: null, label: 'Tüm kategoriler'),
                           for (final c in filterCategories)
@@ -2390,15 +2395,29 @@ class _TaskFilterDropdown<T> extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final hasSelection = selected != null;
-    final borderColor = accent ??
-        (hasSelection
-            ? theme.colorScheme.primary
-            : theme.colorScheme.outlineVariant);
+    final activeAccent =
+        accent ?? (hasSelection ? theme.colorScheme.primary : null);
+    final surfaceColor = hasSelection && activeAccent != null
+        ? Color.alphaBlend(
+            activeAccent.withValues(alpha: 0.2),
+            AppColors.cardSurface,
+          )
+        : AppColors.cardSurface;
+    final borderColor = hasSelection && activeAccent != null
+        ? activeAccent.withValues(alpha: 0.65)
+        : AppColors.cardBorderSubtle;
+    final captionColor = hasSelection && activeAccent != null
+        ? AppColors.readableSecondaryOn(surfaceColor)
+        : theme.colorScheme.onSurfaceVariant;
+    final valueColor = hasSelection && activeAccent != null
+        ? AppColors.statusInkOnCard(activeAccent)
+        : theme.colorScheme.onSurface;
 
     // PopupMenuButton null value'yu "iptal" sayar; "Tümü" (null) için indeks kullan.
     return PopupMenuButton<int>(
       padding: EdgeInsets.zero,
-      offset: const Offset(0, 40),
+      offset: const Offset(0, 44),
+      shape: RoundedRectangleBorder(borderRadius: AppRadii.md),
       onSelected: (index) => onSelected(items[index].value),
       itemBuilder: (ctx) => [
         for (var i = 0; i < items.length; i++)
@@ -2417,17 +2436,31 @@ class _TaskFilterDropdown<T> extends StatelessWidget {
             ),
           ),
       ],
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(8, 6, 6, 6),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 160),
+        padding: const EdgeInsets.fromLTRB(10, 8, 8, 8),
         decoration: BoxDecoration(
-          color: hasSelection && accent != null
-              ? accent!.withValues(alpha: 0.12)
-              : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+          color: surfaceColor,
           borderRadius: AppRadii.sm,
           border: Border.all(
-            color: borderColor.withValues(alpha: hasSelection ? 0.85 : 0.55),
+            color: borderColor,
             width: hasSelection ? 1.5 : 1,
           ),
+          boxShadow: hasSelection && activeAccent != null
+              ? [
+                  BoxShadow(
+                    color: activeAccent.withValues(alpha: 0.14),
+                    blurRadius: 10,
+                    offset: const Offset(0, 3),
+                  ),
+                ]
+              : [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.06),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -2438,14 +2471,32 @@ class _TaskFilterDropdown<T> extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: theme.textTheme.labelSmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
+                color: captionColor,
                 fontWeight: FontWeight.w600,
                 fontSize: 10,
+                letterSpacing: 0.2,
               ),
             ),
-            const SizedBox(height: 2),
+            const SizedBox(height: 4),
             Row(
               children: [
+                if (hasSelection && activeAccent != null) ...[
+                  Container(
+                    width: 7,
+                    height: 7,
+                    decoration: BoxDecoration(
+                      color: activeAccent,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: activeAccent.withValues(alpha: 0.45),
+                          blurRadius: 4,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                ],
                 Expanded(
                   child: Text(
                     valueLabel,
@@ -2453,14 +2504,14 @@ class _TaskFilterDropdown<T> extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: theme.textTheme.labelMedium?.copyWith(
                       fontWeight: FontWeight.w700,
-                      color: accent ?? theme.colorScheme.onSurface,
+                      color: valueColor,
                     ),
                   ),
                 ),
                 Icon(
                   Icons.expand_more,
                   size: 18,
-                  color: theme.colorScheme.onSurfaceVariant,
+                  color: captionColor,
                 ),
               ],
             ),
