@@ -348,8 +348,13 @@ class _ProductionPerformanceBarChartState
                   showLeftTitles: false,
                   touchedGroupX: _touchedGroupX,
                   onTouchedGroupX: (x) {
-                    if (_touchedGroupX == x) return;
-                    setState(() => _touchedGroupX = x);
+                    setState(() {
+                      if (x < 0) {
+                        _touchedGroupX = -1;
+                        return;
+                      }
+                      _touchedGroupX = _touchedGroupX == x ? -1 : x;
+                    });
                   },
                 ),
               ),
@@ -463,8 +468,7 @@ class _ProductionPerformanceBarChartState
           if (spot != null) {
             final x = spot.touchedBarGroup.x;
             if (event is FlTapUpEvent) {
-              // Aynı gruba tekrar tıklanınca seçim kalkar.
-              onTouchedGroupX(touchedGroupX == x ? -1 : x);
+              onTouchedGroupX(x);
             } else if (event is! FlTapDownEvent) {
               // Hover / sürükleme — seçimi uygula (tap-down atlanır; çift toggle olmasın).
               onTouchedGroupX(x);
