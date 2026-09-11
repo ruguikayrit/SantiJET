@@ -53,13 +53,23 @@ jobs:
         with:
           ref: staging
           path: staging-src
-          fetch-depth: 1
+          fetch-depth: 2
         continue-on-error: true
+
+      - name: Fetch this push range
+        if: github.event_name == 'push' && github.event.before != '0000000000000000000000000000000000000000'
+        continue-on-error: true
+        run: git -C staging-src fetch --no-tags --depth=50 origin ${{ github.event.before }}
 
       - name: Detect changed apps
         uses: dorny/paths-filter@v3
         id: filter
         with:
+          # Checkout HEAD'i main; karşılaştırma staging push aralığı olmalı.
+          # base=before + ref=sha → yalnızca bu push'taki dosyalar (main...staging değil).
+          working-directory: staging-src
+          base: ${{ github.event_name == 'push' && github.event.before || github.sha }}
+          ref: ${{ github.sha }}
           filters: |
             demir:
               - 'artifacts/santijet-demir/**'
@@ -82,7 +92,8 @@ jobs:
             is_programi:
               - 'artifacts/santijet-is-programi/**'
             deploy_infra:
-              - '.github/workflows/deploy-github-pages.yml'
+              # Build çıktısını değiştiren betikler. Yalnızca workflow YAML
+              # değişince tüm app'leri yeniden derleme (hızlı önizleme).
               - '.github/scripts/**'
 
       - name: Prepare site directory
@@ -725,16 +736,17 @@ jobs:
       - name: Incremental build plan summary
         run: |
           echo "Deploy plan (build=true → derlendi, build=false → önbellekten alındı):"
-          echo "  DEMİR:        ${{ steps.plan-demir.outputs.build }}"
-          echo "  Maliyet:      ${{ steps.plan-maliyet.outputs.build }}"
-          echo "  Puantaj:      ${{ steps.plan-puantaj.outputs.build }}"
-          echo "  Beton:        ${{ steps.plan-beton.outputs.build }}"
-          echo "  Malzeme:      ${{ steps.plan-malzeme.outputs.build }}"
-          echo "  PRO:          ${{ steps.plan-pro.outputs.build }}"
-          echo "  Mühendis:     ${{ steps.plan-muhendis.outputs.build }}"
-          echo "  Tahvil:       ${{ steps.plan-tahvil.outputs.build }}"
-          echo "  Kasa:         ${{ steps.plan-kasa.outputs.build }}"
-          echo "  İş Programı:  ${{ steps.plan-is-programi.outputs.build }}"
+          echo "  DEMİR:        ${{ steps.plan-demir.outputs.build }} (changed=${{ steps.filter.outputs.demir }})"
+          echo "  Maliyet:      ${{ steps.plan-maliyet.outputs.build }} (changed=${{ steps.filter.outputs.maliyet }})"
+          echo "  Puantaj:      ${{ steps.plan-puantaj.outputs.build }} (changed=${{ steps.filter.outputs.puantaj }})"
+          echo "  Beton:        ${{ steps.plan-beton.outputs.build }} (changed=${{ steps.filter.outputs.beton }})"
+          echo "  Malzeme:      ${{ steps.plan-malzeme.outputs.build }} (changed=${{ steps.filter.outputs.malzeme }})"
+          echo "  PRO:          ${{ steps.plan-pro.outputs.build }} (changed=${{ steps.filter.outputs.pro }})"
+          echo "  Mühendis:     ${{ steps.plan-muhendis.outputs.build }} (changed=${{ steps.filter.outputs.muhendis }})"
+          echo "  Tahvil:       ${{ steps.plan-tahvil.outputs.build }} (changed=${{ steps.filter.outputs.tahvil }})"
+          echo "  Kasa:         ${{ steps.plan-kasa.outputs.build }} (changed=${{ steps.filter.outputs.kasa }})"
+          echo "  İş Programı:  ${{ steps.plan-is-programi.outputs.build }} (changed=${{ steps.filter.outputs.is_programi }})"
+          echo "  Infra:        changed=${{ steps.filter.outputs.deploy_infra }}"
 
       - name: Verify site bundle
         run: |
