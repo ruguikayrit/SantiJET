@@ -16,7 +16,7 @@ import '../../domain/catalogs/production_work_group.dart';
 import '../../domain/models/production_team_group.dart';
 import '../imalat/widgets/production_chart_panel.dart';
 import '../imalat/widgets/production_group_summary_strip.dart';
-import 'widgets/verim_card_colors.dart';
+import '../../core/theme/production_list_row_colors.dart';
 import 'widgets/verim_production_detail_sheet.dart';
 
 /// Verim — grafik + ekip özeti + ad/% listesi (detay İmalat kartında).
@@ -317,7 +317,7 @@ class _VerimNamePercentCardState extends State<_VerimNamePercentCard> {
     final row = widget.row;
     final efficiency = row.unitEfficiency;
     final hasEntries = row.production.dailyEntries.isNotEmpty;
-    final cardBg = VerimCardColors.at(widget.colorIndex);
+    final cardBg = ProductionListRowColors.at(widget.colorIndex);
 
     return SJCard.builder(
       backgroundColor: cardBg,

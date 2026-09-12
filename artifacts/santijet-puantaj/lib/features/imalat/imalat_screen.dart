@@ -11,6 +11,7 @@ import '../../core/theme/app_layout.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_radii.dart';
 import '../../core/theme/app_spacing.dart';
+import '../../core/theme/production_list_row_colors.dart';
 import '../../core/utils/puantaj_date.dart';
 import '../../core/widgets/production_triple_progress.dart';
 import '../../core/widgets/santijet_header.dart';
@@ -107,9 +108,10 @@ class _ImalatScreenState extends ConsumerState<ImalatScreen> {
     return map;
   }
 
-  Widget _productionCard(Production p) {
+  Widget _productionCard(Production p, {required int index}) {
     final title = p.name.trim().isEmpty ? 'İmalat' : p.name.trim();
     return SJCard(
+      backgroundColor: ProductionListRowColors.at(index),
       child: Builder(
         builder: (context) {
           final theme = Theme.of(context);
@@ -360,7 +362,7 @@ class _ImalatScreenState extends ConsumerState<ImalatScreen> {
         else
           for (var i = 0; i < filteredItems.length; i++) ...[
             if (i > 0) const SizedBox(height: AppSpacing.sm),
-            _productionCard(filteredItems[i]),
+            _productionCard(filteredItems[i], index: i),
           ],
       ],
     );
