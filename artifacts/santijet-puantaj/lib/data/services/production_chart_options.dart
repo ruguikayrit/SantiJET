@@ -25,6 +25,12 @@ enum ImalatChartMetric {
         teamProgress => 'Ekip ilerlemesi',
         metrajPlanActual => 'Metraj plan / gerçek',
       };
+
+  String get hint => switch (this) {
+        phaseShare => 'Bekleyen, devam eden ve tamamlanan imalat sayısı',
+        teamProgress => 'Ekiplere göre ortalama metraj ilerlemesi (%)',
+        metrajPlanActual => 'Seçili listede toplam plan ve gerçekleşen metraj',
+      };
 }
 
 /// Verim grafiğinde ne gösterilsin.
@@ -37,6 +43,13 @@ enum VerimChartMetric {
         teamEfficiency => 'Ekip verimi',
         laborPlanActual => 'Adam-gün',
         rowEfficiency => 'İmalat verimi',
+      };
+
+  String get hint => switch (this) {
+        teamEfficiency =>
+          'Her ekip için birim verim ortalaması (planlı metraj / AG)',
+        laborPlanActual => 'Tüm imalatlarda plan ve gerçekleşen adam-gün',
+        rowEfficiency => 'Her imalat satırının birim verim yüzdesi',
       };
 }
 

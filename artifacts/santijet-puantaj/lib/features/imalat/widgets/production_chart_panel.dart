@@ -2,7 +2,6 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/design_system/sj_button.dart';
 import '../../../core/design_system/sj_card.dart';
 import '../../../core/design_system/sj_modal.dart';
 import '../../../core/theme/app_colors.dart';
@@ -472,110 +471,300 @@ class _ChartSettingsSheet extends StatefulWidget {
 class _ChartSettingsSheetState extends State<_ChartSettingsSheet> {
   late ProductionChartOptions _options = widget.initial;
 
+  ProductionChartKind get _kind =>
+      widget.forVerim ? _options.verimKind : _options.imalatKind;
+
+  String get _metricLabel => widget.forVerim
+      ? _options.verimMetric.label
+      : _options.imalatMetric.label;
+
+  String get _metricHint => widget.forVerim
+      ? _options.verimMetric.hint
+      : _options.imalatMetric.hint;
+
+  void _setKind(ProductionChartKind kind) {
+    setState(() {
+      _options = widget.forVerim
+          ? _options.copyWith(verimKind: kind)
+          : _options.copyWith(imalatKind: kind);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return SafeArea(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            'Grafik ayarları',
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w700,
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              'Grafik ayarları',
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
             ),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          Text(
-            'Son seçimler hatırlanır.',
-            style: theme.textTheme.labelMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              'Tür ve veri kaynağını seçin. Son seçimler hatırlanır.',
+              style: theme.textTheme.labelMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
             ),
-          ),
-          const SizedBox(height: AppSpacing.md),
-          Text('Grafik türü', style: theme.textTheme.labelLarge),
-          const SizedBox(height: AppSpacing.sm),
-          Wrap(
-            spacing: AppSpacing.xs,
-            runSpacing: AppSpacing.xs,
-            children: [
-              for (final kind in ProductionChartKind.values)
-                FilterChip(
-                  showCheckmark: false,
-                  label: Text(kind.label),
-                  selected: (widget.forVerim
-                          ? _options.verimKind
-                          : _options.imalatKind) ==
-                      kind,
-                  onSelected: (_) => setState(() {
-                    _options = widget.forVerim
-                        ? _options.copyWith(verimKind: kind)
-                        : _options.copyWith(imalatKind: kind);
-                  }),
+            const SizedBox(height: AppSpacing.md),
+            _ChartSettingsPreviewCard(
+              metricLabel: _metricLabel,
+              kindLabel: _kind.label,
+              kindHint: _kind.hint,
+              metricHint: _metricHint,
+            ),
+            const SizedBox(height: AppSpacing.md),
+            Text(
+              'Grafik türü',
+              style: theme.textTheme.labelLarge?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            SegmentedButton<ProductionChartKind>(
+              segments: [
+                for (final kind in ProductionChartKind.values)
+                  ButtonSegment(
+                    value: kind,
+                    label: Text(kind.label),
+                    icon: Icon(
+                      kind == ProductionChartKind.pie
+                          ? Icons.pie_chart_outline
+                          : Icons.align_horizontal_left,
+                      size: 18,
+                    ),
+                  ),
+              ],
+              selected: {_kind},
+              onSelectionChanged: (next) {
+                if (next.isEmpty) return;
+                _setKind(next.first);
+              },
+              style: ButtonStyle(
+                visualDensity: VisualDensity.compact,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.only(top: AppSpacing.xs),
+              child: Text(
+                _kind.hint,
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
                 ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.md),
-          Text('Veri', style: theme.textTheme.labelLarge),
-          const SizedBox(height: AppSpacing.sm),
-          if (widget.forVerim)
+              ),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            Text(
+              'Veri',
+              style: theme.textTheme.labelLarge?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            if (widget.forVerim)
+              for (final m in VerimChartMetric.values)
+                _ChartMetricTile(
+                  title: m.label,
+                  subtitle: m.hint,
+                  selected: _options.verimMetric == m,
+                  onTap: () => setState(
+                    () => _options = _options.copyWith(verimMetric: m),
+                  ),
+                )
+            else
+              for (final m in ImalatChartMetric.values)
+                _ChartMetricTile(
+                  title: m.label,
+                  subtitle: m.hint,
+                  selected: _options.imalatMetric == m,
+                  onTap: () => setState(
+                    () => _options = _options.copyWith(imalatMetric: m),
+                  ),
+                ),
+            const SizedBox(height: AppSpacing.lg),
             Row(
               children: [
-                for (var i = 0; i < VerimChartMetric.values.length; i++)
-                  Expanded(
-                    child: Padding(
-                      padding: EdgeInsets.only(
-                        right: i < VerimChartMetric.values.length - 1
-                            ? AppSpacing.xs
-                            : 0,
-                      ),
-                      child: FilterChip(
-                        showCheckmark: false,
-                        materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        visualDensity: VisualDensity.compact,
-                        label: Text(
-                          VerimChartMetric.values[i].label,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          textAlign: TextAlign.center,
-                          style: theme.textTheme.labelSmall,
-                        ),
-                        selected:
-                            _options.verimMetric == VerimChartMetric.values[i],
-                        onSelected: (_) => setState(
-                          () => _options = _options.copyWith(
-                            verimMetric: VerimChartMetric.values[i],
-                          ),
-                        ),
-                      ),
-                    ),
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('İptal'),
                   ),
-              ],
-            )
-          else
-            Wrap(
-              spacing: AppSpacing.xs,
-              runSpacing: AppSpacing.xs,
-              children: [
-                for (final m in ImalatChartMetric.values)
-                  FilterChip(
-                    showCheckmark: false,
-                    label: Text(m.label),
-                    selected: _options.imalatMetric == m,
-                    onSelected: (_) => setState(
-                      () => _options = _options.copyWith(imalatMetric: m),
-                    ),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: FilledButton(
+                    onPressed: () => Navigator.pop(context, _options),
+                    child: const Text('Uygula'),
                   ),
+                ),
               ],
             ),
-          const SizedBox(height: AppSpacing.md),
-          SJButton(
-            label: 'Uygula',
-            expanded: true,
-            onPressed: () => Navigator.pop(context, _options),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ChartSettingsPreviewCard extends StatelessWidget {
+  const _ChartSettingsPreviewCard({
+    required this.metricLabel,
+    required this.kindLabel,
+    required this.kindHint,
+    required this.metricHint,
+  });
+
+  final String metricLabel;
+  final String kindLabel;
+  final String kindHint;
+  final String metricHint;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.65),
+        borderRadius: AppRadii.sm,
+        border: Border.all(
+          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.45),
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            Icons.insights_outlined,
+            size: 22,
+            color: theme.colorScheme.primary,
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Önizleme',
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '$metricLabel · $kindLabel',
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  metricHint,
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                    height: 1.35,
+                  ),
+                ),
+                Text(
+                  kindHint,
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                    height: 1.35,
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _ChartMetricTile extends StatelessWidget {
+  const _ChartMetricTile({
+    required this.title,
+    required this.subtitle,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String title;
+  final String subtitle;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final borderColor = selected
+        ? theme.colorScheme.primary
+        : theme.colorScheme.outlineVariant.withValues(alpha: 0.5);
+    final fill = selected
+        ? theme.colorScheme.primary.withValues(alpha: 0.08)
+        : theme.colorScheme.surface;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+      child: Material(
+        color: fill,
+        borderRadius: AppRadii.sm,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: AppRadii.sm,
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: AppRadii.sm,
+              border: Border.all(color: borderColor, width: selected ? 1.5 : 1),
+            ),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.sm,
+              vertical: AppSpacing.sm,
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  selected
+                      ? Icons.radio_button_checked
+                      : Icons.radio_button_off,
+                  size: 20,
+                  color: selected
+                      ? theme.colorScheme.primary
+                      : theme.colorScheme.onSurfaceVariant,
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: theme.textTheme.labelLarge?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      Text(
+                        subtitle,
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                          height: 1.3,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
