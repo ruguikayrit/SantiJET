@@ -398,8 +398,8 @@ class _VerimOrumcekOzetChart extends StatelessWidget {
                 final planStr = a.hasPlan ? _fmt(a.plan) : '—';
                 return RadarChartTitle(
                   text: '$actualStr / $planStr\n${a.title}',
-                  angle: angle,
-                  positionPercentageOffset: 0.08,
+                  angle: 0,
+                  positionPercentageOffset: 0.14,
                 );
               },
               dataSets: [
