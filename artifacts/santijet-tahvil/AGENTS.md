@@ -31,6 +31,12 @@ DEMİR tahvil motoru ile aynı saha kuralları; kopyala-yapıştır başka ürü
 - Aralık ≤ 25 cm
 - Standart çap: 8, 10, 12, 14, 16, 18, 20, 22, 25, 28, 32, 36, 40, 50
 
+## Eleman motoru
+
+Hesap üstünde **Saha · Temel · Kolon · Kiriş · Döşeme**. Saha mevcut 1 çeşit / 2 çeşit motorudur; bozulmaz.
+
+Yeni motor `lib/domain/engine/**`: ortak As/yerleşim servisleri + elemana özgü hesaplayıcılar + `RegulationCatalog` (TS 500 / TBDY 2018). Karar kg eşitliği değildir. Sonuç üç seviyeli: UYGUN / UYGUN DEĞİL / MÜHENDİS KONTROLÜ GEREKLİ. Mutlak “statik olarak kesinlikle güvenli” ifadesi yok.
+
 ## Git / deploy
 
 Dal: `staging`. Commit mesajı `feat(tahvil):` / `fix(tahvil):` / `docs(tahvil):`.

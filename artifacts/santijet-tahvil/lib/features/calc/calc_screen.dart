@@ -11,9 +11,15 @@ import '../../core/widgets/santijet_header.dart';
 import '../../core/widgets/tahvil_hero_card.dart';
 import '../../data/rebar_weight.dart';
 import '../../data/records_store.dart';
+import '../../domain/engine/engine.dart';
 import '../../domain/tahvil_calculator.dart';
 import '../../domain/tahvil_record.dart';
 import '../../domain/tahvil_rules.dart';
+import 'engine/beam_panel.dart';
+import 'engine/column_panel.dart';
+import 'engine/engine_form_widgets.dart';
+import 'engine/foundation_panel.dart';
+import 'engine/slab_panel.dart';
 
 /// Saha tahvil hesaplayıcısı — canlı sonuç, tek dokunuşla kayıt.
 class CalcScreen extends ConsumerStatefulWidget {
@@ -24,6 +30,7 @@ class CalcScreen extends ConsumerStatefulWidget {
 }
 
 class _CalcScreenState extends ConsumerState<CalcScreen> {
+  TahvilModule _module = TahvilModule.saha;
   TahvilBarKind _kind = TahvilBarKind.one;
   TahvilMeasure _measure = TahvilMeasure.spacing;
 
@@ -75,7 +82,9 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
     final record = TahvilRecord(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       createdAt: DateTime.now(),
-      basis: '${_kind.label} · ${_measure.label}',
+      basis: _module == TahvilModule.saha
+          ? '${_kind.label} · ${_measure.label}'
+          : _module.label,
       summary: summary,
       detail: detail,
       isAllowed: allowed,
@@ -109,6 +118,12 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
                 children: [
+                  EngineModuleBar(
+                    selected: _module,
+                    onChanged: (value) => setState(() => _module = value),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  if (_module == TahvilModule.saha) ...[
                   _KindHeadings(
                     selected: _kind,
                     onChanged: (value) => setState(() => _kind = value),
@@ -163,6 +178,15 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
                         onSave: _save,
                       ),
                   },
+                  ] else
+                    switch (_module) {
+                      TahvilModule.foundation =>
+                        FoundationPanel(onSave: _save),
+                      TahvilModule.column => ColumnPanel(onSave: _save),
+                      TahvilModule.beam => BeamPanel(onSave: _save),
+                      TahvilModule.slab => SlabPanel(onSave: _save),
+                      TahvilModule.saha => const SizedBox.shrink(),
+                    },
                 ],
               ),
             ),

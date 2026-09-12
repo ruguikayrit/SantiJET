@@ -15,6 +15,9 @@ Turuncu **STAGING ÖNİZLEME** şeridi yok: `build-tahvil-pages.sh` `#santijet-s
 
 - Alt nav: **Hesap · Teknik · Kayıtlar**. Ayarlar navda yok
   (`SantijetHeader` dişli → `/ayarlar`). Teknik: birim ağırlık tablosu.
+- Hesap üst seçim: Saha (kilitli 1 çeşit / 2 çeşit) · Temel · Kolon ·
+  Kiriş · Döşeme. Eleman motoru `lib/domain/engine/**`; saha formülünü
+  bozma. kg eşitliği karar değildir.
 - Bildirim zili ve avatar yok.
 - Abonelik / hesap / bulut yok. Hive `tahvil_` önekli.
 - DEMİR fire analizi veya sipariş ekranını kopyalama. Tahvil hesabını

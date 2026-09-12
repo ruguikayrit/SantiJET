@@ -108,11 +108,17 @@ class SettingsScreen extends ConsumerWidget {
                 Text('Tahvil kuralları', style: AppTypography.cardLabelMedium),
                 const SizedBox(height: AppSpacing.sm),
                 Text(
+                  'Saha (1 çeşit / 2 çeşit):\n'
                   '• Çap farkı en fazla ±$tahvilMaxDiameterDiffMm mm\n'
                   '• Hedef kesit proje kesitine eşit veya büyük\n'
                   '• Fazla kesit en fazla %${(tahvilMaxAreaDeviationRatio * 100).toStringAsFixed(0)}\n'
                   '• Donatı aralığı en fazla ${tahvilMaxSpacingCm.toStringAsFixed(0)} cm\n'
-                  '• Standart çaplar: Ø8–Ø50',
+                  '• Standart çaplar: Ø8–Ø50\n\n'
+                  'Eleman motoru (Temel / Kolon / Kiriş / Döşeme):\n'
+                  '• As, aralık, yerleşim ve minimum/maksimum koşullar birlikte\n'
+                  '• kg eşitliği karar kriteri değildir\n'
+                  '• Sonuç: UYGUN / UYGUN DEĞİL / MÜHENDİS KONTROLÜ GEREKLİ\n'
+                  '• Statik proje ve müellif onayının yerine geçmez',
                   style: AppTypography.cardBodyMedium.copyWith(height: 1.45),
                 ),
               ],
