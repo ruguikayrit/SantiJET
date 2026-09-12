@@ -32,7 +32,6 @@ import '../../domain/models/team_imalat_summary.dart';
 import 'widgets/imalat_team_summary_strip.dart';
 import 'widgets/production_group_summary_strip.dart';
 import 'widgets/production_performance_bar_chart.dart';
-import 'widgets/production_performance_line_chart.dart';
 
 enum _ImalatPhase {
   bekleyen,
@@ -535,7 +534,7 @@ List<String> imalatTeamOptions(WidgetRef ref) {
     ..sort();
 }
 
-/// Günlük kayıtlar, ilerleme ve çizgi grafik — imalat bilgileri formundan ayrı.
+/// Günlük kayıt listesi — imalat bilgileri formundan ayrı (grafik yok).
 Future<void> openImalatProductionDetail(
   BuildContext context,
   WidgetRef ref, {
@@ -1251,10 +1250,6 @@ class _ImalatDetailSheetState extends ConsumerState<_ImalatDetailSheet> {
               dense: false,
               colorMode: ProductionProgressColorMode.axisFillIntensity,
             ),
-            if (p.dailyEntries.isNotEmpty) ...[
-              const SizedBox(height: AppSpacing.md),
-              ProductionPerformanceLineChart(production: p),
-            ],
             const SizedBox(height: AppSpacing.md),
             Row(
               children: [
