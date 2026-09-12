@@ -235,7 +235,7 @@ class _TeamVerimSummaryStrip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 108,
+      height: 132,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: summaries.length,
@@ -246,7 +246,7 @@ class _TeamVerimSummaryStrip extends StatelessWidget {
           final selected = selectedTeam == s.groupKey;
 
           return SizedBox(
-            width: 168,
+            width: 200,
             child: SJCard.builder(
               selected: selected,
               accentColor: selected ? AppColors.electricBlue : null,

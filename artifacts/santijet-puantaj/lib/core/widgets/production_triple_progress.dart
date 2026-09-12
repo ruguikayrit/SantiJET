@@ -81,6 +81,7 @@ class ProductionTripleProgress extends StatelessWidget {
     List<ProductionProgressAxis>? axes,
     this.dense = true,
     this.showPctLabels = true,
+    this.fitStripLabelRow = false,
     this.colorMode = ProductionProgressColorMode.completionThreshold,
   })  : assert(metrics != null || axes != null),
         _metrics = metrics,
@@ -102,6 +103,9 @@ class ProductionTripleProgress extends StatelessWidget {
   final List<ProductionProgressAxis>? _axes;
   final bool dense;
   final bool showPctLabels;
+
+  /// Özet şerit kartları — değer satırı kırpılmadan sığdırılır (FittedBox).
+  final bool fitStripLabelRow;
   final ProductionProgressColorMode colorMode;
 
   List<ProductionProgressAxis> get _resolvedAxes =>
@@ -125,6 +129,7 @@ class ProductionTripleProgress extends StatelessWidget {
             barHeight: barH,
             labelStyle: labelStyle,
             showPct: showPctLabels,
+            fitStripLabelRow: fitStripLabelRow,
             colorMode: colorMode,
           ),
         ],
@@ -139,6 +144,7 @@ class _CompletionProgressLine extends StatelessWidget {
     required this.barHeight,
     required this.labelStyle,
     required this.showPct,
+    required this.fitStripLabelRow,
     required this.colorMode,
   });
 
@@ -146,7 +152,10 @@ class _CompletionProgressLine extends StatelessWidget {
   final double barHeight;
   final TextStyle? labelStyle;
   final bool showPct;
+  final bool fitStripLabelRow;
   final ProductionProgressColorMode colorMode;
+
+  static const _stripLabelWidth = 68.0;
 
   Color _barColor(double pct) {
     if (!axis.hasPlan) return AppColors.cardTextMuted;
@@ -171,23 +180,55 @@ class _CompletionProgressLine extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              axis.label,
-              style: labelStyle?.copyWith(fontWeight: FontWeight.w700),
-            ),
-            const SizedBox(width: AppSpacing.xs),
-            Expanded(
-              child: Text(
-                axis.detail,
-                style: labelStyle?.copyWith(
-                  color: axis.hasPlan
-                      ? labelStyle?.color
-                      : AppColors.cardTextMuted,
+            if (fitStripLabelRow)
+              SizedBox(
+                width: _stripLabelWidth,
+                child: Text(
+                  axis.label,
+                  maxLines: 2,
+                  style: labelStyle?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    height: 1.15,
+                  ),
                 ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+              )
+            else
+              Text(
+                axis.label,
+                style: labelStyle?.copyWith(fontWeight: FontWeight.w700),
               ),
+            if (!fitStripLabelRow) const SizedBox(width: AppSpacing.xs),
+            Expanded(
+              child: fitStripLabelRow
+                  ? Align(
+                      alignment: Alignment.centerLeft,
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          axis.detail,
+                          maxLines: 1,
+                          softWrap: false,
+                          style: labelStyle?.copyWith(
+                            color: axis.hasPlan
+                                ? labelStyle?.color
+                                : AppColors.cardTextMuted,
+                          ),
+                        ),
+                      ),
+                    )
+                  : Text(
+                      axis.detail,
+                      style: labelStyle?.copyWith(
+                        color: axis.hasPlan
+                            ? labelStyle?.color
+                            : AppColors.cardTextMuted,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
             ),
             if (showPct && axis.hasPlan)
               Text(

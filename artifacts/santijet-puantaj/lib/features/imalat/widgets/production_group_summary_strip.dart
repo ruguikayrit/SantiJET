@@ -26,7 +26,7 @@ class ProductionGroupSummaryStrip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 132,
+      height: 148,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: summaries.length,
@@ -78,6 +78,7 @@ class ProductionGroupSummaryStrip extends StatelessWidget {
                         axes: s.axes,
                         dense: true,
                         showPctLabels: false,
+                        fitStripLabelRow: true,
                         colorMode:
                             ProductionProgressColorMode.axisFillIntensity,
                       ),

@@ -72,6 +72,7 @@ class ImalatTeamSummaryStrip extends StatelessWidget {
                         axes: s.axes,
                         dense: true,
                         showPctLabels: false,
+                        fitStripLabelRow: true,
                         colorMode: ProductionProgressColorMode.axisFillIntensity,
                       ),
                     ),
