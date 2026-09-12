@@ -8,8 +8,10 @@ import '../../../core/widgets/production_triple_progress.dart';
 import '../../../domain/entities/production.dart';
 import '../../../domain/models/production_metrics.dart';
 
-/// Verim imalat satırı — metraj · süre · adam-gün · verim (alt alta).
-class VerimProductionCharts extends StatelessWidget {
+enum _VerimProductionChartMode { cizgisel, orumcekOzet }
+
+/// Verim imalat satırı — metraj · süre · adam-gün · verim (alt alta veya örümcek özet).
+class VerimProductionCharts extends StatefulWidget {
   const VerimProductionCharts({
     required this.production,
     super.key,
@@ -23,7 +25,15 @@ class VerimProductionCharts extends StatelessWidget {
   final bool inline;
   final double chartHeight;
 
+  @override
+  State<VerimProductionCharts> createState() => _VerimProductionChartsState();
+}
+
+class _VerimProductionChartsState extends State<VerimProductionCharts> {
+  _VerimProductionChartMode _mode = _VerimProductionChartMode.cizgisel;
+
   List<_VerimTimelinePoint> _timeline() {
+    final production = widget.production;
     final byDay = <DateTime, ({double qty, double labor})>{};
     for (final e in production.dailyEntries) {
       final d = PuantajDate.tryParse(e.date);
@@ -88,6 +98,7 @@ class VerimProductionCharts extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final production = widget.production;
     final points = _timeline();
     final metrics = ProductionMetrics(production);
     final unit = production.unit.trim();
@@ -107,7 +118,7 @@ class VerimProductionCharts extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (!inline) ...[
+        if (!widget.inline) ...[
           Text(
             team,
             style: theme.textTheme.labelMedium?.copyWith(
@@ -124,10 +135,49 @@ class VerimProductionCharts extends StatelessWidget {
           ],
           const SizedBox(height: AppSpacing.md),
         ],
+        SegmentedButton<_VerimProductionChartMode>(
+          segments: const [
+            ButtonSegment(
+              value: _VerimProductionChartMode.cizgisel,
+              label: Text('Çizgisel'),
+              icon: Icon(Icons.show_chart_outlined, size: 18),
+            ),
+            ButtonSegment(
+              value: _VerimProductionChartMode.orumcekOzet,
+              label: Text('Örümcek özet'),
+              icon: Icon(Icons.radar_outlined, size: 18),
+            ),
+          ],
+          selected: {_mode},
+          onSelectionChanged: (next) {
+            if (next.isEmpty) return;
+            setState(() => _mode = next.first);
+          },
+          style: ButtonStyle(
+            visualDensity: VisualDensity.compact,
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          ),
+        ),
+        const SizedBox(height: AppSpacing.md),
+        if (_mode == _VerimProductionChartMode.orumcekOzet) ...[
+          _VerimOrumcekOzetChart(
+            points: points,
+            metrics: metrics,
+            unit: unit,
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            'Son güne kadar kümülatif süre, metraj ve adam-gün; verim birim '
+            'verim yüzdesidir. Eksenler plana göre 100 üzerinden ölçeklenir.',
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ] else ...[
         _VerimChartSection(
           title: 'Süre · Çalışılan gün',
           points: points,
-          height: chartHeight,
+          height: widget.chartHeight,
           unitSuffix: ' gün',
           primaryValue: (p) => p.cumulativeWorkedDays,
           secondaryValue: (p) => p.plannedCumulativeWorkedDays,
@@ -139,7 +189,7 @@ class VerimProductionCharts extends StatelessWidget {
         _VerimChartSection(
           title: 'Metraj · Kümülatif',
           points: points,
-          height: chartHeight,
+          height: widget.chartHeight,
           unitSuffix: unit.isEmpty ? '' : ' $unit',
           primaryValue: (p) => p.cumulativeQty,
           secondaryValue: (p) => p.plannedCumulativeQty,
@@ -151,7 +201,7 @@ class VerimProductionCharts extends StatelessWidget {
         _VerimChartSection(
           title: 'Adam-gün · Kümülatif',
           points: points,
-          height: chartHeight,
+          height: widget.chartHeight,
           unitSuffix: ' AG',
           primaryValue: (p) => p.cumulativeLabor,
           secondaryValue: (p) => p.plannedCumulativeLabor,
@@ -163,7 +213,7 @@ class VerimProductionCharts extends StatelessWidget {
         _VerimChartSection(
           title: 'Verim · Birim verim',
           points: points,
-          height: chartHeight,
+          height: widget.chartHeight,
           unitSuffix: '%',
           primaryValue: (p) => p.efficiencyPct,
           secondaryValue: (_) => 100,
@@ -180,7 +230,237 @@ class VerimProductionCharts extends StatelessWidget {
             color: theme.colorScheme.onSurfaceVariant,
           ),
         ),
+        ],
       ],
+    );
+  }
+}
+
+class _VerimOrumcekAxis {
+  const _VerimOrumcekAxis({
+    required this.title,
+    required this.actual,
+    required this.plan,
+    required this.hasPlan,
+    required this.actualRadar,
+    required this.planRadar,
+  });
+
+  final String title;
+  final double actual;
+  final double plan;
+  final bool hasPlan;
+  final double actualRadar;
+  final double planRadar;
+}
+
+class _VerimOrumcekOzetChart extends StatelessWidget {
+  const _VerimOrumcekOzetChart({
+    required this.points,
+    required this.metrics,
+    required this.unit,
+  });
+
+  final List<_VerimTimelinePoint> points;
+  final ProductionMetrics metrics;
+  final String unit;
+
+  static const _radarMax = 120.0;
+
+  static String _fmt(double v) {
+    if (v == v.roundToDouble()) return v.toStringAsFixed(0);
+    return v.toStringAsFixed(1);
+  }
+
+  static double _pctOfPlan(double actual, double plan) {
+    if (plan <= 0) return actual > 0 ? 50 : 0;
+    return (actual / plan * 100).clamp(0, _radarMax);
+  }
+
+  List<_VerimOrumcekAxis> _axes() {
+    final last = points.last;
+    final eff = last.efficiencyPct;
+    return [
+      _VerimOrumcekAxis(
+        title: 'SÜRE',
+        actual: last.cumulativeWorkedDays,
+        plan: last.plannedCumulativeWorkedDays,
+        hasPlan: metrics.sure.hasPlan,
+        actualRadar: _pctOfPlan(
+          last.cumulativeWorkedDays,
+          last.plannedCumulativeWorkedDays,
+        ),
+        planRadar: metrics.sure.hasPlan ? 100 : 0,
+      ),
+      _VerimOrumcekAxis(
+        title: 'METRAJ',
+        actual: last.cumulativeQty,
+        plan: last.plannedCumulativeQty,
+        hasPlan: metrics.metraj.hasPlan,
+        actualRadar: _pctOfPlan(last.cumulativeQty, last.plannedCumulativeQty),
+        planRadar: metrics.metraj.hasPlan ? 100 : 0,
+      ),
+      _VerimOrumcekAxis(
+        title: 'ADAM-GÜN',
+        actual: last.cumulativeLabor,
+        plan: last.plannedCumulativeLabor,
+        hasPlan: metrics.labor.hasPlan,
+        actualRadar:
+            _pctOfPlan(last.cumulativeLabor, last.plannedCumulativeLabor),
+        planRadar: metrics.labor.hasPlan ? 100 : 0,
+      ),
+      _VerimOrumcekAxis(
+        title: 'VERİM',
+        actual: eff ?? 0,
+        plan: 100,
+        hasPlan: metrics.canComputeEfficiency && eff != null,
+        actualRadar: eff != null ? eff.clamp(0, _radarMax) : 0,
+        planRadar: metrics.canComputeEfficiency ? 100 : 0,
+      ),
+    ];
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final axes = _axes();
+    final planEntries = [
+      for (final a in axes) RadarEntry(value: a.planRadar),
+    ];
+    final actualEntries = [
+      for (final a in axes) RadarEntry(value: a.actualRadar),
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Center(
+          child: Wrap(
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: AppSpacing.sm,
+            runSpacing: AppSpacing.xs,
+            children: [
+              _SpiderLegendChip(
+                color: AppColors.electricBlue,
+                label: 'Gerçekleşen',
+              ),
+              Text(
+                '·',
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+              _SpiderLegendChip(
+                color: AppColors.warning,
+                label: 'Planlanan',
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        SizedBox(
+          height: 300,
+          child: RadarChart(
+            RadarChartData(
+              radarShape: RadarShape.polygon,
+              tickCount: 4,
+              ticksTextStyle: theme.textTheme.labelSmall?.copyWith(
+                fontSize: 9,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+              titleTextStyle: theme.textTheme.labelSmall?.copyWith(
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+                height: 1.25,
+              ),
+              titlePositionPercentageOffset: 0.12,
+              radarBackgroundColor: Colors.transparent,
+              radarBorderData: BorderSide(
+                color: theme.colorScheme.outlineVariant.withValues(alpha: 0.4),
+                width: 1,
+              ),
+              gridBorderData: BorderSide(
+                color: theme.colorScheme.outlineVariant.withValues(alpha: 0.35),
+                width: 1,
+              ),
+              tickBorderData: BorderSide(
+                color: theme.colorScheme.outlineVariant.withValues(alpha: 0.25),
+                width: 1,
+              ),
+              getTitle: (index, angle) {
+                if (index < 0 || index >= axes.length) {
+                  return RadarChartTitle(text: '', angle: angle);
+                }
+                final a = axes[index];
+                final actualStr = a.title == 'VERİM'
+                    ? (a.hasPlan ? _fmt(a.actual) : '—')
+                    : _fmt(a.actual);
+                final planStr = a.hasPlan ? _fmt(a.plan) : '—';
+                return RadarChartTitle(
+                  text: '$actualStr / $planStr\n${a.title}',
+                  angle: angle,
+                  positionPercentageOffset: 0.08,
+                );
+              },
+              dataSets: [
+                RadarDataSet(
+                  fillColor: AppColors.warning.withValues(alpha: 0.18),
+                  borderColor: AppColors.warning.withValues(alpha: 0.95),
+                  borderWidth: 2,
+                  entryRadius: 2.5,
+                  dataEntries: planEntries,
+                ),
+                RadarDataSet(
+                  fillColor: AppColors.electricBlue.withValues(alpha: 0.22),
+                  borderColor: AppColors.electricBlue,
+                  borderWidth: 2.5,
+                  entryRadius: 3,
+                  dataEntries: actualEntries,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _SpiderLegendChip extends StatelessWidget {
+  const _SpiderLegendChip({required this.color, required this.label});
+
+  final Color color;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.6),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: theme.textTheme.labelSmall?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
