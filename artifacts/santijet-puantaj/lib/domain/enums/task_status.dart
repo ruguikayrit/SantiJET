@@ -7,7 +7,7 @@ enum TaskStatus {
 
   String get label => switch (this) {
         TaskStatus.todo => 'Yapılacak',
-        TaskStatus.started => 'Başlandı',
+        TaskStatus.started => 'Başladı',
         TaskStatus.doing => 'Devam ediyor',
         TaskStatus.done => 'Tamamlandı',
       };
@@ -15,7 +15,7 @@ enum TaskStatus {
   /// Kartta kısa etiket (dar düzen).
   String get shortLabel => switch (this) {
         TaskStatus.todo => 'Yapılacak',
-        TaskStatus.started => 'Başlandı',
+        TaskStatus.started => 'Başladı',
         TaskStatus.doing => 'Devam',
         TaskStatus.done => 'Bitti',
       };

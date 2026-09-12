@@ -234,7 +234,7 @@ class _TaskExportSheetState extends ConsumerState<TaskExportSheet> {
             ButtonSegment(
               value: 'started',
               label:
-                  Text('Başlandı', style: _statusSegStyle(theme), maxLines: 1),
+                  Text('Başladı', style: _statusSegStyle(theme), maxLines: 1),
             ),
             ButtonSegment(
               value: 'doing',

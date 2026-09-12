@@ -94,7 +94,7 @@ class _HomeTaskSummaryDialog extends ConsumerWidget {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-            'Bu geçiş yapılamaz. Sıra: Yapılacak → Başlandı → '
+            'Bu geçiş yapılamaz. Sıra: Yapılacak → Başladı → '
             'Devam ediyor → Tamamlandı.',
           ),
         ),

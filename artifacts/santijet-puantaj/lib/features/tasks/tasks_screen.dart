@@ -126,7 +126,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Bu geçiş yapılamaz. Sıra: Yapılacak → Başlandı → '
+            'Bu geçiş yapılamaz. Sıra: Yapılacak → Başladı → '
             'Devam ediyor → Tamamlandı.',
           ),
         ),
@@ -1738,32 +1738,36 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
               const SizedBox(height: AppSpacing.sm),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-                child: Row(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Expanded(
-                      child: _TaskFilterDropdown<TaskStatus?>(
-                        caption: 'Durum',
-                        valueLabel: _filter == null
-                            ? 'Tümü (${tasks.length})'
-                            : '${_filter!.shortLabel} (${tasks.where((t) => t.status == _filter).length})',
-                        accent: _filter == null ? null : _statusColor(_filter!),
-                        items: [
-                          (
-                            value: null,
-                            label: 'Tümü (${tasks.length})',
-                          ),
-                          for (final s in TaskStatus.values)
-                            (
-                              value: s,
-                              label:
-                                  '${s.label} (${tasks.where((t) => t.status == s).length})',
+                    Row(
+                      children: [
+                        for (var i = 0; i < TaskStatus.values.length; i++) ...[
+                          if (i > 0) const SizedBox(width: AppSpacing.xs),
+                          Expanded(
+                            child: _TaskStatusFilterCard(
+                              status: TaskStatus.values[i],
+                              count: tasks
+                                  .where(
+                                    (t) =>
+                                        t.status == TaskStatus.values[i],
+                                  )
+                                  .length,
+                              color: _statusColor(TaskStatus.values[i]),
+                              selected: _filter == TaskStatus.values[i],
+                              onTap: () => setState(() {
+                                final s = TaskStatus.values[i];
+                                _filter = _filter == s ? null : s;
+                              }),
                             ),
+                          ),
                         ],
-                        selected: _filter,
-                        onSelected: (v) => setState(() => _filter = v),
-                      ),
+                      ],
                     ),
-                    const SizedBox(width: AppSpacing.xs),
+                    const SizedBox(height: AppSpacing.sm),
+                    Row(
+                      children: [
                     Expanded(
                       child: _TaskFilterDropdown<String?>(
                         caption: 'Etiket',
@@ -1810,6 +1814,8 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                         onSelected: (v) =>
                             setState(() => _categoryFilter = v),
                       ),
+                    ),
+                      ],
                     ),
                   ],
                 ),
@@ -2373,7 +2379,76 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
   }
 }
 
-/// Tek satırda yan yana açılır filtre (Durum / Etiket / Kategori).
+/// Durum — Yapılacak · Başladı · Devam · Bitti (4’lü şerit).
+class _TaskStatusFilterCard extends StatelessWidget {
+  const _TaskStatusFilterCard({
+    required this.status,
+    required this.count,
+    required this.color,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final TaskStatus status;
+  final int count;
+  final Color color;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: AppRadii.sm,
+        child: Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: 6,
+            vertical: AppSpacing.sm,
+          ),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: selected ? 0.24 : 0.12),
+            borderRadius: AppRadii.sm,
+            border: Border.all(
+              color: color.withValues(alpha: selected ? 0.6 : 0.28),
+              width: selected ? 1.5 : 1,
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                status.shortLabel,
+                maxLines: 2,
+                textAlign: TextAlign.center,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.labelSmall?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  height: 1.15,
+                  fontSize: 10,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                '$count',
+                textAlign: TextAlign.center,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  color: AppColors.statusInkOnCard(color),
+                  fontWeight: FontWeight.w700,
+                  height: 1,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Tek satırda yan yana açılır filtre (Etiket / Kategori).
 class _TaskFilterDropdown<T> extends StatelessWidget {
   const _TaskFilterDropdown({
     required this.caption,
