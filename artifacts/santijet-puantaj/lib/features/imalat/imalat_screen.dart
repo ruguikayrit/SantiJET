@@ -1774,7 +1774,7 @@ class _ImalatDayEntrySheetState extends ConsumerState<_ImalatDayEntrySheet> {
               style: theme.textTheme.titleLarge,
             ),
             Text(
-              'Kalan plan: ${_num(remainingQty)} ${widget.production.unit}',
+              'Kalan planlanan metraj: ${_num(remainingQty)} ${widget.production.unit}',
               style: theme.textTheme.labelMedium?.copyWith(
                 color: AppColors.electricBlue,
               ),
@@ -1838,7 +1838,7 @@ class _ImalatDayEntrySheetState extends ConsumerState<_ImalatDayEntrySheet> {
               controller: _done,
               decoration: InputDecoration(
                 labelText: 'Bugün gerçekleşen (${widget.production.unit})',
-                helperText: 'Kalan plan: ${_num(remainingQty)}',
+                helperText: 'Kalan planlanan metraj: ${_num(remainingQty)}',
               ),
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
