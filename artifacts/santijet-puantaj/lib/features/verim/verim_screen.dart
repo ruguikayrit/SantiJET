@@ -12,6 +12,7 @@ import '../../core/widgets/production_triple_progress.dart';
 import '../../core/widgets/santijet_header.dart';
 import '../../data/providers/app_data_provider.dart';
 import '../../data/providers/verim_provider.dart';
+import '../../domain/catalogs/production_work_group.dart';
 import '../../domain/models/production_team_group.dart';
 import '../imalat/widgets/production_chart_panel.dart';
 import '../imalat/widgets/production_group_summary_strip.dart';
@@ -72,7 +73,7 @@ class _VerimScreenState extends ConsumerState<VerimScreen> {
     if (_groupFilter != null) {
       filteredRows = filteredRows
           .where(
-            (r) => ProductionTeamGroup.matchesTeamOnly(
+            (r) => ProductionWorkGroupCatalog.matches(
               r.production,
               _groupFilter!,
             ),
@@ -87,7 +88,7 @@ class _VerimScreenState extends ConsumerState<VerimScreen> {
     final groupFilterLabel = _groupFilter == null
         ? null
         : groupSummaries
-            .where((s) => s.teamKey == _groupFilter)
+            .where((s) => s.groupKey == _groupFilter)
             .map((s) => s.title)
             .firstOrNull;
 

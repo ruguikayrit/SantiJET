@@ -12,6 +12,7 @@ class Production extends Equatable {
     this.floor = '',
     this.section = '',
     this.teamName = '',
+    this.workGroup = '',
     this.unit = 'adet',
     this.plannedQty = 0,
     this.plannedDays = 0,
@@ -34,6 +35,9 @@ class Production extends Equatable {
 
   /// Personel `team` (ekip) adı — listeden seçilir.
   final String teamName;
+
+  /// Grup özeti: İnşaat · Elektrik · Mekanik.
+  final String workGroup;
 
   final String unit;
 
@@ -142,6 +146,7 @@ class Production extends Equatable {
     String? floor,
     String? section,
     String? teamName,
+    String? workGroup,
     String? unit,
     double? plannedQty,
     int? plannedDays,
@@ -156,6 +161,7 @@ class Production extends Equatable {
       floor: floor ?? this.floor,
       section: section ?? this.section,
       teamName: teamName ?? this.teamName,
+      workGroup: workGroup ?? this.workGroup,
       unit: unit ?? this.unit,
       plannedQty: plannedQty ?? this.plannedQty,
       plannedDays: plannedDays ?? this.plannedDays,
@@ -172,6 +178,7 @@ class Production extends Equatable {
         'floor': floor,
         'section': section,
         'teamName': teamName,
+        'workGroup': workGroup,
         'unit': unit,
         'plannedQty': plannedQty,
         'plannedDays': plannedDays,
@@ -218,6 +225,7 @@ class Production extends Equatable {
       floor: json['floor'] as String? ?? '',
       section: json['section'] as String? ?? '',
       teamName: json['teamName'] as String? ?? '',
+      workGroup: json['workGroup'] as String? ?? '',
       unit: json['unit'] as String? ?? 'adet',
       plannedQty: (json['plannedQty'] as num?)?.toDouble() ?? 0,
       plannedDays: (json['plannedDays'] as num?)?.toInt() ?? 0,
@@ -235,6 +243,7 @@ class Production extends Equatable {
         floor,
         section,
         teamName,
+        workGroup,
         unit,
         plannedQty,
         plannedDays,

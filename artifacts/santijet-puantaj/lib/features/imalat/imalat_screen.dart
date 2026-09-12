@@ -24,6 +24,8 @@ import '../../domain/entities/production_day_entry.dart';
 import '../../domain/entities/santijet_plan_pack.dart';
 import '../../domain/catalogs/imalat_units.dart';
 import '../../domain/yevmiye/yevmiye_calculator.dart';
+import '../../domain/catalogs/production_work_group.dart';
+import '../../domain/catalogs/task_tags.dart';
 import '../../domain/models/production_group_summary.dart';
 import '../../domain/models/production_team_group.dart';
 import '../../domain/models/team_imalat_summary.dart';
@@ -250,7 +252,7 @@ class _ImalatScreenState extends ConsumerState<ImalatScreen> {
     var filteredItems = phaseItems;
     if (_groupFilter != null) {
       filteredItems = filteredItems
-          .where((p) => ProductionTeamGroup.matchesTeamOnly(p, _groupFilter!))
+          .where((p) => ProductionWorkGroupCatalog.matches(p, _groupFilter!))
           .toList();
     }
     if (_teamFilter != null) {
@@ -262,7 +264,7 @@ class _ImalatScreenState extends ConsumerState<ImalatScreen> {
     final groupFilterLabel = _groupFilter == null
         ? null
         : groupSummaries
-            .where((s) => s.teamKey == _groupFilter)
+            .where((s) => s.groupKey == _groupFilter)
             .map((s) => s.title)
             .firstOrNull;
 
@@ -684,6 +686,7 @@ class _ImalatJobSheetState extends ConsumerState<_ImalatJobSheet> {
   late final TextEditingController _plannedLabor;
   late final TextEditingController _note;
   String? _team;
+  late String _workGroup;
   late String _unit;
   bool _pullingDays = false;
   String? _scheduleHint;
@@ -713,6 +716,9 @@ class _ImalatJobSheetState extends ConsumerState<_ImalatJobSheet> {
     _team = e?.teamName.trim().isNotEmpty == true
         ? e!.teamName.trim()
         : (widget.teams.isNotEmpty ? widget.teams.first : null);
+    _workGroup = e != null
+        ? ProductionWorkGroupCatalog.resolve(e)
+        : TaskTagCatalog.insaat;
   }
 
   @override
@@ -914,6 +920,22 @@ class _ImalatJobSheetState extends ConsumerState<_ImalatJobSheet> {
               textCapitalization: TextCapitalization.sentences,
             ),
             const SizedBox(height: AppSpacing.sm),
+            Text('Grup', style: theme.textTheme.labelLarge),
+            const SizedBox(height: AppSpacing.xs),
+            Wrap(
+              spacing: AppSpacing.xs,
+              runSpacing: AppSpacing.xs,
+              children: [
+                for (final g in TaskTagCatalog.all)
+                  FilterChip(
+                    showCheckmark: false,
+                    label: Text(g),
+                    selected: _workGroup == g,
+                    onSelected: (_) => setState(() => _workGroup = g),
+                  ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.sm),
             DropdownButtonFormField<String>(
               value: _team,
               decoration: const InputDecoration(labelText: 'Ekip'),
@@ -1072,6 +1094,7 @@ class _ImalatJobSheetState extends ConsumerState<_ImalatJobSheet> {
                         floor: _floor.text.trim(),
                         section: _section.text.trim(),
                         teamName: team,
+                        workGroup: _workGroup,
                         unit: _unit.trim().isEmpty
                             ? ImalatUnitCatalog.defaultUnit
                             : _unit.trim(),

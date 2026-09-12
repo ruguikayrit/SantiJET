@@ -5,6 +5,7 @@ import '../../../core/design_system/sj_status_badge.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/production_triple_progress.dart';
+import '../../../domain/catalogs/task_tags.dart';
 import '../../../domain/models/production_group_summary.dart';
 
 /// Grup özeti — süre + adam-gün (metraj yok). İmalat / Verim ortak.
@@ -32,7 +33,8 @@ class ProductionGroupSummaryStrip extends StatelessWidget {
         separatorBuilder: (_, __) => const SizedBox(width: AppSpacing.sm),
         itemBuilder: (context, i) {
           final s = summaries[i];
-          final selected = selectedTeamKey == s.teamKey;
+          final selected = selectedTeamKey == s.groupKey;
+          final accent = TaskTagCatalog.accentFor(s.groupKey);
           final subtitle = subtitleBuilder?.call(s) ??
               '${s.itemCount} imalat';
 
@@ -40,8 +42,8 @@ class ProductionGroupSummaryStrip extends StatelessWidget {
             width: 200,
             child: SJCard.builder(
               selected: selected,
-              accentColor: selected ? AppColors.electricBlue : null,
-              onTap: () => onTeamTap(s.teamKey),
+              accentColor: selected ? accent : null,
+              onTap: () => onTeamTap(s.groupKey),
               builder: (context, theme) {
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
