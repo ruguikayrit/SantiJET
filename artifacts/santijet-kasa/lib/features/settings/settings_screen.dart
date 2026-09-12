@@ -11,14 +11,102 @@ import '../../core/theme/app_typography.dart';
 import '../../core/theme/theme_mode_provider.dart';
 import '../../data/demo_data.dart';
 import '../../data/hareketler_store.dart';
+import '../../data/kasa_json_backup.dart';
 import '../../data/settings_store.dart';
 
 /// Ayarlar — PRO bölüm overline + Beton tile dili. Abonelik yok.
-class SettingsScreen extends ConsumerWidget {
+class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends ConsumerState<SettingsScreen> {
+  bool _busy = false;
+
+  Future<void> _exportJson() async {
+    if (_busy) return;
+    setState(() => _busy = true);
+    try {
+      await kasaJsonBackup.share(
+        hareketler: ref.read(hareketlerProvider),
+        santiyeler: ref.read(santiyelerProvider),
+        activeSantiye: ref.read(activeSantiyeProvider),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('JSON dışa aktarılamadı: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _importJson() async {
+    if (_busy) return;
+    setState(() => _busy = true);
+    try {
+      final snapshot = await kasaJsonBackup.pickAndDecode();
+      if (snapshot == null) return;
+      if (!mounted) return;
+      final ok = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          backgroundColor: AppColors.surfaceElevated,
+          title: Text(
+            'JSON içe aktar',
+            style: TextStyle(color: AppColors.textPrimary),
+          ),
+          content: Text(
+            '${snapshot.hareketler.length} hareket yüklenecek'
+            '${snapshot.skipped > 0 ? ' (${snapshot.skipped} satır atlandı)' : ''}. '
+            'Mevcut hareketlerin yerini alır.',
+            style: TextStyle(color: AppColors.textSecondary),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Vazgeç'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('Yükle'),
+            ),
+          ],
+        ),
+      );
+      if (ok != true) return;
+      await ref
+          .read(hareketlerProvider.notifier)
+          .replaceAll(snapshot.hareketler);
+      await ref
+          .read(santiyelerProvider.notifier)
+          .replaceAll(snapshot.santiyeler);
+      await ref
+          .read(activeSantiyeProvider.notifier)
+          .setActive(snapshot.activeSantiye);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            '${snapshot.hareketler.length} hareket JSON’dan yüklendi.',
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('JSON içe aktarılamadı: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final mode = ref.watch(themeModeProvider);
     final santiyeler = ref.watch(santiyelerProvider);
     final activeSantiye = ref.watch(activeSantiyeProvider);
@@ -258,6 +346,20 @@ class SettingsScreen extends ConsumerWidget {
           const SizedBox(height: AppSpacing.lg),
           const _SectionLabel('VERİ'),
           _ActionTile(
+            icon: Icons.file_download_outlined,
+            title: 'JSON dışa aktar',
+            subtitle: 'Tüm hareketler ve şantiyeler bir dosyaya yazılır.',
+            onTap: _busy ? null : _exportJson,
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          _ActionTile(
+            icon: Icons.file_upload_outlined,
+            title: 'JSON içe aktar',
+            subtitle: 'Yedek dosyası mevcut verinin yerini alır.',
+            onTap: _busy ? null : _importJson,
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          _ActionTile(
             icon: Icons.dataset_outlined,
             title: 'Demo veri yükle',
             subtitle: 'Excel örneğine benzer 12 satır.',
@@ -397,14 +499,14 @@ class _ActionTile extends StatelessWidget {
     required this.icon,
     required this.title,
     required this.subtitle,
-    required this.onTap,
+    this.onTap,
     this.destructive = false,
   });
 
   final IconData icon;
   final String title;
   final String subtitle;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
   final bool destructive;
 
   @override

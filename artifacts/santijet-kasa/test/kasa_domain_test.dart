@@ -11,6 +11,7 @@ import 'package:santijet_kasa/domain/money_format.dart';
 import 'package:santijet_kasa/data/demo_data.dart';
 import 'package:santijet_kasa/data/kasa_export_service.dart';
 import 'package:santijet_kasa/data/kasa_import_service.dart';
+import 'package:santijet_kasa/data/kasa_json_backup.dart';
 import 'package:santijet_kasa/data/kasa_import_template_service.dart';
 import 'package:santijet_kasa/data/kasa_ocr_normalize.dart';
 import 'package:santijet_kasa/data/kasa_table_ocr.dart';
@@ -121,6 +122,93 @@ void main() {
     test('parses TR input', () {
       expect(MoneyFormat.tryParse('1.234,56'), 1234.56);
       expect(MoneyFormat.tryParse('₺350,00'), 350);
+    });
+  });
+
+  group('KasaJsonBackup', () {
+    test('round-trips hareketler and santiyeler', () {
+      final now = DateTime(2026, 9, 12, 16, 30);
+      final rows = [
+        KasaHareket(
+          id: 'g1',
+          tarih: DateTime(2026, 8, 11),
+          tedarikci: 'KOÇTAŞ YAPI MARKET',
+          aciklama: 'CIVATA SOMUN',
+          gider: 350,
+          odemeSekli: OdemeSekli.sahsiKart,
+          belgeTuru: BelgeTuru.fis,
+          santiye: 'İZMİT/EFSANE',
+          createdAt: now,
+          updatedAt: now,
+        ),
+        KasaHareket(
+          id: 'i1',
+          tarih: DateTime(2026, 7, 28),
+          tedarikci: 'KADİR BEY',
+          aciklama: 'HESABIMA GÖNDERDİ',
+          gelir: 5429.83,
+          odemeSekli: OdemeSekli.havale,
+          belgeTuru: BelgeTuru.yok,
+          santiye: 'İZMİT/EFSANE',
+          createdAt: now,
+          updatedAt: now,
+        ),
+      ];
+      final json = KasaJsonBackup().encode(
+        hareketler: rows,
+        santiyeler: const ['İZMİT/EFSANE', 'İSTANBUL/ATAŞEHİR'],
+        activeSantiye: 'İZMİT/EFSANE',
+        now: now,
+      );
+      final snap = KasaJsonBackup().decode(json);
+      expect(snap.hareketler.length, 2);
+      expect(snap.hareketler.firstWhere((h) => h.id == 'g1').gider, 350);
+      expect(
+        snap.hareketler.firstWhere((h) => h.id == 'i1').gelir,
+        closeTo(5429.83, 0.01),
+      );
+      expect(snap.santiyeler, ['İZMİT/EFSANE', 'İSTANBUL/ATAŞEHİR']);
+      expect(snap.activeSantiye, 'İZMİT/EFSANE');
+      expect(snap.skipped, 0);
+    });
+
+    test('rejects another app backup', () {
+      expect(
+        () => KasaJsonBackup().decode(
+          '{"app":"santijet_demir","hareketler":[]}',
+        ),
+        throwsStateError,
+      );
+    });
+
+    test('skips invalid hareket rows', () {
+      final snap = KasaJsonBackup().decode('''
+{
+  "app": "santijet_kasa",
+  "santiyeler": ["İZMİT/EFSANE"],
+  "activeSantiye": "İZMİT/EFSANE",
+  "hareketler": [
+    {
+      "id": "ok",
+      "tarih": "2026-08-11T00:00:00.000",
+      "aciklama": "CIVATA",
+      "gider": 350,
+      "createdAt": "2026-09-12T00:00:00.000",
+      "updatedAt": "2026-09-12T00:00:00.000"
+    },
+    {
+      "id": "bad",
+      "tarih": "2026-08-11T00:00:00.000",
+      "aciklama": "",
+      "gider": 10,
+      "createdAt": "2026-09-12T00:00:00.000",
+      "updatedAt": "2026-09-12T00:00:00.000"
+    }
+  ]
+}
+''');
+      expect(snap.hareketler.length, 1);
+      expect(snap.skipped, 1);
     });
   });
 
