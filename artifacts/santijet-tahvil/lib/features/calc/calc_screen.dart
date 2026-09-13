@@ -122,7 +122,7 @@ class _CalcScreenState extends ConsumerState<CalcScreen> {
                     selected: _module,
                     onChanged: (value) => setState(() => _module = value),
                   ),
-                  const SizedBox(height: AppSpacing.md),
+                  const SizedBox(height: AppSpacing.sm),
                   if (_module == TahvilModule.saha) ...[
                   _KindHeadings(
                     selected: _kind,

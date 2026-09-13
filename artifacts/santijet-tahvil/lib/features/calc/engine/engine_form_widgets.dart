@@ -17,23 +17,7 @@ IconData _moduleIcon(TahvilModule module) => switch (module) {
       TahvilModule.slab => Icons.grid_on_outlined,
     };
 
-String _moduleSubtitle(TahvilModule module) => switch (module) {
-      TahvilModule.saha => '1 · 2 çeşit · aralık / adet',
-      TahvilModule.foundation => 'Tekil · sürekli · radye',
-      TahvilModule.column => 'Boyuna donatı · etriye',
-      TahvilModule.beam => 'Bölge bazlı · mesnet / açıklık',
-      TahvilModule.slab => '1 m şerit · As/m · X / Y',
-    };
-
-String _moduleTileHint(TahvilModule module) => switch (module) {
-      TahvilModule.saha => 'Hızlı tahvil',
-      TahvilModule.foundation => 'Temel tipi',
-      TahvilModule.column => 'Kolon + etriye',
-      TahvilModule.beam => 'Kiriş bölgeleri',
-      TahvilModule.slab => 'Döşeme As/m',
-    };
-
-/// Hesap modülü — yatay kart şeridi, ikon + başlık + kısa açıklama.
+/// Hesap modülü — kompakt yatay şerit (ikon + ad).
 class EngineModuleBar extends StatelessWidget {
   const EngineModuleBar({
     required this.selected,
@@ -44,75 +28,28 @@ class EngineModuleBar extends StatelessWidget {
   final TahvilModule selected;
   final ValueChanged<TahvilModule> onChanged;
 
-  static const _tileWidth = 112.0;
-  static const _tileHeight = 92.0;
+  static const _stripHeight = 48.0;
 
   @override
   Widget build(BuildContext context) {
     return SJCard(
-      padding: const EdgeInsets.fromLTRB(12, 12, 12, 14),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Modül', style: AppTypography.cardLabelMedium),
-                    const SizedBox(height: 4),
-                    Text(
-                      _moduleSubtitle(selected),
-                      style: AppTypography.cardBodySmall.copyWith(
-                        color: AppColors.textSecondary,
-                        height: 1.35,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: AppColors.electricBlue.withValues(alpha: 0.12),
-                  borderRadius: AppRadii.full,
-                  border: Border.all(
-                    color: AppColors.electricBlue.withValues(alpha: 0.35),
-                  ),
-                ),
-                child: Text(
-                  selected.label,
-                  style: AppTypography.labelLarge.copyWith(
-                    color: AppColors.electricBlue,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          SizedBox(
-            height: _tileHeight,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              clipBehavior: Clip.none,
-              itemCount: TahvilModule.values.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 8),
-              itemBuilder: (context, index) {
-                final module = TahvilModule.values[index];
-                return _ModuleTile(
-                  module: module,
-                  selected: module == selected,
-                  width: _tileWidth,
-                  onTap: () => onChanged(module),
-                );
-              },
-            ),
-          ),
-        ],
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+      child: SizedBox(
+        height: _stripHeight,
+        child: ListView.separated(
+          scrollDirection: Axis.horizontal,
+          clipBehavior: Clip.hardEdge,
+          itemCount: TahvilModule.values.length,
+          separatorBuilder: (_, __) => const SizedBox(width: 6),
+          itemBuilder: (context, index) {
+            final module = TahvilModule.values[index];
+            return _ModuleTile(
+              module: module,
+              selected: module == selected,
+              onTap: () => onChanged(module),
+            );
+          },
+        ),
       ),
     );
   }
@@ -122,21 +59,16 @@ class _ModuleTile extends StatelessWidget {
   const _ModuleTile({
     required this.module,
     required this.selected,
-    required this.width,
     required this.onTap,
   });
 
   final TahvilModule module;
   final bool selected;
-  final double width;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final fg = selected ? Colors.white : AppColors.textPrimary;
-    final muted = selected
-        ? Colors.white.withValues(alpha: 0.82)
-        : AppColors.textSecondary;
 
     return Material(
       color: Colors.transparent,
@@ -144,10 +76,9 @@ class _ModuleTile extends StatelessWidget {
         onTap: onTap,
         borderRadius: AppRadii.sm,
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
+          duration: const Duration(milliseconds: 180),
           curve: Curves.easeOutCubic,
-          width: width,
-          padding: const EdgeInsets.fromLTRB(10, 10, 10, 8),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
           decoration: BoxDecoration(
             color: selected
                 ? AppColors.electricBlue
@@ -157,40 +88,18 @@ class _ModuleTile extends StatelessWidget {
               color: selected ? AppColors.electricBlue : AppColors.cardBorder,
               width: selected ? 1.5 : 1,
             ),
-            boxShadow: selected
-                ? [
-                    BoxShadow(
-                      color: AppColors.electricBlue.withValues(alpha: 0.28),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ]
-                : null,
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          alignment: Alignment.center,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(_moduleIcon(module), size: 22, color: fg),
-              const Spacer(),
+              Icon(_moduleIcon(module), size: 18, color: fg),
+              const SizedBox(width: 6),
               Text(
                 module.label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: AppTypography.cardTitleMedium.copyWith(
+                style: AppTypography.labelLarge.copyWith(
                   color: fg,
-                  fontWeight: FontWeight.w800,
-                  fontSize: 15,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                _moduleTileHint(module),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: AppTypography.cardLabelSmall.copyWith(
-                  color: muted,
-                  fontSize: 10,
-                  height: 1.2,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
             ],
