@@ -8,6 +8,7 @@ import '../../core/utils/id_gen.dart';
 import '../../core/utils/puantaj_date.dart';
 import '../../domain/entities/production.dart';
 import '../../domain/entities/production_day_entry.dart';
+import '../../domain/models/home_imalat_group_progress.dart';
 import '../../domain/models/production_group_summary.dart';
 import 'app_data_provider.dart';
 
@@ -254,6 +255,14 @@ final productionProvider =
 final homeImalatGroupSummariesProvider =
     Provider<List<ProductionGroupSummary>>((ref) {
   return ProductionGroupSummary.fromProductions(
+    ref.watch(activeProductionProvider),
+  );
+});
+
+/// Ana sayfa — Süre / Metraj (AG ağırlıklı) / Adam-gün ilerleme %.
+final homeImalatGroupProgressProvider =
+    Provider<List<HomeImalatGroupProgress>>((ref) {
+  return HomeImalatGroupProgress.fromProductions(
     ref.watch(activeProductionProvider),
   );
 });

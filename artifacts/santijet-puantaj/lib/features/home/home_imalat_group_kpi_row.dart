@@ -9,25 +9,15 @@ import '../../core/theme/app_spacing.dart';
 import '../../core/widgets/production_triple_progress.dart';
 import '../../data/providers/production_provider.dart';
 import '../../domain/catalogs/task_tags.dart';
-import '../../domain/models/production_group_summary.dart';
-import '../../domain/models/production_metrics.dart';
+import '../../domain/models/home_imalat_group_progress.dart';
 
-/// Ana sayfa — İnşaat / Elektrik / Mekanik adam-gün ilerleme (%), üçlü sıra.
+/// Ana sayfa — İnşaat / Elektrik / Mekanik: Süre · Metraj · Adam-gün %.
 class HomeImalatGroupKpiRow extends ConsumerWidget {
   const HomeImalatGroupKpiRow({super.key});
 
-  static ProductionProgressAxis? _laborAxis(ProductionGroupSummary? summary) {
-    if (summary == null) return null;
-    for (final a in summary.axes) {
-      if (a.label == 'Adam-gün') return a;
-    }
-    return null;
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final summaries = ref.watch(homeImalatGroupSummariesProvider);
-    final byKey = {for (final s in summaries) s.groupKey: s};
+    final progress = ref.watch(homeImalatGroupProgressProvider);
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -37,15 +27,14 @@ class HomeImalatGroupKpiRow extends ConsumerWidget {
             (constraints.maxWidth - spacing * (columns - 1)) / columns;
 
         return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            for (var i = 0; i < TaskTagCatalog.all.length; i++) ...[
+            for (var i = 0; i < progress.length; i++) ...[
               if (i > 0) const SizedBox(width: spacing),
               SizedBox(
                 width: itemWidth,
                 child: _GroupKpiCard(
-                  tag: TaskTagCatalog.all[i],
-                  summary: byKey[TaskTagCatalog.all[i]],
-                  labor: _laborAxis(byKey[TaskTagCatalog.all[i]]),
+                  data: progress[i],
                   onTap: () => context.go(AppRoutes.imalat),
                 ),
               ),
@@ -59,26 +48,19 @@ class HomeImalatGroupKpiRow extends ConsumerWidget {
 
 class _GroupKpiCard extends StatelessWidget {
   const _GroupKpiCard({
-    required this.tag,
-    required this.summary,
-    required this.labor,
+    required this.data,
     required this.onTap,
   });
 
-  final String tag;
-  final ProductionGroupSummary? summary;
-  final ProductionProgressAxis? labor;
+  final HomeImalatGroupProgress data;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final accent = TaskTagCatalog.accentFor(tag);
+    final accent = TaskTagCatalog.accentFor(data.groupKey);
     final ink = AppColors.statusInkOnCard(accent);
-    final hasPlan = labor?.hasPlan ?? false;
-    final displayPct = labor?.displayProgressPct ?? 0;
-    final fill = hasPlan ? (labor!.progressPct / 100).clamp(0.0, 1.0) : 0.0;
-    final imalatCount = summary?.itemCount ?? 0;
+    final hasAny = data.includedCount > 0;
 
     return Material(
       color: Colors.transparent,
@@ -86,7 +68,7 @@ class _GroupKpiCard extends StatelessWidget {
         onTap: onTap,
         borderRadius: AppRadii.sm,
         child: Container(
-          constraints: const BoxConstraints(minHeight: 96),
+          constraints: const BoxConstraints(minHeight: 132),
           padding: const EdgeInsets.fromLTRB(10, 10, 10, 8),
           decoration: BoxDecoration(
             color: accent.withValues(alpha: 0.1),
@@ -97,7 +79,7 @@ class _GroupKpiCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                TaskTagCatalog.cardLabel(tag),
+                TaskTagCatalog.cardLabel(data.groupKey),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: theme.textTheme.labelSmall?.copyWith(
@@ -106,34 +88,61 @@ class _GroupKpiCard extends StatelessWidget {
                   letterSpacing: 0.5,
                 ),
               ),
-              const SizedBox(height: 4),
-              Text(
-                hasPlan ? '%${displayPct.toStringAsFixed(0)}' : '—',
-                style: theme.textTheme.headlineSmall?.copyWith(
-                  color: ink,
-                  fontWeight: FontWeight.w800,
-                  height: 1,
+              if (data.totalImalatCount > 0) ...[
+                const SizedBox(height: 2),
+                Text(
+                  '${data.includedCount}/${data.totalImalatCount} imalat',
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                    fontSize: 10,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                imalatCount > 0 ? '$imalatCount imalat · AG' : 'Adam-gün',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                  fontSize: 10,
+              ],
+              const SizedBox(height: 8),
+              if (hasAny) ...[
+                _ProgressLine(
+                  label: 'Süre',
+                  pct: data.sureDisplayPct,
+                  ink: ink,
+                  barColor: axisFillAccentColor('Süre'),
                 ),
-              ),
-              if (hasPlan) ...[
                 const SizedBox(height: 6),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(4),
-                  child: LinearProgressIndicator(
-                    value: fill,
-                    minHeight: 5,
-                    backgroundColor: accent.withValues(alpha: 0.14),
-                    color: axisFillAccentColor('Adam-gün'),
+                _ProgressLine(
+                  label: 'Metraj',
+                  pct: data.metrajDisplayPct,
+                  ink: ink,
+                  barColor: axisFillAccentColor('Metraj'),
+                ),
+                const SizedBox(height: 6),
+                _ProgressLine(
+                  label: 'Adam-gün',
+                  pct: data.laborDisplayPct,
+                  ink: ink,
+                  barColor: axisFillAccentColor('Adam-gün'),
+                ),
+              ] else if (data.totalImalatCount == 0)
+                Text(
+                  'İmalat yok',
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                )
+              else
+                Text(
+                  'Plan verisi tam değil',
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: AppColors.statusInkOnCard(AppColors.warning),
+                  ),
+                ),
+              if (data.hasExcludedImalats) ...[
+                const SizedBox(height: 8),
+                Text(
+                  'Veriler tam değil; ${
+                      data.excludedCount} imalat hesaba alınmamıştır.',
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: AppColors.statusInkOnCard(AppColors.warning),
+                    fontSize: 10,
+                    height: 1.25,
                   ),
                 ),
               ],
@@ -141,6 +150,69 @@ class _GroupKpiCard extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _ProgressLine extends StatelessWidget {
+  const _ProgressLine({
+    required this.label,
+    required this.pct,
+    required this.ink,
+    required this.barColor,
+  });
+
+  final String label;
+  final double? pct;
+  final Color ink;
+  final Color barColor;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final display = pct;
+    final fill = display != null
+        ? (display / 100).clamp(0.0, 1.0)
+        : 0.0;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            SizedBox(
+              width: 58,
+              child: Text(
+                label,
+                style: theme.textTheme.labelSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 10,
+                ),
+              ),
+            ),
+            Expanded(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(3),
+                child: LinearProgressIndicator(
+                  value: display != null ? fill : null,
+                  minHeight: 4,
+                  backgroundColor: barColor.withValues(alpha: 0.14),
+                  color: barColor,
+                ),
+              ),
+            ),
+            const SizedBox(width: 4),
+            Text(
+              display != null ? '%${display.toStringAsFixed(0)}' : '—',
+              style: theme.textTheme.labelSmall?.copyWith(
+                fontWeight: FontWeight.w800,
+                color: ink,
+                fontSize: 10,
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }

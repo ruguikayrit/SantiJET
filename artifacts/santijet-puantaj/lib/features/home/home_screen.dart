@@ -225,7 +225,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ),
                   const SizedBox(height: AppSpacing.md),
                   _SummarySection(
-                    title: 'İmalat özeti',
+                    title: 'İmalat ilerleme yüzdeleri',
                     icon: Icons.construction_outlined,
                     onTap: () => context.go(AppRoutes.imalat),
                     child: const HomeImalatGroupKpiRow(),
