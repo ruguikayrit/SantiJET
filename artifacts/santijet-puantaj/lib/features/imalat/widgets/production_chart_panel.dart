@@ -1,4 +1,3 @@
-import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -11,20 +10,7 @@ import '../../../data/providers/production_chart_options_provider.dart';
 import '../../../data/providers/verim_provider.dart';
 import '../../../data/services/production_chart_options.dart';
 import '../../../domain/entities/production.dart';
-
-class _ChartSlice {
-  const _ChartSlice({
-    required this.label,
-    required this.value,
-    required this.color,
-    this.secondary,
-  });
-
-  final String label;
-  final double value;
-  final Color color;
-  final double? secondary;
-}
+import 'production_summary_charts.dart';
 
 /// İmalat / Verim ortak grafik paneli + ayar butonu.
 class ProductionChartPanel extends ConsumerWidget {
@@ -58,7 +44,7 @@ class ProductionChartPanel extends ConsumerWidget {
     ref.read(productionChartOptionsProvider.notifier).save(next);
   }
 
-  List<_ChartSlice> _imalatSlices(
+  List<ProductionChartSlice> _imalatSlices(
     ProductionChartOptions options,
   ) {
     if (productions.isEmpty) return const [];
@@ -78,19 +64,19 @@ class ProductionChartPanel extends ConsumerWidget {
         }
         return [
           if (bekleyen > 0)
-            _ChartSlice(
+            ProductionChartSlice(
               label: 'Bekleyen',
               value: bekleyen.toDouble(),
               color: AppColors.warning,
             ),
           if (devam > 0)
-            _ChartSlice(
+            ProductionChartSlice(
               label: 'Devam',
               value: devam.toDouble(),
               color: AppColors.info,
             ),
           if (tamam > 0)
-            _ChartSlice(
+            ProductionChartSlice(
               label: 'Tamam',
               value: tamam.toDouble(),
               color: AppColors.success,
@@ -114,7 +100,7 @@ class ProductionChartPanel extends ConsumerWidget {
         ];
         return [
           for (var i = 0; i < teams.length; i++)
-            _ChartSlice(
+            ProductionChartSlice(
               label: teams[i],
               value: () {
                 final items = byTeam[teams[i]]!;
@@ -138,13 +124,13 @@ class ProductionChartPanel extends ConsumerWidget {
           (s, p) => s + p.completedQty,
         );
         return [
-          _ChartSlice(
+          ProductionChartSlice(
             label: 'Plan',
             value: planned,
             color: AppColors.electricBlue.withValues(alpha: 0.55),
             secondary: actual,
           ),
-          _ChartSlice(
+          ProductionChartSlice(
             label: 'Gerçek',
             value: actual,
             color: AppColors.success,
@@ -153,7 +139,7 @@ class ProductionChartPanel extends ConsumerWidget {
     }
   }
 
-  List<_ChartSlice> _verimSlices(ProductionChartOptions options) {
+  List<ProductionChartSlice> _verimSlices(ProductionChartOptions options) {
     final palette = [
       AppColors.electricBlue,
       AppColors.info,
@@ -167,14 +153,14 @@ class ProductionChartPanel extends ConsumerWidget {
         final list = [
           for (final s in teamSummaries)
             if (s.unitEfficiency != null)
-              _ChartSlice(
+              ProductionChartSlice(
                 label: s.teamName,
                 value: s.unitEfficiency! * 100,
                 color: AppColors.electricBlue,
               ),
         ];
         for (var i = 0; i < list.length; i++) {
-          list[i] = _ChartSlice(
+          list[i] = ProductionChartSlice(
             label: list[i].label,
             value: list[i].value,
             color: palette[i % palette.length],
@@ -191,12 +177,12 @@ class ProductionChartPanel extends ConsumerWidget {
           (s, r) => s + r.actualWorkerDays,
         );
         return [
-          _ChartSlice(
+          ProductionChartSlice(
             label: 'Plan Adam-gün',
             value: planned,
             color: AppColors.electricBlue.withValues(alpha: 0.55),
           ),
-          _ChartSlice(
+          ProductionChartSlice(
             label: 'Gerçek Adam-gün',
             value: actual,
             color: AppColors.success,
@@ -211,7 +197,7 @@ class ProductionChartPanel extends ConsumerWidget {
         final top = rows.take(8).toList();
         return [
           for (var i = 0; i < top.length; i++)
-            _ChartSlice(
+            ProductionChartSlice(
               label: top[i].name,
               value: top[i].eff * 100,
               color: palette[i % palette.length],
@@ -297,14 +283,14 @@ class ProductionChartPanel extends ConsumerWidget {
               )
             else ...[
               if (kind == ProductionChartKind.horizontalBar)
-                _HorizontalBarChart(
+                ProductionSummaryHorizontalBarChart(
                   slices: slices,
                   unitHint: unitHint,
                 )
               else
                 SizedBox(
                   height: 200,
-                  child: _PieChart(slices: slices),
+                  child: ProductionSummaryPieChart(slices: slices),
                 ),
             ],
           ],
@@ -313,120 +299,6 @@ class ProductionChartPanel extends ConsumerWidget {
     );
   }
 
-  static String _fmt(double v) {
-    if (v == v.roundToDouble()) return v.toStringAsFixed(0);
-    return v.toStringAsFixed(1);
-  }
-}
-
-class _PieChart extends StatelessWidget {
-  const _PieChart({required this.slices});
-
-  final List<_ChartSlice> slices;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final total = slices.fold<double>(0, (s, e) => s + e.value);
-    if (total <= 0) return const SizedBox.shrink();
-
-    return PieChart(
-      PieChartData(
-        sectionsSpace: 2,
-        centerSpaceRadius: 32,
-        sections: [
-          for (final s in slices)
-            PieChartSectionData(
-              value: s.value,
-              color: s.color,
-              radius: 46,
-              title: '${((s.value / total) * 100).round()}%',
-              titleStyle: const TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-                color: Colors.white,
-              ),
-              badgeWidget: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 88),
-                child: Text(
-                  s.label.trim(),
-                  textAlign: TextAlign.center,
-                  softWrap: true,
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: theme.colorScheme.onSurface,
-                    fontSize: 9,
-                    height: 1.15,
-                  ),
-                ),
-              ),
-              badgePositionPercentageOffset: 1.35,
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-class _HorizontalBarChart extends StatelessWidget {
-  const _HorizontalBarChart({required this.slices, required this.unitHint});
-
-  final List<_ChartSlice> slices;
-  final String unitHint;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final maxV = slices.fold<double>(0, (m, s) => s.value > m ? s.value : m);
-    final top = maxV <= 0 ? 1.0 : maxV;
-
-    return ListView.separated(
-      physics: const NeverScrollableScrollPhysics(),
-      shrinkWrap: true,
-      itemCount: slices.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 8),
-      itemBuilder: (context, i) {
-        final s = slices[i];
-        final ratio = (s.value / top).clamp(0.0, 1.0);
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Text(
-                    s.label.trim(),
-                    style: theme.textTheme.labelMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                    softWrap: true,
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.sm),
-                Text(
-                  '${ProductionChartPanel._fmt(s.value)} $unitHint',
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 4),
-            ClipRRect(
-              borderRadius: AppRadii.xs,
-              child: LinearProgressIndicator(
-                value: ratio,
-                minHeight: 10,
-                backgroundColor: s.color.withValues(alpha: 0.15),
-                color: s.color,
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
 }
 
 Future<ProductionChartOptions?> showProductionChartSettingsSheet(

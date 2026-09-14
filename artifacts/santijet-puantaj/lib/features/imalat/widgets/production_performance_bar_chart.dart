@@ -21,10 +21,18 @@ class ProductionPerformanceBarChart extends ConsumerStatefulWidget {
     required this.production,
     super.key,
     this.height = 220,
+    this.fixedPeriod,
+    this.onlyDates,
+    this.hidePeriodChips = false,
   });
 
   final Production production;
   final double height;
+
+  /// Rapor dönemi gibi sabit periyot (chip gizlenebilir).
+  final ProductionPerformancePeriod? fixedPeriod;
+  final Set<String>? onlyDates;
+  final bool hidePeriodChips;
 
   static const visibleBucketCount = 12;
 
@@ -91,9 +99,13 @@ class _ProductionPerformanceBarChartState
   static DateTime _weekStart(DateTime d) =>
       DateTime(d.year, d.month, d.day).subtract(Duration(days: d.weekday - 1));
 
-  static Map<DateTime, double> _dailyTotals(Production p) {
+  static Map<DateTime, double> _dailyTotals(
+    Production p, {
+    Set<String>? onlyDates,
+  }) {
     final byDay = <DateTime, double>{};
     for (final e in p.dailyEntries) {
+      if (onlyDates != null && !onlyDates.contains(e.date.trim())) continue;
       final d = PuantajDate.tryParse(e.date);
       if (d == null || e.completedQty <= 0) continue;
       final key = DateTime(d.year, d.month, d.day);
@@ -104,9 +116,10 @@ class _ProductionPerformanceBarChartState
 
   static List<_PeriodBucket> _buckets(
     Production p,
-    ProductionPerformancePeriod period,
-  ) {
-    final daily = _dailyTotals(p);
+    ProductionPerformancePeriod period, {
+    Set<String>? onlyDates,
+  }) {
+    final daily = _dailyTotals(p, onlyDates: onlyDates);
     if (daily.isEmpty) return const [];
 
     final planQty = p.plannedQty;
@@ -206,7 +219,12 @@ class _ProductionPerformanceBarChartState
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final options = ref.watch(productionPerformanceChartOptionsProvider);
-    final buckets = _buckets(widget.production, options.period);
+    final period = widget.fixedPeriod ?? options.period;
+    final buckets = _buckets(
+      widget.production,
+      period,
+      onlyDates: widget.onlyDates,
+    );
 
     final unit =
         widget.production.unit.trim().isEmpty ? '' : widget.production.unit.trim();
@@ -265,7 +283,7 @@ class _ProductionPerformanceBarChartState
           children: [
             Expanded(
               child: Text(
-                'Metraj · ${options.period.label}',
+                'Metraj · ${period.label}',
                 style: theme.textTheme.labelMedium?.copyWith(
                   fontWeight: FontWeight.w700,
                 ),
@@ -289,23 +307,25 @@ class _ProductionPerformanceBarChartState
               ),
           ],
         ),
-        const SizedBox(height: AppSpacing.xs),
-        Wrap(
-          spacing: AppSpacing.xs,
-          runSpacing: AppSpacing.xs,
-          children: [
-            for (final p in ProductionPerformancePeriod.values)
-              FilterChip(
-                showCheckmark: false,
-                label: Text(p.label),
-                selected: options.period == p,
-                visualDensity: VisualDensity.compact,
-                onSelected: (_) => ref
-                    .read(productionPerformanceChartOptionsProvider.notifier)
-                    .save(options.copyWith(period: p)),
-              ),
-          ],
-        ),
+        if (!widget.hidePeriodChips && widget.fixedPeriod == null) ...[
+          const SizedBox(height: AppSpacing.xs),
+          Wrap(
+            spacing: AppSpacing.xs,
+            runSpacing: AppSpacing.xs,
+            children: [
+              for (final p in ProductionPerformancePeriod.values)
+                FilterChip(
+                  showCheckmark: false,
+                  label: Text(p.label),
+                  selected: options.period == p,
+                  visualDensity: VisualDensity.compact,
+                  onSelected: (_) => ref
+                      .read(productionPerformanceChartOptionsProvider.notifier)
+                      .save(options.copyWith(period: p)),
+                ),
+            ],
+          ),
+        ],
         const SizedBox(height: AppSpacing.md),
         LayoutBuilder(
           builder: (context, constraints) {
@@ -330,7 +350,7 @@ class _ProductionPerformanceBarChartState
             _scrollToCenterIfNeeded(
               scrollable: scrollable,
               bucketCount: buckets.length,
-              period: options.period,
+              period: period,
             );
 
             final chart = SizedBox(

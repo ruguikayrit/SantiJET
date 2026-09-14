@@ -1,14 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/design_system/sj_card.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_radii.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/production_triple_progress.dart';
+import '../../../data/providers/production_provider.dart';
 import '../../../data/services/period_site_report_builder.dart';
+import '../../../domain/entities/production.dart';
+import '../../../data/services/production_performance_chart_options.dart';
+import '../../../data/services/puantaj_report_builder.dart';
 import '../../imalat/widgets/production_group_summary_strip.dart';
+import '../../imalat/widgets/production_performance_bar_chart.dart';
 import 'attendance_summary_table.dart';
-import 'period_site_report_charts.dart';
+import 'period_production_chart_panel.dart';
 
 String _fmtNum(double v) {
   if (v == v.roundToDouble()) return v.toStringAsFixed(0);
@@ -134,14 +140,20 @@ class _CollapsibleSectionState extends State<_CollapsibleSection> {
   }
 }
 
-class _ImalatReportSection extends StatelessWidget {
+class _ImalatReportSection extends ConsumerWidget {
   const _ImalatReportSection({required this.report});
 
   final PeriodSiteReportData report;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final rows = report.imalatRows;
+    final productions = ref.watch(productionProvider);
+    final byId = {for (final p in productions) p.id: p};
+    final daySet = report.days.toSet();
+    final perfPeriod = report.period == PuantajReportPeriod.weekly
+        ? ProductionPerformancePeriod.daily
+        : ProductionPerformancePeriod.weekly;
     if (rows.isEmpty) {
       return SJCard.builder(
         builder: (context, theme) => Text(
@@ -153,12 +165,13 @@ class _ImalatReportSection extends StatelessWidget {
       );
     }
 
-    final metrajSlices = imalatPeriodMetrajSlices(rows);
     final groups = report.imalatGroupSummaries;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        PeriodProductionChartPanel.imalat(report: report),
+        const SizedBox(height: AppSpacing.md),
         if (groups.isNotEmpty) ...[
           Text(
             'Grup özeti (dönem)',
@@ -174,13 +187,6 @@ class _ImalatReportSection extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.md),
         ],
-        if (metrajSlices.isNotEmpty) ...[
-          PeriodReportHorizontalBarChart(
-            title: 'Dönem metraj (imalat)',
-            slices: metrajSlices,
-          ),
-          const SizedBox(height: AppSpacing.md),
-        ],
         Text(
           'İmalat detayı',
           style: Theme.of(context).textTheme.labelLarge?.copyWith(
@@ -190,7 +196,12 @@ class _ImalatReportSection extends StatelessWidget {
         const SizedBox(height: AppSpacing.sm),
         for (var i = 0; i < rows.length; i++) ...[
           if (i > 0) const SizedBox(height: AppSpacing.sm),
-          _ImalatPeriodCard(row: rows[i]),
+          _ImalatPeriodCard(
+            row: rows[i],
+            production: byId[rows[i].productionId],
+            perfPeriod: perfPeriod,
+            daySet: daySet,
+          ),
         ],
       ],
     );
@@ -198,9 +209,17 @@ class _ImalatReportSection extends StatelessWidget {
 }
 
 class _ImalatPeriodCard extends StatelessWidget {
-  const _ImalatPeriodCard({required this.row});
+  const _ImalatPeriodCard({
+    required this.row,
+    required this.production,
+    required this.perfPeriod,
+    required this.daySet,
+  });
 
   final PeriodImalatRow row;
+  final Production? production;
+  final ProductionPerformancePeriod perfPeriod;
+  final Set<String> daySet;
 
   @override
   Widget build(BuildContext context) {
@@ -292,6 +311,16 @@ class _ImalatPeriodCard extends StatelessWidget {
                 ),
               ],
             ),
+            if (production != null) ...[
+              const SizedBox(height: AppSpacing.md),
+              ProductionPerformanceBarChart(
+                production: production!,
+                fixedPeriod: perfPeriod,
+                onlyDates: daySet,
+                hidePeriodChips: true,
+                height: 200,
+              ),
+            ],
           ],
         );
       },
@@ -318,26 +347,11 @@ class _VerimReportSection extends StatelessWidget {
       );
     }
 
-    final agSlices = verimPeriodAgCompareSlices(rows);
-    final effSlices = verimPeriodEfficiencySlices(rows);
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (agSlices.isNotEmpty) ...[
-          PeriodReportHorizontalBarChart(
-            title: 'Adam-gün · plan ve dönem',
-            slices: agSlices,
-          ),
-          const SizedBox(height: AppSpacing.md),
-        ],
-        if (effSlices.isNotEmpty) ...[
-          PeriodReportHorizontalBarChart(
-            title: 'Birim verim (dönem, %)',
-            slices: effSlices,
-          ),
-          const SizedBox(height: AppSpacing.md),
-        ],
+        PeriodProductionChartPanel.verim(report: report),
+        const SizedBox(height: AppSpacing.md),
         Text(
           'Verim detayı',
           style: Theme.of(context).textTheme.labelLarge?.copyWith(

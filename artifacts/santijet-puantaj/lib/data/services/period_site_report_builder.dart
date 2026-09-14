@@ -15,6 +15,7 @@ import 'puantaj_report_builder.dart';
 /// İmalat — dönem içi gerçekleşen (İmalat sekmesi kaynakları).
 class PeriodImalatRow {
   const PeriodImalatRow({
+    required this.productionId,
     required this.name,
     required this.unit,
     required this.location,
@@ -26,6 +27,7 @@ class PeriodImalatRow {
     required this.progressPct,
   });
 
+  final String productionId;
   final String name;
   final String unit;
   final String location;
@@ -41,6 +43,7 @@ class PeriodImalatRow {
 class PeriodVerimRow {
   const PeriodVerimRow({
     required this.imalatName,
+    this.teamName,
     this.unit,
     required this.plannedWorkerDays,
     required this.periodActualWorkerDays,
@@ -50,6 +53,7 @@ class PeriodVerimRow {
   });
 
   final String imalatName;
+  final String? teamName;
   final String? unit;
   final double plannedWorkerDays;
   final double periodActualWorkerDays;
@@ -172,6 +176,7 @@ class PeriodSiteReportData {
     required this.imalatRows,
     required this.verimRows,
     required this.imalatGroupSummaries,
+    required this.period,
     required this.fileStem,
   });
 
@@ -185,6 +190,7 @@ class PeriodSiteReportData {
   final List<PeriodImalatRow> imalatRows;
   final List<PeriodVerimRow> verimRows;
   final List<ProductionGroupSummary> imalatGroupSummaries;
+  final PuantajReportPeriod period;
   final String fileStem;
 
   bool get hasImalat => imalatRows.isNotEmpty;
@@ -290,6 +296,7 @@ abstract final class PeriodSiteReportBuilder {
           periodEntries.fold<double>(0, (s, e) => s + e.laborDays);
       imalatRows.add(
         PeriodImalatRow(
+          productionId: p.id,
           name: p.name,
           unit: p.unit,
           location: p.locationLabel,
@@ -334,6 +341,7 @@ abstract final class PeriodSiteReportBuilder {
       verimRows.add(
         PeriodVerimRow(
           imalatName: p.name,
+          teamName: p.teamName,
           unit: p.unit,
           plannedWorkerDays: plannedAg,
           periodActualWorkerDays: periodLabor,
@@ -360,6 +368,7 @@ abstract final class PeriodSiteReportBuilder {
       imalatRows: imalatRows,
       verimRows: verimRows,
       imalatGroupSummaries: imalatGroupSummaries,
+      period: period,
       fileStem: fileStem,
     );
   }
