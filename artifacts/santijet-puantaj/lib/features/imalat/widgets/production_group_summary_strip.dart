@@ -78,6 +78,7 @@ class ProductionGroupSummaryStrip extends StatelessWidget {
                         axes: s.axes,
                         dense: true,
                         showPctLabels: false,
+                        showPctAtBarEnd: true,
                         fitStripLabelRow: true,
                         colorMode:
                             ProductionProgressColorMode.axisFillIntensity,

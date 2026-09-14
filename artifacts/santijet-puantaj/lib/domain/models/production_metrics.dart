@@ -16,10 +16,16 @@ class ProductionProgressAxis {
 
   bool get hasPlan => planned > 0;
 
-  /// Gerçekleşen / planlanan yüzdesi (0–100).
+  /// Gerçekleşen / planlanan yüzdesi (0–100, çubuk doluluğu için).
   double get progressPct {
     if (planned <= 0) return actual > 0 ? 100 : 0;
     return ((actual / planned) * 100).clamp(0, 100);
+  }
+
+  /// Etiketler — plan aşımında 100 üzeri (ör. %385).
+  double get displayProgressPct {
+    if (planned <= 0) return actual > 0 ? 100 : 0;
+    return (actual / planned) * 100;
   }
 
   String formatValue(double v) {

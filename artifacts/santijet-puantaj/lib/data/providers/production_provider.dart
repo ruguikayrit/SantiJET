@@ -8,6 +8,7 @@ import '../../core/utils/id_gen.dart';
 import '../../core/utils/puantaj_date.dart';
 import '../../domain/entities/production.dart';
 import '../../domain/entities/production_day_entry.dart';
+import '../../domain/models/production_group_summary.dart';
 import 'app_data_provider.dart';
 
 final productionBoxProvider = Provider<Box>(
@@ -247,6 +248,14 @@ class ProductionNotifier extends StateNotifier<List<Production>> {
 final productionProvider =
     StateNotifierProvider<ProductionNotifier, List<Production>>((ref) {
   return ProductionNotifier(ref.watch(productionBoxProvider));
+});
+
+/// Ana sayfa — disiplin bazlı imalat grup özetleri.
+final homeImalatGroupSummariesProvider =
+    Provider<List<ProductionGroupSummary>>((ref) {
+  return ProductionGroupSummary.fromProductions(
+    ref.watch(activeProductionProvider),
+  );
 });
 
 final activeProductionProvider = Provider<List<Production>>((ref) {

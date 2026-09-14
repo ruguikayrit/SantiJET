@@ -81,6 +81,7 @@ class ProductionTripleProgress extends StatelessWidget {
     List<ProductionProgressAxis>? axes,
     this.dense = true,
     this.showPctLabels = true,
+    this.showPctAtBarEnd = false,
     this.fitStripLabelRow = false,
     this.colorMode = ProductionProgressColorMode.completionThreshold,
   })  : assert(metrics != null || axes != null),
@@ -103,6 +104,9 @@ class ProductionTripleProgress extends StatelessWidget {
   final List<ProductionProgressAxis>? _axes;
   final bool dense;
   final bool showPctLabels;
+
+  /// Yüzde üst satır yerine çubuk satırının sağında.
+  final bool showPctAtBarEnd;
 
   /// Özet şerit kartları — değer satırı kırpılmadan sığdırılır (FittedBox).
   final bool fitStripLabelRow;
@@ -129,6 +133,7 @@ class ProductionTripleProgress extends StatelessWidget {
             barHeight: barH,
             labelStyle: labelStyle,
             showPct: showPctLabels,
+            showPctAtBarEnd: showPctAtBarEnd,
             fitStripLabelRow: fitStripLabelRow,
             colorMode: colorMode,
           ),
@@ -144,6 +149,7 @@ class _CompletionProgressLine extends StatelessWidget {
     required this.barHeight,
     required this.labelStyle,
     required this.showPct,
+    required this.showPctAtBarEnd,
     required this.fitStripLabelRow,
     required this.colorMode,
   });
@@ -152,6 +158,7 @@ class _CompletionProgressLine extends StatelessWidget {
   final double barHeight;
   final TextStyle? labelStyle;
   final bool showPct;
+  final bool showPctAtBarEnd;
   final bool fitStripLabelRow;
   final ProductionProgressColorMode colorMode;
 
@@ -170,6 +177,7 @@ class _CompletionProgressLine extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final pct = axis.progressPct;
+    final displayPct = axis.displayProgressPct;
     final fill = axis.hasPlan ? (pct / 100).clamp(0.0, 1.0) : 0.0;
     final color = _barColor(pct);
     final trackBg = colorMode == ProductionProgressColorMode.axisFillIntensity
@@ -230,9 +238,9 @@ class _CompletionProgressLine extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
             ),
-            if (showPct && axis.hasPlan)
+            if (showPct && !showPctAtBarEnd && axis.hasPlan)
               Text(
-                '%${pct.toStringAsFixed(0)}',
+                '%${displayPct.toStringAsFixed(0)}',
                 style: labelStyle?.copyWith(
                   color: color,
                   fontWeight: FontWeight.w700,
@@ -241,24 +249,41 @@ class _CompletionProgressLine extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 4),
-        if (colorMode == ProductionProgressColorMode.axisFillIntensity &&
-            axis.hasPlan)
-          _AxisGradientProgressBar(
-            value: fill,
-            height: barHeight,
-            gradient: axisFillGradient(axis.label, fill),
-            trackColor: trackBg,
-          )
-        else
-          ClipRRect(
-            borderRadius: BorderRadius.circular(4),
-            child: LinearProgressIndicator(
-              value: fill,
-              minHeight: barHeight,
-              backgroundColor: trackBg,
-              color: axis.hasPlan ? color : AppColors.cardTextMuted,
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Expanded(
+              child: colorMode == ProductionProgressColorMode.axisFillIntensity &&
+                      axis.hasPlan
+                  ? _AxisGradientProgressBar(
+                      value: fill,
+                      height: barHeight,
+                      gradient: axisFillGradient(axis.label, fill),
+                      trackColor: trackBg,
+                    )
+                  : ClipRRect(
+                      borderRadius: BorderRadius.circular(4),
+                      child: LinearProgressIndicator(
+                        value: fill,
+                        minHeight: barHeight,
+                        backgroundColor: trackBg,
+                        color: axis.hasPlan ? color : AppColors.cardTextMuted,
+                      ),
+                    ),
             ),
-          ),
+            if (showPctAtBarEnd && axis.hasPlan) ...[
+              const SizedBox(width: 6),
+              Text(
+                '%${displayPct.toStringAsFixed(0)}',
+                style: labelStyle?.copyWith(
+                  color: color,
+                  fontWeight: FontWeight.w800,
+                  fontSize: (labelStyle?.fontSize ?? 12) + 1,
+                ),
+              ),
+            ],
+          ],
+        ),
       ],
     );
   }

@@ -21,6 +21,7 @@ import '../../domain/entities/site_task.dart';
 import '../../domain/enums/attendance_status.dart';
 import '../projects/widgets/project_switcher.dart';
 import 'home_daily_report_pdf_sheet.dart';
+import 'home_imalat_group_kpi_row.dart';
 import 'home_task_summary_dialog.dart';
 import '../demo/demo_guide_banner.dart';
 import '../daily_report/widgets/daily_report_export_sections_sheet.dart';
@@ -221,6 +222,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         );
                       },
                     ),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  _SummarySection(
+                    title: 'İmalat özeti',
+                    icon: Icons.construction_outlined,
+                    onTap: () => context.go(AppRoutes.imalat),
+                    child: const HomeImalatGroupKpiRow(),
                   ),
                   const SizedBox(height: AppSpacing.md),
                   _SummarySection(
