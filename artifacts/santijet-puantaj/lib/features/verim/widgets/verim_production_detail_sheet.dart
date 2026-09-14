@@ -17,6 +17,8 @@ class VerimProductionCharts extends StatefulWidget {
     super.key,
     this.inline = false,
     this.chartHeight = 150,
+    this.onlyDates,
+    this.stackBothChartModes = false,
   });
 
   final Production production;
@@ -24,6 +26,12 @@ class VerimProductionCharts extends StatefulWidget {
   /// Liste kartında üst bilgi zaten gösteriliyorsa ekip/rozet gizlenir.
   final bool inline;
   final double chartHeight;
+
+  /// Haftalık / aylık rapor — yalnızca bu günlerin kayıtları.
+  final Set<String>? onlyDates;
+
+  /// Raporda çizgisel ve örümcek üst üste (segment yok).
+  final bool stackBothChartModes;
 
   @override
   State<VerimProductionCharts> createState() => _VerimProductionChartsState();
@@ -36,6 +44,10 @@ class _VerimProductionChartsState extends State<VerimProductionCharts> {
     final production = widget.production;
     final byDay = <DateTime, ({double qty, double labor})>{};
     for (final e in production.dailyEntries) {
+      if (widget.onlyDates != null &&
+          !widget.onlyDates!.contains(e.date.trim())) {
+        continue;
+      }
       final d = PuantajDate.tryParse(e.date);
       if (d == null) continue;
       if (e.completedQty <= 0 && e.laborDays <= 0) continue;
@@ -115,6 +127,26 @@ class _VerimProductionChartsState extends State<VerimProductionCharts> {
       );
     }
 
+    final lineCharts = _buildLineCharts(theme, points, metrics, unit);
+    final spiderBlock = [
+      _VerimOrumcekOzetChart(
+        points: points,
+        metrics: metrics,
+        unit: unit,
+      ),
+      const SizedBox(height: AppSpacing.sm),
+      Text(
+        widget.onlyDates != null
+            ? 'Dönem içi kümülatif süre, metraj ve adam-gün; verim birim '
+                'verim yüzdesidir. Eksenler plana göre 100 üzerinden ölçeklenir.'
+            : 'Son güne kadar kümülatif süre, metraj ve adam-gün; verim birim '
+                'verim yüzdesidir. Eksenler plana göre 100 üzerinden ölçeklenir.',
+        style: theme.textTheme.labelSmall?.copyWith(
+          color: theme.colorScheme.onSurfaceVariant,
+        ),
+      ),
+    ];
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -135,104 +167,124 @@ class _VerimProductionChartsState extends State<VerimProductionCharts> {
           ],
           const SizedBox(height: AppSpacing.md),
         ],
-        SegmentedButton<_VerimProductionChartMode>(
-          segments: const [
-            ButtonSegment(
-              value: _VerimProductionChartMode.cizgisel,
-              label: Text('Çizgisel'),
-              icon: Icon(Icons.show_chart_outlined, size: 18),
+        if (widget.stackBothChartModes) ...[
+          Text(
+            'Çizgisel',
+            style: theme.textTheme.labelLarge?.copyWith(
+              fontWeight: FontWeight.w700,
             ),
-            ButtonSegment(
-              value: _VerimProductionChartMode.orumcekOzet,
-              label: Text('Örümcek özet'),
-              icon: Icon(Icons.radar_outlined, size: 18),
-            ),
-          ],
-          selected: {_mode},
-          onSelectionChanged: (next) {
-            if (next.isEmpty) return;
-            setState(() => _mode = next.first);
-          },
-          style: ButtonStyle(
-            visualDensity: VisualDensity.compact,
-            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-          ),
-        ),
-        const SizedBox(height: AppSpacing.md),
-        if (_mode == _VerimProductionChartMode.orumcekOzet) ...[
-          _VerimOrumcekOzetChart(
-            points: points,
-            metrics: metrics,
-            unit: unit,
           ),
           const SizedBox(height: AppSpacing.sm),
+          ...lineCharts,
+          const SizedBox(height: AppSpacing.lg),
           Text(
-            'Son güne kadar kümülatif süre, metraj ve adam-gün; verim birim '
-            'verim yüzdesidir. Eksenler plana göre 100 üzerinden ölçeklenir.',
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
+            'Örümcek özet',
+            style: theme.textTheme.labelLarge?.copyWith(
+              fontWeight: FontWeight.w700,
             ),
           ),
+          const SizedBox(height: AppSpacing.sm),
+          ...spiderBlock,
         ] else ...[
-        _VerimChartSection(
-          title: 'Süre · Çalışılan gün',
-          points: points,
-          height: widget.chartHeight,
-          unitSuffix: ' gün',
-          primaryValue: (p) => p.cumulativeWorkedDays,
-          secondaryValue: (p) => p.plannedCumulativeWorkedDays,
-          showSecondary: metrics.sure.hasPlan,
-          primaryLabel: 'Gerçek',
-          secondaryLabel: 'Plan',
-        ),
-        const SizedBox(height: AppSpacing.lg),
-        _VerimChartSection(
-          title: 'Metraj · Kümülatif',
-          points: points,
-          height: widget.chartHeight,
-          unitSuffix: unit.isEmpty ? '' : ' $unit',
-          primaryValue: (p) => p.cumulativeQty,
-          secondaryValue: (p) => p.plannedCumulativeQty,
-          showSecondary: metrics.metraj.hasPlan,
-          primaryLabel: 'Gerçek',
-          secondaryLabel: 'Plan',
-        ),
-        const SizedBox(height: AppSpacing.lg),
-        _VerimChartSection(
-          title: 'Adam-gün · Kümülatif',
-          points: points,
-          height: widget.chartHeight,
-          unitSuffix: ' AG',
-          primaryValue: (p) => p.cumulativeLabor,
-          secondaryValue: (p) => p.plannedCumulativeLabor,
-          showSecondary: metrics.labor.hasPlan,
-          primaryLabel: 'Gerçek',
-          secondaryLabel: 'Plan',
-        ),
-        const SizedBox(height: AppSpacing.lg),
-        _VerimChartSection(
-          title: 'Verim · Birim verim',
-          points: points,
-          height: widget.chartHeight,
-          unitSuffix: '%',
-          primaryValue: (p) => p.efficiencyPct,
-          secondaryValue: (_) => 100,
-          showSecondary: metrics.canComputeEfficiency,
-          primaryLabel: 'Verim',
-          secondaryLabel: 'Plan',
-          minY: 0,
-        ),
-        const SizedBox(height: AppSpacing.sm),
-        Text(
-          'Her nokta o güne kadar kümülatif süre, metraj, adam-gün ve birim '
-          'verimi gösterir.',
-          style: theme.textTheme.labelSmall?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
+          SegmentedButton<_VerimProductionChartMode>(
+            segments: const [
+              ButtonSegment(
+                value: _VerimProductionChartMode.cizgisel,
+                label: Text('Çizgisel'),
+                icon: Icon(Icons.show_chart_outlined, size: 18),
+              ),
+              ButtonSegment(
+                value: _VerimProductionChartMode.orumcekOzet,
+                label: Text('Örümcek özet'),
+                icon: Icon(Icons.radar_outlined, size: 18),
+              ),
+            ],
+            selected: {_mode},
+            onSelectionChanged: (next) {
+              if (next.isEmpty) return;
+              setState(() => _mode = next.first);
+            },
+            style: ButtonStyle(
+              visualDensity: VisualDensity.compact,
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
           ),
-        ),
+          const SizedBox(height: AppSpacing.md),
+          if (_mode == _VerimProductionChartMode.orumcekOzet)
+            ...spiderBlock
+          else
+            ...lineCharts,
         ],
       ],
     );
+  }
+
+  List<Widget> _buildLineCharts(
+    ThemeData theme,
+    List<_VerimTimelinePoint> points,
+    ProductionMetrics metrics,
+    String unit,
+  ) {
+    return [
+      _VerimChartSection(
+        title: 'Süre · Çalışılan gün',
+        points: points,
+        height: widget.chartHeight,
+        unitSuffix: ' gün',
+        primaryValue: (p) => p.cumulativeWorkedDays,
+        secondaryValue: (p) => p.plannedCumulativeWorkedDays,
+        showSecondary: metrics.sure.hasPlan,
+        primaryLabel: 'Gerçek',
+        secondaryLabel: 'Plan',
+      ),
+      const SizedBox(height: AppSpacing.lg),
+      _VerimChartSection(
+        title: 'Metraj · Kümülatif',
+        points: points,
+        height: widget.chartHeight,
+        unitSuffix: unit.isEmpty ? '' : ' $unit',
+        primaryValue: (p) => p.cumulativeQty,
+        secondaryValue: (p) => p.plannedCumulativeQty,
+        showSecondary: metrics.metraj.hasPlan,
+        primaryLabel: 'Gerçek',
+        secondaryLabel: 'Plan',
+      ),
+      const SizedBox(height: AppSpacing.lg),
+      _VerimChartSection(
+        title: 'Adam-gün · Kümülatif',
+        points: points,
+        height: widget.chartHeight,
+        unitSuffix: ' AG',
+        primaryValue: (p) => p.cumulativeLabor,
+        secondaryValue: (p) => p.plannedCumulativeLabor,
+        showSecondary: metrics.labor.hasPlan,
+        primaryLabel: 'Gerçek',
+        secondaryLabel: 'Plan',
+      ),
+      const SizedBox(height: AppSpacing.lg),
+      _VerimChartSection(
+        title: 'Verim · Birim verim',
+        points: points,
+        height: widget.chartHeight,
+        unitSuffix: '%',
+        primaryValue: (p) => p.efficiencyPct,
+        secondaryValue: (_) => 100,
+        showSecondary: metrics.canComputeEfficiency,
+        primaryLabel: 'Verim',
+        secondaryLabel: 'Plan',
+        minY: 0,
+      ),
+      const SizedBox(height: AppSpacing.sm),
+      Text(
+        widget.onlyDates != null
+            ? 'Her nokta dönem içinde o güne kadar kümülatif değerleri gösterir.'
+            : 'Her nokta o güne kadar kümülatif süre, metraj, adam-gün ve birim '
+                'verimi gösterir.',
+        style: theme.textTheme.labelSmall?.copyWith(
+          color: theme.colorScheme.onSurfaceVariant,
+        ),
+      ),
+    ];
   }
 }
 

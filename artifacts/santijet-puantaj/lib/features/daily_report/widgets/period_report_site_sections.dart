@@ -13,6 +13,7 @@ import '../../../data/services/production_performance_chart_options.dart';
 import '../../../data/services/puantaj_report_builder.dart';
 import '../../imalat/widgets/production_group_summary_strip.dart';
 import '../../imalat/widgets/production_performance_bar_chart.dart';
+import '../../verim/widgets/verim_production_detail_sheet.dart';
 import 'attendance_summary_table.dart';
 import 'period_production_chart_panel.dart';
 
@@ -320,6 +321,14 @@ class _ImalatPeriodCard extends StatelessWidget {
                 hidePeriodChips: true,
                 height: 200,
               ),
+              const SizedBox(height: AppSpacing.md),
+              VerimProductionCharts(
+                production: production!,
+                inline: true,
+                chartHeight: 130,
+                onlyDates: daySet,
+                stackBothChartModes: true,
+              ),
             ],
           ],
         );
@@ -328,13 +337,13 @@ class _ImalatPeriodCard extends StatelessWidget {
   }
 }
 
-class _VerimReportSection extends StatelessWidget {
+class _VerimReportSection extends ConsumerWidget {
   const _VerimReportSection({required this.report});
 
   final PeriodSiteReportData report;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final rows = report.verimRows;
     if (rows.isEmpty) {
       return SJCard.builder(
@@ -347,11 +356,31 @@ class _VerimReportSection extends StatelessWidget {
       );
     }
 
+    final productions = ref.watch(productionProvider);
+    final byId = {for (final p in productions) p.id: p};
+    final daySet = report.days.toSet();
+    final groups = report.imalatGroupSummaries;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         PeriodProductionChartPanel.verim(report: report),
         const SizedBox(height: AppSpacing.md),
+        if (groups.isNotEmpty) ...[
+          Text(
+            'Grup özeti (dönem)',
+            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          ProductionGroupSummaryStrip(
+            summaries: groups,
+            selectedTeamKey: null,
+            onTeamTap: (_) {},
+          ),
+          const SizedBox(height: AppSpacing.md),
+        ],
         Text(
           'Verim detayı',
           style: Theme.of(context).textTheme.labelLarge?.copyWith(
@@ -361,7 +390,11 @@ class _VerimReportSection extends StatelessWidget {
         const SizedBox(height: AppSpacing.sm),
         for (var i = 0; i < rows.length; i++) ...[
           if (i > 0) const SizedBox(height: AppSpacing.sm),
-          _VerimPeriodCard(row: rows[i]),
+          _VerimPeriodCard(
+            row: rows[i],
+            production: byId[rows[i].productionId],
+            daySet: daySet,
+          ),
         ],
       ],
     );
@@ -369,9 +402,15 @@ class _VerimReportSection extends StatelessWidget {
 }
 
 class _VerimPeriodCard extends StatelessWidget {
-  const _VerimPeriodCard({required this.row});
+  const _VerimPeriodCard({
+    required this.row,
+    required this.production,
+    required this.daySet,
+  });
 
   final PeriodVerimRow row;
+  final Production? production;
+  final Set<String> daySet;
 
   @override
   Widget build(BuildContext context) {
@@ -443,6 +482,16 @@ class _VerimPeriodCard extends StatelessWidget {
                 ),
               ],
             ),
+            if (production != null) ...[
+              const SizedBox(height: AppSpacing.md),
+              VerimProductionCharts(
+                production: production!,
+                inline: true,
+                chartHeight: 130,
+                onlyDates: daySet,
+                stackBothChartModes: true,
+              ),
+            ],
           ],
         );
       },

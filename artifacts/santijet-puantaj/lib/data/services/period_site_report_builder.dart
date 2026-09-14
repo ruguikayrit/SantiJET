@@ -42,6 +42,7 @@ class PeriodImalatRow {
 /// Verim — dönem gerçekleşen + plan (Verim sekmesi mantığı).
 class PeriodVerimRow {
   const PeriodVerimRow({
+    required this.productionId,
     required this.imalatName,
     this.teamName,
     this.unit,
@@ -52,6 +53,7 @@ class PeriodVerimRow {
     this.unitEfficiency,
   });
 
+  final String productionId;
   final String imalatName;
   final String? teamName;
   final String? unit;
@@ -340,6 +342,7 @@ abstract final class PeriodSiteReportBuilder {
 
       verimRows.add(
         PeriodVerimRow(
+          productionId: p.id,
           imalatName: p.name,
           teamName: p.teamName,
           unit: p.unit,
