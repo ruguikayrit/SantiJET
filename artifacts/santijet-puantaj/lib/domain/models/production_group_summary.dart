@@ -20,6 +20,32 @@ class ProductionGroupSummary {
   final List<ProductionProgressAxis> axes;
   final bool updatedToday;
 
+  ProductionProgressAxis? get _sureAxis {
+    for (final a in axes) {
+      if (a.label == 'Süre') return a;
+    }
+    return null;
+  }
+
+  ProductionProgressAxis? get _laborAxis {
+    for (final a in axes) {
+      if (a.label == 'Adam-gün') return a;
+    }
+    return null;
+  }
+
+  /// Grup toplamı — planlanan / gerçekleşen süre ve adam-gün ortalaması (1.0 = plan).
+  double? get groupScheduleLaborEfficiency {
+    final sure = _sureAxis;
+    final labor = _laborAxis;
+    if (sure == null || labor == null) return null;
+    if (!sure.hasPlan || !labor.hasPlan) return null;
+    if (sure.actual <= 0 || labor.actual <= 0) return null;
+    final rSure = sure.planned / sure.actual;
+    final rLabor = labor.planned / labor.actual;
+    return (rSure + rLabor) / 2;
+  }
+
   static List<ProductionGroupSummary> fromProductions(List<Production> items) {
     if (items.isEmpty) return const [];
 

@@ -16,6 +16,7 @@ class ProductionGroupSummaryStrip extends StatelessWidget {
     required this.selectedTeamKey,
     required this.onTeamTap,
     this.subtitleBuilder,
+    this.verimTitleOnly = false,
   });
 
   final List<ProductionGroupSummary> summaries;
@@ -23,20 +24,35 @@ class ProductionGroupSummaryStrip extends StatelessWidget {
   final ValueChanged<String> onTeamTap;
   final String Function(ProductionGroupSummary summary)? subtitleBuilder;
 
+  /// Verim sekmesi — başlıkta yalnızca verim %; süre / AG çubukları yok.
+  final bool verimTitleOnly;
+
+  static String _fmtVerimPct(double? ratio) {
+    if (ratio == null) return '—';
+    return '%${(ratio * 100).toStringAsFixed(0)}';
+  }
+
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 148,
+      height: verimTitleOnly ? 108 : 148,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: summaries.length,
         separatorBuilder: (_, __) => const SizedBox(width: AppSpacing.sm),
         itemBuilder: (context, i) {
+          final theme = Theme.of(context);
           final s = summaries[i];
           final selected = selectedTeamKey == s.groupKey;
           final accent = TaskTagCatalog.accentFor(s.groupKey);
           final subtitle = subtitleBuilder?.call(s) ??
               '${s.itemCount} imalat';
+          final verim = s.groupScheduleLaborEfficiency;
+          final verimInk = verim == null
+              ? theme.colorScheme.onSurfaceVariant
+              : AppColors.statusInkOnCard(
+                  efficiencyColorForRatio(verim),
+                );
 
           return SizedBox(
             width: 200,
@@ -45,6 +61,49 @@ class ProductionGroupSummaryStrip extends StatelessWidget {
               accentColor: selected ? accent : null,
               onTap: () => onTeamTap(s.groupKey),
               builder: (context, theme) {
+                if (verimTitleOnly) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              _fmtVerimPct(verim),
+                              style: theme.textTheme.headlineSmall?.copyWith(
+                                fontWeight: FontWeight.w800,
+                                color: verimInk,
+                                height: 1,
+                              ),
+                            ),
+                          ),
+                          if (s.updatedToday)
+                            SJStatusBadge(
+                              label: 'Bugün',
+                              color: AppColors.info,
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        '${s.title} · $subtitle',
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                      if (verim != null) ...[
+                        const Spacer(),
+                        UnitEfficiencyBar(
+                          efficiency: verim.clamp(0.0, 2.0),
+                          height: 4,
+                        ),
+                      ],
+                    ],
+                  );
+                }
+
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
@@ -60,11 +119,21 @@ class ProductionGroupSummaryStrip extends StatelessWidget {
                             ),
                           ),
                         ),
-                        if (s.updatedToday)
+                        if (verim != null)
+                          Text(
+                            _fmtVerimPct(verim),
+                            style: theme.textTheme.labelMedium?.copyWith(
+                              fontWeight: FontWeight.w800,
+                              color: verimInk,
+                            ),
+                          ),
+                        if (s.updatedToday) ...[
+                          const SizedBox(width: 4),
                           SJStatusBadge(
                             label: 'Bugün',
                             color: AppColors.info,
                           ),
+                        ],
                       ],
                     ),
                     const SizedBox(height: 2),

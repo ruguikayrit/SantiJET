@@ -132,6 +132,7 @@ class _VerimScreenState extends ConsumerState<VerimScreen> {
                 const SizedBox(height: AppSpacing.sm),
                 ProductionGroupSummaryStrip(
                   summaries: groupSummaries,
+                  verimTitleOnly: true,
                   selectedTeamKey: _groupFilter,
                   onTeamTap: (teamKey) {
                     setState(() {
