@@ -6,7 +6,9 @@ import '../../../core/theme/app_radii.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/production_triple_progress.dart';
 import '../../../data/services/period_site_report_builder.dart';
+import '../../imalat/widgets/production_group_summary_strip.dart';
 import 'attendance_summary_table.dart';
+import 'period_site_report_charts.dart';
 
 String _fmtNum(double v) {
   if (v == v.roundToDouble()) return v.toStringAsFixed(0);
@@ -59,13 +61,13 @@ class PeriodSiteReportSections extends StatelessWidget {
         _CollapsibleSection(
           icon: Icons.construction_outlined,
           title: 'Yapılan işler (İmalat)',
-          child: _ImalatTableSection(rows: report.imalatRows),
+          child: _ImalatReportSection(report: report),
         ),
         const SizedBox(height: AppSpacing.md),
         _CollapsibleSection(
           icon: Icons.speed_outlined,
           title: 'Verim',
-          child: _VerimTableSection(rows: report.verimRows),
+          child: _VerimReportSection(report: report),
         ),
       ],
     );
@@ -132,13 +134,14 @@ class _CollapsibleSectionState extends State<_CollapsibleSection> {
   }
 }
 
-class _ImalatTableSection extends StatelessWidget {
-  const _ImalatTableSection({required this.rows});
+class _ImalatReportSection extends StatelessWidget {
+  const _ImalatReportSection({required this.report});
 
-  final List<PeriodImalatRow> rows;
+  final PeriodSiteReportData report;
 
   @override
   Widget build(BuildContext context) {
+    final rows = report.imalatRows;
     if (rows.isEmpty) {
       return SJCard.builder(
         builder: (context, theme) => Text(
@@ -150,9 +153,41 @@ class _ImalatTableSection extends StatelessWidget {
       );
     }
 
+    final metrajSlices = imalatPeriodMetrajSlices(rows);
+    final groups = report.imalatGroupSummaries;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        if (groups.isNotEmpty) ...[
+          Text(
+            'Grup özeti (dönem)',
+            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          ProductionGroupSummaryStrip(
+            summaries: groups,
+            selectedTeamKey: null,
+            onTeamTap: (_) {},
+          ),
+          const SizedBox(height: AppSpacing.md),
+        ],
+        if (metrajSlices.isNotEmpty) ...[
+          PeriodReportHorizontalBarChart(
+            title: 'Dönem metraj (imalat)',
+            slices: metrajSlices,
+          ),
+          const SizedBox(height: AppSpacing.md),
+        ],
+        Text(
+          'İmalat detayı',
+          style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+        ),
+        const SizedBox(height: AppSpacing.sm),
         for (var i = 0; i < rows.length; i++) ...[
           if (i > 0) const SizedBox(height: AppSpacing.sm),
           _ImalatPeriodCard(row: rows[i]),
@@ -264,13 +299,14 @@ class _ImalatPeriodCard extends StatelessWidget {
   }
 }
 
-class _VerimTableSection extends StatelessWidget {
-  const _VerimTableSection({required this.rows});
+class _VerimReportSection extends StatelessWidget {
+  const _VerimReportSection({required this.report});
 
-  final List<PeriodVerimRow> rows;
+  final PeriodSiteReportData report;
 
   @override
   Widget build(BuildContext context) {
+    final rows = report.verimRows;
     if (rows.isEmpty) {
       return SJCard.builder(
         builder: (context, theme) => Text(
@@ -282,9 +318,33 @@ class _VerimTableSection extends StatelessWidget {
       );
     }
 
+    final agSlices = verimPeriodAgCompareSlices(rows);
+    final effSlices = verimPeriodEfficiencySlices(rows);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        if (agSlices.isNotEmpty) ...[
+          PeriodReportHorizontalBarChart(
+            title: 'Adam-gün · plan ve dönem',
+            slices: agSlices,
+          ),
+          const SizedBox(height: AppSpacing.md),
+        ],
+        if (effSlices.isNotEmpty) ...[
+          PeriodReportHorizontalBarChart(
+            title: 'Birim verim (dönem, %)',
+            slices: effSlices,
+          ),
+          const SizedBox(height: AppSpacing.md),
+        ],
+        Text(
+          'Verim detayı',
+          style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+        ),
+        const SizedBox(height: AppSpacing.sm),
         for (var i = 0; i < rows.length; i++) ...[
           if (i > 0) const SizedBox(height: AppSpacing.sm),
           _VerimPeriodCard(row: rows[i]),

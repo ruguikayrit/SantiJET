@@ -5,6 +5,7 @@ import '../../domain/entities/attendance.dart';
 import '../../domain/entities/daily_report.dart';
 import '../../domain/entities/person.dart';
 import '../../domain/entities/production.dart';
+import '../../domain/models/production_group_summary.dart';
 import '../../domain/models/production_metrics.dart';
 import '../../domain/entities/uninsured_team_entry.dart';
 import '../../domain/entities/yevmiyeli_is_kaydi.dart';
@@ -170,6 +171,7 @@ class PeriodSiteReportData {
     required this.yevmiyeli,
     required this.imalatRows,
     required this.verimRows,
+    required this.imalatGroupSummaries,
     required this.fileStem,
   });
 
@@ -182,6 +184,7 @@ class PeriodSiteReportData {
   final PuantajReportData yevmiyeli;
   final List<PeriodImalatRow> imalatRows;
   final List<PeriodVerimRow> verimRows;
+  final List<ProductionGroupSummary> imalatGroupSummaries;
   final String fileStem;
 
   bool get hasImalat => imalatRows.isNotEmpty;
@@ -341,6 +344,11 @@ abstract final class PeriodSiteReportBuilder {
       );
     }
 
+    final imalatGroupSummaries = ProductionGroupSummary.forPeriod(
+      projectProductions,
+      daySet,
+    );
+
     return PeriodSiteReportData(
       periodLabel: periodLabel,
       rangeLabel: rangeLabel,
@@ -351,6 +359,7 @@ abstract final class PeriodSiteReportBuilder {
       yevmiyeli: yevmiyeli,
       imalatRows: imalatRows,
       verimRows: verimRows,
+      imalatGroupSummaries: imalatGroupSummaries,
       fileStem: fileStem,
     );
   }

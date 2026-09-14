@@ -200,6 +200,42 @@ class PeriodSiteReportExportService {
       startSectionPage();
       body.add(_pdfSectionTitle('Yapılan işler (İmalat)'));
       body.add(pw.SizedBox(height: 6));
+      if (report.imalatGroupSummaries.isNotEmpty) {
+        body.add(_pdfSectionSubtitle('Grup özeti (dönem)'));
+        body.add(pw.SizedBox(height: 4));
+        body.add(
+          _pdfTable(
+            const ['Grup', 'İmalat', 'Süre', 'Adam-gün'],
+            [
+              for (final g in report.imalatGroupSummaries)
+                [
+                  g.title,
+                  '${g.itemCount}',
+                  g.axes.length > 0 ? g.axes[0].detail : '—',
+                  g.axes.length > 1 ? g.axes[1].detail : '—',
+                ],
+            ],
+          ),
+        );
+        body.add(pw.SizedBox(height: 8));
+      }
+      final metrajBars = [
+        for (final r in report.imalatRows)
+          (label: r.name, value: r.periodQty, unit: r.unit),
+      ]..sort((a, b) => b.value.compareTo(a.value));
+      if (metrajBars.isNotEmpty) {
+        body.add(_pdfSectionSubtitle('Dönem metraj grafiği'));
+        body.add(pw.SizedBox(height: 4));
+        body.add(
+          _pdfBarChart(
+            metrajBars.take(10).map((e) => (e.label, e.value)).toList(),
+            unitHint: metrajBars.first.unit,
+          ),
+        );
+        body.add(pw.SizedBox(height: 8));
+      }
+      body.add(_pdfSectionSubtitle('İmalat detayı'));
+      body.add(pw.SizedBox(height: 4));
       body.add(
         _pdfTable(
           const [
@@ -235,6 +271,41 @@ class PeriodSiteReportExportService {
       startSectionPage();
       body.add(_pdfSectionTitle('Verim'));
       body.add(pw.SizedBox(height: 6));
+      var planAg = 0.0;
+      var actualAg = 0.0;
+      for (final r in report.verimRows) {
+        planAg += r.plannedWorkerDays;
+        actualAg += r.periodActualWorkerDays;
+      }
+      if (planAg > 0 || actualAg > 0) {
+        body.add(_pdfSectionSubtitle('Adam-gün · plan ve dönem'));
+        body.add(pw.SizedBox(height: 4));
+        body.add(
+          _pdfBarChart([
+            ('Plan', planAg),
+            ('Dönem', actualAg),
+          ], unitHint: 'AG'),
+        );
+        body.add(pw.SizedBox(height: 8));
+      }
+      final effBars = [
+        for (final r in report.verimRows)
+          if (r.unitEfficiency != null)
+            (r.imalatName, r.unitEfficiency! * 100),
+      ]..sort((a, b) => b.$2.compareTo(a.$2));
+      if (effBars.isNotEmpty) {
+        body.add(_pdfSectionSubtitle('Birim verim (dönem, %)'));
+        body.add(pw.SizedBox(height: 4));
+        body.add(
+          _pdfBarChart(
+            effBars.take(10).map((e) => (e.$1, e.$2)).toList(),
+            unitHint: '%',
+          ),
+        );
+        body.add(pw.SizedBox(height: 8));
+      }
+      body.add(_pdfSectionSubtitle('Verim detayı'));
+      body.add(pw.SizedBox(height: 4));
       body.add(
         _pdfTable(
           const [
@@ -341,6 +412,69 @@ class PeriodSiteReportExportService {
     );
   }
 
+  pw.Widget _pdfSectionSubtitle(String text) {
+    return pw.Text(
+      text,
+      style: pw.TextStyle(
+        fontSize: 9,
+        fontWeight: pw.FontWeight.bold,
+        color: _inkMuted,
+      ),
+    );
+  }
+
+  pw.Widget _pdfBarChart(
+    List<(String, double)> items, {
+    required String unitHint,
+  }) {
+    if (items.isEmpty) {
+      return pw.Text(
+        'Grafik için veri yok',
+        style: const pw.TextStyle(fontSize: 8, color: _inkMuted),
+      );
+    }
+    final maxV = items.fold<double>(0, (m, e) => e.$2 > m ? e.$2 : m);
+    final top = maxV <= 0 ? 1.0 : maxV;
+    return pw.Column(
+      children: [
+        for (final item in items)
+          pw.Padding(
+            padding: const pw.EdgeInsets.only(bottom: 5),
+            child: pw.Row(
+              children: [
+                pw.SizedBox(
+                  width: 72,
+                  child: pw.Text(
+                    item.$1,
+                    maxLines: 2,
+                    style: const pw.TextStyle(fontSize: 7, color: _ink),
+                  ),
+                ),
+                pw.Expanded(
+                  child: pw.Container(
+                    height: 7,
+                    alignment: pw.Alignment.centerLeft,
+                    child: pw.Container(
+                      width: (item.$2 / top) * 280,
+                      height: 7,
+                      color: _headerBg,
+                    ),
+                  ),
+                ),
+                pw.SizedBox(width: 4),
+                pw.Text(
+                  unitHint == '%'
+                      ? '%${_fmt(item.$2)}'
+                      : '${_fmt(item.$2)} $unitHint',
+                  style: const pw.TextStyle(fontSize: 7, color: _ink),
+                ),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+
   pw.Widget _pdfTable(List<String> headers, List<List<String>> rows) {
     if (rows.isEmpty) {
       return pw.Text(
@@ -430,6 +564,36 @@ class PeriodSiteReportExportService {
       );
     }
     if (sections.imalat) {
+      if (report.imalatGroupSummaries.isNotEmpty) {
+        _writeSheet(
+          excel,
+          'İmalat grup',
+          const ['Grup', 'İmalat adet', 'Süre', 'Adam-gün'],
+          [
+            for (final g in report.imalatGroupSummaries)
+              [
+                g.title,
+                '${g.itemCount}',
+                g.axes.length > 0 ? g.axes[0].detail : '—',
+                g.axes.length > 1 ? g.axes[1].detail : '—',
+              ],
+          ],
+        );
+      }
+      final metrajChart = [
+        for (final r in report.imalatRows) (r.name, r.periodQty, r.unit),
+      ]..sort((a, b) => b.$2.compareTo(a.$2));
+      if (metrajChart.isNotEmpty) {
+        _writeSheet(
+          excel,
+          'İmalat grafik',
+          const ['İmalat', 'Dönem metraj', 'Birim'],
+          [
+            for (final row in metrajChart.take(20))
+              [row.$1, _fmt(row.$2), row.$3],
+          ],
+        );
+      }
       _writeSheet(
         excel,
         'İmalat',
@@ -461,6 +625,39 @@ class PeriodSiteReportExportService {
       );
     }
     if (sections.verim) {
+      var planAg = 0.0;
+      var actualAg = 0.0;
+      for (final r in report.verimRows) {
+        planAg += r.plannedWorkerDays;
+        actualAg += r.periodActualWorkerDays;
+      }
+      if (planAg > 0 || actualAg > 0) {
+        _writeSheet(
+          excel,
+          'Verim AG grafik',
+          const ['Kalem', 'Değer'],
+          [
+            ['Plan Adam-gün', _fmt(planAg)],
+            ['Dönem Adam-gün', _fmt(actualAg)],
+          ],
+        );
+      }
+      final effChart = [
+        for (final r in report.verimRows)
+          if (r.unitEfficiency != null)
+            (r.imalatName, r.unitEfficiency! * 100),
+      ]..sort((a, b) => b.$2.compareTo(a.$2));
+      if (effChart.isNotEmpty) {
+        _writeSheet(
+          excel,
+          'Verim grafik',
+          const ['İmalat', 'Birim verim %'],
+          [
+            for (final row in effChart.take(20))
+              [row.$1, _fmt(row.$2)],
+          ],
+        );
+      }
       _writeSheet(
         excel,
         'Verim',
