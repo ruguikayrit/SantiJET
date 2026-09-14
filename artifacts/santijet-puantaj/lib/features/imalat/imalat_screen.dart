@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/design_system/sj_add_fab.dart';
 import '../../core/design_system/sj_card.dart';
+import '../../core/design_system/sj_search_bar.dart';
 import '../../core/design_system/sj_empty_state.dart';
 import '../../core/design_system/sj_status_badge.dart';
 import '../../core/routing/app_routes.dart';
@@ -71,13 +72,37 @@ class ImalatScreen extends ConsumerStatefulWidget {
 
 class _ImalatScreenState extends ConsumerState<ImalatScreen> {
   /// Seçili imalat durumu — acil görev filtre kartları gibi.
-  _ImalatPhase _selectedPhase = _ImalatPhase.devamEden;
+  /// null = faz filtresi yok (tümü); aynı karta tekrar tıklanınca null olur.
+  _ImalatPhase? _selectedPhase = _ImalatPhase.devamEden;
 
   /// null = tüm gruplar; dolu = grup özet kartı filtresi (ekip adı).
   String? _groupFilter;
 
   /// null = tüm ekipler; dolu = ekip özet kartı filtresi (ekip + birim).
   String? _teamFilter;
+
+  final _searchController = TextEditingController();
+  String _searchQuery = '';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  static bool _matchesSearch(Production p, String query) {
+    final q = query.trim().toLowerCase();
+    if (q.isEmpty) return true;
+    final hay = [
+      p.name,
+      p.locationLabel,
+      p.teamName,
+      p.unit,
+      p.workGroup,
+      p.note,
+    ].join(' ').toLowerCase();
+    return hay.contains(q);
+  }
 
   static bool _updatedToday(Production p) {
     final today = PuantajDate.today();
@@ -218,7 +243,8 @@ class _ImalatScreenState extends ConsumerState<ImalatScreen> {
               color: _ImalatPhase.values[i].accent,
               selected: _selectedPhase == _ImalatPhase.values[i],
               onTap: () => setState(() {
-                _selectedPhase = _ImalatPhase.values[i];
+                final phase = _ImalatPhase.values[i];
+                _selectedPhase = _selectedPhase == phase ? null : phase;
                 _teamFilter = null;
               }),
             ),
@@ -229,7 +255,6 @@ class _ImalatScreenState extends ConsumerState<ImalatScreen> {
   }
 
   Widget _phaseContent({
-    required _ImalatPhase phase,
     required List<Production> phaseItems,
   }) {
     final theme = Theme.of(context);
@@ -261,6 +286,11 @@ class _ImalatScreenState extends ConsumerState<ImalatScreen> {
           .where((p) => TeamImalatSummary.teamKey(p) == _teamFilter)
           .toList();
     }
+    if (_searchQuery.trim().isNotEmpty) {
+      filteredItems = filteredItems
+          .where((p) => _matchesSearch(p, _searchQuery))
+          .toList();
+    }
 
     final groupFilterLabel = _groupFilter == null
         ? null
@@ -276,10 +306,14 @@ class _ImalatScreenState extends ConsumerState<ImalatScreen> {
             .map((s) => s.teamName)
             .firstOrNull;
 
-    final listFilterActive = _groupFilter != null || _teamFilter != null;
-    final listFilterLabel = _teamFilter != null
-        ? (teamFilterLabel ?? _teamFilter)
-        : (groupFilterLabel ?? _groupFilter);
+    final searchActive = _searchQuery.trim().isNotEmpty;
+    final listFilterActive =
+        _groupFilter != null || _teamFilter != null || searchActive;
+    final listFilterLabel = searchActive
+        ? '"${_searchQuery.trim()}"'
+        : _teamFilter != null
+            ? (teamFilterLabel ?? _teamFilter)
+            : (groupFilterLabel ?? _groupFilter);
 
     filteredItems.sort((a, b) {
       final name = a.name.toLowerCase().compareTo(b.name.toLowerCase());
@@ -346,6 +380,8 @@ class _ImalatScreenState extends ConsumerState<ImalatScreen> {
                 onPressed: () => setState(() {
                   _groupFilter = null;
                   _teamFilter = null;
+                  _searchController.clear();
+                  _searchQuery = '';
                 }),
                 child: const Text('Tümünü göster'),
               ),
@@ -354,7 +390,9 @@ class _ImalatScreenState extends ConsumerState<ImalatScreen> {
         const SizedBox(height: AppSpacing.sm),
         if (filteredItems.isEmpty)
           Text(
-            'Bu ekibe atanmış imalat yok',
+            searchActive
+                ? 'Aramanızla eşleşen imalat yok'
+                : 'Bu filtrede imalat yok',
             style: theme.textTheme.bodySmall?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),
@@ -455,9 +493,25 @@ class _ImalatScreenState extends ConsumerState<ImalatScreen> {
                       ),
                       children: [
                         _phaseFilterBar(byPhase),
+                        const SizedBox(height: AppSpacing.sm),
+                        SJSearchBar(
+                          controller: _searchController,
+                          hint: 'İmalat ara…',
+                          onChanged: (v) => setState(() => _searchQuery = v),
+                          onClear: () => setState(() {
+                            _searchController.clear();
+                            _searchQuery = '';
+                          }),
+                        ),
+                        const SizedBox(height: AppSpacing.sm),
                         _phaseContent(
-                          phase: _selectedPhase,
-                          phaseItems: byPhase[_selectedPhase]!,
+                          phaseItems: _selectedPhase == null
+                              ? [
+                                  ...byPhase[_ImalatPhase.bekleyen]!,
+                                  ...byPhase[_ImalatPhase.devamEden]!,
+                                  ...byPhase[_ImalatPhase.tamamlanan]!,
+                                ]
+                              : byPhase[_selectedPhase!]!,
                         ),
                       ],
                     ),
