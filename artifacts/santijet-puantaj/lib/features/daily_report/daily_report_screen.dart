@@ -24,9 +24,12 @@ import '../../data/providers/daily_report_export_sections_provider.dart';
 import '../../data/providers/daily_report_provider.dart';
 import '../../data/providers/period_site_report_export_sections_provider.dart';
 import '../../data/providers/period_site_report_provider.dart';
+import '../../data/providers/production_chart_options_provider.dart';
+import '../../data/providers/production_provider.dart';
 import '../../data/services/daily_report_pdf_service.dart';
 import '../../data/services/period_site_report_builder.dart';
 import '../../data/services/period_site_report_export_service.dart';
+import '../../data/services/period_site_report_pdf_chart_capture.dart';
 import '../../data/services/puantaj_report_builder.dart';
 import '../../data/services/irsaliye_material_ocr.dart';
 import '../../domain/catalogs/turkey_cities.dart';
@@ -540,19 +543,50 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
     ref.read(periodSiteReportExportSectionsProvider.notifier).save(choice.sections);
 
     final company = ref.read(companyInfoProvider);
+    final chartOptions = ref.read(productionChartOptionsProvider);
+    final productionsById = {
+      for (final p in ref.read(productionProvider)) p.id: p,
+    };
     try {
       if (choice.pdf) {
+        if (!mounted) return;
+        showDialog<void>(
+          context: context,
+          barrierDismissible: false,
+          builder: (ctx) => const AlertDialog(
+            content: Row(
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(width: 16),
+                Expanded(child: Text('Grafikler hazırlanıyor…')),
+              ],
+            ),
+          ),
+        );
+        PeriodSiteReportPdfChartBundle? charts;
+        try {
+          charts = await PeriodSiteReportPdfChartCapture.capture(
+            context: context,
+            report: report,
+            productionsById: productionsById,
+            sections: choice.sections,
+          );
+        } finally {
+          if (mounted) Navigator.of(context, rootNavigator: true).pop();
+        }
         await periodSiteReportExportService.exportPdf(
           report,
           projectName: project.name,
           companyName: company.name,
           sections: choice.sections,
+          charts: charts,
         );
       } else {
         await periodSiteReportExportService.exportExcel(
           report,
           projectName: project.name,
           sections: choice.sections,
+          chartOptions: chartOptions,
         );
       }
       if (!mounted) return;
