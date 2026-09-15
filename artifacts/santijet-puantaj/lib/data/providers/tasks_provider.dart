@@ -399,14 +399,15 @@ final upcomingUrgentTasksProvider = Provider<List<SiteTask>>((ref) {
   final tasks = ref.watch(visibleProjectTasksProvider);
   final now = DateTime.now();
   final today = DateTime(now.year, now.month, now.day);
-  final weekEnd = today.add(const Duration(days: 7));
+  final dueHorizon = today.add(const Duration(days: 3));
 
   final list = tasks.where((t) {
     if (t.status == TaskStatus.done) return false;
     final due = t.latestDeliveryDate;
     if (due == null) return false;
     final day = DateTime(due.year, due.month, due.day);
-    return !day.isAfter(weekEnd);
+    // Gecikmiş veya teslime en fazla 3 gün kalan açık görevler.
+    return !day.isAfter(dueHorizon);
   }).toList()
     ..sort((a, b) {
       final da = a.latestDeliveryDate!;

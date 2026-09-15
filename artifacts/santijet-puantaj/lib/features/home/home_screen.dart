@@ -14,7 +14,6 @@ import '../../core/utils/puantaj_date.dart';
 import '../../core/utils/text_format.dart';
 import '../../data/providers/app_data_provider.dart';
 import '../../data/providers/tasks_provider.dart';
-import '../../domain/catalogs/task_categories.dart';
 import '../../domain/catalogs/task_tags.dart';
 import '../../domain/entities/project.dart';
 import '../../domain/entities/site_task.dart';
@@ -87,7 +86,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final people = ref.watch(personnelForDateProvider(today));
     final attendance = ref.watch(attendanceProvider);
     final urgentTasks = ref.watch(upcomingUrgentTasksProvider);
-    final urgentByCategory = ref.watch(urgentTaskCategorySummariesProvider);
     if (project == null) {
       return Scaffold(
         body: SafeArea(
@@ -266,10 +264,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     title: 'Acil görevler',
                     icon: Icons.assignment_late_outlined,
                     onTap: () => context.go(AppRoutes.gorevler),
-                    child: _HomeUrgentTasksSection(
-                      tasks: urgentTasks,
-                      categorySummaries: urgentByCategory,
-                    ),
+                    child: _HomeUrgentTasksSection(tasks: urgentTasks),
                   ),
                 ]),
               ),
@@ -287,61 +282,27 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 }
 
 class _HomeUrgentTasksSection extends StatefulWidget {
-  const _HomeUrgentTasksSection({
-    required this.tasks,
-    required this.categorySummaries,
-  });
+  const _HomeUrgentTasksSection({required this.tasks});
 
   final List<SiteTask> tasks;
-  final List<UrgentTaskCategorySummary> categorySummaries;
 
   @override
   State<_HomeUrgentTasksSection> createState() => _HomeUrgentTasksSectionState();
 }
 
 class _HomeUrgentTasksSectionState extends State<_HomeUrgentTasksSection> {
-  String? _selectedCategory;
   String? _selectedTag;
 
-  String _categoryKey(SiteTask task) {
-    return task.category.trim().isEmpty
-        ? TaskCategoryCatalog.uncategorized
-        : task.category.trim();
-  }
-
-  /// Karşı boyuttaki seçime göre süzülmüş havuz (liste + çapraz sayımlar).
-  List<SiteTask> _poolForTags() {
-    if (_selectedCategory == null) return widget.tasks;
-    return widget.tasks
-        .where((t) => _categoryKey(t) == _selectedCategory)
-        .toList();
-  }
-
-  List<SiteTask> _poolForCategories() {
+  List<SiteTask> get _filteredTasks {
     if (_selectedTag == null) return widget.tasks;
     return widget.tasks
         .where((t) => TaskTagCatalog.normalize(t.tag) == _selectedTag)
         .toList();
   }
 
-  List<SiteTask> get _filteredTasks {
-    var list = widget.tasks;
-    if (_selectedTag != null) {
-      list = list
-          .where((t) => TaskTagCatalog.normalize(t.tag) == _selectedTag)
-          .toList();
-    }
-    if (_selectedCategory == null) return list;
-    return list
-        .where((t) => _categoryKey(t) == _selectedCategory)
-        .toList();
-  }
-
-  /// Etiket kartları: kategori seçiliyse yalnız o kategorideki adetler.
   List<UrgentTaskTagSummary> get _displayTagSummaries {
-    final pool = _poolForTags();
     final counts = {for (final t in TaskTagCatalog.all) t: 0};
-    for (final task in pool) {
+    for (final task in widget.tasks) {
       final tag = TaskTagCatalog.normalize(task.tag);
       if (counts.containsKey(tag)) {
         counts[tag] = counts[tag]! + 1;
@@ -352,30 +313,9 @@ class _HomeUrgentTasksSectionState extends State<_HomeUrgentTasksSection> {
     ];
   }
 
-  /// Kategori kartları: etiket seçiliyse yalnız o etiketteki adetler (0 dahil).
-  List<UrgentTaskCategorySummary> get _displayCategorySummaries {
-    final pool = _poolForCategories();
-    final counts = <String, int>{};
-    for (final t in pool) {
-      final cat = _categoryKey(t);
-      counts[cat] = (counts[cat] ?? 0) + 1;
-    }
-    // Kart sırası sabit kalsın; seçim sonrası 0 olanlar da görünsün.
-    return [
-      for (final summary in widget.categorySummaries)
-        (category: summary.category, count: counts[summary.category] ?? 0),
-    ];
-  }
-
   @override
   void didUpdateWidget(covariant _HomeUrgentTasksSection oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // Seçim yalnızca o kategori/etiket acil listeden tamamen düşerse sıfırlanır
-    // (çapraz filtrede 0 olması seçimi kaldırmaz).
-    if (_selectedCategory != null &&
-        !widget.tasks.any((t) => _categoryKey(t) == _selectedCategory)) {
-      _selectedCategory = null;
-    }
     if (_selectedTag != null &&
         !widget.tasks.any(
           (t) => TaskTagCatalog.normalize(t.tag) == _selectedTag,
@@ -388,7 +328,6 @@ class _HomeUrgentTasksSectionState extends State<_HomeUrgentTasksSection> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final tagSummaries = _displayTagSummaries;
-    final categorySummaries = _displayCategorySummaries;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -433,44 +372,10 @@ class _HomeUrgentTasksSectionState extends State<_HomeUrgentTasksSection> {
             );
           },
         ),
-        if (categorySummaries.isNotEmpty) ...[
-          const SizedBox(height: AppSpacing.md),
-          Text(
-            'Kategori',
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0.4,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.xs),
-          Wrap(
-            spacing: AppSpacing.xs,
-            runSpacing: AppSpacing.xs,
-            children: [
-              for (final summary in categorySummaries)
-                _UrgentCategoryFilter(
-                  label: summary.category,
-                  count: summary.count,
-                  color: TaskCategoryCatalog.accentFor(summary.category),
-                  selected: _selectedCategory == summary.category,
-                  onTap: () {
-                    setState(() {
-                      _selectedCategory =
-                          _selectedCategory == summary.category
-                              ? null
-                              : summary.category;
-                    });
-                  },
-                ),
-            ],
-          ),
-        ],
-        if (_selectedTag != null || _selectedCategory != null) ...[
+        if (_selectedTag != null) ...[
           const SizedBox(height: AppSpacing.sm),
           _HomeUrgentTasksList(
             tasks: _filteredTasks,
-            filteredByCategory: _selectedCategory,
             filteredByTag: _selectedTag,
           ),
         ],
@@ -482,12 +387,10 @@ class _HomeUrgentTasksSectionState extends State<_HomeUrgentTasksSection> {
 class _HomeUrgentTasksList extends StatelessWidget {
   const _HomeUrgentTasksList({
     required this.tasks,
-    this.filteredByCategory,
     this.filteredByTag,
   });
 
   final List<SiteTask> tasks;
-  final String? filteredByCategory;
   final String? filteredByTag;
 
   @override
@@ -495,9 +398,9 @@ class _HomeUrgentTasksList extends StatelessWidget {
     final theme = Theme.of(context);
     if (tasks.isEmpty) {
       return Text(
-        filteredByCategory == null && filteredByTag == null
-            ? '1 hafta içinde teslim tarihi olan açık görev yok.'
-            : 'Bu filtrede acil görev yok.',
+        filteredByTag == null
+            ? 'Gecikmiş veya 3 gün içinde teslimi olan açık görev yok.'
+            : 'Bu etikette acil görev yok.',
         style: theme.textTheme.bodyMedium,
       );
     }
@@ -811,95 +714,6 @@ class _UrgentTagFilter extends StatelessWidget {
                   color: ink,
                   fontWeight: FontWeight.w800,
                   height: 1,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Kategori — yatay chip; etiket kartlarından ayrılır (outline + rozet).
-class _UrgentCategoryFilter extends StatelessWidget {
-  const _UrgentCategoryFilter({
-    required this.label,
-    required this.count,
-    required this.color,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String label;
-  final int count;
-  final Color color;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final surface = selected
-        ? color.withValues(alpha: 0.14)
-        : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.55);
-    final border = selected
-        ? color.withValues(alpha: 0.7)
-        : theme.colorScheme.outlineVariant.withValues(alpha: 0.7);
-    final labelColor = selected
-        ? AppColors.statusInkOnCard(color)
-        : theme.colorScheme.onSurface;
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 160),
-          padding: const EdgeInsets.fromLTRB(12, 7, 8, 7),
-          decoration: BoxDecoration(
-            color: surface,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: border,
-              width: selected ? 1.5 : 1,
-            ),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 120),
-                child: Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.labelLarge?.copyWith(
-                    color: labelColor,
-                    fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Container(
-                constraints: const BoxConstraints(minWidth: 22),
-                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                decoration: BoxDecoration(
-                  color: selected
-                      ? color.withValues(alpha: 0.85)
-                      : theme.colorScheme.onSurface.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                alignment: Alignment.center,
-                child: Text(
-                  '$count',
-                  style: theme.textTheme.labelMedium?.copyWith(
-                    color: selected
-                        ? AppColors.readableOn(color)
-                        : theme.colorScheme.onSurfaceVariant,
-                    fontWeight: FontWeight.w800,
-                  ),
                 ),
               ),
             ],
