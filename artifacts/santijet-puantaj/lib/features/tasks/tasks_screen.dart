@@ -1762,9 +1762,6 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                                         TaskTagCatalog.all[i],
                                   )
                                   .length,
-                              color: TaskTagCatalog.accentFor(
-                                TaskTagCatalog.all[i],
-                              ),
                               selected:
                                   _tagFilter == TaskTagCatalog.all[i],
                               onTap: () => setState(() {
@@ -1800,7 +1797,6 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                       return _TaskFilterKpiCard(
                         label: category,
                         count: count,
-                        color: TaskCategoryCatalog.accentFor(category),
                         selected: _categoryFilter == category,
                         scrollTile: true,
                         onTap: () => setState(() {
@@ -1828,7 +1824,6 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                                 (t) => t.status == TaskStatus.values[i],
                               )
                               .length,
-                          color: _statusColor(TaskStatus.values[i]),
                           selected: _filter == TaskStatus.values[i],
                           onTap: () => setState(() {
                             final s = TaskStatus.values[i];
@@ -2399,43 +2394,62 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
   }
 }
 
+const _taskFilterSelectedGradient = LinearGradient(
+  begin: Alignment.centerLeft,
+  end: Alignment.centerRight,
+  colors: [AppColors.electricBlue, AppColors.electricBlueLight],
+);
+
+BoxDecoration _taskListFilterDecoration(bool selected) {
+  if (selected) {
+    return BoxDecoration(
+      gradient: _taskFilterSelectedGradient,
+      borderRadius: AppRadii.sm,
+      border: Border.all(
+        color: AppColors.electricBlueLight.withValues(alpha: 0.9),
+        width: 1.5,
+      ),
+    );
+  }
+  return BoxDecoration(
+    color: AppColors.surfaceElevated,
+    borderRadius: AppRadii.sm,
+    border: Border.all(color: AppColors.border),
+  );
+}
+
 /// Durum — Yapılacak · Başladı · Devam · Bitti (4’lü şerit).
 class _TaskStatusFilterCard extends StatelessWidget {
   const _TaskStatusFilterCard({
     required this.status,
     required this.count,
-    required this.color,
     required this.selected,
     required this.onTap,
   });
 
   final TaskStatus status;
   final int count;
-  final Color color;
   final bool selected;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final labelInk =
+        selected ? Colors.white : AppColors.textSecondary;
+    final countInk = selected ? Colors.white : AppColors.textPrimary;
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
         borderRadius: AppRadii.sm,
-        child: Container(
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 160),
           padding: const EdgeInsets.symmetric(
             horizontal: 6,
             vertical: AppSpacing.sm,
           ),
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: selected ? 0.24 : 0.12),
-            borderRadius: AppRadii.sm,
-            border: Border.all(
-              color: color.withValues(alpha: selected ? 0.6 : 0.28),
-              width: selected ? 1.5 : 1,
-            ),
-          ),
+          decoration: _taskListFilterDecoration(selected),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -2445,6 +2459,7 @@ class _TaskStatusFilterCard extends StatelessWidget {
                 textAlign: TextAlign.center,
                 overflow: TextOverflow.ellipsis,
                 style: theme.textTheme.labelSmall?.copyWith(
+                  color: labelInk,
                   fontWeight: FontWeight.w600,
                   height: 1.15,
                   fontSize: 10,
@@ -2455,7 +2470,7 @@ class _TaskStatusFilterCard extends StatelessWidget {
                 '$count',
                 textAlign: TextAlign.center,
                 style: theme.textTheme.titleMedium?.copyWith(
-                  color: AppColors.statusInkOnCard(color),
+                  color: countInk,
                   fontWeight: FontWeight.w700,
                   height: 1,
                 ),
@@ -2473,7 +2488,6 @@ class _TaskFilterKpiCard extends StatelessWidget {
   const _TaskFilterKpiCard({
     required this.label,
     required this.count,
-    required this.color,
     required this.selected,
     required this.onTap,
     this.scrollTile = false,
@@ -2481,7 +2495,6 @@ class _TaskFilterKpiCard extends StatelessWidget {
 
   final String label;
   final int count;
-  final Color color;
   final bool selected;
   final VoidCallback onTap;
 
@@ -2491,15 +2504,17 @@ class _TaskFilterKpiCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final ink = AppColors.statusInkOnCard(color);
+    final labelInk =
+        selected ? Colors.white : AppColors.textSecondary;
+    final countInk = selected ? Colors.white : AppColors.textPrimary;
     final labelStyle = theme.textTheme.labelSmall?.copyWith(
-      color: ink,
+      color: labelInk,
       fontWeight: FontWeight.w800,
       letterSpacing: 0.5,
       fontSize: 11,
     );
     final countStyle = theme.textTheme.titleSmall?.copyWith(
-      color: ink,
+      color: countInk,
       fontWeight: FontWeight.w800,
       height: 1,
     );
@@ -2520,7 +2535,7 @@ class _TaskFilterKpiCard extends StatelessWidget {
         Text('$count', style: countStyle),
         if (selected) ...[
           const SizedBox(width: 4),
-          Icon(Icons.check_circle, size: 14, color: ink),
+          Icon(Icons.check_circle, size: 14, color: countInk),
         ],
       ],
     );
@@ -2536,14 +2551,7 @@ class _TaskFilterKpiCard extends StatelessWidget {
               ? const BoxConstraints(minWidth: 88, maxWidth: 200)
               : null,
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: selected ? 0.16 : 0.08),
-            borderRadius: AppRadii.sm,
-            border: Border.all(
-              color: color.withValues(alpha: selected ? 0.55 : 0.25),
-              width: selected ? 1.5 : 1,
-            ),
-          ),
+          decoration: _taskListFilterDecoration(selected),
           child: row,
         ),
       ),
