@@ -1751,7 +1751,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                           if (i > 0) const SizedBox(width: spacing),
                           SizedBox(
                             width: itemWidth,
-                            child: _TaskTagKpiCard(
+                            child: _TaskFilterKpiCard(
                               label: TaskTagCatalog.cardLabel(
                                 TaskTagCatalog.all[i],
                               ),
@@ -1783,7 +1783,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
               if (filterCategories.isNotEmpty) ...[
                 const SizedBox(height: AppSpacing.sm),
                 SizedBox(
-                  height: 42,
+                  height: 40,
                   child: ListView.separated(
                     scrollDirection: Axis.horizontal,
                     padding: const EdgeInsets.symmetric(
@@ -1797,11 +1797,12 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                       final count = tasks
                           .where((t) => t.category.trim() == category)
                           .length;
-                      return _TaskCategoryScrollChip(
+                      return _TaskFilterKpiCard(
                         label: category,
                         count: count,
                         color: TaskCategoryCatalog.accentFor(category),
                         selected: _categoryFilter == category,
+                        scrollTile: true,
                         onTap: () => setState(() {
                           _categoryFilter = _categoryFilter == category
                               ? null
@@ -2467,14 +2468,15 @@ class _TaskStatusFilterCard extends StatelessWidget {
   }
 }
 
-/// Etiket — ana sayfa acil görev KPI kartları ile aynı dil.
-class _TaskTagKpiCard extends StatelessWidget {
-  const _TaskTagKpiCard({
+/// Etiket / kategori — tek satır KPI (İNŞAAT 5).
+class _TaskFilterKpiCard extends StatelessWidget {
+  const _TaskFilterKpiCard({
     required this.label,
     required this.count,
     required this.color,
     required this.selected,
     required this.onTap,
+    this.scrollTile = false,
   });
 
   final String label;
@@ -2483,10 +2485,45 @@ class _TaskTagKpiCard extends StatelessWidget {
   final bool selected;
   final VoidCallback onTap;
 
+  /// Kategori şeridi — içeriğe göre genişlik.
+  final bool scrollTile;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final ink = AppColors.statusInkOnCard(color);
+    final labelStyle = theme.textTheme.labelSmall?.copyWith(
+      color: ink,
+      fontWeight: FontWeight.w800,
+      letterSpacing: 0.5,
+      fontSize: 11,
+    );
+    final countStyle = theme.textTheme.titleSmall?.copyWith(
+      color: ink,
+      fontWeight: FontWeight.w800,
+      height: 1,
+    );
+
+    final row = Row(
+      mainAxisSize: scrollTile ? MainAxisSize.min : MainAxisSize.max,
+      children: [
+        Flexible(
+          fit: scrollTile ? FlexFit.loose : FlexFit.tight,
+          child: Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: labelStyle,
+          ),
+        ),
+        const SizedBox(width: 6),
+        Text('$count', style: countStyle),
+        if (selected) ...[
+          const SizedBox(width: 4),
+          Icon(Icons.check_circle, size: 14, color: ink),
+        ],
+      ],
+    );
 
     return Material(
       color: Colors.transparent,
@@ -2495,7 +2532,10 @@ class _TaskTagKpiCard extends StatelessWidget {
         borderRadius: AppRadii.sm,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 160),
-          padding: const EdgeInsets.fromLTRB(10, 10, 10, 8),
+          constraints: scrollTile
+              ? const BoxConstraints(minWidth: 88, maxWidth: 200)
+              : null,
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
           decoration: BoxDecoration(
             color: color.withValues(alpha: selected ? 0.16 : 0.08),
             borderRadius: AppRadii.sm,
@@ -2504,129 +2544,7 @@ class _TaskTagKpiCard extends StatelessWidget {
               width: selected ? 1.5 : 1,
             ),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      label,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: ink,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 0.6,
-                      ),
-                    ),
-                  ),
-                  if (selected)
-                    Icon(Icons.check_circle, size: 14, color: ink),
-                ],
-              ),
-              const SizedBox(height: 6),
-              Text(
-                '$count',
-                style: theme.textTheme.headlineSmall?.copyWith(
-                  color: ink,
-                  fontWeight: FontWeight.w800,
-                  height: 1,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Kategori — yatay kaydırma satırı chip.
-class _TaskCategoryScrollChip extends StatelessWidget {
-  const _TaskCategoryScrollChip({
-    required this.label,
-    required this.count,
-    required this.color,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final String label;
-  final int count;
-  final Color color;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final surface = selected
-        ? color.withValues(alpha: 0.14)
-        : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.55);
-    final border = selected
-        ? color.withValues(alpha: 0.7)
-        : theme.colorScheme.outlineVariant.withValues(alpha: 0.7);
-    final labelColor = selected
-        ? AppColors.statusInkOnCard(color)
-        : theme.colorScheme.onSurface;
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 160),
-          padding: const EdgeInsets.fromLTRB(12, 7, 8, 7),
-          decoration: BoxDecoration(
-            color: surface,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: border,
-              width: selected ? 1.5 : 1,
-            ),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 140),
-                child: Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.labelLarge?.copyWith(
-                    color: labelColor,
-                    fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Container(
-                constraints: const BoxConstraints(minWidth: 22),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                decoration: BoxDecoration(
-                  color: selected
-                      ? color.withValues(alpha: 0.85)
-                      : theme.colorScheme.onSurface.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                alignment: Alignment.center,
-                child: Text(
-                  '$count',
-                  style: theme.textTheme.labelMedium?.copyWith(
-                    color: selected
-                        ? AppColors.readableOn(color)
-                        : theme.colorScheme.onSurfaceVariant,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 12,
-                  ),
-                ),
-              ),
-            ],
-          ),
+          child: row,
         ),
       ),
     );
