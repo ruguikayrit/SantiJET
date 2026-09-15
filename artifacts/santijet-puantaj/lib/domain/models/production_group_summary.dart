@@ -4,7 +4,7 @@ import '../catalogs/task_tags.dart';
 import '../entities/production.dart';
 import 'production_metrics.dart';
 
-/// Grup özeti — İnşaat / Elektrik / Mekanik; yalnızca süre ve adam-gün.
+/// Grup özeti — İnşaat / Elektrik / Mekanik; süre, adam-gün, birim verim.
 class ProductionGroupSummary {
   const ProductionGroupSummary({
     required this.groupKey,
@@ -12,6 +12,7 @@ class ProductionGroupSummary {
     required this.itemCount,
     required this.axes,
     required this.updatedToday,
+    this.groupUnitEfficiency,
   });
 
   final String groupKey;
@@ -20,30 +21,56 @@ class ProductionGroupSummary {
   final List<ProductionProgressAxis> axes;
   final bool updatedToday;
 
-  ProductionProgressAxis? get _sureAxis {
-    for (final a in axes) {
-      if (a.label == 'Süre') return a;
-    }
-    return null;
+  /// Plan AG ağırlıklı toplu birim verim (metraj ÷ AG, grafikle uyumlu).
+  final double? groupUnitEfficiency;
+
+  /// Grup birim verimi — [groupUnitEfficiency] (1.0 = plan).
+  double? get groupScheduleLaborEfficiency => groupUnitEfficiency;
+
+  /// Σ plan metraj / Σ plan AG ile gerçekleşenlerden birim verim.
+  static double? pooledUnitEfficiency({
+    required double plannedQty,
+    required double plannedWorkerDays,
+    required double actualQty,
+    required double actualWorkerDays,
+  }) {
+    return ProductionMetrics.computeUnitEfficiency(
+      plannedQty: plannedQty,
+      plannedWorkerDays: plannedWorkerDays,
+      actualQty: actualQty,
+      actualWorkerDays: actualWorkerDays,
+    );
   }
 
-  ProductionProgressAxis? get _laborAxis {
-    for (final a in axes) {
-      if (a.label == 'Adam-gün') return a;
+  /// İmalat satırları — plan AG ile ağırlıklı ortalama birim verim.
+  static double? weightedUnitEfficiencyFromProductions(
+    Iterable<Production> items,
+  ) {
+    var weightSum = 0.0;
+    var weighted = 0.0;
+    for (final p in items) {
+      final eff = p.metrics.unitEfficiency;
+      final w = p.plannedWorkerDays;
+      if (eff == null || w <= 0) continue;
+      weighted += eff * w;
+      weightSum += w;
     }
-    return null;
+    if (weightSum <= 0) return null;
+    return weighted / weightSum;
   }
 
-  /// Grup toplamı — planlanan / gerçekleşen süre ve adam-gün ortalaması (1.0 = plan).
-  double? get groupScheduleLaborEfficiency {
-    final sure = _sureAxis;
-    final labor = _laborAxis;
-    if (sure == null || labor == null) return null;
-    if (!sure.hasPlan || !labor.hasPlan) return null;
-    if (sure.actual <= 0 || labor.actual <= 0) return null;
-    final rSure = sure.planned / sure.actual;
-    final rLabor = labor.planned / labor.actual;
-    return (rSure + rLabor) / 2;
+  static double? _groupUnitEfficiencyFromTotals({
+    required double plannedQty,
+    required double plannedWorkerDays,
+    required double actualQty,
+    required double actualWorkerDays,
+  }) {
+    return pooledUnitEfficiency(
+      plannedQty: plannedQty,
+      plannedWorkerDays: plannedWorkerDays,
+      actualQty: actualQty,
+      actualWorkerDays: actualWorkerDays,
+    );
   }
 
   static List<ProductionGroupSummary> fromProductions(List<Production> items) {
@@ -69,6 +96,8 @@ class ProductionGroupSummary {
       var workedDays = 0.0;
       var plannedAg = 0.0;
       var actualAg = 0.0;
+      var plannedQty = 0.0;
+      var actualQty = 0.0;
 
       for (final p in groupItems) {
         final m = p.metrics;
@@ -76,7 +105,17 @@ class ProductionGroupSummary {
         workedDays += m.sure.actual;
         if (m.labor.hasPlan) plannedAg += m.labor.planned;
         actualAg += m.labor.actual;
+        if (m.metraj.hasPlan) plannedQty += m.metraj.planned;
+        actualQty += m.metraj.actual;
       }
+
+      final groupEff = _groupUnitEfficiencyFromTotals(
+        plannedQty: plannedQty,
+        plannedWorkerDays: plannedAg,
+        actualQty: actualQty,
+        actualWorkerDays: actualAg,
+      ) ??
+          weightedUnitEfficiencyFromProductions(groupItems);
 
       summaries.add(
         ProductionGroupSummary(
@@ -84,6 +123,7 @@ class ProductionGroupSummary {
           title: ProductionWorkGroupCatalog.displayTitle(entry.key),
           itemCount: groupItems.length,
           updatedToday: updatedToday(groupItems),
+          groupUnitEfficiency: groupEff,
           axes: [
             ProductionProgressAxis(
               label: 'Süre',
@@ -183,16 +223,44 @@ class ProductionGroupSummary {
       final groupItems = entry.value;
       var plannedDays = 0.0;
       var workedDays = 0.0;
-      var plannedAg = 0.0;
+      var plannedAgAxis = 0.0;
       var actualAg = 0.0;
+      var plannedQtyEff = 0.0;
+      var plannedAgEff = 0.0;
+      var actualQtyEff = 0.0;
+      var actualAgEff = 0.0;
 
       for (final p in groupItems) {
         final w = periodWorkedDays(p);
         workedDays += w;
         plannedDays += periodPlannedDays(p, w);
-        actualAg += periodLabor(p);
-        plannedAg += periodPlannedAg(p, w);
+        final labor = periodLabor(p);
+        actualAg += labor;
+        plannedAgAxis += periodPlannedAg(p, w);
+        final periodEntries =
+            p.dailyEntries.where((e) => daySet.contains(e.date));
+        actualQtyEff += periodEntries.fold<double>(
+          0,
+          (s, e) => s + e.completedQty,
+        );
+        actualAgEff += labor;
+        if (p.plannedQty > 0 && p.plannedWorkerDays > 0) {
+          plannedQtyEff += p.plannedQty;
+          plannedAgEff += p.plannedWorkerDays;
+        }
       }
+
+      final groupEff = _groupUnitEfficiencyFromTotals(
+        plannedQty: plannedQtyEff,
+        plannedWorkerDays: plannedAgEff,
+        actualQty: actualQtyEff,
+        actualWorkerDays: actualAgEff,
+      ) ??
+          weightedUnitEfficiencyFromProductions(
+            groupItems.where(
+              (p) => p.dailyEntries.any((e) => daySet.contains(e.date)),
+            ),
+          );
 
       summaries.add(
         ProductionGroupSummary(
@@ -200,6 +268,7 @@ class ProductionGroupSummary {
           title: ProductionWorkGroupCatalog.displayTitle(entry.key),
           itemCount: groupItems.length,
           updatedToday: updatedInPeriod(groupItems),
+          groupUnitEfficiency: groupEff,
           axes: [
             ProductionProgressAxis(
               label: 'Süre',
@@ -209,7 +278,7 @@ class ProductionGroupSummary {
             ),
             ProductionProgressAxis(
               label: 'Adam-gün',
-              planned: plannedAg,
+              planned: plannedAgAxis,
               actual: actualAg,
               unit: 'adam-gün',
             ),
