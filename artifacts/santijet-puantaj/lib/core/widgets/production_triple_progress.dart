@@ -27,8 +27,8 @@ LinearGradient axisFillGradient(String label, double fillRatio) {
   final t = fillRatio.clamp(0.0, 1.0);
   final whiteBlend = AppColors.useDarkCards ? 0.68 : 0.58;
 
-  late Color start;
-  late Color end;
+  var start = AppColors.info;
+  var end = AppColors.electricBlue;
   switch (label) {
     case 'Metraj':
       start = const Color(0xFF6EE7B7);

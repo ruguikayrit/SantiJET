@@ -563,6 +563,7 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
             ),
           ),
         );
+
         PeriodSiteReportPdfChartBundle? charts;
         try {
           charts = await PeriodSiteReportPdfChartCapture.capture(
@@ -571,8 +572,13 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
             productionsById: productionsById,
             sections: choice.sections,
           );
+        } catch (e, st) {
+          debugPrint('Dönem raporu grafik yakalama: $e\n$st');
+          charts = null;
         } finally {
-          if (mounted) Navigator.of(context, rootNavigator: true).pop();
+          if (mounted) {
+            Navigator.of(context, rootNavigator: true).maybePop();
+          }
         }
         await periodSiteReportExportService.exportPdf(
           report,

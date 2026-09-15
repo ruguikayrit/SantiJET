@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -64,19 +65,24 @@ abstract final class PeriodSiteReportPdfChartCapture {
     Widget child, {
     required double height,
   }) async {
-    final bytes = await captureWidgetToPng(
-      context,
-      _captureShell(context, child),
-      logicalSize: Size(_contentWidth, height),
-      pixelRatio: 2,
-      frameWait: 5,
-    );
-    if (bytes == null) return null;
-    return PeriodSiteReportPdfChartImage(
-      bytes: bytes,
-      logicalWidth: _contentWidth,
-      logicalHeight: height,
-    );
+    if (!context.mounted) return null;
+    try {
+      final bytes = await captureWidgetToPng(
+        context,
+        _captureShell(context, child),
+        logicalSize: Size(_contentWidth, height),
+        pixelRatio: 2,
+      );
+      if (bytes == null || bytes.isEmpty) return null;
+      return PeriodSiteReportPdfChartImage(
+        bytes: bytes,
+        logicalWidth: _contentWidth,
+        logicalHeight: height,
+      );
+    } catch (e, st) {
+      debugPrint('PeriodSiteReportPdfChartCapture._capture: $e\n$st');
+      return null;
+    }
   }
 
   static Future<PeriodSiteReportPdfChartBundle> capture({

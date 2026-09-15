@@ -27,6 +27,18 @@ class PeriodSiteReportExportService {
   static const _border = PdfColor.fromInt(0xFFE5E7EB);
   static const _line = PdfColor.fromInt(0xFFCBD5E1);
 
+  /// Yakalama başarısızsa tablo + yedek çubuk grafiklere düş.
+  PeriodSiteReportPdfChartBundle? _chartsForPdf(
+    PeriodSiteReportPdfChartBundle? charts,
+  ) {
+    if (charts == null) return null;
+    final hasAny = charts.imalatSummary != null ||
+        charts.verimSummary != null ||
+        charts.imalatDetailByProductionId.isNotEmpty ||
+        charts.verimDetailByProductionId.isNotEmpty;
+    return hasAny ? charts : null;
+  }
+
   Future<pw.ThemeData> _pdfTheme() async {
     _regularFont ??= await PdfGoogleFonts.notoSansRegular();
     _boldFont ??= await PdfGoogleFonts.notoSansBold();
@@ -44,12 +56,13 @@ class PeriodSiteReportExportService {
         const PeriodSiteReportExportSections(),
     PeriodSiteReportPdfChartBundle? charts,
   }) async {
+    final effectiveCharts = _chartsForPdf(charts);
     final bytes = await _buildPdfBytes(
       report,
       projectName: projectName,
       companyName: companyName,
       sections: sections,
-      charts: charts,
+      charts: effectiveCharts,
     );
     await file_access.downloadBytesFile(
       fileName: 'santijet-${report.fileStem}.pdf',
