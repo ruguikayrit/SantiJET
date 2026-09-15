@@ -27,15 +27,12 @@ class PeriodSiteReportExportService {
   static const _border = PdfColor.fromInt(0xFFE5E7EB);
   static const _line = PdfColor.fromInt(0xFFCBD5E1);
 
-  /// Yakalama başarısızsa tablo + yedek çubuk grafiklere düş.
   PeriodSiteReportPdfChartBundle? _chartsForPdf(
     PeriodSiteReportPdfChartBundle? charts,
   ) {
     if (charts == null) return null;
-    final hasAny = charts.imalatSummary != null ||
-        charts.verimSummary != null ||
-        charts.imalatDetailByProductionId.isNotEmpty ||
-        charts.verimDetailByProductionId.isNotEmpty;
+    final hasAny =
+        charts.imalatBlocks.isNotEmpty || charts.verimBlocks.isNotEmpty;
     return hasAny ? charts : null;
   }
 
@@ -221,30 +218,11 @@ class PeriodSiteReportExportService {
       startSectionPage();
       body.add(_pdfSectionTitle('Yapılan işler (İmalat)'));
       body.add(pw.SizedBox(height: 6));
-      if (report.imalatGroupSummaries.isNotEmpty) {
-        body.add(_pdfSectionSubtitle('Grup özeti (dönem)'));
-        body.add(pw.SizedBox(height: 4));
-        body.add(
-          _pdfTable(
-            const ['Grup', 'İmalat', 'Süre', 'Adam-gün'],
-            [
-              for (final g in report.imalatGroupSummaries)
-                [
-                  g.title,
-                  '${g.itemCount}',
-                  g.axes.length > 0 ? g.axes[0].detail : '—',
-                  g.axes.length > 1 ? g.axes[1].detail : '—',
-                ],
-            ],
-          ),
-        );
-        body.add(pw.SizedBox(height: 8));
-      }
-      if (charts?.imalatSummary != null) {
-        body.add(_pdfSectionSubtitle('Grafik (önizleme ile aynı)'));
-        body.add(pw.SizedBox(height: 4));
-        body.add(_pdfEmbeddedChart(charts!.imalatSummary!));
-        body.add(pw.SizedBox(height: 8));
+      if (charts != null && charts.imalatBlocks.isNotEmpty) {
+        for (final block in charts.imalatBlocks) {
+          body.add(_pdfEmbeddedChart(block));
+          body.add(pw.SizedBox(height: 10));
+        }
       } else {
         final metrajBars = [
           for (final r in report.imalatRows)
@@ -261,48 +239,37 @@ class PeriodSiteReportExportService {
           );
           body.add(pw.SizedBox(height: 8));
         }
-      }
-      body.add(_pdfSectionSubtitle('İmalat detayı'));
-      body.add(pw.SizedBox(height: 4));
-      body.add(
-        _pdfTable(
-          const [
-            'İmalat',
-            'Konum',
-            'Ekip',
-            'Dönem',
-            'Birim',
-            'Adam-gün',
-            'Kümülatif',
-            'Plan',
-            '%',
-          ],
-          [
-            for (final r in report.imalatRows)
-              [
-                r.name,
-                r.location,
-                r.teamName,
-                _fmt(r.periodQty),
-                r.unit,
-                _fmt(r.periodLaborDays),
-                _fmt(r.totalQty),
-                _fmt(r.plannedQty),
-                '${r.progressPct.toStringAsFixed(0)}%',
-              ],
-          ],
-        ),
-      );
-      if (charts != null && charts.imalatDetailByProductionId.isNotEmpty) {
-        body.add(pw.SizedBox(height: 8));
-        body.add(_pdfSectionSubtitle('İmalat grafikleri (detay)'));
+        body.add(_pdfSectionSubtitle('İmalat detayı'));
         body.add(pw.SizedBox(height: 4));
-        for (final r in report.imalatRows) {
-          final img = charts.imalatDetailByProductionId[r.productionId];
-          if (img == null) continue;
-          body.add(_pdfEmbeddedChart(img));
-          body.add(pw.SizedBox(height: 10));
-        }
+        body.add(
+          _pdfTable(
+            const [
+              'İmalat',
+              'Konum',
+              'Ekip',
+              'Dönem',
+              'Birim',
+              'Adam-gün',
+              'Kümülatif',
+              'Plan',
+              '%',
+            ],
+            [
+              for (final r in report.imalatRows)
+                [
+                  r.name,
+                  r.location,
+                  r.teamName,
+                  _fmt(r.periodQty),
+                  r.unit,
+                  _fmt(r.periodLaborDays),
+                  _fmt(r.totalQty),
+                  _fmt(r.plannedQty),
+                  '${r.progressPct.toStringAsFixed(0)}%',
+                ],
+            ],
+          ),
+        );
       }
       body.add(pw.SizedBox(height: 12));
     }
@@ -310,11 +277,11 @@ class PeriodSiteReportExportService {
       startSectionPage();
       body.add(_pdfSectionTitle('Verim'));
       body.add(pw.SizedBox(height: 6));
-      if (charts?.verimSummary != null) {
-        body.add(_pdfSectionSubtitle('Grafik (önizleme ile aynı)'));
-        body.add(pw.SizedBox(height: 4));
-        body.add(_pdfEmbeddedChart(charts!.verimSummary!));
-        body.add(pw.SizedBox(height: 8));
+      if (charts != null && charts.verimBlocks.isNotEmpty) {
+        for (final block in charts.verimBlocks) {
+          body.add(_pdfEmbeddedChart(block));
+          body.add(pw.SizedBox(height: 10));
+        }
       } else {
         var planAg = 0.0;
         var actualAg = 0.0;
@@ -349,44 +316,33 @@ class PeriodSiteReportExportService {
           );
           body.add(pw.SizedBox(height: 8));
         }
-      }
-      body.add(_pdfSectionSubtitle('Verim detayı'));
-      body.add(pw.SizedBox(height: 4));
-      body.add(
-        _pdfTable(
-          const [
-            'İmalat',
-            'Plan AG',
-            'Dönem AG',
-            'Plan metraj',
-            'Dönem metraj',
-            'Verim',
-          ],
-          [
-            for (final r in report.verimRows)
-              [
-                r.imalatName,
-                _fmt(r.plannedWorkerDays),
-                _fmt(r.periodActualWorkerDays),
-                r.plannedQty != null ? _fmt(r.plannedQty!) : '—',
-                _fmt(r.periodActualQty),
-                r.unitEfficiency != null
-                    ? '%${(r.unitEfficiency! * 100).toStringAsFixed(0)}'
-                    : '—',
-              ],
-          ],
-        ),
-      );
-      if (charts != null && charts.verimDetailByProductionId.isNotEmpty) {
-        body.add(pw.SizedBox(height: 8));
-        body.add(_pdfSectionSubtitle('Verim grafikleri (detay)'));
+        body.add(_pdfSectionSubtitle('Verim detayı'));
         body.add(pw.SizedBox(height: 4));
-        for (final r in report.verimRows) {
-          final img = charts.verimDetailByProductionId[r.productionId];
-          if (img == null) continue;
-          body.add(_pdfEmbeddedChart(img));
-          body.add(pw.SizedBox(height: 10));
-        }
+        body.add(
+          _pdfTable(
+            const [
+              'İmalat',
+              'Plan AG',
+              'Dönem AG',
+              'Plan metraj',
+              'Dönem metraj',
+              'Verim',
+            ],
+            [
+              for (final r in report.verimRows)
+                [
+                  r.imalatName,
+                  _fmt(r.plannedWorkerDays),
+                  _fmt(r.periodActualWorkerDays),
+                  r.plannedQty != null ? _fmt(r.plannedQty!) : '—',
+                  _fmt(r.periodActualQty),
+                  r.unitEfficiency != null
+                      ? '%${(r.unitEfficiency! * 100).toStringAsFixed(0)}'
+                      : '—',
+                ],
+            ],
+          ),
+        );
       }
     }
 

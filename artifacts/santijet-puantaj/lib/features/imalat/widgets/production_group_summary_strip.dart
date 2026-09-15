@@ -17,6 +17,7 @@ class ProductionGroupSummaryStrip extends StatelessWidget {
     required this.onTeamTap,
     this.subtitleBuilder,
     this.verimTitleOnly = false,
+    this.wrapForExport = false,
   });
 
   final List<ProductionGroupSummary> summaries;
@@ -27,6 +28,9 @@ class ProductionGroupSummaryStrip extends StatelessWidget {
   /// Verim sekmesi — başlıkta yalnızca verim %; süre / AG çubukları yok.
   final bool verimTitleOnly;
 
+  /// PDF / dışa aktarma — yatay kaydırma yerine satır kırılımlı ızgarada göster.
+  final bool wrapForExport;
+
   static String _fmtVerimPct(double? ratio) {
     if (ratio == null) return '—';
     return '%${(ratio * 100).toStringAsFixed(0)}';
@@ -34,6 +38,20 @@ class ProductionGroupSummaryStrip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (wrapForExport) {
+      return Wrap(
+        spacing: AppSpacing.sm,
+        runSpacing: AppSpacing.sm,
+        children: [
+          for (var i = 0; i < summaries.length; i++)
+            SizedBox(
+              width: 200,
+              height: verimTitleOnly ? 108 : 148,
+              child: _summaryCard(context, summaries[i]),
+            ),
+        ],
+      );
+    }
     return SizedBox(
       height: verimTitleOnly ? 108 : 148,
       child: ListView.separated(
@@ -41,22 +59,29 @@ class ProductionGroupSummaryStrip extends StatelessWidget {
         itemCount: summaries.length,
         separatorBuilder: (_, __) => const SizedBox(width: AppSpacing.sm),
         itemBuilder: (context, i) {
-          final theme = Theme.of(context);
-          final s = summaries[i];
-          final selected = selectedTeamKey == s.groupKey;
-          final accent = TaskTagCatalog.accentFor(s.groupKey);
-          final subtitle = subtitleBuilder?.call(s) ??
-              '${s.itemCount} imalat';
-          final verim = s.groupScheduleLaborEfficiency;
-          final verimInk = verim == null
-              ? theme.colorScheme.onSurfaceVariant
-              : AppColors.statusInkOnCard(
-                  efficiencyColorForRatio(verim),
-                );
-
           return SizedBox(
             width: 200,
-            child: SJCard.builder(
+            child: _summaryCard(context, summaries[i]),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _summaryCard(BuildContext context, ProductionGroupSummary s) {
+    final theme = Theme.of(context);
+    final selected = selectedTeamKey == s.groupKey;
+    final accent = TaskTagCatalog.accentFor(s.groupKey);
+    final subtitle =
+        subtitleBuilder?.call(s) ?? '${s.itemCount} imalat';
+    final verim = s.groupScheduleLaborEfficiency;
+    final verimInk = verim == null
+        ? theme.colorScheme.onSurfaceVariant
+        : AppColors.statusInkOnCard(
+            efficiencyColorForRatio(verim),
+          );
+
+    return SJCard.builder(
               selected: selected,
               accentColor: selected ? accent : null,
               onTap: () => onTeamTap(s.groupKey),
@@ -156,10 +181,6 @@ class ProductionGroupSummaryStrip extends StatelessWidget {
                   ],
                 );
               },
-            ),
-          );
-        },
-      ),
-    );
+            );
   }
 }
