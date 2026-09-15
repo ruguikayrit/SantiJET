@@ -9,6 +9,7 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../data/providers/production_chart_options_provider.dart';
 import '../../../data/providers/verim_provider.dart';
 import '../../../data/services/production_chart_options.dart';
+import '../../../domain/catalogs/task_tags.dart';
 import '../../../domain/entities/production.dart';
 import 'production_summary_charts.dart';
 
@@ -25,6 +26,8 @@ class ProductionChartPanel extends ConsumerWidget {
     required this.verimRows,
     required this.teamSummaries,
     super.key,
+    this.chartWorkGroupFilter,
+    this.onChartWorkGroupFilterChanged,
   })  : productions = const [],
         _forVerim = true;
 
@@ -32,6 +35,10 @@ class ProductionChartPanel extends ConsumerWidget {
   final List<VerimRow> verimRows;
   final List<TeamVerimSummary> teamSummaries;
   final bool _forVerim;
+
+  /// Verim grafiği — İnşaat / Elektrik / Mekanik (null = tümü).
+  final String? chartWorkGroupFilter;
+  final ValueChanged<String?>? onChartWorkGroupFilterChanged;
 
   Future<void> _openSettings(BuildContext context, WidgetRef ref) async {
     final current = ref.read(productionChartOptionsProvider);
@@ -269,6 +276,13 @@ class ProductionChartPanel extends ConsumerWidget {
                 ),
               ],
             ),
+            if (_forVerim && onChartWorkGroupFilterChanged != null) ...[
+              const SizedBox(height: AppSpacing.sm),
+              _VerimChartGroupFilter(
+                selected: chartWorkGroupFilter,
+                onSelected: onChartWorkGroupFilterChanged!,
+              ),
+            ],
             const SizedBox(height: AppSpacing.sm),
             if (slices.isEmpty || slices.every((s) => s.value <= 0))
               Padding(
@@ -299,6 +313,84 @@ class ProductionChartPanel extends ConsumerWidget {
     );
   }
 
+}
+
+const _chartGroupSelectedGradient = LinearGradient(
+  begin: Alignment.centerLeft,
+  end: Alignment.centerRight,
+  colors: [AppColors.electricBlue, AppColors.electricBlueLight],
+);
+
+class _VerimChartGroupFilter extends StatelessWidget {
+  const _VerimChartGroupFilter({
+    required this.selected,
+    required this.onSelected,
+  });
+
+  final String? selected;
+  final ValueChanged<String?> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Wrap(
+      spacing: AppSpacing.xs,
+      runSpacing: AppSpacing.xs,
+      children: [
+        _chip(
+          theme: theme,
+          label: 'Tümü',
+          selected: selected == null,
+          onTap: () => onSelected(null),
+        ),
+        for (final tag in TaskTagCatalog.all)
+          _chip(
+            theme: theme,
+            label: TaskTagCatalog.cardLabel(tag),
+            selected: selected == tag,
+            onTap: () => onSelected(selected == tag ? null : tag),
+          ),
+      ],
+    );
+  }
+
+  Widget _chip({
+    required ThemeData theme,
+    required String label,
+    required bool selected,
+    required VoidCallback onTap,
+  }) {
+    final labelStyle = theme.textTheme.labelSmall?.copyWith(
+      color: selected ? Colors.white : AppColors.textSecondary,
+      fontWeight: FontWeight.w700,
+      letterSpacing: 0.4,
+    );
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: AppRadii.sm,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 160),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+          decoration: selected
+              ? BoxDecoration(
+                  gradient: _chartGroupSelectedGradient,
+                  borderRadius: AppRadii.sm,
+                  border: Border.all(
+                    color: AppColors.electricBlueLight.withValues(alpha: 0.9),
+                  ),
+                )
+              : BoxDecoration(
+                  color: AppColors.surfaceElevated,
+                  borderRadius: AppRadii.sm,
+                  border: Border.all(color: AppColors.border),
+                ),
+          child: Text(label, style: labelStyle),
+        ),
+      ),
+    );
+  }
 }
 
 Future<ProductionChartOptions?> showProductionChartSettingsSheet(

@@ -138,8 +138,24 @@ class _VerimScreenState extends ConsumerState<VerimScreen> {
             ),
             children: [
               ProductionChartPanel.verim(
-                verimRows: rows,
+                verimRows: _groupFilter == null
+                    ? rows
+                    : rows
+                        .where(
+                          (r) => ProductionWorkGroupCatalog.matches(
+                            r.production,
+                            _groupFilter!,
+                          ),
+                        )
+                        .toList(),
                 teamSummaries: teamSummaries,
+                chartWorkGroupFilter: _groupFilter,
+                onChartWorkGroupFilterChanged: (group) {
+                  setState(() {
+                    _groupFilter = group;
+                    if (group != null) _teamFilter = null;
+                  });
+                },
               ),
               const SizedBox(height: AppSpacing.md),
               if (groupSummaries.isNotEmpty) ...[
