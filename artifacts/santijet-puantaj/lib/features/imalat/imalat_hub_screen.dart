@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/design_system/sj_modal.dart';
+import '../../core/design_system/sj_search_bar.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_radii.dart';
 import '../../core/theme/app_spacing.dart';
@@ -27,11 +28,24 @@ class ImalatHubScreen extends ConsumerStatefulWidget {
 
 class _ImalatHubScreenState extends ConsumerState<ImalatHubScreen> {
   late int _tab;
+  final _imalatSearchController = TextEditingController();
+  String _imalatSearchQuery = '';
 
   @override
   void initState() {
     super.initState();
     _tab = widget.initialTab.clamp(0, 1);
+  }
+
+  @override
+  void dispose() {
+    _imalatSearchController.dispose();
+    super.dispose();
+  }
+
+  void _clearImalatSearch() {
+    _imalatSearchController.clear();
+    setState(() => _imalatSearchQuery = '');
   }
 
   @override
@@ -104,12 +118,31 @@ class _ImalatHubScreenState extends ConsumerState<ImalatHubScreen> {
                 onChanged: (i) => setState(() => _tab = i),
               ),
             ),
+            if (isImalat)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.md,
+                  0,
+                  AppSpacing.md,
+                  AppSpacing.sm,
+                ),
+                child: SJSearchBar(
+                  controller: _imalatSearchController,
+                  hint: 'İmalat ara…',
+                  onChanged: (v) => setState(() => _imalatSearchQuery = v),
+                  onClear: _clearImalatSearch,
+                ),
+              ),
             Expanded(
               child: IndexedStack(
                 index: _tab,
-                children: const [
-                  ImalatScreen(embedded: true),
-                  VerimScreen(embedded: true),
+                children: [
+                  ImalatScreen(
+                    embedded: true,
+                    searchQuery: _imalatSearchQuery,
+                    onClearSearch: _clearImalatSearch,
+                  ),
+                  const VerimScreen(embedded: true),
                 ],
               ),
             ),

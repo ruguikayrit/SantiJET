@@ -1738,85 +1738,104 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
               const SizedBox(height: AppSpacing.sm),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Row(
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    const spacing = AppSpacing.xs;
+                    const columns = 3;
+                    final itemWidth =
+                        (constraints.maxWidth - spacing * (columns - 1)) /
+                            columns;
+                    return Row(
                       children: [
-                        for (var i = 0; i < TaskStatus.values.length; i++) ...[
-                          if (i > 0) const SizedBox(width: AppSpacing.xs),
-                          Expanded(
-                            child: _TaskStatusFilterCard(
-                              status: TaskStatus.values[i],
+                        for (var i = 0; i < TaskTagCatalog.all.length; i++) ...[
+                          if (i > 0) const SizedBox(width: spacing),
+                          SizedBox(
+                            width: itemWidth,
+                            child: _TaskTagKpiCard(
+                              label: TaskTagCatalog.cardLabel(
+                                TaskTagCatalog.all[i],
+                              ),
                               count: tasks
                                   .where(
                                     (t) =>
-                                        t.status == TaskStatus.values[i],
+                                        TaskTagCatalog.normalize(t.tag) ==
+                                        TaskTagCatalog.all[i],
                                   )
                                   .length,
-                              color: _statusColor(TaskStatus.values[i]),
-                              selected: _filter == TaskStatus.values[i],
+                              color: TaskTagCatalog.accentFor(
+                                TaskTagCatalog.all[i],
+                              ),
+                              selected:
+                                  _tagFilter == TaskTagCatalog.all[i],
                               onTap: () => setState(() {
-                                final s = TaskStatus.values[i];
-                                _filter = _filter == s ? null : s;
+                                final tag = TaskTagCatalog.all[i];
+                                _tagFilter =
+                                    _tagFilter == tag ? null : tag;
                               }),
                             ),
                           ),
                         ],
                       ],
+                    );
+                  },
+                ),
+              ),
+              if (filterCategories.isNotEmpty) ...[
+                const SizedBox(height: AppSpacing.sm),
+                SizedBox(
+                  height: 42,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.md,
                     ),
-                    const SizedBox(height: AppSpacing.sm),
-                    Row(
-                      children: [
-                    Expanded(
-                      child: _TaskFilterDropdown<String?>(
-                        caption: 'Etiket',
-                        valueLabel: _tagFilter == null
-                            ? 'Tümü'
-                            : '${TaskTagCatalog.cardLabel(_tagFilter!)} '
-                                '(${tasks.where((t) => TaskTagCatalog.normalize(t.tag) == _tagFilter).length})',
-                        accent: _tagFilter == null
-                            ? null
-                            : TaskTagCatalog.accentFor(_tagFilter!),
-                        items: [
-                          (value: null, label: 'Tüm etiketler'),
-                          for (final t in TaskTagCatalog.all)
-                            (
-                              value: t,
-                              label:
-                                  '${TaskTagCatalog.cardLabel(t)} (${tasks.where((task) => TaskTagCatalog.normalize(task.tag) == t).length})',
-                            ),
-                        ],
-                        selected: _tagFilter,
-                        onSelected: (v) => setState(() => _tagFilter = v),
+                    itemCount: filterCategories.length,
+                    separatorBuilder: (_, __) =>
+                        const SizedBox(width: AppSpacing.xs),
+                    itemBuilder: (context, i) {
+                      final category = filterCategories[i];
+                      final count = tasks
+                          .where((t) => t.category.trim() == category)
+                          .length;
+                      return _TaskCategoryScrollChip(
+                        label: category,
+                        count: count,
+                        color: TaskCategoryCatalog.accentFor(category),
+                        selected: _categoryFilter == category,
+                        onTap: () => setState(() {
+                          _categoryFilter = _categoryFilter == category
+                              ? null
+                              : category;
+                        }),
+                      );
+                    },
+                  ),
+                ),
+              ],
+              const SizedBox(height: AppSpacing.sm),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                child: Row(
+                  children: [
+                    for (var i = 0; i < TaskStatus.values.length; i++) ...[
+                      if (i > 0) const SizedBox(width: AppSpacing.xs),
+                      Expanded(
+                        child: _TaskStatusFilterCard(
+                          status: TaskStatus.values[i],
+                          count: tasks
+                              .where(
+                                (t) => t.status == TaskStatus.values[i],
+                              )
+                              .length,
+                          color: _statusColor(TaskStatus.values[i]),
+                          selected: _filter == TaskStatus.values[i],
+                          onTap: () => setState(() {
+                            final s = TaskStatus.values[i];
+                            _filter = _filter == s ? null : s;
+                          }),
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: AppSpacing.xs),
-                    Expanded(
-                      child: _TaskFilterDropdown<String?>(
-                        caption: 'Kategori',
-                        valueLabel: _categoryFilter == null
-                            ? 'Tümü'
-                            : '$_categoryFilter (${tasks.where((t) => t.category.trim() == _categoryFilter).length})',
-                        accent: _categoryFilter == null
-                            ? null
-                            : TaskCategoryCatalog.accentFor(_categoryFilter!),
-                        items: [
-                          (value: null, label: 'Tüm kategoriler'),
-                          for (final c in filterCategories)
-                            (
-                              value: c,
-                              label:
-                                  '$c (${tasks.where((t) => t.category.trim() == c).length})',
-                            ),
-                        ],
-                        selected: _categoryFilter,
-                        onSelected: (v) =>
-                            setState(() => _categoryFilter = v),
-                      ),
-                    ),
-                      ],
-                    ),
+                    ],
                   ],
                 ),
               ),
@@ -2448,149 +2467,166 @@ class _TaskStatusFilterCard extends StatelessWidget {
   }
 }
 
-/// Tek satırda yan yana açılır filtre (Etiket / Kategori).
-class _TaskFilterDropdown<T> extends StatelessWidget {
-  const _TaskFilterDropdown({
-    required this.caption,
-    required this.valueLabel,
-    required this.items,
+/// Etiket — ana sayfa acil görev KPI kartları ile aynı dil.
+class _TaskTagKpiCard extends StatelessWidget {
+  const _TaskTagKpiCard({
+    required this.label,
+    required this.count,
+    required this.color,
     required this.selected,
-    required this.onSelected,
-    this.accent,
+    required this.onTap,
   });
 
-  final String caption;
-  final String valueLabel;
-  final List<({T value, String label})> items;
-  final T selected;
-  final ValueChanged<T> onSelected;
-  final Color? accent;
+  final String label;
+  final int count;
+  final Color color;
+  final bool selected;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final hasSelection = selected != null;
-    final activeAccent =
-        accent ?? (hasSelection ? theme.colorScheme.primary : null);
-    final surfaceColor = hasSelection && activeAccent != null
-        ? Color.alphaBlend(
-            activeAccent.withValues(alpha: 0.2),
-            AppColors.cardSurface,
-          )
-        : AppColors.cardSurface;
-    final borderColor = hasSelection && activeAccent != null
-        ? activeAccent.withValues(alpha: 0.65)
-        : AppColors.cardBorderSubtle;
-    // Kart yüzeyi chrome temasından bağımsız — mürekkep luminance ile seçilir.
-    final captionColor = AppColors.readableMutedOn(surfaceColor);
-    final valueColor = hasSelection && activeAccent != null
-        ? AppColors.statusInk(activeAccent, surface: surfaceColor)
-        : AppColors.readableOn(surfaceColor);
-    final chevronColor = AppColors.readableSecondaryOn(surfaceColor);
+    final ink = AppColors.statusInkOnCard(color);
 
-    // PopupMenuButton null value'yu "iptal" sayar; "Tümü" (null) için indeks kullan.
-    return PopupMenuButton<int>(
-      padding: EdgeInsets.zero,
-      offset: const Offset(0, 44),
-      shape: RoundedRectangleBorder(borderRadius: AppRadii.md),
-      onSelected: (index) => onSelected(items[index].value),
-      itemBuilder: (ctx) => [
-        for (var i = 0; i < items.length; i++)
-          PopupMenuItem<int>(
-            value: i,
-            child: Row(
-              children: [
-                Expanded(child: Text(items[i].label)),
-                if (items[i].value == selected)
-                  Icon(
-                    Icons.check,
-                    size: 16,
-                    color: theme.colorScheme.primary,
-                  ),
-              ],
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: AppRadii.sm,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 160),
+          padding: const EdgeInsets.fromLTRB(10, 10, 10, 8),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: selected ? 0.16 : 0.08),
+            borderRadius: AppRadii.sm,
+            border: Border.all(
+              color: color.withValues(alpha: selected ? 0.55 : 0.25),
+              width: selected ? 1.5 : 1,
             ),
           ),
-      ],
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 160),
-        padding: const EdgeInsets.fromLTRB(10, 8, 8, 8),
-        decoration: BoxDecoration(
-          color: surfaceColor,
-          borderRadius: AppRadii.sm,
-          border: Border.all(
-            color: borderColor,
-            width: hasSelection ? 1.5 : 1,
-          ),
-          boxShadow: hasSelection && activeAccent != null
-              ? [
-                  BoxShadow(
-                    color: activeAccent.withValues(alpha: 0.14),
-                    blurRadius: 10,
-                    offset: const Offset(0, 3),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: ink,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.6,
+                      ),
+                    ),
                   ),
-                ]
-              : [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.06),
-                    blurRadius: 6,
-                    offset: const Offset(0, 2),
-                  ),
+                  if (selected)
+                    Icon(Icons.check_circle, size: 14, color: ink),
                 ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              caption,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: theme.textTheme.labelSmall?.copyWith(
-                color: captionColor,
-                fontWeight: FontWeight.w600,
-                fontSize: 10,
-                letterSpacing: 0.2,
               ),
+              const SizedBox(height: 6),
+              Text(
+                '$count',
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  color: ink,
+                  fontWeight: FontWeight.w800,
+                  height: 1,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Kategori — yatay kaydırma satırı chip.
+class _TaskCategoryScrollChip extends StatelessWidget {
+  const _TaskCategoryScrollChip({
+    required this.label,
+    required this.count,
+    required this.color,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final int count;
+  final Color color;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final surface = selected
+        ? color.withValues(alpha: 0.14)
+        : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.55);
+    final border = selected
+        ? color.withValues(alpha: 0.7)
+        : theme.colorScheme.outlineVariant.withValues(alpha: 0.7);
+    final labelColor = selected
+        ? AppColors.statusInkOnCard(color)
+        : theme.colorScheme.onSurface;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 160),
+          padding: const EdgeInsets.fromLTRB(12, 7, 8, 7),
+          decoration: BoxDecoration(
+            color: surface,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: border,
+              width: selected ? 1.5 : 1,
             ),
-            const SizedBox(height: 4),
-            Row(
-              children: [
-                if (hasSelection && activeAccent != null) ...[
-                  Container(
-                    width: 7,
-                    height: 7,
-                    decoration: BoxDecoration(
-                      color: activeAccent,
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: activeAccent.withValues(alpha: 0.45),
-                          blurRadius: 4,
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                ],
-                Expanded(
-                  child: Text(
-                    valueLabel,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.labelMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: valueColor,
-                    ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 140),
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    color: labelColor,
+                    fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
                   ),
                 ),
-                Icon(
-                  Icons.expand_more,
-                  size: 18,
-                  color: chevronColor,
+              ),
+              const SizedBox(width: 8),
+              Container(
+                constraints: const BoxConstraints(minWidth: 22),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                decoration: BoxDecoration(
+                  color: selected
+                      ? color.withValues(alpha: 0.85)
+                      : theme.colorScheme.onSurface.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-              ],
-            ),
-          ],
+                alignment: Alignment.center,
+                child: Text(
+                  '$count',
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    color: selected
+                        ? AppColors.readableOn(color)
+                        : theme.colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

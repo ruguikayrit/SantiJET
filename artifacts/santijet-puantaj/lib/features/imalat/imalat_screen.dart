@@ -61,10 +61,19 @@ enum _ImalatPhase {
 
 /// İmalat — iş tanımı + %100'e kadar günlük usta/düz kayıtları.
 class ImalatScreen extends ConsumerStatefulWidget {
-  const ImalatScreen({super.key, this.embedded = false});
+  const ImalatScreen({
+    super.key,
+    this.embedded = false,
+    this.searchQuery = '',
+    this.onClearSearch,
+  });
 
   /// Hub içindeyken üst chrome (header) gösterilmez.
   final bool embedded;
+
+  /// Hub segment çubuğunun altındaki arama (yalnızca [embedded]).
+  final String searchQuery;
+  final VoidCallback? onClearSearch;
 
   @override
   ConsumerState<ImalatScreen> createState() => _ImalatScreenState();
@@ -82,12 +91,26 @@ class _ImalatScreenState extends ConsumerState<ImalatScreen> {
   String? _teamFilter;
 
   final _searchController = TextEditingController();
-  String _searchQuery = '';
+  String _localSearchQuery = '';
+
+  String get _activeSearchQuery =>
+      widget.embedded ? widget.searchQuery : _localSearchQuery;
 
   @override
   void dispose() {
-    _searchController.dispose();
+    if (!widget.embedded) {
+      _searchController.dispose();
+    }
     super.dispose();
+  }
+
+  void _clearSearchFilter() {
+    if (widget.embedded) {
+      widget.onClearSearch?.call();
+    } else {
+      _searchController.clear();
+      setState(() => _localSearchQuery = '');
+    }
   }
 
   static bool _matchesSearch(Production p, String query) {
@@ -286,9 +309,9 @@ class _ImalatScreenState extends ConsumerState<ImalatScreen> {
           .where((p) => TeamImalatSummary.teamKey(p) == _teamFilter)
           .toList();
     }
-    if (_searchQuery.trim().isNotEmpty) {
+    if (_activeSearchQuery.trim().isNotEmpty) {
       filteredItems = filteredItems
-          .where((p) => _matchesSearch(p, _searchQuery))
+          .where((p) => _matchesSearch(p, _activeSearchQuery))
           .toList();
     }
 
@@ -306,11 +329,11 @@ class _ImalatScreenState extends ConsumerState<ImalatScreen> {
             .map((s) => s.teamName)
             .firstOrNull;
 
-    final searchActive = _searchQuery.trim().isNotEmpty;
+    final searchActive = _activeSearchQuery.trim().isNotEmpty;
     final listFilterActive =
         _groupFilter != null || _teamFilter != null || searchActive;
     final listFilterLabel = searchActive
-        ? '"${_searchQuery.trim()}"'
+        ? '"${_activeSearchQuery.trim()}"'
         : _teamFilter != null
             ? (teamFilterLabel ?? _teamFilter)
             : (groupFilterLabel ?? _groupFilter);
@@ -380,8 +403,7 @@ class _ImalatScreenState extends ConsumerState<ImalatScreen> {
                 onPressed: () => setState(() {
                   _groupFilter = null;
                   _teamFilter = null;
-                  _searchController.clear();
-                  _searchQuery = '';
+                  _clearSearchFilter();
                 }),
                 child: const Text('Tümünü göster'),
               ),
@@ -493,16 +515,16 @@ class _ImalatScreenState extends ConsumerState<ImalatScreen> {
                       ),
                       children: [
                         _phaseFilterBar(byPhase),
-                        const SizedBox(height: AppSpacing.sm),
-                        SJSearchBar(
-                          controller: _searchController,
-                          hint: 'İmalat ara…',
-                          onChanged: (v) => setState(() => _searchQuery = v),
-                          onClear: () => setState(() {
-                            _searchController.clear();
-                            _searchQuery = '';
-                          }),
-                        ),
+                        if (!widget.embedded) ...[
+                          const SizedBox(height: AppSpacing.sm),
+                          SJSearchBar(
+                            controller: _searchController,
+                            hint: 'İmalat ara…',
+                            onChanged: (v) =>
+                                setState(() => _localSearchQuery = v),
+                            onClear: _clearSearchFilter,
+                          ),
+                        ],
                         const SizedBox(height: AppSpacing.sm),
                         _phaseContent(
                           phaseItems: _selectedPhase == null
