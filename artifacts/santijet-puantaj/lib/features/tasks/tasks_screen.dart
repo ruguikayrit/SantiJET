@@ -117,6 +117,54 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
     return haystack.contains(query);
   }
 
+  List<SiteTask> _tasksAfterSearch(List<SiteTask> tasks, String searchQ) {
+    if (searchQ.isEmpty) return tasks;
+    return tasks.where((t) => _matchesSearch(t, searchQ)).toList();
+  }
+
+  List<SiteTask> _tasksAfterTag(List<SiteTask> pool) {
+    if (_tagFilter == null) return pool;
+    return pool
+        .where((t) => TaskTagCatalog.normalize(t.tag) == _tagFilter)
+        .toList();
+  }
+
+  List<SiteTask> _tasksAfterCategory(List<SiteTask> pool) {
+    if (_categoryFilter == null) return pool;
+    return pool
+        .where((t) => t.category.trim() == _categoryFilter)
+        .toList();
+  }
+
+  bool _taskMatchesStatusFilter(SiteTask t, TaskStatus filter) {
+    if (t.status == filter) return true;
+    if (filter != TaskStatus.done &&
+        _pinnedDoneIds.contains(t.id) &&
+        t.status == TaskStatus.done) {
+      return true;
+    }
+    return false;
+  }
+
+  List<SiteTask> _tasksAfterStatus(List<SiteTask> pool) {
+    if (_filter == null) return pool;
+    return pool.where((t) => _taskMatchesStatusFilter(t, _filter!)).toList();
+  }
+
+  /// Üst filtre değişince alt seçimler geçersiz kalırsa temizlenir.
+  void _reconcileTaskFilters(List<SiteTask> tasks, String searchQ) {
+    final afterTag = _tasksAfterTag(_tasksAfterSearch(tasks, searchQ));
+    if (_categoryFilter != null &&
+        !afterTag.any((t) => t.category.trim() == _categoryFilter)) {
+      _categoryFilter = null;
+    }
+    final afterCategory = _tasksAfterCategory(afterTag);
+    if (_filter != null &&
+        !afterCategory.any((t) => _taskMatchesStatusFilter(t, _filter!))) {
+      _filter = null;
+    }
+  }
+
   Future<void> _changeTaskStatus(SiteTask task, TaskStatus status) async {
     final operator = ref.read(activeOperatorProvider);
     if (operator == null) return;
@@ -1594,33 +1642,11 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
       ...usedCategories,
     }.toList()
       ..sort((a, b) => a.compareTo(b));
-    final statusFiltered = _filter == null
-        ? tasks
-        : tasks.where((t) {
-            if (t.status == _filter) return true;
-            // Tamamlanırken 2 sn görünür kalsın (aktif filtrelerde).
-            if (_filter != TaskStatus.done &&
-                _pinnedDoneIds.contains(t.id) &&
-                t.status == TaskStatus.done) {
-              return true;
-            }
-            return false;
-          }).toList();
-    final categoryFiltered = _categoryFilter == null
-        ? statusFiltered
-        : statusFiltered
-            .where((t) => t.category.trim() == _categoryFilter)
-            .toList();
-    final tagFiltered = _tagFilter == null
-        ? categoryFiltered
-        : categoryFiltered
-            .where((t) => TaskTagCatalog.normalize(t.tag) == _tagFilter)
-            .toList();
     final searchQ = _foldTr(_searchQuery.trim());
-    final searchFiltered = searchQ.isEmpty
-        ? tagFiltered
-        : tagFiltered.where((t) => _matchesSearch(t, searchQ)).toList();
-    final filtered = _orderedTasks(searchFiltered);
+    final searchPool = _tasksAfterSearch(tasks, searchQ);
+    final tagScope = _tasksAfterTag(searchPool);
+    final categoryScope = _tasksAfterCategory(tagScope);
+    final filtered = _orderedTasks(_tasksAfterStatus(categoryScope));
     final canAssign =
         operator != null && RoleDegree.canAssignTasks(operator);
 
@@ -1728,10 +1754,14 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                 child: SJSearchBar(
                   controller: _searchController,
                   hint: 'Görev ara…',
-                  onChanged: (v) => setState(() => _searchQuery = v),
+                  onChanged: (v) => setState(() {
+                    _searchQuery = v;
+                    _reconcileTaskFilters(tasks, _foldTr(v.trim()));
+                  }),
                   onClear: () => setState(() {
                     _searchController.clear();
                     _searchQuery = '';
+                    _reconcileTaskFilters(tasks, '');
                   }),
                 ),
               ),
@@ -1755,7 +1785,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                               label: TaskTagCatalog.cardLabel(
                                 TaskTagCatalog.all[i],
                               ),
-                              count: tasks
+                              count: searchPool
                                   .where(
                                     (t) =>
                                         TaskTagCatalog.normalize(t.tag) ==
@@ -1768,6 +1798,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                                 final tag = TaskTagCatalog.all[i];
                                 _tagFilter =
                                     _tagFilter == tag ? null : tag;
+                                _reconcileTaskFilters(tasks, searchQ);
                               }),
                             ),
                           ),
@@ -1791,7 +1822,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                         const SizedBox(width: AppSpacing.xs),
                     itemBuilder: (context, i) {
                       final category = filterCategories[i];
-                      final count = tasks
+                      final count = tagScope
                           .where((t) => t.category.trim() == category)
                           .length;
                       return _TaskFilterKpiCard(
@@ -1803,6 +1834,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                           _categoryFilter = _categoryFilter == category
                               ? null
                               : category;
+                          _reconcileTaskFilters(tasks, searchQ);
                         }),
                       );
                     },
@@ -1819,7 +1851,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                       Expanded(
                         child: _TaskStatusFilterCard(
                           status: TaskStatus.values[i],
-                          count: tasks
+                          count: categoryScope
                               .where(
                                 (t) => t.status == TaskStatus.values[i],
                               )
@@ -2533,10 +2565,6 @@ class _TaskFilterKpiCard extends StatelessWidget {
         ),
         const SizedBox(width: 6),
         Text('$count', style: countStyle),
-        if (selected) ...[
-          const SizedBox(width: 4),
-          Icon(Icons.check_circle, size: 14, color: countInk),
-        ],
       ],
     );
 
