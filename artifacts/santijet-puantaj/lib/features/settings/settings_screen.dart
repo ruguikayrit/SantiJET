@@ -25,6 +25,7 @@ import '../../domain/catalogs/professions.dart';
 import '../../domain/catalogs/task_categories.dart';
 import '../../domain/entities/santijet_plan_pack.dart';
 import '../../core/design_system/sj_modal.dart';
+import 'widgets/project_backup_sheets.dart';
 
 /// Ayarlar — Demir ile aynı kart/tile düzeni; Puantaj kapsamına indirgenmiş.
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -110,9 +111,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                'Tüm uygulama verisi tek JSON dosyasında yedeklenir: proje, '
-                'personel, puantaj, sigortasız ekip, imalat, verim, görev, '
-                'günlük rapor, yevmiyeli iş, kataloglar ve firma bilgisi.',
+                'Şantiye bazında yedekleyin: yalnızca seçtiğiniz projenin '
+                'kayıtları dışa aktarılır veya dosyadan tek şantiye içe '
+                'birleştirilir. Bitmiş / pasif şantiyeler listeye dahil '
+                'edilmez (seçmezseniz).',
                 style: sheetTheme.textTheme.bodySmall,
               ),
               const SizedBox(height: 16),
@@ -147,12 +149,21 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   Future<void> _export() async {
     if (_busy) return;
+    final ids = await pickProjectsForExport(context, ref);
+    if (ids == null || ids.isEmpty || !mounted) return;
+
     setState(() => _busy = true);
     try {
-      await ref.read(puantajBackupControllerProvider).exportAll();
+      await ref.read(puantajBackupControllerProvider).exportProjects(ids);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Yedek dışa aktarıldı')),
+        SnackBar(
+          content: Text(
+            ids.length == 1
+                ? 'Şantiye yedeği dışa aktarıldı'
+                : '${ids.length} şantiye yedeği dışa aktarıldı',
+          ),
+        ),
       );
     } on PuantajBackupException catch (e) {
       if (!mounted) return;
@@ -171,51 +182,91 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   Future<void> _import() async {
     if (_busy) return;
+
+    setState(() => _busy = true);
+    PuantajBackupPayload? payload;
+    try {
+      payload = await ref.read(puantajBackupControllerProvider).pickBackupFile();
+    } on PuantajBackupException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.message)),
+        );
+      }
+      setState(() => _busy = false);
+      return;
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Dosya okunamadı: $e')),
+        );
+      }
+      setState(() => _busy = false);
+      return;
+    }
+
+    if (!mounted) {
+      setState(() => _busy = false);
+      return;
+    }
+    if (payload == null) {
+      setState(() => _busy = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('İçe aktarma iptal edildi')),
+      );
+      return;
+    }
+
+    final projectId = await pickProjectForImport(context, payload);
+    if (projectId == null || !mounted) {
+      setState(() => _busy = false);
+      return;
+    }
+
+    final name = payload.projects
+        .where((p) => p['id'] == projectId)
+        .map((p) => p['name'] as String? ?? 'Şantiye')
+        .firstOrNull;
+
     final dialogTheme = SJModal.sheetThemeOf(context);
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => Theme(
         data: dialogTheme,
         child: AlertDialog(
-        backgroundColor: SJModal.sheetSurface,
-        title: const Text('Verileri İçe Aktar'),
-        content: const Text(
-          'Seçilen yedek dosyası mevcut tüm uygulama verisinin üzerine '
-          'yazılacak. Devam edilsin mi?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Vazgeç'),
+          backgroundColor: SJModal.sheetSurface,
+          title: const Text('Şantiye içe aktar'),
+          content: Text(
+            '«${name ?? 'Şantiye'}» bu cihazdaki aynı kayıtla '
+            'değiştirilir (varsa). Diğer şantiyeler etkilenmez. Devam?',
           ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('İçe aktar'),
-          ),
-        ],
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Vazgeç'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('İçe aktar'),
+            ),
+          ],
         ),
       ),
     );
-    if (ok != true || !mounted) return;
+    if (ok != true || !mounted) {
+      setState(() => _busy = false);
+      return;
+    }
 
-    setState(() => _busy = true);
     try {
-      final payload =
-          await ref.read(puantajBackupControllerProvider).importAll();
+      final project = await ref
+          .read(puantajBackupControllerProvider)
+          .importProject(payload, projectId);
       if (!mounted) return;
-      if (payload == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('İçe aktarma iptal edildi')),
-        );
-        return;
-      }
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Yedek yüklendi · ${payload.projects.length} proje · '
-            '${payload.personnel.length} personel · '
-            '${payload.tasks.length} görev · '
-            '${payload.dailyReports.length} rapor',
+            '«${project?.name ?? name ?? 'Şantiye'}» içe aktarıldı',
           ),
         ),
       );
@@ -536,7 +587,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           _SettingsTile(
             icon: Icons.backup,
             title: 'Yedekleme & Geri Yükleme',
-            subtitle: 'Verileri JSON olarak dışa/içe aktar',
+            subtitle: 'Şantiye seçerek JSON dışa / içe aktar',
             onTap: () => _showBackupDialog(context),
           ),
           _SettingsTile(

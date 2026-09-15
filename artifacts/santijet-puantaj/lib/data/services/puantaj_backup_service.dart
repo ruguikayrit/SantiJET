@@ -38,6 +38,7 @@ class PuantajBackupPayload {
     this.dailyReportExportSections,
     this.workSchedulesByProject = const {},
     this.kesifByProject = const {},
+    this.scopeProjectIds = const [],
   });
 
   final int version;
@@ -60,6 +61,9 @@ class PuantajBackupPayload {
   final Map<String, dynamic>? dailyReportExportSections;
   final Map<String, Map<String, dynamic>> workSchedulesByProject;
   final Map<String, Map<String, dynamic>> kesifByProject;
+
+  /// Boş değilse yedek yalnızca bu şantiye(ler) için alınmıştır.
+  final List<String> scopeProjectIds;
 
   Map<String, dynamic> toJson() => {
         'format': puantajBackupFormatId,
@@ -85,6 +89,7 @@ class PuantajBackupPayload {
         if (workSchedulesByProject.isNotEmpty)
           'workSchedulesByProject': workSchedulesByProject,
         if (kesifByProject.isNotEmpty) 'kesifByProject': kesifByProject,
+        if (scopeProjectIds.isNotEmpty) 'scopeProjectIds': scopeProjectIds,
       };
 
   String toJsonString() =>
@@ -168,6 +173,7 @@ class PuantajBackupPayload {
           : null,
       workSchedulesByProject: mapOfMaps('workSchedulesByProject'),
       kesifByProject: mapOfMaps('kesifByProject'),
+      scopeProjectIds: listOfStrings('scopeProjectIds'),
     );
   }
 
@@ -183,15 +189,18 @@ class PuantajBackupPayload {
 }
 
 class PuantajBackupService {
-  Future<void> exportBackup(PuantajBackupPayload payload) async {
+  Future<void> exportBackup(
+    PuantajBackupPayload payload, {
+    String? downloadFileName,
+  }) async {
     final bytes = utf8.encode(payload.toJsonString());
     final stamp = payload.exportedAt;
-    final fileName =
+    final fileName = downloadFileName ??
         'santijet-puantaj-yedek-'
-        '${stamp.year}'
-        '${stamp.month.toString().padLeft(2, '0')}'
-        '${stamp.day.toString().padLeft(2, '0')}'
-        '.json';
+            '${stamp.year}'
+            '${stamp.month.toString().padLeft(2, '0')}'
+            '${stamp.day.toString().padLeft(2, '0')}'
+            '.json';
 
     await file_access.downloadJsonFile(
       fileName: fileName,
