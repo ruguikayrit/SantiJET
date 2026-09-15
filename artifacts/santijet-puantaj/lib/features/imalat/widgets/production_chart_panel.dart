@@ -20,7 +20,9 @@ class ProductionChartPanel extends ConsumerWidget {
     super.key,
   })  : verimRows = const [],
         teamSummaries = const [],
-        _forVerim = false;
+        _forVerim = false,
+        chartWorkGroupFilter = null,
+        onChartWorkGroupFilterChanged = null;
 
   const ProductionChartPanel.verim({
     required this.verimRows,
