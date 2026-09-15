@@ -296,7 +296,13 @@ class _ImalatScreenState extends ConsumerState<ImalatScreen> {
 
     final groupSummaries =
         ProductionGroupSummary.fromProductions(phaseItems);
-    final teamSummaries = TeamImalatSummary.fromProductions(phaseItems);
+    final teamSummaryItems = _groupFilter == null
+        ? phaseItems
+        : phaseItems
+            .where((p) => ProductionWorkGroupCatalog.matches(p, _groupFilter!))
+            .toList();
+    final teamSummaries =
+        TeamImalatSummary.fromProductions(teamSummaryItems);
 
     var filteredItems = phaseItems;
     if (_groupFilter != null) {
@@ -377,12 +383,7 @@ class _ImalatScreenState extends ConsumerState<ImalatScreen> {
             selectedTeam: _teamFilter,
             onTeamTap: (team) {
               setState(() {
-                if (_teamFilter == team) {
-                  _teamFilter = null;
-                } else {
-                  _teamFilter = team;
-                  _groupFilter = null;
-                }
+                _teamFilter = _teamFilter == team ? null : team;
               });
             },
           ),

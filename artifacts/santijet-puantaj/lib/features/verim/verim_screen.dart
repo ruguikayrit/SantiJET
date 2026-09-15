@@ -43,7 +43,7 @@ class _VerimScreenState extends ConsumerState<VerimScreen> {
     final project = ref.watch(activeProjectProvider);
     final rows = ref.watch(verimRowsProvider);
     final groupSummaries = ref.watch(groupVerimSummariesProvider);
-    final teamSummaries = ref.watch(teamVerimSummariesProvider);
+    final teamSummariesAll = ref.watch(teamVerimSummariesProvider);
 
     if (project == null) {
       final empty = SJEmptyState(
@@ -84,6 +84,21 @@ class _VerimScreenState extends ConsumerState<VerimScreen> {
       filteredRows =
           filteredRows.where((r) => r.summaryGroupKey == _teamFilter).toList();
     }
+
+    final teamSummaries = _groupFilter == null
+        ? teamSummariesAll
+        : teamSummariesAll
+            .where(
+              (s) => rows.any(
+                (r) =>
+                    r.summaryGroupKey == s.groupKey &&
+                    ProductionWorkGroupCatalog.matches(
+                      r.production,
+                      _groupFilter!,
+                    ),
+              ),
+            )
+            .toList();
 
     final groupFilterLabel = _groupFilter == null
         ? null
@@ -155,12 +170,7 @@ class _VerimScreenState extends ConsumerState<VerimScreen> {
                   selectedTeam: _teamFilter,
                   onTeamTap: (team) {
                     setState(() {
-                      if (_teamFilter == team) {
-                        _teamFilter = null;
-                      } else {
-                        _teamFilter = team;
-                        _groupFilter = null;
-                      }
+                      _teamFilter = _teamFilter == team ? null : team;
                     });
                   },
                 ),
