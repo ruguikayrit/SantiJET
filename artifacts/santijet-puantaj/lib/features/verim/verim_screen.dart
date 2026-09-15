@@ -34,6 +34,9 @@ class _VerimScreenState extends ConsumerState<VerimScreen> {
   /// null = tüm gruplar; dolu = grup özet kartı filtresi.
   String? _groupFilter;
 
+  /// Grafik başlığı altı — yalnızca grafik; liste/grup özetinden bağımsız.
+  String? _chartGroupFilter;
+
   /// null = tüm imalatlar; dolu = ekip kartı filtresi (ekip + birim).
   String? _teamFilter;
 
@@ -119,6 +122,31 @@ class _VerimScreenState extends ConsumerState<VerimScreen> {
         ? (teamFilterLabel ?? _teamFilter)
         : (groupFilterLabel ?? _groupFilter);
 
+    final chartRows = _chartGroupFilter == null
+        ? rows
+        : rows
+            .where(
+              (r) => ProductionWorkGroupCatalog.matches(
+                r.production,
+                _chartGroupFilter!,
+              ),
+            )
+            .toList();
+    final chartTeamSummaries = _chartGroupFilter == null
+        ? teamSummariesAll
+        : teamSummariesAll
+            .where(
+              (s) => rows.any(
+                (r) =>
+                    r.summaryGroupKey == s.groupKey &&
+                    ProductionWorkGroupCatalog.matches(
+                      r.production,
+                      _chartGroupFilter!,
+                    ),
+              ),
+            )
+            .toList();
+
     final body = rows.isEmpty
         ? SJEmptyState(
             title: 'Henüz imalat yok',
@@ -138,23 +166,11 @@ class _VerimScreenState extends ConsumerState<VerimScreen> {
             ),
             children: [
               ProductionChartPanel.verim(
-                verimRows: _groupFilter == null
-                    ? rows
-                    : rows
-                        .where(
-                          (r) => ProductionWorkGroupCatalog.matches(
-                            r.production,
-                            _groupFilter!,
-                          ),
-                        )
-                        .toList(),
-                teamSummaries: teamSummaries,
-                chartWorkGroupFilter: _groupFilter,
+                verimRows: chartRows,
+                teamSummaries: chartTeamSummaries,
+                chartWorkGroupFilter: _chartGroupFilter,
                 onChartWorkGroupFilterChanged: (group) {
-                  setState(() {
-                    _groupFilter = group;
-                    if (group != null) _teamFilter = null;
-                  });
+                  setState(() => _chartGroupFilter = group);
                 },
               ),
               const SizedBox(height: AppSpacing.md),
