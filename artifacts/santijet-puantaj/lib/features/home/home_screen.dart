@@ -22,12 +22,13 @@ import '../../domain/enums/attendance_status.dart';
 import '../projects/widgets/project_switcher.dart';
 import 'home_daily_report_pdf_sheet.dart';
 import 'home_imalat_group_kpi_row.dart';
+import 'home_verim_group_kpi_row.dart';
 import 'home_task_summary_dialog.dart';
 import '../demo/demo_guide_banner.dart';
 import '../daily_report/widgets/daily_report_export_sections_sheet.dart';
 import '../../data/providers/daily_report_export_sections_provider.dart';
 
-/// Ana sayfa — günlük puantaj, günlük rapor, acil görevler.
+/// Ana sayfa — günlük rapor, puantaj, imalat %, verim özeti, acil görevler.
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
@@ -173,6 +174,29 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               sliver: SliverList(
                 delegate: SliverChildListDelegate([
                   _SummarySection(
+                    title: 'Günlük rapor',
+                    icon: Icons.edit_calendar_outlined,
+                    child: _DailyReportQuickActions(
+                      busy: _dailyReportBusy,
+                      onDun: () => _exportDailyReportForDates(
+                        project,
+                        [PuantajDate.shift(today, -1)],
+                        successLabel: 'Dünün raporu',
+                      ),
+                      onBugun: () => _exportDailyReportForDates(
+                        project,
+                        [today],
+                        successLabel: 'Bugünün raporu',
+                      ),
+                      onOzel: () => showHomeDailyReportPdfSheet(
+                        context,
+                        ref,
+                        project: project,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  _SummarySection(
                     title: 'Günlük Puantaj',
                     icon: Icons.fact_check_outlined,
                     onTap: () => context.go(AppRoutes.puantaj),
@@ -232,26 +256,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ),
                   const SizedBox(height: AppSpacing.md),
                   _SummarySection(
-                    title: 'Günlük rapor',
-                    icon: Icons.edit_calendar_outlined,
-                    child: _DailyReportQuickActions(
-                      busy: _dailyReportBusy,
-                      onDun: () => _exportDailyReportForDates(
-                        project,
-                        [PuantajDate.shift(today, -1)],
-                        successLabel: 'Dünün raporu',
-                      ),
-                      onBugun: () => _exportDailyReportForDates(
-                        project,
-                        [today],
-                        successLabel: 'Bugünün raporu',
-                      ),
-                      onOzel: () => showHomeDailyReportPdfSheet(
-                        context,
-                        ref,
-                        project: project,
-                      ),
-                    ),
+                    title: 'Verim özeti',
+                    icon: Icons.speed_outlined,
+                    onTap: () => context.go(AppRoutes.verim),
+                    child: const HomeVerimGroupKpiRow(),
                   ),
                   const SizedBox(height: AppSpacing.md),
                   _SummarySection(
