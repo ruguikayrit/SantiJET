@@ -79,6 +79,67 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }
   }
 
+  void _showImalatProgressInfo(BuildContext context) {
+    showDialog<void>(
+      context: context,
+      builder: (ctx) {
+        final theme = Theme.of(ctx);
+        return AlertDialog(
+          title: const Text('İmalat ilerleme nasıl hesaplanır?'),
+          content: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Yalnızca plan metraj, plan süre ve plan adam-gün girilmiş '
+                  'imalatlar hesaba katılır.',
+                  style: theme.textTheme.bodyMedium,
+                ),
+                const SizedBox(height: AppSpacing.md),
+                Text('Süre', style: theme.textTheme.titleSmall),
+                const SizedBox(height: 4),
+                Text(
+                  'Toplam çalışılan gün ÷ toplam plan gün × 100.',
+                  style: theme.textTheme.bodyMedium,
+                ),
+                const SizedBox(height: AppSpacing.md),
+                Text('Metraj', style: theme.textTheme.titleSmall),
+                const SizedBox(height: 4),
+                Text(
+                  'Her imalatın gerçekleşen / plan metraj oranı alınır; '
+                  'plan adam-günü büyük olanlar daha fazla ağırlık alır.',
+                  style: theme.textTheme.bodyMedium,
+                ),
+                const SizedBox(height: AppSpacing.md),
+                Text('Adam-gün', style: theme.textTheme.titleSmall),
+                const SizedBox(height: 4),
+                Text(
+                  'Toplam gerçekleşen adam-gün ÷ toplam plan adam-gün × 100.',
+                  style: theme.textTheme.bodyMedium,
+                ),
+                const SizedBox(height: AppSpacing.md),
+                Text(
+                  'Proje genel satırı tüm imalatları; grup kartları yalnızca '
+                  'o grubun (İnşaat / Elektrik / Mekanik) imalatlarını kullanır.',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('Tamam'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final project = ref.watch(activeProjectProvider);
@@ -250,6 +311,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     title: 'İmalat ilerleme yüzdeleri',
                     icon: Icons.construction_outlined,
                     onTap: () => context.go(AppRoutes.imalat),
+                    onInfoTap: () => _showImalatProgressInfo(context),
                     child: const HomeImalatGroupKpiRow(),
                   ),
                   const SizedBox(height: AppSpacing.md),
@@ -608,12 +670,14 @@ class _SummarySection extends StatelessWidget {
     required this.icon,
     required this.child,
     this.onTap,
+    this.onInfoTap,
   });
 
   final String title;
   final IconData icon;
   final Widget child;
   final VoidCallback? onTap;
+  final VoidCallback? onInfoTap;
 
   @override
   Widget build(BuildContext context) {
@@ -632,6 +696,22 @@ class _SummarySection extends StatelessWidget {
                   Expanded(
                     child: Text(title, style: theme.textTheme.titleMedium),
                   ),
+                  if (onInfoTap != null)
+                    IconButton(
+                      tooltip: 'Hesaplama mantığı',
+                      onPressed: onInfoTap,
+                      visualDensity: VisualDensity.compact,
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(
+                        minWidth: 32,
+                        minHeight: 32,
+                      ),
+                      icon: Icon(
+                        Icons.info_outline,
+                        size: 20,
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
                   if (onTap != null)
                     Icon(
                       Icons.chevron_right,
