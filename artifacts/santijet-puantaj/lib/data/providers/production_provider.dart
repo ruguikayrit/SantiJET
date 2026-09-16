@@ -267,6 +267,14 @@ final homeImalatGroupProgressProvider =
   );
 });
 
+/// Ana sayfa — proje geneli (aynı ilerleme formülü, tüm imalatlar).
+final homeImalatProjectProgressProvider =
+    Provider<HomeImalatGroupProgress>((ref) {
+  return HomeImalatGroupProgress.projectOverall(
+    ref.watch(activeProductionProvider),
+  );
+});
+
 final activeProductionProvider = Provider<List<Production>>((ref) {
   final project = ref.watch(activeProjectProvider);
   final all = ref.watch(productionProvider);

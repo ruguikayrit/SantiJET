@@ -31,6 +31,8 @@ class HomeImalatGroupProgress {
     return p.plannedQty > 0 && p.plannedDays > 0 && p.plannedWorkerDays > 0;
   }
 
+  static const projectOverallKey = '__project__';
+
   static List<HomeImalatGroupProgress> fromProductions(List<Production> items) {
     final byGroup = <String, List<Production>>{};
     for (final p in items) {
@@ -41,16 +43,21 @@ class HomeImalatGroupProgress {
     final out = <HomeImalatGroupProgress>[];
     for (final tag in TaskTagCatalog.all) {
       final groupItems = byGroup[tag] ?? const [];
-      out.add(_compute(tag, groupItems));
+      out.add(_compute(tag, ProductionWorkGroupCatalog.displayTitle(tag), groupItems));
     }
     return out;
   }
 
+  /// Tüm gruplar — grup kartlarıyla aynı formül (uygun imalat havuzu).
+  static HomeImalatGroupProgress projectOverall(List<Production> items) {
+    return _compute(projectOverallKey, 'Proje genel', items);
+  }
+
   static HomeImalatGroupProgress _compute(
     String groupKey,
+    String title,
     List<Production> groupItems,
   ) {
-    final title = ProductionWorkGroupCatalog.displayTitle(groupKey);
     final total = groupItems.length;
     final eligible = groupItems.where(isEligible).toList(growable: false);
 
