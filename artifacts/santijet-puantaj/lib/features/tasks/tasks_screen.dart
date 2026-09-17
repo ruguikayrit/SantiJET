@@ -2318,30 +2318,34 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                                       ),
                                     ],
                                     const SizedBox(height: AppSpacing.sm),
-                                    Wrap(
-                                      spacing: 6,
-                                      runSpacing: 6,
+                                    Row(
                                       children: [
-                                        for (final s in TaskStatus.values)
-                                          SizedBox(
-                                            width: (MediaQuery.sizeOf(context)
-                                                        .width -
-                                                    AppSpacing.md * 4 -
-                                                    6) /
-                                                2,
+                                        for (var i = 0;
+                                            i < TaskStatus.values.length;
+                                            i++) ...[
+                                          if (i > 0) const SizedBox(width: 4),
+                                          Expanded(
                                             child: _StatusSelectButton(
-                                              label: s.shortLabel,
-                                              selected: task.status == s,
-                                              color: _statusColor(s),
-                                              enabled: task.status == s ||
+                                              label: TaskStatus
+                                                  .values[i].shortLabel,
+                                              selected: task.status ==
+                                                  TaskStatus.values[i],
+                                              color: _statusColor(
+                                                TaskStatus.values[i],
+                                              ),
+                                              enabled: task.status ==
+                                                      TaskStatus.values[i] ||
                                                   TaskStatusRules.canTransition(
                                                     task.status,
-                                                    s,
+                                                    TaskStatus.values[i],
                                                   ),
-                                              onTap: () =>
-                                                  _changeTaskStatus(task, s),
+                                              onTap: () => _changeTaskStatus(
+                                                task,
+                                                TaskStatus.values[i],
+                                              ),
                                             ),
                                           ),
+                                        ],
                                       ],
                                     ),
                                     const SizedBox(height: AppSpacing.xs),
@@ -2647,7 +2651,7 @@ class _StatusSelectButton extends StatelessWidget {
           borderRadius: AppRadii.sm,
           child: Container(
             alignment: Alignment.center,
-            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 2),
+            padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 1),
             decoration: BoxDecoration(
               borderRadius: AppRadii.sm,
               border: Border.all(
@@ -2666,6 +2670,8 @@ class _StatusSelectButton extends StatelessWidget {
                 style: theme.textTheme.labelSmall?.copyWith(
                   color: ink,
                   fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+                  fontSize: 11,
+                  height: 1.05,
                 ),
               ),
             ),

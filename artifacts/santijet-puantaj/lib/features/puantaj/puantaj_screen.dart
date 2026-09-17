@@ -649,6 +649,14 @@ class _DailyViewState extends State<_DailyView> {
   final Map<String, bool> _yevmiyeliCompanies = {};
   /// Son kırılım çubuğu seçimi — yeni firma anahtarlarına uygulanır.
   int _appliedDepth = 0;
+  final _listSearchController = TextEditingController();
+  String _listQuery = '';
+
+  @override
+  void dispose() {
+    _listSearchController.dispose();
+    super.dispose();
+  }
 
   @override
   void didUpdateWidget(covariant _DailyView oldWidget) {
@@ -662,7 +670,71 @@ class _DailyViewState extends State<_DailyView> {
       _ekipCompanies.clear();
       _yevmiyeliCompanies.clear();
       _appliedDepth = 0;
+      _listSearchController.clear();
+      _listQuery = '';
     }
+  }
+
+  static String _foldTr(String s) {
+    final b = StringBuffer();
+    for (final unit in s.runes) {
+      final c = String.fromCharCode(unit);
+      switch (c) {
+        case 'I':
+          b.write('ı');
+        case 'İ':
+          b.write('i');
+        case 'Ğ':
+          b.write('ğ');
+        case 'Ü':
+          b.write('ü');
+        case 'Ş':
+          b.write('ş');
+        case 'Ö':
+          b.write('ö');
+        case 'Ç':
+          b.write('ç');
+        default:
+          b.write(c.toLowerCase());
+      }
+    }
+    return b.toString();
+  }
+
+  bool _personMatchesQuery(Person p, String q) {
+    if (q.isEmpty) return true;
+    final hay = _foldTr(
+      [
+        p.name,
+        p.profession,
+        p.team,
+        p.company,
+      ].join(' '),
+    );
+    return hay.contains(q);
+  }
+
+  List<Person> _filteredPeople(List<Person> source) {
+    final q = _foldTr(_listQuery.trim());
+    if (q.isEmpty) return source;
+    return source.where((p) => _personMatchesQuery(p, q)).toList();
+  }
+
+  List<({String company, List<Person> users})> _filteredGrouped(
+    List<({String company, List<Person> users})> source,
+  ) {
+    final q = _foldTr(_listQuery.trim());
+    if (q.isEmpty) return source;
+    final out = <({String company, List<Person> users})>[];
+    for (final g in source) {
+      final companyHit = _foldTr(g.company).contains(q);
+      final users = companyHit
+          ? g.users
+          : g.users.where((p) => _personMatchesQuery(p, q)).toList();
+      if (users.isEmpty && !companyHit) continue;
+      out.add((company: g.company, users: companyHit ? g.users : users));
+    }
+    return out;
   }
 
   String _teamKey(String company, String team) => '$company|$team';
@@ -825,6 +897,8 @@ class _DailyViewState extends State<_DailyView> {
     final isToday = widget.date == PuantajDate.today();
     final people = widget.people;
     final grouped = widget.grouped;
+    final listPeople = _filteredPeople(people);
+    final listGrouped = _filteredGrouped(grouped);
     final date = widget.date;
     final missing = widget.missing;
     final counts = widget.counts;
@@ -907,6 +981,15 @@ class _DailyViewState extends State<_DailyView> {
             depth: _kirilimDepth(),
             maxDepth: 3,
             onDepthChanged: _setKirilimDepth,
+            searchController: _listSearchController,
+            onSearchChanged: (v) => setState(() {
+              _listQuery = v;
+              if (v.trim().isNotEmpty) _l1Personel = true;
+            }),
+            onSearchClear: () => setState(() {
+              _listSearchController.clear();
+              _listQuery = '';
+            }),
           ),
           _ExpandableSection(
             leadingBar: true,
@@ -942,7 +1025,7 @@ class _DailyViewState extends State<_DailyView> {
           ),
           DayYevmiyeliSection(
             date: date,
-            people: widget.people,
+            people: people,
             expanded: _l1Yevmiyeli,
             onExpandedChanged: (v) => setState(() => _l1Yevmiyeli = v),
             companyExpanded: _yevmiyeliCompanyExpanded,
@@ -1087,6 +1170,15 @@ class _DailyViewState extends State<_DailyView> {
           depth: _kirilimDepth(),
           maxDepth: 3,
           onDepthChanged: _setKirilimDepth,
+          searchController: _listSearchController,
+          onSearchChanged: (v) => setState(() {
+            _listQuery = v;
+            if (v.trim().isNotEmpty) _l1Personel = true;
+          }),
+          onSearchClear: () => setState(() {
+            _listSearchController.clear();
+            _listQuery = '';
+          }),
         ),
         _ExpandableSection(
           leadingBar: true,
@@ -1099,11 +1191,24 @@ class _DailyViewState extends State<_DailyView> {
             ),
           ),
           trailing: Text(
-            '${people.length} personel',
+            _listQuery.trim().isEmpty
+                ? '${people.length} personel'
+                : '${listPeople.length}/${people.length} personel',
             style: theme.textTheme.labelSmall,
           ),
           children: [
-            for (final group in grouped)
+            if (listGrouped.isEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: AppSpacing.sm),
+                child: Text(
+                  'Aramayla eşleşen personel yok',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              )
+            else
+              for (final group in listGrouped)
               _ExpandableSection(
                 indent: AppSpacing.sm,
                 expanded: _companyExpanded(group.company),
@@ -1272,7 +1377,7 @@ class _DailyViewState extends State<_DailyView> {
         ),
         DayYevmiyeliSection(
           date: date,
-          people: widget.people,
+          people: _listQuery.trim().isEmpty ? people : listPeople,
           expanded: _l1Yevmiyeli,
           onExpandedChanged: (v) => setState(() => _l1Yevmiyeli = v),
           companyExpanded: _yevmiyeliCompanyExpanded,
@@ -1404,11 +1509,17 @@ class _PuantajKirilimBar extends StatelessWidget {
     required this.depth,
     required this.maxDepth,
     required this.onDepthChanged,
+    this.searchController,
+    this.onSearchChanged,
+    this.onSearchClear,
   });
 
   final int depth;
   final int maxDepth;
   final ValueChanged<int> onDepthChanged;
+  final TextEditingController? searchController;
+  final ValueChanged<String>? onSearchChanged;
+  final VoidCallback? onSearchClear;
 
   static const _labels = ['Kapalı', 'Firma', 'Ekip', 'Personel'];
 
@@ -1422,6 +1533,15 @@ class _PuantajKirilimBar extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          if (searchController != null && onSearchChanged != null) ...[
+            SJSearchBar(
+              controller: searchController,
+              hint: 'Personel, ekip veya firma ara...',
+              onChanged: onSearchChanged,
+              onClear: onSearchClear,
+            ),
+            const SizedBox(height: AppSpacing.sm),
+          ],
           Text(
             'Liste görünümü',
             style: theme.textTheme.labelMedium?.copyWith(
