@@ -45,30 +45,34 @@ class TaskReportData {
 
 /// Görünür saha görevlerinden PDF/Excel satırları üretir.
 abstract final class TaskReportBuilder {
-  /// [tagFilter] null → tüm etiketler; aksi halde katalog etiketi (ör. İnşaat).
-  /// [statusFilter] null → tüm durumlar.
+  /// [tagFilters] boş/null → tüm etiketler.
+  /// [statusFilters] boş/null → tüm durumlar.
   static TaskReportData build({
     required String projectName,
     required List<SiteTask> tasks,
-    String? tagFilter,
-    TaskStatus? statusFilter,
+    Set<String>? tagFilters,
+    Set<TaskStatus>? statusFilters,
     TaskExportOptions? options,
   }) {
     final opts = options ?? TaskExportOptions.all();
     final columns = opts.orderedColumns;
 
-    final tag = tagFilter == null || tagFilter.isEmpty
-        ? null
-        : TaskTagCatalog.normalize(tagFilter);
+    final tags = {
+      for (final raw in tagFilters ?? const <String>{})
+        if (raw.trim().isNotEmpty) TaskTagCatalog.normalize(raw),
+    };
+    final statuses = statusFilters == null
+        ? <TaskStatus>{}
+        : Set<TaskStatus>.from(statusFilters);
 
     var list = List<SiteTask>.from(tasks);
-    if (tag != null) {
+    if (tags.isNotEmpty) {
       list = list
-          .where((t) => TaskTagCatalog.normalize(t.tag) == tag)
+          .where((t) => tags.contains(TaskTagCatalog.normalize(t.tag)))
           .toList();
     }
-    if (statusFilter != null) {
-      list = list.where((t) => t.status == statusFilter).toList();
+    if (statuses.isNotEmpty) {
+      list = list.where((t) => statuses.contains(t.status)).toList();
     }
 
     list.sort((a, b) {
@@ -82,20 +86,23 @@ abstract final class TaskReportBuilder {
       return a.title.toLowerCase().compareTo(b.title.toLowerCase());
     });
 
-    final tagLabel = tag == null
+    final tagLabel = tags.isEmpty
         ? 'Tüm etiketler'
-        : TaskTagCatalog.cardLabel(tag);
-    final statusLabel =
-        statusFilter == null ? 'Tüm durumlar' : statusFilter.label;
+        : tags.map(TaskTagCatalog.cardLabel).join(' · ');
+    final statusLabel = statuses.isEmpty
+        ? 'Tüm durumlar'
+        : statuses.map((s) => s.shortLabel).join(' · ');
     final today = PuantajDate.today();
-    final stemTag = tag == null
+    final stemTag = tags.isEmpty
         ? 'tum'
-        : switch (tag) {
-            TaskTagCatalog.insaat => 'insaat',
-            TaskTagCatalog.elektrik => 'elektrik',
-            TaskTagCatalog.mekanik => 'mekanik',
-            _ => 'etiket',
-          };
+        : tags.length > 1
+            ? 'coklu'
+            : switch (tags.first) {
+                TaskTagCatalog.insaat => 'insaat',
+                TaskTagCatalog.elektrik => 'elektrik',
+                TaskTagCatalog.mekanik => 'mekanik',
+                _ => 'etiket',
+              };
 
     final headers = [for (final c in columns) c.header];
     final rows = <List<String>>[

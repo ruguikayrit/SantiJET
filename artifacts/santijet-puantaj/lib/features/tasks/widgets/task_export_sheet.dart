@@ -13,7 +13,7 @@ import '../../../domain/catalogs/task_tags.dart';
 import '../../../domain/entities/site_task.dart';
 import '../../../domain/enums/task_status.dart';
 
-/// Görev AL — etiket / durum / sütun / fotoğraf + PDF / Excel.
+/// Görev AL — etiket / durum (çoklu) / sütun / fotoğraf + PDF / Excel.
 class TaskExportSheet extends ConsumerStatefulWidget {
   const TaskExportSheet({
     required this.projectName,
@@ -25,7 +25,7 @@ class TaskExportSheet extends ConsumerStatefulWidget {
   final String projectName;
   final List<SiteTask> tasks;
 
-  /// null = tüm etiketler (varsayılan).
+  /// null = tüm etiketler (varsayılan); doluysa başlangıçta o etiket seçili.
   final String? initialTag;
 
   @override
@@ -33,8 +33,14 @@ class TaskExportSheet extends ConsumerStatefulWidget {
 }
 
 class _TaskExportSheetState extends ConsumerState<TaskExportSheet> {
-  late String? _tag = widget.initialTag;
-  TaskStatus? _status;
+  /// Boş = tüm etiketler.
+  late Set<String> _tags = widget.initialTag == null ||
+          widget.initialTag!.trim().isEmpty
+      ? <String>{}
+      : {TaskTagCatalog.normalize(widget.initialTag!)};
+
+  /// Boş = tüm durumlar.
+  Set<TaskStatus> _statuses = {};
   late TaskExportOptions _options;
   bool _busy = false;
   String? _error;
@@ -49,10 +55,58 @@ class _TaskExportSheetState extends ConsumerState<TaskExportSheet> {
     return TaskReportBuilder.build(
       projectName: widget.projectName,
       tasks: widget.tasks,
-      tagFilter: _tag,
-      statusFilter: _status,
+      tagFilters: _tags,
+      statusFilters: _statuses,
       options: _options,
     ).taskCount;
+  }
+
+  void _onTagSelectionChanged(Set<String> next) {
+    final wasAll = _tags.isEmpty;
+    final nextHasAll = next.contains('all');
+    final specifics = next.where((e) => e != 'all').toSet();
+
+    setState(() {
+      if (nextHasAll && !wasAll) {
+        _tags = {};
+      } else if (nextHasAll && wasAll && specifics.isNotEmpty) {
+        _tags = specifics;
+      } else if (!nextHasAll && specifics.isEmpty) {
+        _tags = {};
+      } else {
+        _tags = specifics;
+      }
+      _error = null;
+    });
+  }
+
+  void _onStatusSelectionChanged(Set<String> next) {
+    final wasAll = _statuses.isEmpty;
+    final nextHasAll = next.contains('all');
+    final specifics = <TaskStatus>{
+      for (final v in next)
+        if (v == 'todo')
+          TaskStatus.todo
+        else if (v == 'started')
+          TaskStatus.started
+        else if (v == 'doing')
+          TaskStatus.doing
+        else if (v == 'done')
+          TaskStatus.done,
+    };
+
+    setState(() {
+      if (nextHasAll && !wasAll) {
+        _statuses = {};
+      } else if (nextHasAll && wasAll && specifics.isNotEmpty) {
+        _statuses = specifics;
+      } else if (!nextHasAll && specifics.isEmpty) {
+        _statuses = {};
+      } else {
+        _statuses = specifics;
+      }
+      _error = null;
+    });
   }
 
   Future<void> _showExportBusyDialog({required bool pdf}) {
@@ -108,8 +162,8 @@ class _TaskExportSheetState extends ConsumerState<TaskExportSheet> {
     final report = TaskReportBuilder.build(
       projectName: widget.projectName,
       tasks: widget.tasks,
-      tagFilter: _tag,
-      statusFilter: _status,
+      tagFilters: _tags,
+      statusFilters: _statuses,
       options: _options,
     );
     if (report.taskCount == 0) {
@@ -123,7 +177,6 @@ class _TaskExportSheetState extends ConsumerState<TaskExportSheet> {
       _busy = true;
       _error = null;
     });
-    // Önce buton/loading durumunun çizilmesi için bir kare bekle.
     await Future<void>.delayed(Duration.zero);
     if (!mounted) return;
 
@@ -160,10 +213,29 @@ class _TaskExportSheetState extends ConsumerState<TaskExportSheet> {
     );
   }
 
+  ButtonStyle _filterSegStyle(ThemeData theme) {
+    return SegmentedButton.styleFrom(
+      foregroundColor: theme.colorScheme.onSurfaceVariant,
+      selectedForegroundColor: theme.colorScheme.onSecondary,
+      selectedBackgroundColor: theme.colorScheme.secondary,
+      textStyle: theme.textTheme.labelLarge?.copyWith(
+        fontSize: (theme.textTheme.labelLarge?.fontSize ?? 14) - 2,
+        height: 1.1,
+      ),
+      visualDensity: VisualDensity.compact,
+      padding: const EdgeInsets.symmetric(horizontal: 6),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final count = _previewCount;
+    final tagSelected =
+        _tags.isEmpty ? {'all'} : Set<String>.from(_tags);
+    final statusSelected = _statuses.isEmpty
+        ? {'all'}
+        : {for (final s in _statuses) s.name};
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -177,90 +249,77 @@ class _TaskExportSheetState extends ConsumerState<TaskExportSheet> {
         ),
         const SizedBox(height: AppSpacing.xs),
         Text(
-          'Son seçimler hatırlanır.',
+          'Son sütun seçimleri hatırlanır. Etiket ve durumda birden fazla seçebilirsiniz.',
           style: theme.textTheme.labelMedium?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
           ),
         ),
         const SizedBox(height: AppSpacing.md),
         Text('Etiket', style: theme.textTheme.labelLarge),
-        const SizedBox(height: AppSpacing.sm),
-        Wrap(
-          spacing: AppSpacing.xs,
-          runSpacing: AppSpacing.xs,
-          children: [
-            _TagChoice(
-              label: 'Tümü',
-              selected: _tag == null,
-              color: theme.colorScheme.primary,
-              onTap: _busy ? null : () => setState(() => _tag = null),
+        const SizedBox(height: AppSpacing.xs),
+        SegmentedButton<String>(
+          multiSelectionEnabled: true,
+          emptySelectionAllowed: true,
+          showSelectedIcon: false,
+          style: _filterSegStyle(theme),
+          segments: [
+            ButtonSegment(
+              value: 'all',
+              label: Text('Tümü', style: _segLabelStyle(theme), maxLines: 1),
             ),
-            ...TaskTagCatalog.all.map(
-              (t) => _TagChoice(
-                label: TaskTagCatalog.cardLabel(t),
-                selected: _tag == t,
-                color: TaskTagCatalog.accentFor(t),
-                onTap: _busy ? null : () => setState(() => _tag = t),
+            for (final t in TaskTagCatalog.all)
+              ButtonSegment(
+                value: t,
+                label: Text(
+                  TaskTagCatalog.cardLabel(t),
+                  style: _segLabelStyle(theme),
+                  maxLines: 1,
+                ),
               ),
-            ),
           ],
+          selected: tagSelected,
+          onSelectionChanged: _busy ? null : _onTagSelectionChanged,
         ),
         const SizedBox(height: AppSpacing.md),
         Text('Durum', style: theme.textTheme.labelLarge),
         const SizedBox(height: AppSpacing.xs),
         SegmentedButton<String>(
+          multiSelectionEnabled: true,
+          emptySelectionAllowed: true,
           showSelectedIcon: false,
-          style: SegmentedButton.styleFrom(
-            foregroundColor: theme.colorScheme.onSurfaceVariant,
-            selectedForegroundColor: theme.colorScheme.onSecondary,
-            selectedBackgroundColor: theme.colorScheme.secondary,
-            textStyle: theme.textTheme.labelLarge?.copyWith(
-              fontSize: (theme.textTheme.labelLarge?.fontSize ?? 14) - 2,
-              height: 1.1,
-            ),
-            visualDensity: VisualDensity.compact,
-            padding: const EdgeInsets.symmetric(horizontal: 6),
-          ),
+          style: _filterSegStyle(theme),
           segments: [
             ButtonSegment(
               value: 'all',
-              label: Text('Tümü', style: _statusSegStyle(theme), maxLines: 1),
+              label: Text('Tümü', style: _segLabelStyle(theme), maxLines: 1),
             ),
             ButtonSegment(
               value: 'todo',
-              label:
-                  Text('Yapılacak', style: _statusSegStyle(theme), maxLines: 1),
+              label: Text(
+                'Yapılacak',
+                style: _segLabelStyle(theme),
+                maxLines: 1,
+              ),
             ),
             ButtonSegment(
               value: 'started',
-              label:
-                  Text('Başladı', style: _statusSegStyle(theme), maxLines: 1),
+              label: Text(
+                'Başladı',
+                style: _segLabelStyle(theme),
+                maxLines: 1,
+              ),
             ),
             ButtonSegment(
               value: 'doing',
-              label: Text('Devam', style: _statusSegStyle(theme), maxLines: 1),
+              label: Text('Devam', style: _segLabelStyle(theme), maxLines: 1),
             ),
             ButtonSegment(
               value: 'done',
-              label: Text('Bitti', style: _statusSegStyle(theme), maxLines: 1),
+              label: Text('Bitti', style: _segLabelStyle(theme), maxLines: 1),
             ),
           ],
-          selected: {_status == null ? 'all' : _status!.name},
-          onSelectionChanged: _busy
-              ? null
-              : (s) {
-                  final v = s.first;
-                  setState(() {
-                    _status = switch (v) {
-                      'todo' => TaskStatus.todo,
-                      'started' => TaskStatus.started,
-                      'doing' => TaskStatus.doing,
-                      'done' => TaskStatus.done,
-                      _ => null,
-                    };
-                    _error = null;
-                  });
-                },
+          selected: statusSelected,
+          onSelectionChanged: _busy ? null : _onStatusSelectionChanged,
         ),
         const SizedBox(height: AppSpacing.md),
         Row(
@@ -432,56 +491,10 @@ class _TaskExportSheetState extends ConsumerState<TaskExportSheet> {
   }
 }
 
-TextStyle? _statusSegStyle(ThemeData theme) {
+TextStyle? _segLabelStyle(ThemeData theme) {
   final base = theme.textTheme.labelLarge;
   return base?.copyWith(
     fontSize: (base.fontSize ?? 14) - 2,
     height: 1.1,
   );
-}
-
-class _TagChoice extends StatelessWidget {
-  const _TagChoice({
-    required this.label,
-    required this.selected,
-    required this.color,
-    this.onTap,
-  });
-
-  final String label;
-  final bool selected;
-  final Color color;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: AppRadii.sm,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          decoration: BoxDecoration(
-            color: selected
-                ? color.withValues(alpha: 0.2)
-                : color.withValues(alpha: 0.08),
-            borderRadius: AppRadii.sm,
-            border: Border.all(
-              color: color.withValues(alpha: selected ? 0.75 : 0.35),
-              width: selected ? 1.5 : 1,
-            ),
-          ),
-          child: Text(
-            label,
-            style: theme.textTheme.labelMedium?.copyWith(
-              color: color,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
 }
