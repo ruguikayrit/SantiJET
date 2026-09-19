@@ -952,7 +952,7 @@ class _HomeSyncBar extends ConsumerWidget {
   final VoidCallback onSync;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final sync = ref.watch(sahaSyncStateProvider);
     final isLive = sync.phase == SahaSyncPhase.live;
