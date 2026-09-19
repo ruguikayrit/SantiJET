@@ -38,11 +38,18 @@ class UninsuredTeamsNotifier extends StateNotifier<List<UninsuredTeamEntry>> {
   final Box _box;
   static const _key = 'items';
 
+  void Function(String projectId)? onLocalProjectChanged;
+  bool suppressCloud = false;
+
   static List<UninsuredTeamEntry> _load(Box box) =>
       _readList(box, _key).map(UninsuredTeamEntry.fromJson).toList();
 
-  void _persist() =>
-      _writeList(_box, _key, state.map((e) => e.toJson()).toList());
+  void _persist([String? projectId]) {
+    _writeList(_box, _key, state.map((e) => e.toJson()).toList());
+    if (!suppressCloud && projectId != null) {
+      onLocalProjectChanged?.call(projectId);
+    }
+  }
 
   List<UninsuredTeamEntry> forDay({
     required String projectId,
@@ -73,7 +80,7 @@ class UninsuredTeamsNotifier extends StateNotifier<List<UninsuredTeamEntry>> {
     } else {
       state = [...state, cleaned];
     }
-    _persist();
+    _persist(cleaned.projectId);
   }
 
   void add({
@@ -96,18 +103,63 @@ class UninsuredTeamsNotifier extends StateNotifier<List<UninsuredTeamEntry>> {
   }
 
   void remove(String id) {
+    String? projectId;
+    for (final e in state) {
+      if (e.id == id) {
+        projectId = e.projectId;
+        break;
+      }
+    }
     state = state.where((e) => e.id != id).toList();
-    _persist();
+    _persist(projectId);
   }
 
   void deleteForProject(String projectId) {
     state = state.where((e) => e.projectId != projectId).toList();
-    _persist();
+    _persist(projectId);
   }
 
   void replaceAll(List<UninsuredTeamEntry> items) {
     state = List<UninsuredTeamEntry>.from(items);
     _persist();
+  }
+
+  void replaceAllQuiet(List<UninsuredTeamEntry> items) {
+    suppressCloud = true;
+    try {
+      state = List<UninsuredTeamEntry>.from(items);
+      _writeList(_box, _key, state.map((e) => e.toJson()).toList());
+    } finally {
+      suppressCloud = false;
+    }
+  }
+
+  void upsertRemote(UninsuredTeamEntry entry) {
+    suppressCloud = true;
+    try {
+      final i = state.indexWhere((e) => e.id == entry.id);
+      if (i >= 0) {
+        state = [
+          for (var j = 0; j < state.length; j++)
+            if (j == i) entry else state[j],
+        ];
+      } else {
+        state = [...state, entry];
+      }
+      _writeList(_box, _key, state.map((e) => e.toJson()).toList());
+    } finally {
+      suppressCloud = false;
+    }
+  }
+
+  void deleteRemote(String id) {
+    suppressCloud = true;
+    try {
+      state = state.where((e) => e.id != id).toList();
+      _writeList(_box, _key, state.map((e) => e.toJson()).toList());
+    } finally {
+      suppressCloud = false;
+    }
   }
 
   /// Katalog ekip adı değişince günlük ekip kayıtlarını günceller.

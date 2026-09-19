@@ -58,6 +58,9 @@ class TasksNotifier extends StateNotifier<List<SiteTask>> {
   final Box _box;
   static const _key = 'items';
 
+  void Function(String projectId)? onLocalProjectChanged;
+  bool suppressCloud = false;
+
   static List<SiteTask> _loadAndPromote(Box box) {
     final loaded =
         _readList(box, _key).map(SiteTask.fromJson).toList(growable: false);
@@ -88,15 +91,19 @@ class TasksNotifier extends StateNotifier<List<SiteTask>> {
     ];
   }
 
-  void _persist() =>
-      _writeList(_box, _key, state.map((e) => e.toJson()).toList());
+  void _persist([String? projectId]) {
+    _writeList(_box, _key, state.map((e) => e.toJson()).toList());
+    if (!suppressCloud && projectId != null) {
+      onLocalProjectChanged?.call(projectId);
+    }
+  }
 
   void _replace(String id, SiteTask next) {
     state = [
       for (final t in state)
         if (t.id == id) next else t,
     ];
-    _persist();
+    _persist(next.projectId);
   }
 
   /// Durum + gerçekleşen tarihleri uygular; onay kuyruğunu temizler.
@@ -189,7 +196,7 @@ class TasksNotifier extends StateNotifier<List<SiteTask>> {
       updatedAt: now,
     );
     state = [...state, task];
-    _persist();
+    _persist(projectId);
     return task;
   }
 
@@ -217,7 +224,7 @@ class TasksNotifier extends StateNotifier<List<SiteTask>> {
     } else {
       state = [...state, next.copyWith(createdAt: next.createdAt ?? now)];
     }
-    _persist();
+    _persist(next.projectId);
     return next;
   }
 
@@ -313,8 +320,15 @@ class TasksNotifier extends StateNotifier<List<SiteTask>> {
   }
 
   void delete(String id) {
+    String? projectId;
+    for (final t in state) {
+      if (t.id == id) {
+        projectId = t.projectId;
+        break;
+      }
+    }
     state = state.where((t) => t.id != id).toList();
-    _persist();
+    _persist(projectId);
   }
 
   int reassignCategory(String from, String to) {
@@ -361,12 +375,50 @@ class TasksNotifier extends StateNotifier<List<SiteTask>> {
 
   void deleteForProject(String projectId) {
     state = state.where((t) => t.projectId != projectId).toList();
-    _persist();
+    _persist(projectId);
   }
 
   void replaceAll(List<SiteTask> items) {
     state = _promoteStartedTasks(List<SiteTask>.from(items));
     _persist();
+  }
+
+  void replaceAllQuiet(List<SiteTask> items) {
+    suppressCloud = true;
+    try {
+      state = _promoteStartedTasks(List<SiteTask>.from(items));
+      _writeList(_box, _key, state.map((e) => e.toJson()).toList());
+    } finally {
+      suppressCloud = false;
+    }
+  }
+
+  void upsertRemote(SiteTask task) {
+    suppressCloud = true;
+    try {
+      final i = state.indexWhere((t) => t.id == task.id);
+      if (i >= 0) {
+        state = [
+          for (var j = 0; j < state.length; j++)
+            if (j == i) task else state[j],
+        ];
+      } else {
+        state = [...state, task];
+      }
+      _writeList(_box, _key, state.map((e) => e.toJson()).toList());
+    } finally {
+      suppressCloud = false;
+    }
+  }
+
+  void deleteRemote(String id) {
+    suppressCloud = true;
+    try {
+      state = state.where((t) => t.id != id).toList();
+      _writeList(_box, _key, state.map((e) => e.toJson()).toList());
+    } finally {
+      suppressCloud = false;
+    }
   }
 }
 

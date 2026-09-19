@@ -7,6 +7,7 @@ import '../../domain/entities/attendance.dart';
 import '../../domain/entities/daily_report.dart';
 import '../../domain/entities/person.dart';
 import '../../domain/entities/production.dart';
+import '../../domain/entities/project.dart';
 import '../../domain/entities/project_member.dart';
 import '../../domain/entities/site_task.dart';
 import '../../domain/enums/project_role.dart';
@@ -18,6 +19,8 @@ import 'auth_provider.dart';
 import 'daily_report_provider.dart';
 import 'production_provider.dart';
 import 'tasks_provider.dart';
+import 'uninsured_teams_provider.dart';
+import 'yevmiyeli_is_provider.dart';
 
 final membersBoxProvider = Provider<Box>(
   (ref) => throw UnimplementedError('membersBoxProvider override edilmeli'),
@@ -172,7 +175,7 @@ class CollaborationController {
     return _ref.read(supabaseProjectSyncProvider);
   }
 
-  bool _canEditProject(String projectId) {
+  bool canEditProject(String projectId) {
     final user = _ref.read(authProvider).user;
     final projects = _ref.read(projectsProvider);
     ProjectMember? mine;
@@ -190,6 +193,158 @@ class CollaborationController {
       return false;
     }
     return false;
+  }
+
+  /// Yerel `prj…` kimliğini bulut UUID’sine bağlar; domain veriyi taşır.
+  /// Zaten UUID ise aynen döner.
+  Future<String> ensureCloudProjectId(String projectId) async {
+    if (isSahaUuid(projectId)) return projectId;
+
+    final user = _ref.read(authProvider).user;
+    if (user == null) {
+      throw ProjectException('Buluta bağlamak için giriş yapın');
+    }
+
+    Project? local;
+    for (final p in _ref.read(projectsProvider)) {
+      if (p.id == projectId) {
+        local = p;
+        break;
+      }
+    }
+    if (local == null) {
+      throw ProjectException('Proje bulunamadı');
+    }
+
+    final sync = await _projectSync();
+    if (sync == null) {
+      throw ProjectException('Bulut bağlantısı yok');
+    }
+
+    Project? cloud;
+    if (local.code.trim().isNotEmpty) {
+      cloud = await sync.findProjectByCode(local.code);
+    }
+
+    if (cloud == null) {
+      try {
+        cloud = await sync.createProject(
+          owner: user,
+          name: local.name,
+          company: local.company,
+          code: local.code.trim().isEmpty ? null : local.code,
+          logoBase64: local.logoBase64,
+          logoMimeType: local.logoMimeType,
+        );
+      } on ProjectException catch (e) {
+        // Kod çakışması — tekrar kodla ara
+        if (local.code.trim().isNotEmpty) {
+          cloud = await sync.findProjectByCode(local.code);
+        }
+        if (cloud == null) rethrow;
+      }
+    }
+
+    final cloudId = cloud.id;
+    remapLocalProjectId(
+      from: projectId,
+      to: cloudId,
+      cloudProject: cloud,
+    );
+    return cloudId;
+  }
+
+  /// Yerel proje id’sini bulut UUID’sine taşı (Hive + bellek).
+  void remapLocalProjectId({
+    required String from,
+    required String to,
+    required Project cloudProject,
+  }) {
+    if (from == to) return;
+
+    final projects = _ref.read(projectsProvider);
+    Project? fromP;
+    for (final p in projects) {
+      if (p.id == from) fromP = p;
+    }
+    final merged = cloudProject.copyWith(
+      name: (fromP?.name.trim().isNotEmpty ?? false)
+          ? fromP!.name
+          : cloudProject.name,
+      company: (fromP?.company.trim().isNotEmpty ?? false)
+          ? fromP!.company
+          : cloudProject.company,
+      code: (fromP?.code.trim().isNotEmpty ?? false)
+          ? fromP!.code
+          : cloudProject.code,
+      logoBase64: (fromP?.logoBase64.trim().isNotEmpty ?? false)
+          ? fromP!.logoBase64
+          : cloudProject.logoBase64,
+      logoMimeType: fromP?.logoMimeType ?? cloudProject.logoMimeType,
+    );
+
+    _ref.read(projectsProvider.notifier).replaceAll([
+      for (final p in projects)
+        if (p.id != from && p.id != to) p,
+      merged,
+    ]);
+
+    final members = _ref.read(projectMembersListProvider);
+    for (final m in List<ProjectMember>.from(members)) {
+      if (m.projectId == from) {
+        _ref.read(projectMembersListProvider.notifier).upsert(
+              m.copyWith(projectId: to),
+            );
+      }
+    }
+    _ref.read(projectMembersListProvider.notifier).deleteForProject(from);
+
+    final people = _ref.read(personnelProvider);
+    _ref.read(personnelProvider.notifier).replaceAllQuiet([
+      for (final p in people)
+        if (p.projectId == from) p.copyWith(projectId: to) else p,
+    ]);
+
+    final att = _ref.read(attendanceProvider);
+    _ref.read(attendanceProvider.notifier).replaceAllQuiet([
+      for (final a in att)
+        if (a.projectId == from) a.copyWith(projectId: to) else a,
+    ]);
+
+    final prod = _ref.read(productionProvider);
+    _ref.read(productionProvider.notifier).replaceAllQuiet([
+      for (final p in prod)
+        if (p.projectId == from) p.copyWith(projectId: to) else p,
+    ]);
+
+    final tasks = _ref.read(tasksProvider);
+    _ref.read(tasksProvider.notifier).replaceAllQuiet([
+      for (final t in tasks)
+        if (t.projectId == from) t.copyWith(projectId: to) else t,
+    ]);
+
+    final reports = _ref.read(dailyReportsProvider);
+    _ref.read(dailyReportsProvider.notifier).replaceAllQuiet([
+      for (final r in reports)
+        if (r.projectId == from) r.copyWith(projectId: to) else r,
+    ]);
+
+    final yev = _ref.read(yevmiyeliIsProvider);
+    _ref.read(yevmiyeliIsProvider.notifier).replaceAllQuiet([
+      for (final e in yev)
+        if (e.projectId == from) e.copyWith(projectId: to) else e,
+    ]);
+
+    final teams = _ref.read(uninsuredTeamsProvider);
+    _ref.read(uninsuredTeamsProvider.notifier).replaceAllQuiet([
+      for (final e in teams)
+        if (e.projectId == from) e.copyWith(projectId: to) else e,
+    ]);
+
+    final active = _ref.read(activeProjectIdProvider);
+    if (active == from) {
+      _ref.read(activeProjectIdProvider.notifier).set(to);
+    }
   }
 
   Future<void> pullMyProjects() async {
@@ -249,9 +404,14 @@ class CollaborationController {
   }
 
   Future<void> pushDomain(String projectId) async {
+    await pushDomainSnapshotsOnly(projectId);
+  }
+
+  /// Geriye dönük snapshot upsert (satır sync ile birlikte).
+  Future<void> pushDomainSnapshotsOnly(String projectId) async {
     final user = _ref.read(authProvider).user;
     if (user == null || !SupabaseService.isReady) return;
-    if (!_canEditProject(projectId)) return;
+    if (!canEditProject(projectId)) return;
 
     final personnel = _ref
         .read(personnelProvider)
@@ -301,7 +461,7 @@ class CollaborationController {
       final map = Map<String, dynamic>.from(e)..['projectId'] = projectId;
       return Person.fromJson(map);
     }).toList();
-    notifier.replaceAll([...others, ...imported]);
+    notifier.replaceAllQuiet([...others, ...imported]);
   }
 
   void _mergeAttendance(String projectId, List<Map<String, dynamic>>? remote) {
@@ -313,7 +473,7 @@ class CollaborationController {
       final map = Map<String, dynamic>.from(e)..['projectId'] = projectId;
       return Attendance.fromJson(map);
     }).toList();
-    notifier.replaceAll([...others, ...imported]);
+    notifier.replaceAllQuiet([...others, ...imported]);
   }
 
   void _mergeProduction(String projectId, List<Map<String, dynamic>>? remote) {
@@ -325,7 +485,7 @@ class CollaborationController {
       final map = Map<String, dynamic>.from(e)..['projectId'] = projectId;
       return Production.fromJson(map);
     }).toList();
-    notifier.replaceAll([...others, ...imported]);
+    notifier.replaceAllQuiet([...others, ...imported]);
   }
 
   void _mergeTasks(String projectId, List<Map<String, dynamic>>? remote) {
@@ -337,7 +497,7 @@ class CollaborationController {
       final map = Map<String, dynamic>.from(e)..['projectId'] = projectId;
       return SiteTask.fromJson(map);
     }).toList();
-    notifier.replaceAll([...others, ...imported]);
+    notifier.replaceAllQuiet([...others, ...imported]);
   }
 
   void _mergeDailyReports(
@@ -352,6 +512,6 @@ class CollaborationController {
       final map = Map<String, dynamic>.from(e)..['projectId'] = projectId;
       return DailyReport.fromJson(map);
     }).toList();
-    notifier.replaceAll([...others, ...imported]);
+    notifier.replaceAllQuiet([...others, ...imported]);
   }
 }

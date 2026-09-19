@@ -3004,7 +3004,7 @@ class _CetvelView extends ConsumerWidget {
             child: Text(
               mode == _ViewMode.weekly
                   ? '${PuantajDate.trDaysShort[i]}\n${days[i].split('.').first}'
-                  : days[i].split('.').first,
+                  : '${days[i].split('.').first}\n${PuantajDate.trDaysShort[PuantajDate.parse(days[i]).weekday - 1]}',
               textAlign: TextAlign.center,
               style: theme.textTheme.labelSmall?.copyWith(
                 color: days[i] == today
@@ -3012,6 +3012,8 @@ class _CetvelView extends ConsumerWidget {
                     : theme.colorScheme.onSurfaceVariant,
                 fontWeight:
                     days[i] == today ? FontWeight.w700 : FontWeight.w400,
+                height: 1.15,
+                fontSize: 10,
               ),
             ),
           ),

@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/utils/project_code_generator.dart';
@@ -71,43 +69,34 @@ class SupabaseProjectSync {
       finalCode = ProjectCodeGenerator.generate();
     }
 
-    final projectId = _newUuidV4();
     final createdAt = DateTime.now().toUtc();
 
     try {
       await _ensureProfile(owner);
-      await _client.from('saha_projects').insert({
-        'id': projectId,
-        'code': finalCode,
-        'name': trimmedName,
-        'company': company.trim(),
-        'owner_id': owner.id,
-        'logo_base64': logoBase64,
-        'logo_mime_type': logoMimeType,
-      });
+      final projectId = await _client.rpc(
+        'create_saha_project',
+        params: {
+          'p_name': trimmedName,
+          'p_code': finalCode,
+          'p_company': company.trim(),
+          'p_logo_base64': logoBase64,
+          'p_logo_mime_type': logoMimeType,
+        },
+      ) as String;
 
-      await _client.from('saha_project_members').insert({
-        'project_id': projectId,
-        'user_id': owner.id,
-        'email': owner.email,
-        'display_name': owner.displayName,
-        'role': ProjectRole.owner.name,
-        'can_edit': true,
-      });
+      return Project(
+        id: projectId,
+        code: finalCode,
+        name: trimmedName,
+        company: company.trim(),
+        ownerId: owner.id,
+        logoBase64: logoBase64,
+        logoMimeType: logoMimeType,
+        createdAt: createdAt,
+      );
     } on PostgrestException catch (e) {
       throw ProjectException(_mapProjectError(e));
     }
-
-    return Project(
-      id: projectId,
-      code: finalCode,
-      name: trimmedName,
-      company: company.trim(),
-      ownerId: owner.id,
-      logoBase64: logoBase64,
-      logoMimeType: logoMimeType,
-      createdAt: createdAt,
-    );
   }
 
   Future<Project> joinByCode({
@@ -134,6 +123,23 @@ class SupabaseProjectSync {
         throw ProjectException('İş kodu bulunamadı');
       }
       throw ProjectException(e.message);
+    }
+  }
+
+  /// İş koduna göre (üyesi/sahibi olunan) bulut projeyi bul.
+  Future<Project?> findProjectByCode(String code) async {
+    final trimmed = code.trim().toUpperCase();
+    if (trimmed.isEmpty) return null;
+    try {
+      final row = await _client
+          .from('saha_projects')
+          .select()
+          .eq('code', trimmed)
+          .maybeSingle();
+      if (row == null) return null;
+      return _projectFromJson(row);
+    } on PostgrestException {
+      return null;
     }
   }
 
@@ -198,6 +204,10 @@ class SupabaseProjectSync {
 
   String _mapProjectError(PostgrestException e) {
     final message = e.message.toLowerCase();
+    if (message.contains('invalid input syntax for type uuid')) {
+      return 'Bu iş henüz buluta bağlanmamış. Senkron tekrar denensin '
+          '(yerel iş bulut UUID’sine taşınacak).';
+    }
     if (message.contains('duplicate key') || message.contains('unique')) {
       return 'Bu iş kodu zaten kullanılıyor';
     }
@@ -226,12 +236,9 @@ class SupabaseProjectSync {
   }
 }
 
-String _newUuidV4() {
-  final random = Random.secure();
-  final bytes = List<int>.generate(16, (_) => random.nextInt(256));
-  bytes[6] = (bytes[6] & 0x0f) | 0x40;
-  bytes[8] = (bytes[8] & 0x3f) | 0x80;
-  final hex = bytes.map((b) => b.toRadixString(16).padLeft(2, '0')).join();
-  return '${hex.substring(0, 8)}-${hex.substring(8, 12)}-'
-      '${hex.substring(12, 16)}-${hex.substring(16, 20)}-${hex.substring(20)}';
+/// Supabase `uuid` kolonları için geçerli kimlik mi?
+bool isSahaUuid(String id) {
+  return RegExp(
+    r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
+  ).hasMatch(id.trim());
 }

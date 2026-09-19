@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../core/routing/app_routes.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../data/providers/app_data_provider.dart';
 import '../../data/providers/auth_provider.dart';
 import '../../data/providers/collaboration_provider.dart';
+import '../../data/providers/saha_realtime_sync_provider.dart';
 import '../../domain/entities/project.dart';
 import '../../domain/entities/project_member.dart';
 
@@ -25,6 +28,8 @@ class _ProjectMembersScreenState extends ConsumerState<ProjectMembersScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(collaborationControllerProvider).refreshMembers(widget.projectId);
+      // ignore: unawaited_futures
+      ref.read(sahaRealtimeSyncProvider).startForProject(widget.projectId);
     });
   }
 
@@ -40,6 +45,7 @@ class _ProjectMembersScreenState extends ConsumerState<ProjectMembersScreen> {
     final proj = _findProject(ref.watch(projectsProvider));
     final members = ref.watch(projectMembersProvider(widget.projectId));
     final auth = ref.watch(authProvider);
+    final sync = ref.watch(sahaSyncStateProvider);
     ProjectMember? myMembership;
     for (final m in members) {
       if (m.userId == auth.user?.id) {
@@ -96,45 +102,50 @@ class _ProjectMembersScreenState extends ConsumerState<ProjectMembersScreen> {
               style: Theme.of(context).textTheme.bodySmall,
             ),
             const SizedBox(height: 12),
-            OutlinedButton.icon(
-              onPressed: () async {
-                try {
-                  await ref
-                      .read(collaborationControllerProvider)
-                      .pushDomain(widget.projectId);
-                  if (!context.mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Veriler buluta gönderildi')),
-                  );
-                } catch (e) {
-                  if (!context.mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Gönderilemedi: $e')),
-                  );
-                }
-              },
-              icon: const Icon(Icons.cloud_upload_outlined),
-              label: const Text('Verileri senkronize et (gönder)'),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: Icon(
+                switch (sync.phase) {
+                  SahaSyncPhase.live => Icons.cloud_done_outlined,
+                  SahaSyncPhase.syncing => Icons.cloud_sync_outlined,
+                  SahaSyncPhase.error => Icons.cloud_off_outlined,
+                  SahaSyncPhase.offline => Icons.cloud_off_outlined,
+                  SahaSyncPhase.idle => Icons.cloud_outlined,
+                },
+              ),
+              title: Text(sync.label),
+              subtitle: Text(
+                sync.lastSyncedAt == null
+                    ? 'Değişiklikler cihazlar arasında otomatik senkronize edilir.'
+                    : 'Son senkron: ${_fmtTime(sync.lastSyncedAt!)}',
+              ),
             ),
             OutlinedButton.icon(
-              onPressed: () async {
-                try {
-                  await ref
-                      .read(collaborationControllerProvider)
-                      .pullDomain(widget.projectId);
-                  if (!context.mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Veriler buluttan alındı')),
-                  );
-                } catch (e) {
-                  if (!context.mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Çekilemedi: $e')),
-                  );
-                }
-              },
-              icon: const Icon(Icons.cloud_download_outlined),
-              label: const Text('Verileri senkronize et (çek)'),
+              onPressed: sync.phase == SahaSyncPhase.syncing
+                  ? null
+                  : () async {
+                      try {
+                        final cloudId = await ref
+                            .read(sahaRealtimeSyncProvider)
+                            .pushProject(widget.projectId);
+                        if (!context.mounted) return;
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Bulutla senkronize edildi'),
+                          ),
+                        );
+                        if (cloudId != widget.projectId) {
+                          context.go(AppRoutes.projeUyeler(cloudId));
+                        }
+                      } catch (e) {
+                        if (!context.mounted) return;
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Senkron başarısız: $e')),
+                        );
+                      }
+                    },
+              icon: const Icon(Icons.sync),
+              label: const Text('Şimdi senkronize et'),
             ),
             const SizedBox(height: 20),
           ],
@@ -174,5 +185,12 @@ class _ProjectMembersScreenState extends ConsumerState<ProjectMembersScreen> {
         ],
       ),
     );
+  }
+
+  String _fmtTime(DateTime t) {
+    final local = t.toLocal();
+    final h = local.hour.toString().padLeft(2, '0');
+    final m = local.minute.toString().padLeft(2, '0');
+    return '$h:$m';
   }
 }

@@ -170,11 +170,18 @@ class PersonnelNotifier extends StateNotifier<List<Person>> {
   final Box _box;
   static const _key = 'items';
 
+  void Function(String projectId)? onLocalProjectChanged;
+  bool suppressCloud = false;
+
   static List<Person> _load(Box box) =>
       _readList(box, _key).map(Person.fromJson).toList();
 
-  void _persist() =>
-      _writeList(_box, _key, state.map((e) => e.toJson()).toList());
+  void _persist([String? projectId]) {
+    _writeList(_box, _key, state.map((e) => e.toJson()).toList());
+    if (!suppressCloud && projectId != null) {
+      onLocalProjectChanged?.call(projectId);
+    }
+  }
 
   void _persistIfNamesNormalized() {
     final raw = _readList(_box, _key);
@@ -202,7 +209,7 @@ class PersonnelNotifier extends StateNotifier<List<Person>> {
   Person add(Person draft) {
     final person = draft.copyWith(id: IdGen.make('per'));
     state = [...state, person];
-    _persist();
+    _persist(person.projectId);
     return person;
   }
 
@@ -213,7 +220,8 @@ class PersonnelNotifier extends StateNotifier<List<Person>> {
       for (final d in drafts)
         d.id.trim().isEmpty ? d.copyWith(id: IdGen.make('per')) : d,
     ];
-    _persist();
+    final projectId = drafts.first.projectId;
+    _persist(projectId);
   }
 
   void update(Person person) {
@@ -221,7 +229,7 @@ class PersonnelNotifier extends StateNotifier<List<Person>> {
       for (final p in state)
         if (p.id == person.id) person else p,
     ];
-    _persist();
+    _persist(person.projectId);
   }
 
   /// Puantajda Çıkış seçildiğinde işten çıkış tarihini senkronize eder;
@@ -261,25 +269,77 @@ class PersonnelNotifier extends StateNotifier<List<Person>> {
   }
 
   void delete(String id) {
+    String? projectId;
+    for (final p in state) {
+      if (p.id == id) {
+        projectId = p.projectId;
+        break;
+      }
+    }
     state = state.where((p) => p.id != id).toList();
-    _persist();
+    _persist(projectId);
   }
 
   void deleteMany(Iterable<String> ids) {
     final remove = ids.toSet();
     if (remove.isEmpty) return;
+    String? projectId;
+    for (final p in state) {
+      if (remove.contains(p.id)) {
+        projectId = p.projectId;
+        break;
+      }
+    }
     state = state.where((p) => !remove.contains(p.id)).toList();
-    _persist();
+    _persist(projectId);
   }
 
   void deleteForProject(String projectId) {
     state = state.where((p) => p.projectId != projectId).toList();
-    _persist();
+    _persist(projectId);
   }
 
   void replaceAll(List<Person> items) {
     state = List<Person>.from(items);
     _persist();
+  }
+
+  void replaceAllQuiet(List<Person> items) {
+    suppressCloud = true;
+    try {
+      state = List<Person>.from(items);
+      _writeList(_box, _key, state.map((e) => e.toJson()).toList());
+    } finally {
+      suppressCloud = false;
+    }
+  }
+
+  void upsertRemote(Person person) {
+    suppressCloud = true;
+    try {
+      final i = state.indexWhere((p) => p.id == person.id);
+      if (i >= 0) {
+        state = [
+          for (var j = 0; j < state.length; j++)
+            if (j == i) person else state[j],
+        ];
+      } else {
+        state = [...state, person];
+      }
+      _writeList(_box, _key, state.map((e) => e.toJson()).toList());
+    } finally {
+      suppressCloud = false;
+    }
+  }
+
+  void deleteRemote(String id) {
+    suppressCloud = true;
+    try {
+      state = state.where((p) => p.id != id).toList();
+      _writeList(_box, _key, state.map((e) => e.toJson()).toList());
+    } finally {
+      suppressCloud = false;
+    }
   }
 
   /// Katalog ekip adı değişince personel kayıtlarını günceller.
@@ -389,11 +449,19 @@ class AttendanceNotifier extends StateNotifier<List<Attendance>> {
   final Box _box;
   static const _key = 'items';
 
+  /// Bulut sync kancası — remote apply sırasında çağrılmaz.
+  void Function(String projectId)? onLocalProjectChanged;
+  bool suppressCloud = false;
+
   static List<Attendance> _load(Box box) =>
       _readList(box, _key).map(Attendance.fromJson).toList();
 
-  void _persist() =>
-      _writeList(_box, _key, state.map((e) => e.toJson()).toList());
+  void _persist([String? projectId]) {
+    _writeList(_box, _key, state.map((e) => e.toJson()).toList());
+    if (!suppressCloud && projectId != null) {
+      onLocalProjectChanged?.call(projectId);
+    }
+  }
 
   void _persistIfNamesNormalized() {
     final raw = _readList(_box, _key);
@@ -464,7 +532,7 @@ class AttendanceNotifier extends StateNotifier<List<Attendance>> {
         ),
       ];
     }
-    _persist();
+    _persist(projectId);
   }
 
   void setOvertime({
@@ -503,7 +571,7 @@ class AttendanceNotifier extends StateNotifier<List<Attendance>> {
         ),
       ];
     }
-    _persist();
+    _persist(projectId);
   }
 
   void setNote({
@@ -538,7 +606,7 @@ class AttendanceNotifier extends StateNotifier<List<Attendance>> {
         ),
       ];
     }
-    _persist();
+    _persist(projectId);
   }
 
   void bulkSetStatus({
@@ -547,14 +615,20 @@ class AttendanceNotifier extends StateNotifier<List<Attendance>> {
     required String date,
     required AttendanceStatus status,
   }) {
-    for (final person in people) {
-      setStatus(
-        projectId: projectId,
-        person: person,
-        date: date,
-        status: status,
-      );
+    suppressCloud = true;
+    try {
+      for (final person in people) {
+        setStatus(
+          projectId: projectId,
+          person: person,
+          date: date,
+          status: status,
+        );
+      }
+    } finally {
+      suppressCloud = false;
     }
+    _persist(projectId);
   }
 
   /// Önceki günden kopyala. Dönüş: kopyalanan kayıt sayısı.
@@ -565,61 +639,123 @@ class AttendanceNotifier extends StateNotifier<List<Attendance>> {
     required String previousDate,
   }) {
     var copied = 0;
-    for (final person in people) {
-      final prev = find(
-        projectId: projectId,
-        personId: person.id,
-        date: previousDate,
-      );
-      if (prev == null) continue;
-      final existing = find(
-        projectId: projectId,
-        personId: person.id,
-        date: date,
-      );
-      if (existing != null) {
-        state = [
-          for (final a in state)
-            if (a.id == existing.id)
-              a.copyWith(
-                status: prev.status,
-                hours: prev.hours,
-                overtimeHours: prev.overtimeHours,
-                note: prev.note,
-              )
-            else
-              a,
-        ];
-      } else {
-        state = [
-          ...state,
-          Attendance(
-            id: IdGen.make('att'),
-            projectId: projectId,
-            personId: person.id,
-            personName: person.name,
-            date: date,
-            status: prev.status,
-            hours: prev.hours,
-            overtimeHours: prev.overtimeHours,
-            note: prev.note,
-          ),
-        ];
+    suppressCloud = true;
+    try {
+      for (final person in people) {
+        final prev = find(
+          projectId: projectId,
+          personId: person.id,
+          date: previousDate,
+        );
+        if (prev == null) continue;
+        final existing = find(
+          projectId: projectId,
+          personId: person.id,
+          date: date,
+        );
+        if (existing != null) {
+          state = [
+            for (final a in state)
+              if (a.id == existing.id)
+                a.copyWith(
+                  status: prev.status,
+                  hours: prev.hours,
+                  overtimeHours: prev.overtimeHours,
+                  note: prev.note,
+                )
+              else
+                a,
+          ];
+        } else {
+          state = [
+            ...state,
+            Attendance(
+              id: IdGen.make('att'),
+              projectId: projectId,
+              personId: person.id,
+              personName: person.name,
+              date: date,
+              status: prev.status,
+              hours: prev.hours,
+              overtimeHours: prev.overtimeHours,
+              note: prev.note,
+            ),
+          ];
+        }
+        copied++;
       }
-      copied++;
+    } finally {
+      suppressCloud = false;
     }
-    if (copied > 0) _persist();
+    if (copied > 0) _persist(projectId);
     return copied;
   }
 
   void deleteForProject(String projectId) {
     state = state.where((a) => a.projectId != projectId).toList();
-    _persist();
+    _persist(projectId);
   }
 
   void replaceAll(List<Attendance> items) {
     state = List<Attendance>.from(items);
     _persist();
+  }
+
+  void replaceAllQuiet(List<Attendance> items) {
+    suppressCloud = true;
+    try {
+      state = List<Attendance>.from(items);
+      _writeList(_box, _key, state.map((e) => e.toJson()).toList());
+    } finally {
+      suppressCloud = false;
+    }
+  }
+
+  void upsertRemote(Attendance row) {
+    suppressCloud = true;
+    try {
+      final existing = find(
+        projectId: row.projectId,
+        personId: row.personId,
+        date: row.date,
+      );
+      if (existing != null) {
+        state = [
+          for (final a in state)
+            if (a.projectId == row.projectId &&
+                a.personId == row.personId &&
+                a.date == row.date)
+              row.copyWith(id: existing.id.isNotEmpty ? existing.id : row.id)
+            else
+              a,
+        ];
+      } else {
+        state = [...state, row];
+      }
+      _writeList(_box, _key, state.map((e) => e.toJson()).toList());
+    } finally {
+      suppressCloud = false;
+    }
+  }
+
+  void deleteRemote({
+    required String projectId,
+    required String personId,
+    required String date,
+  }) {
+    suppressCloud = true;
+    try {
+      state = state
+          .where(
+            (a) => !(a.projectId == projectId &&
+                a.personId == personId &&
+                a.date == date),
+          )
+          .toList();
+      _writeList(_box, _key, state.map((e) => e.toJson()).toList());
+    } finally {
+      suppressCloud = false;
+    }
   }
 }
 

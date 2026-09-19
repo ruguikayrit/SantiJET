@@ -6,6 +6,7 @@ import '../../core/design_system/sj_bottom_navigation.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/theme_mode_provider.dart';
 import '../../core/theme/theme_rebuild_gate.dart';
+import '../../data/providers/saha_realtime_sync_provider.dart';
 
 /// Ana kabuk — kalıcı alt navigasyon + indexedStack.
 class MainShell extends ConsumerWidget {
@@ -43,6 +44,7 @@ class MainShell extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    ref.watch(sahaRealtimeSyncBootstrapProvider);
     final themeMode = ref.watch(themeModeProvider);
     AppColors.applyPaletteFromMode(themeMode, Theme.of(context).brightness);
     final keyboardOpen = MediaQuery.viewInsetsOf(context).bottom > 0;

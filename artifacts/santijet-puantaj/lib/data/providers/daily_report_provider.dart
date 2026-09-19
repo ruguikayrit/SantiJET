@@ -46,11 +46,18 @@ class DailyReportsNotifier extends StateNotifier<List<DailyReport>> {
   final Box _box;
   static const _key = 'items';
 
+  void Function(String projectId)? onLocalProjectChanged;
+  bool suppressCloud = false;
+
   static List<DailyReport> _load(Box box) =>
       _readList(box, _key).map(DailyReport.fromJson).toList();
 
-  void _persist() =>
-      _writeList(_box, _key, state.map((e) => e.toJson()).toList());
+  void _persist([String? projectId]) {
+    _writeList(_box, _key, state.map((e) => e.toJson()).toList());
+    if (!suppressCloud && projectId != null) {
+      onLocalProjectChanged?.call(projectId);
+    }
+  }
 
   DailyReport? find({required String projectId, required String date}) {
     for (final r in state) {
@@ -75,7 +82,7 @@ class DailyReportsNotifier extends StateNotifier<List<DailyReport>> {
       updatedAt: now,
     );
     state = [...state, draft];
-    _persist();
+    _persist(projectId);
     return draft;
   }
 
@@ -98,18 +105,60 @@ class DailyReportsNotifier extends StateNotifier<List<DailyReport>> {
         withMeta.copyWith(createdAt: withMeta.createdAt ?? now),
       ];
     }
-    _persist();
+    _persist(withMeta.projectId);
     return withMeta;
   }
 
   void deleteForProject(String projectId) {
     state = state.where((r) => r.projectId != projectId).toList();
-    _persist();
+    _persist(projectId);
   }
 
   void replaceAll(List<DailyReport> items) {
     state = List<DailyReport>.from(items);
     _persist();
+  }
+
+  void replaceAllQuiet(List<DailyReport> items) {
+    suppressCloud = true;
+    try {
+      state = List<DailyReport>.from(items);
+      _writeList(_box, _key, state.map((e) => e.toJson()).toList());
+    } finally {
+      suppressCloud = false;
+    }
+  }
+
+  void upsertRemote(DailyReport report) {
+    suppressCloud = true;
+    try {
+      final idx = state.indexWhere(
+        (r) =>
+            r.id == report.id ||
+            (r.projectId == report.projectId && r.date == report.date),
+      );
+      if (idx >= 0) {
+        state = [
+          for (var i = 0; i < state.length; i++)
+            if (i == idx) report else state[i],
+        ];
+      } else {
+        state = [...state, report];
+      }
+      _writeList(_box, _key, state.map((e) => e.toJson()).toList());
+    } finally {
+      suppressCloud = false;
+    }
+  }
+
+  void deleteRemote(String id) {
+    suppressCloud = true;
+    try {
+      state = state.where((r) => r.id != id).toList();
+      _writeList(_box, _key, state.map((e) => e.toJson()).toList());
+    } finally {
+      suppressCloud = false;
+    }
   }
 
   /// Önceki günden seçili alanları kopyalar. Dönüş: kopya özeti.

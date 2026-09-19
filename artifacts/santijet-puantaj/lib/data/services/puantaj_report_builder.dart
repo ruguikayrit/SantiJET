@@ -937,7 +937,8 @@ abstract final class PuantajReportBuilder {
 
   static String _monthDayHeader(String date) {
     final d = PuantajDate.parse(date);
-    return d.day.toString().padLeft(2, '0');
+    final dayName = PuantajDate.trDaysShort[d.weekday - 1];
+    return '${d.day.toString().padLeft(2, '0')}\n$dayName';
   }
 
   static String _employmentPart(String raw) {

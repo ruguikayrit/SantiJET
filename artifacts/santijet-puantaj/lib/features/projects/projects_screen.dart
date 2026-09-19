@@ -15,6 +15,7 @@ import '../../data/providers/app_data_provider.dart';
 import '../../data/providers/auth_provider.dart';
 import '../../data/providers/collaboration_provider.dart';
 import '../../data/providers/production_provider.dart';
+import '../../data/providers/saha_realtime_sync_provider.dart';
 import '../../data/providers/tasks_provider.dart';
 import '../../data/providers/uninsured_teams_provider.dart';
 import '../../data/providers/yevmiyeli_is_provider.dart';
@@ -312,9 +313,7 @@ class ProjectsScreen extends ConsumerWidget {
                 ),
               );
           ref.read(activeProjectIdProvider.notifier).set(cloud.id);
-          await ref
-              .read(collaborationControllerProvider)
-              .pushDomain(cloud.id);
+          await ref.read(sahaRealtimeSyncProvider).pushProject(cloud.id);
           if (context.mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(

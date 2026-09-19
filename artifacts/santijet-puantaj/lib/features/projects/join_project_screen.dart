@@ -7,6 +7,7 @@ import '../../core/theme/app_spacing.dart';
 import '../../data/providers/app_data_provider.dart';
 import '../../data/providers/auth_provider.dart';
 import '../../data/providers/collaboration_provider.dart';
+import '../../data/providers/saha_realtime_sync_provider.dart';
 import '../../data/remote/supabase_project_sync.dart';
 import '../../data/remote/supabase_service.dart';
 import '../../domain/entities/project_member.dart';
@@ -68,8 +69,8 @@ class _JoinProjectScreenState extends ConsumerState<JoinProjectScreen> {
             ),
           );
       await ref.read(collaborationControllerProvider).pullMyProjects();
-      await ref.read(collaborationControllerProvider).pullDomain(project.id);
       ref.read(activeProjectIdProvider.notifier).set(project.id);
+      await ref.read(sahaRealtimeSyncProvider).startForProject(project.id);
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

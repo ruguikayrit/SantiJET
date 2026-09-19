@@ -45,16 +45,30 @@ class ProductionNotifier extends StateNotifier<List<Production>> {
   final Box _box;
   static const _key = 'items';
 
+  void Function(String projectId)? onLocalProjectChanged;
+  bool suppressCloud = false;
+
   static List<Production> _load(Box box) =>
       _readList(box, _key).map(Production.fromJson).toList();
 
-  void _persist() =>
-      _writeList(_box, _key, state.map((e) => e.toJson()).toList());
+  void _persist([String? projectId]) {
+    _writeList(_box, _key, state.map((e) => e.toJson()).toList());
+    if (!suppressCloud && projectId != null) {
+      onLocalProjectChanged?.call(projectId);
+    }
+  }
+
+  String? _projectIdOf(String id) {
+    for (final p in state) {
+      if (p.id == id) return p.projectId;
+    }
+    return null;
+  }
 
   Production add(Production draft) {
     final item = draft.copyWith(id: IdGen.make('prd'));
     state = [...state, item];
-    _persist();
+    _persist(item.projectId);
     return item;
   }
 
@@ -63,16 +77,18 @@ class ProductionNotifier extends StateNotifier<List<Production>> {
       for (final p in state)
         if (p.id == item.id) item else p,
     ];
-    _persist();
+    _persist(item.projectId);
   }
 
   void delete(String id) {
+    final projectId = _projectIdOf(id);
     state = state.where((p) => p.id != id).toList();
-    _persist();
+    _persist(projectId);
   }
 
   ProductionDayEntry addDayEntry(String productionId, ProductionDayEntry draft) {
     final entry = draft.copyWith(id: IdGen.make('prd'));
+    final projectId = _projectIdOf(productionId);
     state = [
       for (final p in state)
         if (p.id == productionId)
@@ -80,11 +96,12 @@ class ProductionNotifier extends StateNotifier<List<Production>> {
         else
           p,
     ];
-    _persist();
+    _persist(projectId);
     return entry;
   }
 
   void updateDayEntry(String productionId, ProductionDayEntry entry) {
+    final projectId = _projectIdOf(productionId);
     state = [
       for (final p in state)
         if (p.id == productionId)
@@ -97,10 +114,11 @@ class ProductionNotifier extends StateNotifier<List<Production>> {
         else
           p,
     ];
-    _persist();
+    _persist(projectId);
   }
 
   void deleteDayEntry(String productionId, String entryId) {
+    final projectId = _projectIdOf(productionId);
     state = [
       for (final p in state)
         if (p.id == productionId)
@@ -111,17 +129,55 @@ class ProductionNotifier extends StateNotifier<List<Production>> {
         else
           p,
     ];
-    _persist();
+    _persist(projectId);
   }
 
   void deleteForProject(String projectId) {
     state = state.where((p) => p.projectId != projectId).toList();
-    _persist();
+    _persist(projectId);
   }
 
   void replaceAll(List<Production> items) {
     state = List<Production>.from(items);
     _persist();
+  }
+
+  void replaceAllQuiet(List<Production> items) {
+    suppressCloud = true;
+    try {
+      state = List<Production>.from(items);
+      _writeList(_box, _key, state.map((e) => e.toJson()).toList());
+    } finally {
+      suppressCloud = false;
+    }
+  }
+
+  void upsertRemote(Production item) {
+    suppressCloud = true;
+    try {
+      final i = state.indexWhere((p) => p.id == item.id);
+      if (i >= 0) {
+        state = [
+          for (var j = 0; j < state.length; j++)
+            if (j == i) item else state[j],
+        ];
+      } else {
+        state = [...state, item];
+      }
+      _writeList(_box, _key, state.map((e) => e.toJson()).toList());
+    } finally {
+      suppressCloud = false;
+    }
+  }
+
+  void deleteRemote(String id) {
+    suppressCloud = true;
+    try {
+      state = state.where((p) => p.id != id).toList();
+      _writeList(_box, _key, state.map((e) => e.toJson()).toList());
+    } finally {
+      suppressCloud = false;
+    }
   }
 
   /// Katalog ekip adı değişince imalat kayıtlarını günceller.
@@ -141,7 +197,7 @@ class ProductionNotifier extends StateNotifier<List<Production>> {
         else
           p,
     ];
-    if (count > 0) _persist();
+    if (count > 0) _persist(); // katalog — proje bazlı push yok
     return count;
   }
 
@@ -214,7 +270,7 @@ class ProductionNotifier extends StateNotifier<List<Production>> {
       dailyEntries: entries,
     );
     state = [...state, item];
-    _persist();
+    _persist(projectId);
     _box.put(flagKey, true);
   }
 
@@ -225,7 +281,7 @@ class ProductionNotifier extends StateNotifier<List<Production>> {
               !(p.projectId == projectId && p.id.startsWith(demoYearPrefix)),
         )
         .toList();
-    _persist();
+    _persist(projectId);
   }
 
   /// Demo butonu için: önceki yıllık örneği silip yeniden oluşturur.

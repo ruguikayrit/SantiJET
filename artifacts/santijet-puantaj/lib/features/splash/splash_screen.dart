@@ -11,7 +11,9 @@ import '../../core/theme/app_theme.dart';
 import '../../core/theme/app_typography.dart';
 import '../../data/providers/demo_intro_provider.dart';
 import '../../data/providers/auth_provider.dart';
+import '../../data/providers/app_data_provider.dart';
 import '../../data/providers/collaboration_provider.dart';
+import '../../data/providers/saha_realtime_sync_provider.dart';
 
 /// ŞantiJET Puantaj açılış ekranı — Demir splash ile birebir; ürün adı PUANTAJ.
 class SplashScreen extends ConsumerStatefulWidget {
@@ -46,6 +48,11 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
       await ref.read(authProvider.notifier).restoreSession();
       if (ref.read(authProvider).isAuthenticated) {
         await ref.read(collaborationControllerProvider).pullMyProjects();
+        final activeId = ref.read(activeProjectIdProvider);
+        if (activeId != null && activeId.isNotEmpty) {
+          // ignore: unawaited_futures
+          ref.read(sahaRealtimeSyncProvider).startForProject(activeId);
+        }
       }
     } catch (_) {
       // Splash'ı offline devam ettir.
