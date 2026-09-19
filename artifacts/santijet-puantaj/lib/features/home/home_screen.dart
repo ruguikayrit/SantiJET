@@ -958,82 +958,136 @@ class _HomeSyncBar extends ConsumerWidget {
     final isLive = sync.phase == SahaSyncPhase.live;
     final isSyncing = sync.phase == SahaSyncPhase.syncing || busy;
     final isError = sync.phase == SahaSyncPhase.error;
+    final isOffline = sync.phase == SahaSyncPhase.offline ||
+        sync.phase == SahaSyncPhase.idle;
 
-    final statusColor = isError
+    final accent = isError
         ? theme.colorScheme.error
         : isLive
-            ? const Color(0xFF1B8A4A)
-            : theme.colorScheme.onSurfaceVariant;
+            ? AppColors.success
+            : isSyncing
+                ? AppColors.electricBlue
+                : AppColors.textMuted;
 
     final statusText = switch (sync.phase) {
       SahaSyncPhase.live => 'Canlı',
-      SahaSyncPhase.syncing => 'Senkronize ediliyor…',
+      SahaSyncPhase.syncing => 'Senkronize ediliyor',
       SahaSyncPhase.offline => 'Çevrimdışı',
-      SahaSyncPhase.error => 'Senkron hatası',
-      SahaSyncPhase.idle => 'Senkron kapalı',
+      SahaSyncPhase.error => 'Bağlantı hatası',
+      SahaSyncPhase.idle => 'Beklemede',
     };
 
     final last = sync.lastSyncedAt;
-    final lastLabel = last == null
-        ? 'Son senkron: —'
-        : 'Son senkron: ${_fmtSyncTime(last)}';
+    final relative = last == null ? null : _relativeSyncLabel(last);
+    final absolute = last == null ? null : _fmtSyncTime(last);
 
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.sm,
-        vertical: AppSpacing.xs,
-      ),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.55),
-        borderRadius: AppRadii.sm,
-        border: Border.all(
-          color: theme.dividerColor.withValues(alpha: 0.5),
-        ),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            isLive
-                ? Icons.cloud_done_outlined
-                : isError
-                    ? Icons.cloud_off_outlined
-                    : Icons.cloud_outlined,
-            size: 18,
-            color: statusColor,
+    return Material(
+      color: AppColors.surfaceElevated,
+      borderRadius: AppRadii.md,
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: isSyncing ? null : onSync,
+        child: Ink(
+          decoration: BoxDecoration(
+            borderRadius: AppRadii.md,
+            border: Border.all(
+              color: accent.withValues(alpha: isLive ? 0.35 : 0.18),
+            ),
+            gradient: LinearGradient(
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight,
+              colors: [
+                accent.withValues(alpha: isLive ? 0.12 : 0.06),
+                AppColors.surfaceElevated,
+              ],
+            ),
           ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(12, 10, 10, 10),
+            child: Row(
               children: [
-                Text(
-                  statusText,
-                  style: theme.textTheme.labelLarge?.copyWith(
-                    color: statusColor,
-                    fontWeight: FontWeight.w700,
+                _SyncStatusChip(
+                  label: statusText,
+                  color: accent,
+                  pulsing: isLive,
+                  spinning: isSyncing,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'SON SENKRON',
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: AppColors.textMuted,
+                          letterSpacing: 0.8,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 10,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        relative ?? 'Henüz senkron yok',
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          color: AppColors.textPrimary,
+                          fontWeight: FontWeight.w700,
+                          height: 1.15,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      if (absolute != null) ...[
+                        const SizedBox(height: 1),
+                        Text(
+                          absolute,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: AppColors.textSecondary,
+                            fontFeatures: const [FontFeature.tabularFigures()],
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ],
                   ),
                 ),
-                Text(
-                  lastLabel,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
+                const SizedBox(width: 8),
+                FilledButton.tonal(
+                  onPressed: isSyncing ? null : onSync,
+                  style: FilledButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
+                    minimumSize: const Size(0, 40),
+                    visualDensity: VisualDensity.compact,
+                    foregroundColor: isOffline || isError
+                        ? AppColors.electricBlue
+                        : accent,
                   ),
+                  child: isSyncing
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2.2),
+                        )
+                      : const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.sync_rounded, size: 18),
+                            SizedBox(width: 6),
+                            Text(
+                              'Senkronize et',
+                              style: TextStyle(fontWeight: FontWeight.w600),
+                            ),
+                          ],
+                        ),
                 ),
               ],
             ),
           ),
-          TextButton.icon(
-            onPressed: isSyncing ? null : onSync,
-            icon: isSyncing
-                ? const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.sync, size: 18),
-            label: const Text('Senkronize et'),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -1044,6 +1098,83 @@ class _HomeSyncBar extends ConsumerWidget {
     final mo = local.month.toString().padLeft(2, '0');
     final h = local.hour.toString().padLeft(2, '0');
     final min = local.minute.toString().padLeft(2, '0');
-    return '$d.$mo.${local.year} $h:$min';
+    return '$d.$mo.${local.year} · $h:$min';
+  }
+
+  static String _relativeSyncLabel(DateTime t) {
+    final diff = DateTime.now().difference(t.toLocal());
+    if (diff.inSeconds < 45) return 'Az önce';
+    if (diff.inMinutes < 60) return '${diff.inMinutes} dk önce';
+    if (diff.inHours < 24) return '${diff.inHours} sa önce';
+    if (diff.inDays < 7) return '${diff.inDays} gün önce';
+    return _fmtSyncTime(t);
+  }
+}
+
+class _SyncStatusChip extends StatelessWidget {
+  const _SyncStatusChip({
+    required this.label,
+    required this.color,
+    this.pulsing = false,
+    this.spinning = false,
+  });
+
+  final String label;
+  final Color color;
+  final bool pulsing;
+  final bool spinning;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.14),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withValues(alpha: 0.35)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (spinning)
+            SizedBox(
+              width: 8,
+              height: 8,
+              child: CircularProgressIndicator(
+                strokeWidth: 1.6,
+                color: color,
+              ),
+            )
+          else
+            Container(
+              width: 8,
+              height: 8,
+              decoration: BoxDecoration(
+                color: color,
+                shape: BoxShape.circle,
+                boxShadow: pulsing
+                    ? [
+                        BoxShadow(
+                          color: color.withValues(alpha: 0.55),
+                          blurRadius: 6,
+                          spreadRadius: 0.5,
+                        ),
+                      ]
+                    : null,
+              ),
+            ),
+          const SizedBox(width: 7),
+          Text(
+            label,
+            style: TextStyle(
+              color: color,
+              fontWeight: FontWeight.w700,
+              fontSize: 12,
+              letterSpacing: 0.2,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
