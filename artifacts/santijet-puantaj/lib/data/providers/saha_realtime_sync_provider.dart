@@ -10,6 +10,7 @@ import '../../domain/entities/production.dart';
 import '../../domain/entities/site_task.dart';
 import '../../domain/entities/uninsured_team_entry.dart';
 import '../../domain/entities/yevmiyeli_is_kaydi.dart';
+import '../remote/supabase_project_sync.dart';
 import '../remote/supabase_row_sync.dart';
 import '../remote/supabase_service.dart';
 import 'app_data_provider.dart';
