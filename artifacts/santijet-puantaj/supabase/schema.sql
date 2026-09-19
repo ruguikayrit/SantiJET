@@ -220,12 +220,17 @@ stable
 security definer
 set search_path = public
 as $$
-  select exists (
-    select 1 from public.saha_project_members
-    where project_id = p_project_id
-      and user_id = auth.uid()
-      and can_edit = true
-  );
+  select
+    exists (
+      select 1 from public.saha_projects
+      where id = p_project_id and owner_id = auth.uid()
+    )
+    or exists (
+      select 1 from public.saha_project_members
+      where project_id = p_project_id
+        and user_id = auth.uid()
+        and can_edit = true
+    );
 $$;
 
 grant execute on function public.is_saha_member(uuid) to authenticated;

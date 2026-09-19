@@ -40,7 +40,7 @@ class SahaSyncState {
   String get label => switch (phase) {
         SahaSyncPhase.idle => 'Senkron kapalı',
         SahaSyncPhase.syncing => 'Senkronize ediliyor…',
-        SahaSyncPhase.live => 'Canlı senkron',
+        SahaSyncPhase.live => 'Canlı',
         SahaSyncPhase.offline => 'Çevrimdışı',
         SahaSyncPhase.error => message.isEmpty ? 'Senkron hatası' : message,
       };

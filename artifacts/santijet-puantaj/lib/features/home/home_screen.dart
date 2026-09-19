@@ -13,6 +13,9 @@ import '../../core/widgets/santijet_header.dart';
 import '../../core/utils/puantaj_date.dart';
 import '../../core/utils/text_format.dart';
 import '../../data/providers/app_data_provider.dart';
+import '../../data/providers/auth_provider.dart';
+import '../../data/providers/collaboration_provider.dart';
+import '../../data/providers/saha_realtime_sync_provider.dart';
 import '../../data/providers/tasks_provider.dart';
 import '../../domain/catalogs/task_tags.dart';
 import '../../domain/entities/project.dart';
@@ -37,6 +40,42 @@ class HomeScreen extends ConsumerStatefulWidget {
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   bool _dailyReportBusy = false;
+  bool _syncBusy = false;
+
+  Future<void> _syncNow(Project project) async {
+    if (_syncBusy) return;
+    final auth = ref.read(authProvider);
+    if (!auth.isAuthenticated) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Senkron için önce bulut girişi yapın')),
+      );
+      return;
+    }
+
+    setState(() => _syncBusy = true);
+    try {
+      final sync = ref.read(sahaRealtimeSyncProvider);
+      final canEdit =
+          ref.read(collaborationControllerProvider).canEditProject(project.id);
+      if (canEdit) {
+        await sync.pushProject(project.id);
+      } else {
+        await sync.startForProject(project.id);
+      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Senkronize edildi')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Senkron başarısız: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _syncBusy = false);
+    }
+  }
 
   Future<void> _exportDailyReportForDates(
     Project project,
@@ -209,6 +248,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   AppSpacing.sm,
                 ),
                 child: ProjectSwitcher(),
+              ),
+            ),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.md,
+                  0,
+                  AppSpacing.md,
+                  AppSpacing.sm,
+                ),
+                child: _HomeSyncBar(
+                  busy: _syncBusy,
+                  onSync: () => _syncNow(project),
+                ),
               ),
             ),
             const SliverToBoxAdapter(child: ReadOnlyBanner()),
@@ -885,5 +938,112 @@ class _MiniStat extends StatelessWidget {
         child: child,
       ),
     );
+  }
+}
+
+/// Ana sayfa — canlı senkron durumu + son saat + senkron butonu.
+class _HomeSyncBar extends ConsumerWidget {
+  const _HomeSyncBar({
+    required this.busy,
+    required this.onSync,
+  });
+
+  final bool busy;
+  final VoidCallback onSync;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final sync = ref.watch(sahaSyncStateProvider);
+    final isLive = sync.phase == SahaSyncPhase.live;
+    final isSyncing = sync.phase == SahaSyncPhase.syncing || busy;
+    final isError = sync.phase == SahaSyncPhase.error;
+
+    final statusColor = isError
+        ? theme.colorScheme.error
+        : isLive
+            ? const Color(0xFF1B8A4A)
+            : theme.colorScheme.onSurfaceVariant;
+
+    final statusText = switch (sync.phase) {
+      SahaSyncPhase.live => 'Canlı',
+      SahaSyncPhase.syncing => 'Senkronize ediliyor…',
+      SahaSyncPhase.offline => 'Çevrimdışı',
+      SahaSyncPhase.error => 'Senkron hatası',
+      SahaSyncPhase.idle => 'Senkron kapalı',
+    };
+
+    final last = sync.lastSyncedAt;
+    final lastLabel = last == null
+        ? 'Son senkron: —'
+        : 'Son senkron: ${_fmtSyncTime(last)}';
+
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.xs,
+      ),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.55),
+        borderRadius: AppRadii.sm,
+        border: Border.all(
+          color: theme.dividerColor.withValues(alpha: 0.5),
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            isLive
+                ? Icons.cloud_done_outlined
+                : isError
+                    ? Icons.cloud_off_outlined
+                    : Icons.cloud_outlined,
+            size: 18,
+            color: statusColor,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  statusText,
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    color: statusColor,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                Text(
+                  lastLabel,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          TextButton.icon(
+            onPressed: isSyncing ? null : onSync,
+            icon: isSyncing
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.sync, size: 18),
+            label: const Text('Senkronize et'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  static String _fmtSyncTime(DateTime t) {
+    final local = t.toLocal();
+    final d = local.day.toString().padLeft(2, '0');
+    final mo = local.month.toString().padLeft(2, '0');
+    final h = local.hour.toString().padLeft(2, '0');
+    final min = local.minute.toString().padLeft(2, '0');
+    return '$d.$mo.${local.year} $h:$min';
   }
 }
