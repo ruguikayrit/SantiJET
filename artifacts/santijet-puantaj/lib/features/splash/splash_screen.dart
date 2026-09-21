@@ -51,7 +51,10 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
         final activeId = ref.read(activeProjectIdProvider);
         if (activeId != null && activeId.isNotEmpty) {
           // ignore: unawaited_futures
-          ref.read(sahaRealtimeSyncProvider).startForProject(activeId);
+          ref.read(sahaRealtimeSyncProvider).startForProject(
+                activeId,
+                forcePull: true,
+              );
         }
       }
     } catch (_) {

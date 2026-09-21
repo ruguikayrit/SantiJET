@@ -61,7 +61,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       if (canEdit) {
         await sync.pushProject(project.id);
       } else {
-        await sync.startForProject(project.id);
+        await sync.startForProject(project.id, forcePull: true);
       }
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

@@ -87,13 +87,14 @@ final sahaRealtimeSyncProvider = Provider<SahaRealtimeSyncController>((ref) {
 final sahaRealtimeSyncBootstrapProvider = Provider<void>((ref) {
   final sync = ref.watch(sahaRealtimeSyncProvider);
   final projectId = ref.watch(activeProjectIdProvider);
-  final auth = ref.watch(authProvider);
+  // Tüm AuthState yerine yalnız giriş bayrağı — gereksiz restart olmasın.
+  final loggedIn = ref.watch(authProvider.select((a) => a.isAuthenticated));
 
-  if (!auth.isAuthenticated || projectId == null || projectId.isEmpty) {
-    unawaited(sync.stop());
+  if (!loggedIn || projectId == null || projectId.isEmpty) {
+    sync.scheduleStop();
     return;
   }
-  unawaited(sync.startForProject(projectId));
+  sync.scheduleStartForProject(projectId);
 });
 
 class SahaRealtimeSyncController {
@@ -107,6 +108,11 @@ class SahaRealtimeSyncController {
   final _dirtyDomains = <String, Set<String>>{};
   bool _applyingRemote = false;
   bool _hooksWired = false;
+  Timer? _startDebounce;
+  Timer? _stopDebounce;
+  String? _pendingStartProjectId;
+  bool _startInFlight = false;
+  int _startGeneration = 0;
 
   static const _domainAttendance = 'attendance';
   static const _domainPersonnel = 'personnel';
@@ -149,11 +155,35 @@ class SahaRealtimeSyncController {
   }
 
   void dispose() {
+    _startDebounce?.cancel();
+    _stopDebounce?.cancel();
     for (final t in _pushTimers.values) {
       t.cancel();
     }
     _pushTimers.clear();
     unawaited(_stopChannel());
+  }
+
+  /// Bootstrap — kısa auth/proje dalgalanmalarında kanalı hemen kesme.
+  void scheduleStop() {
+    _startDebounce?.cancel();
+    _pendingStartProjectId = null;
+    _stopDebounce?.cancel();
+    _stopDebounce = Timer(const Duration(milliseconds: 600), () {
+      unawaited(stop());
+    });
+  }
+
+  /// Bootstrap — proje remap / rebuild fırtınasında tek start.
+  void scheduleStartForProject(String projectId) {
+    _stopDebounce?.cancel();
+    _pendingStartProjectId = projectId;
+    _startDebounce?.cancel();
+    _startDebounce = Timer(const Duration(milliseconds: 350), () {
+      final id = _pendingStartProjectId;
+      if (id == null || id.isEmpty) return;
+      unawaited(startForProject(id));
+    });
   }
 
   Future<void> _stopChannel() async {
@@ -176,7 +206,11 @@ class SahaRealtimeSyncController {
   }
 
   /// Splash / proje değişimi — pull + realtime dinle.
-  Future<void> startForProject(String projectId) async {
+  /// [forcePull]: true ise kanal açıkken bile taze pull (manuel senkron).
+  Future<void> startForProject(
+    String projectId, {
+    bool forcePull = false,
+  }) async {
     if (!SupabaseService.isConfigured) {
       _ref.read(sahaSyncStateProvider.notifier).set(
             const SahaSyncState(
@@ -193,6 +227,8 @@ class SahaRealtimeSyncController {
           );
       return;
     }
+
+    final gen = ++_startGeneration;
 
     // Yerel işi buluta bağla (prj… → UUID)
     try {
@@ -216,10 +252,24 @@ class SahaRealtimeSyncController {
       }
     }
 
+    if (gen != _startGeneration) return;
+
     if (_listeningProjectId == projectId && _channel != null) {
-      // Zaten dinliyorken bile taze pull (2. cihaz / yeniden giriş).
+      // Zaten canlı — otomatik yeniden pull UI'yi dondurur / oturumu zorlar.
+      if (!forcePull) {
+        _ref.read(sahaSyncStateProvider.notifier).set(
+              SahaSyncState(
+                phase: SahaSyncPhase.live,
+                projectId: projectId,
+                lastSyncedAt: _ref.read(sahaSyncStateProvider).lastSyncedAt ??
+                    DateTime.now(),
+              ),
+            );
+        return;
+      }
       try {
         await pullProject(projectId);
+        if (gen != _startGeneration) return;
         _ref.read(sahaSyncStateProvider.notifier).set(
               SahaSyncState(
                 phase: SahaSyncPhase.live,
@@ -233,6 +283,9 @@ class SahaRealtimeSyncController {
       return;
     }
 
+    if (_startInFlight && !forcePull) return;
+    _startInFlight = true;
+
     _ref.read(sahaSyncStateProvider.notifier).set(
           SahaSyncState(
             phase: SahaSyncPhase.syncing,
@@ -242,7 +295,9 @@ class SahaRealtimeSyncController {
 
     try {
       await _stopChannel();
+      if (gen != _startGeneration) return;
       await pullProject(projectId);
+      if (gen != _startGeneration) return;
       _channel = _rows.subscribeProject(
         projectId: projectId,
         onChange: _onRealtime,
@@ -264,6 +319,8 @@ class SahaRealtimeSyncController {
               message: e.toString(),
             ),
           );
+    } finally {
+      if (gen == _startGeneration) _startInFlight = false;
     }
   }
 
@@ -297,6 +354,7 @@ class SahaRealtimeSyncController {
     String projectId, {
     Set<String>? onlyDomains,
     bool includeSnapshots = true,
+    bool quiet = false,
   }) async {
     final user = _ref.read(authProvider).user;
     if (user == null || !SupabaseService.isReady) return projectId;
@@ -312,12 +370,14 @@ class SahaRealtimeSyncController {
         ? _allDomains
         : onlyDomains;
 
-    _ref.read(sahaSyncStateProvider.notifier).set(
-          SahaSyncState(
-            phase: SahaSyncPhase.syncing,
-            projectId: projectId,
-          ),
-        );
+    if (!quiet) {
+      _ref.read(sahaSyncStateProvider.notifier).set(
+            SahaSyncState(
+              phase: SahaSyncPhase.syncing,
+              projectId: projectId,
+            ),
+          );
+    }
     try {
       final now = DateTime.now().toUtc();
       final jobs = <Future<void>>[];
@@ -524,6 +584,7 @@ class SahaRealtimeSyncController {
         projectId,
         onlyDomains: dirty,
         includeSnapshots: false,
+        quiet: true,
       );
     } catch (e, st) {
       // Başarısız domainleri tekrar kuyruğa al.

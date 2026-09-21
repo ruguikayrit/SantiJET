@@ -37,6 +37,8 @@ abstract final class SupabaseService {
         publishableKey: SupabaseConfig.normalizedAnonKey,
         authOptions: const FlutterAuthClientOptions(
           authFlowType: AuthFlowType.pkce,
+          autoRefreshToken: true,
+          detectSessionInUri: true,
         ),
       ).timeout(const Duration(seconds: 5));
       _initialized = true;

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -34,11 +36,16 @@ class AuthState {
 }
 
 final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
-  return AuthNotifier();
+  final notifier = AuthNotifier();
+  ref.onDispose(notifier.dispose);
+  return notifier;
 });
 
 class AuthNotifier extends StateNotifier<AuthState> {
   AuthNotifier() : super(const AuthState());
+
+  StreamSubscription<dynamic>? _authSub;
+  bool _listening = false;
 
   Future<void> restoreSession() async {
     try {
@@ -55,9 +62,26 @@ class AuthNotifier extends StateNotifier<AuthState> {
         return;
       }
 
-      final session = SupabaseService.client.auth.currentSession;
+      _listenAuthChanges();
+
+      var session = SupabaseService.client.auth.currentSession;
+      if (session != null && session.isExpired) {
+        try {
+          final refreshed =
+              await SupabaseService.client.auth.refreshSession();
+          session = refreshed.session;
+        } catch (_) {
+          // Yenileme başarısız — mevcut oturumu koru; listener SIGNED_OUT basarsa temizler.
+        }
+      }
+
       if (session == null) {
-        state = const AuthState(isInitialized: true);
+        // Oturum yok — kullanıcıyı hemen “çıkış” sayma; initialize bitmiş olsun.
+        if (!state.isAuthenticated) {
+          state = const AuthState(isInitialized: true);
+        } else {
+          state = state.copyWith(isInitialized: true, clearError: true);
+        }
         return;
       }
 
@@ -66,8 +90,48 @@ class AuthNotifier extends StateNotifier<AuthState> {
         isInitialized: true,
       );
     } catch (e) {
-      state = AuthState(isInitialized: true, error: e.toString());
+      // Geçici hata → oturumu silme (yeniden giriş zorlamasın).
+      if (state.isAuthenticated) {
+        state = state.copyWith(isInitialized: true, error: e.toString());
+      } else {
+        state = AuthState(isInitialized: true, error: e.toString());
+      }
     }
+  }
+
+  void _listenAuthChanges() {
+    if (_listening || !SupabaseService.isReady) return;
+    _listening = true;
+    _authSub?.cancel();
+    _authSub = SupabaseService.client.auth.onAuthStateChange.listen((data) {
+      final event = data.event;
+      final session = data.session;
+
+      switch (event) {
+        case AuthChangeEvent.signedOut:
+          state = const AuthState(isInitialized: true);
+        case AuthChangeEvent.passwordRecovery:
+        case AuthChangeEvent.mfaChallengeVerified:
+          break;
+        case AuthChangeEvent.initialSession:
+        case AuthChangeEvent.signedIn:
+        case AuthChangeEvent.tokenRefreshed:
+        case AuthChangeEvent.userUpdated:
+          if (session != null) {
+            final next = _userFromSession(session);
+            // Aynı kullanıcıysa gereksiz rebuild tetikleme.
+            if (state.user?.id == next.id &&
+                state.user?.email == next.email &&
+                state.user?.displayName == next.displayName &&
+                state.isInitialized) {
+              return;
+            }
+            state = AuthState(user: next, isInitialized: true);
+          }
+        default:
+          break;
+      }
+    });
   }
 
   Future<void> signIn({
@@ -75,6 +139,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     required String password,
   }) async {
     await _ensureReady();
+    _listenAuthChanges();
     try {
       final res = await SupabaseService.client.auth.signInWithPassword(
         email: email.trim(),
@@ -98,6 +163,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     required String displayName,
   }) async {
     await _ensureReady();
+    _listenAuthChanges();
     try {
       final res = await SupabaseService.client.auth.signUp(
         email: email.trim(),
@@ -124,6 +190,14 @@ class AuthNotifier extends StateNotifier<AuthState> {
       await SupabaseService.client.auth.signOut();
     }
     state = const AuthState(isInitialized: true);
+  }
+
+  @override
+  void dispose() {
+    _authSub?.cancel();
+    _authSub = null;
+    _listening = false;
+    super.dispose();
   }
 
   Future<void> _ensureReady() async {

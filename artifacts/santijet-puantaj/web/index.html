@@ -102,29 +102,19 @@
   </script>
   <script>
     (function () {
-      var APP_VERSION = '82';
+      var APP_VERSION = '83';
       var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
         (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
       var isStandalone = window.navigator.standalone === true ||
         (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches);
 
       function clearAppCaches() {
-        var tasks = [Promise.resolve()];
-        if ('caches' in window) {
-          tasks.push(
-            caches.keys().then(function (keys) {
-              return Promise.all(keys.map(function (key) { return caches.delete(key); }));
-            })
-          );
-        }
-        if ('serviceWorker' in navigator) {
-          tasks.push(
-            navigator.serviceWorker.getRegistrations().then(function (regs) {
-              return Promise.all(regs.map(function (reg) { return reg.unregister(); }));
-            })
-          );
-        }
-        return Promise.all(tasks);
+        // Yalnız HTTP cache — service worker unregister sürekli yeniden yükleme
+        // ve oturum kaybına yol açabiliyor; dokunma.
+        if (!('caches' in window)) return Promise.resolve();
+        return caches.keys().then(function (keys) {
+          return Promise.all(keys.map(function (key) { return caches.delete(key); }));
+        });
       }
 
       window.santijetHardReload = function () {
