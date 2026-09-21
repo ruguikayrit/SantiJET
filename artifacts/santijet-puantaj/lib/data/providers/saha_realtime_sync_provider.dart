@@ -613,10 +613,16 @@ class SahaRealtimeSyncController {
     final notifier = _ref.read(personnelProvider.notifier);
     final others =
         notifier.state.where((p) => p.projectId != projectId).toList();
+    final byId = <String, Person>{};
+    for (final (raw, _) in remote) {
+      final person = Person.fromJson(raw);
+      byId[person.id] = person;
+    }
     notifier.replaceAllQuiet([
       ...others,
-      for (final (p, _) in remote) Person.fromJson(p),
+      ...byId.values,
     ]);
+    notifier.dedupeForProject(projectId);
   }
 
   Future<void> _pullProduction(String projectId) async {

@@ -1748,7 +1748,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
               )
             else ...[
               TaskCalendarPanel(tasks: tasks),
-              const SizedBox(height: AppSpacing.sm),
+              const SizedBox(height: AppSpacing.xs),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
                 child: SJSearchBar(
@@ -1765,109 +1765,93 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                   }),
                 ),
               ),
-              const SizedBox(height: AppSpacing.sm),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    const spacing = AppSpacing.xs;
-                    const columns = 3;
-                    final itemWidth =
-                        (constraints.maxWidth - spacing * (columns - 1)) /
-                            columns;
-                    return Row(
-                      children: [
-                        for (var i = 0; i < TaskTagCatalog.all.length; i++) ...[
-                          if (i > 0) const SizedBox(width: spacing),
-                          SizedBox(
-                            width: itemWidth,
-                            child: _TaskFilterKpiCard(
-                              label: TaskTagCatalog.cardLabel(
-                                TaskTagCatalog.all[i],
-                              ),
-                              count: searchPool
-                                  .where(
-                                    (t) =>
-                                        TaskTagCatalog.normalize(t.tag) ==
-                                        TaskTagCatalog.all[i],
-                                  )
-                                  .length,
-                              selected:
-                                  _tagFilter == TaskTagCatalog.all[i],
-                              onTap: () => setState(() {
-                                final tag = TaskTagCatalog.all[i];
-                                _tagFilter =
-                                    _tagFilter == tag ? null : tag;
-                                _reconcileTaskFilters(tasks, searchQ);
-                              }),
-                            ),
-                          ),
-                        ],
-                      ],
-                    );
-                  },
-                ),
-              ),
-              if (filterCategories.isNotEmpty) ...[
-                const SizedBox(height: AppSpacing.sm),
-                SizedBox(
-                  height: 40,
-                  child: ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.md,
-                    ),
-                    itemCount: filterCategories.length,
-                    separatorBuilder: (_, __) =>
-                        const SizedBox(width: AppSpacing.xs),
-                    itemBuilder: (context, i) {
-                      final category = filterCategories[i];
-                      final count = tagScope
-                          .where((t) => t.category.trim() == category)
-                          .length;
-                      return _TaskFilterKpiCard(
-                        label: category,
-                        count: count,
-                        selected: _categoryFilter == category,
-                        scrollTile: true,
+              const SizedBox(height: AppSpacing.xs),
+              SizedBox(
+                height: 30,
+                child: ListView(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.md,
+                  ),
+                  children: [
+                    for (final tag in TaskTagCatalog.all) ...[
+                      _TaskFilterChip(
+                        label: TaskTagCatalog.cardLabel(tag),
+                        count: searchPool
+                            .where(
+                              (t) => TaskTagCatalog.normalize(t.tag) == tag,
+                            )
+                            .length,
+                        selected: _tagFilter == tag,
                         onTap: () => setState(() {
-                          _categoryFilter = _categoryFilter == category
-                              ? null
-                              : category;
+                          _tagFilter = _tagFilter == tag ? null : tag;
                           _reconcileTaskFilters(tasks, searchQ);
                         }),
-                      );
-                    },
-                  ),
-                ),
-              ],
-              const SizedBox(height: AppSpacing.sm),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-                child: Row(
-                  children: [
-                    for (var i = 0; i < TaskStatus.values.length; i++) ...[
-                      if (i > 0) const SizedBox(width: AppSpacing.xs),
-                      Expanded(
-                        child: _TaskStatusFilterCard(
-                          status: TaskStatus.values[i],
-                          count: categoryScope
-                              .where(
-                                (t) => t.status == TaskStatus.values[i],
-                              )
-                              .length,
-                          selected: _filter == TaskStatus.values[i],
-                          onTap: () => setState(() {
-                            final s = TaskStatus.values[i];
-                            _filter = _filter == s ? null : s;
-                          }),
+                      ),
+                      const SizedBox(width: 6),
+                    ],
+                    if (filterCategories.isNotEmpty) ...[
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 2),
+                        child: Center(
+                          child: Container(
+                            width: 1,
+                            height: 16,
+                            color: AppColors.border,
+                          ),
                         ),
                       ),
+                      const SizedBox(width: 6),
+                      for (final category in filterCategories) ...[
+                        _TaskFilterChip(
+                          label: category,
+                          count: tagScope
+                              .where((t) => t.category.trim() == category)
+                              .length,
+                          selected: _categoryFilter == category,
+                          onTap: () => setState(() {
+                            _categoryFilter = _categoryFilter == category
+                                ? null
+                                : category;
+                            _reconcileTaskFilters(tasks, searchQ);
+                          }),
+                        ),
+                        const SizedBox(width: 6),
+                      ],
                     ],
                   ],
                 ),
               ),
-              const SizedBox(height: AppSpacing.sm),
+              const SizedBox(height: AppSpacing.xs),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                child: SizedBox(
+                  height: 32,
+                  child: Row(
+                    children: [
+                      for (var i = 0; i < TaskStatus.values.length; i++) ...[
+                        if (i > 0) const SizedBox(width: 6),
+                        Expanded(
+                          child: _TaskStatusFilterChip(
+                            status: TaskStatus.values[i],
+                            count: categoryScope
+                                .where(
+                                  (t) => t.status == TaskStatus.values[i],
+                                )
+                                .length,
+                            selected: _filter == TaskStatus.values[i],
+                            onTap: () => setState(() {
+                              final s = TaskStatus.values[i];
+                              _filter = _filter == s ? null : s;
+                            }),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.xs),
               Expanded(
                 child: filtered.isEmpty
                     ? SJEmptyState(
@@ -2454,9 +2438,9 @@ BoxDecoration _taskListFilterDecoration(bool selected) {
   );
 }
 
-/// Durum — Yapılacak · Başladı · Devam · Bitti (4’lü şerit).
-class _TaskStatusFilterCard extends StatelessWidget {
-  const _TaskStatusFilterCard({
+/// Durum — tek satır şerit (Yapılacak 1).
+class _TaskStatusFilterChip extends StatelessWidget {
+  const _TaskStatusFilterChip({
     required this.status,
     required this.count,
     required this.selected,
@@ -2471,47 +2455,29 @@ class _TaskStatusFilterCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final labelInk =
-        selected ? Colors.white : AppColors.textSecondary;
-    final countInk = selected ? Colors.white : AppColors.textPrimary;
+    final ink = selected ? Colors.white : AppColors.textPrimary;
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
         borderRadius: AppRadii.sm,
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 160),
-          padding: const EdgeInsets.symmetric(
-            horizontal: 6,
-            vertical: AppSpacing.sm,
-          ),
+          duration: const Duration(milliseconds: 140),
+          height: 32,
+          alignment: Alignment.center,
+          padding: const EdgeInsets.symmetric(horizontal: 4),
           decoration: _taskListFilterDecoration(selected),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                status.shortLabel,
-                maxLines: 2,
-                textAlign: TextAlign.center,
-                overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: labelInk,
-                  fontWeight: FontWeight.w600,
-                  height: 1.15,
-                  fontSize: 10,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                '$count',
-                textAlign: TextAlign.center,
-                style: theme.textTheme.titleMedium?.copyWith(
-                  color: countInk,
-                  fontWeight: FontWeight.w700,
-                  height: 1,
-                ),
-              ),
-            ],
+          child: Text(
+            '${status.shortLabel} $count',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: ink,
+              fontWeight: FontWeight.w700,
+              fontSize: 11,
+              height: 1,
+            ),
           ),
         ),
       ),
@@ -2519,14 +2485,13 @@ class _TaskStatusFilterCard extends StatelessWidget {
   }
 }
 
-/// Etiket / kategori — tek satır KPI (İNŞAAT 5).
-class _TaskFilterKpiCard extends StatelessWidget {
-  const _TaskFilterKpiCard({
+/// Etiket / kategori — kompakt yatay chip (İNŞAAT 2).
+class _TaskFilterChip extends StatelessWidget {
+  const _TaskFilterChip({
     required this.label,
     required this.count,
     required this.selected,
     required this.onTap,
-    this.scrollTile = false,
   });
 
   final String label;
@@ -2534,57 +2499,47 @@ class _TaskFilterKpiCard extends StatelessWidget {
   final bool selected;
   final VoidCallback onTap;
 
-  /// Kategori şeridi — içeriğe göre genişlik.
-  final bool scrollTile;
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final labelInk =
-        selected ? Colors.white : AppColors.textSecondary;
+    final ink = selected ? Colors.white : AppColors.textSecondary;
     final countInk = selected ? Colors.white : AppColors.textPrimary;
-    final labelStyle = theme.textTheme.labelSmall?.copyWith(
-      color: labelInk,
-      fontWeight: FontWeight.w800,
-      letterSpacing: 0.5,
-      fontSize: 11,
-    );
-    final countStyle = theme.textTheme.titleSmall?.copyWith(
-      color: countInk,
-      fontWeight: FontWeight.w800,
-      height: 1,
-    );
-
-    final row = Row(
-      mainAxisSize: scrollTile ? MainAxisSize.min : MainAxisSize.max,
-      children: [
-        Flexible(
-          fit: scrollTile ? FlexFit.loose : FlexFit.tight,
-          child: Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: labelStyle,
-          ),
-        ),
-        const SizedBox(width: 6),
-        Text('$count', style: countStyle),
-      ],
-    );
-
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
         borderRadius: AppRadii.sm,
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 160),
-          constraints: scrollTile
-              ? const BoxConstraints(minWidth: 88, maxWidth: 200)
-              : null,
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+          duration: const Duration(milliseconds: 140),
+          height: 30,
+          padding: const EdgeInsets.symmetric(horizontal: 10),
           decoration: _taskListFilterDecoration(selected),
-          child: row,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                label,
+                maxLines: 1,
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: ink,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 11,
+                  letterSpacing: 0.2,
+                  height: 1,
+                ),
+              ),
+              const SizedBox(width: 5),
+              Text(
+                '$count',
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: countInk,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 11,
+                  height: 1,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

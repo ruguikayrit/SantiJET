@@ -7,6 +7,7 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 
 import '../../domain/entities/site_task.dart';
+import 'pdf_memory_image.dart';
 import 'report_file_access_stub.dart'
     if (dart.library.html) 'report_file_access_web.dart'
     if (dart.library.io) 'report_file_access_io.dart' as file_access;
@@ -200,7 +201,7 @@ class TaskExportService {
     pw.MemoryImage? img;
     try {
       if (photo.dataBase64.isNotEmpty) {
-        img = pw.MemoryImage(base64Decode(photo.dataBase64));
+        img = pdfMemoryImage(base64Decode(photo.dataBase64));
       }
     } catch (_) {
       img = null;

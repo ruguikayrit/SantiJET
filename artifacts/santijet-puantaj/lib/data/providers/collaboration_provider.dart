@@ -300,10 +300,28 @@ class CollaborationController {
     _ref.read(projectMembersListProvider.notifier).deleteForProject(from);
 
     final people = _ref.read(personnelProvider);
+    final others = <Person>[];
+    final fromPeople = <Person>[];
+    final toPeople = <Person>[];
+    for (final p in people) {
+      if (p.projectId == from) {
+        fromPeople.add(p.copyWith(projectId: to));
+      } else if (p.projectId == to) {
+        toPeople.add(p);
+      } else {
+        others.add(p);
+      }
+    }
+    // Yerel kaynak (from) aynı kişide kazanır; id çakışmayan to kayıtları kalır.
+    final byId = <String, Person>{
+      for (final p in toPeople) p.id: p,
+      for (final p in fromPeople) p.id: p,
+    };
     _ref.read(personnelProvider.notifier).replaceAllQuiet([
-      for (final p in people)
-        if (p.projectId == from) p.copyWith(projectId: to) else p,
+      ...others,
+      ...byId.values,
     ]);
+    _ref.read(personnelProvider.notifier).dedupeForProject(to);
 
     final att = _ref.read(attendanceProvider);
     _ref.read(attendanceProvider.notifier).replaceAllQuiet([

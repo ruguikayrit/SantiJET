@@ -14,6 +14,7 @@ import '../../domain/entities/project.dart';
 import '../../domain/enums/attendance_status.dart';
 import '../../domain/entities/yevmiyeli_is_kaydi.dart';
 import 'daily_report_export_sections.dart';
+import 'pdf_memory_image.dart';
 import 'report_file_access_stub.dart'
     if (dart.library.html) 'report_file_access_web.dart'
     if (dart.library.io) 'report_file_access_io.dart' as file_access;
@@ -575,7 +576,7 @@ class DailyReportPdfService {
   pw.MemoryImage? _projectLogoImage(Project project) {
     if (!project.hasLogo) return null;
     try {
-      return pw.MemoryImage(base64Decode(project.logoBase64));
+      return pdfMemoryImage(base64Decode(project.logoBase64));
     } catch (_) {
       return null;
     }
@@ -1158,7 +1159,7 @@ class DailyReportPdfService {
       pw.MemoryImage? img;
       try {
         if (p.dataBase64.isNotEmpty) {
-          img = pw.MemoryImage(base64Decode(p.dataBase64));
+          img = pdfMemoryImage(base64Decode(p.dataBase64));
         }
       } catch (_) {
         img = null;

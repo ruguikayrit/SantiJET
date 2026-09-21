@@ -2431,226 +2431,308 @@ class _PersonCard extends StatelessWidget {
     final worked = status?.isWorkedDay ?? false;
     final baseHours = status?.hours ?? 0;
     final yevmiye = worked ? (baseHours + overtimeHours) / 8.0 : 0.0;
+    final employmentLines = AttendanceDisplay.employmentDateLines(person);
 
     return SJCard(
-      padding: const EdgeInsets.all(AppSpacing.sm),
+      padding: const EdgeInsets.fromLTRB(10, 6, 8, 6),
       child: Builder(
         builder: (context) {
           final theme = Theme.of(context);
           final statusColor =
               status?.color ?? theme.colorScheme.onSurfaceVariant;
+          final nameColor = AppColors.statusInkOnCard(AppColors.partial);
+          final showControls = worked || onYevmiyeliTap != null;
 
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
             children: [
               Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Expanded(
                     child: InkWell(
                       onTap: onPersonTap,
                       borderRadius: AppRadii.sm,
                       child: Padding(
-                        padding: const EdgeInsets.only(right: 4, bottom: 2),
+                        padding: const EdgeInsets.symmetric(vertical: 1),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
                               titleCaseTr(person.name),
-                              style: theme.textTheme.titleMedium?.copyWith(
-                                color: AppColors.statusInkOnCard(
-                                  AppColors.partial,
-                                ),
-                                decoration: TextDecoration.underline,
-                                decorationColor:
-                                    AppColors.statusInkOnCard(AppColors.partial)
-                                        .withValues(alpha: 0.35),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.titleSmall?.copyWith(
+                                color: nameColor,
+                                fontWeight: FontWeight.w700,
+                                height: 1.1,
+                                letterSpacing: -0.1,
                               ),
                             ),
-                            for (final line
-                                in AttendanceDisplay.employmentDateLines(
-                                    person))
+                            if (meta.isNotEmpty || employmentLines.isNotEmpty)
                               Text(
-                                line,
+                                [
+                                  if (meta.isNotEmpty) meta,
+                                  ...employmentLines,
+                                ].join(' · '),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                                 style: theme.textTheme.labelSmall?.copyWith(
                                   color: theme.colorScheme.onSurfaceVariant,
+                                  height: 1.15,
+                                  fontSize: 11,
                                 ),
                               ),
-                            if (meta.isNotEmpty)
-                              Text(meta, style: theme.textTheme.bodySmall),
                           ],
                         ),
                       ),
                     ),
                   ),
+                  const SizedBox(width: 2),
                   IconButton(
+                    tooltip: noteOpen ? 'Notu kapat' : 'Not',
                     visualDensity: VisualDensity.compact,
+                    constraints: const BoxConstraints(
+                      minWidth: 28,
+                      minHeight: 28,
+                    ),
+                    padding: EdgeInsets.zero,
                     onPressed: noteOpen ? onCloseNote : onOpenNote,
                     icon: Icon(
-                      Icons.edit_note,
+                      Icons.edit_note_rounded,
+                      size: 18,
                       color: note != null
                           ? theme.colorScheme.primary
                           : theme.colorScheme.onSurfaceVariant,
                     ),
                   ),
-                  InkWell(
-                    onTap: onToggleDropdown,
-                    borderRadius: AppRadii.sm,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: statusColor.withValues(alpha: 0.12),
-                        borderRadius: AppRadii.sm,
-                        border: Border.all(
-                          color: statusColor.withValues(alpha: 0.4),
+                  const SizedBox(width: 2),
+                  Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: onToggleDropdown,
+                      borderRadius: BorderRadius.circular(16),
+                      child: Container(
+                        height: 28,
+                        padding: const EdgeInsets.fromLTRB(8, 0, 4, 0),
+                        decoration: BoxDecoration(
+                          color: statusColor.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: statusColor.withValues(alpha: 0.4),
+                          ),
                         ),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Container(
-                            width: 8,
-                            height: 8,
-                            decoration: BoxDecoration(
-                              color: statusColor,
-                              shape: BoxShape.circle,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              width: 6,
+                              height: 6,
+                              decoration: BoxDecoration(
+                                color: statusColor,
+                                shape: BoxShape.circle,
+                              ),
                             ),
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            status?.label ?? 'Seçilmedi',
-                            style: theme.textTheme.labelMedium?.copyWith(
+                            const SizedBox(width: 5),
+                            Text(
+                              status?.label ?? 'Seçilmedi',
+                              style: theme.textTheme.labelSmall?.copyWith(
+                                color: AppColors.statusInkOnCard(statusColor),
+                                fontWeight: FontWeight.w700,
+                                height: 1,
+                              ),
+                            ),
+                            Icon(
+                              dropdownOpen
+                                  ? Icons.keyboard_arrow_up_rounded
+                                  : Icons.keyboard_arrow_down_rounded,
+                              size: 15,
                               color: AppColors.statusInkOnCard(statusColor),
-                              fontWeight: FontWeight.w600,
                             ),
-                          ),
-                          Icon(
-                            dropdownOpen
-                                ? Icons.keyboard_arrow_up
-                                : Icons.keyboard_arrow_down,
-                            size: 16,
-                            color: AppColors.statusInkOnCard(statusColor),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   ),
                 ],
               ),
-              if (worked) ...[
-                const SizedBox(height: AppSpacing.sm),
-                Row(
-                  children: [
-                    const Spacer(),
-                    Text('Mesai', style: theme.textTheme.labelMedium),
-                    IconButton(
-                      visualDensity: VisualDensity.compact,
-                      onPressed: overtimeHours <= 0
-                          ? null
-                          : () => onSetOvertime(
-                                (overtimeHours - 0.5).clamp(0, 12),
+              if (showControls) ...[
+                const SizedBox(height: 4),
+                SizedBox(
+                  height: 28,
+                  child: Row(
+                    children: [
+                      if (worked) ...[
+                        Text(
+                          'Mesai',
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 11,
+                          ),
+                        ),
+                        _CompactStepperButton(
+                          icon: Icons.remove_rounded,
+                          enabled: overtimeHours > 0,
+                          onPressed: () => onSetOvertime(
+                            (overtimeHours - 0.5).clamp(0, 12),
+                          ),
+                        ),
+                        SizedBox(
+                          width: 36,
+                          child: Text(
+                            overtimeHours == overtimeHours.roundToDouble()
+                                ? '${overtimeHours.toStringAsFixed(0)} sa'
+                                : '${overtimeHours.toStringAsFixed(1)} sa',
+                            textAlign: TextAlign.center,
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              fontWeight: FontWeight.w800,
+                              fontFeatures: const [
+                                FontFeature.tabularFigures(),
+                              ],
+                            ),
+                          ),
+                        ),
+                        _CompactStepperButton(
+                          icon: Icons.add_rounded,
+                          enabled: overtimeHours < 12,
+                          onPressed: () => onSetOvertime(
+                            (overtimeHours + 0.5).clamp(0, 12),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Container(
+                          height: 22,
+                          padding: const EdgeInsets.symmetric(horizontal: 6),
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color:
+                                AppColors.electricBlue.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(5),
+                          ),
+                          child: Text(
+                            '${yevmiye.toStringAsFixed(yevmiye == yevmiye.roundToDouble() ? 0 : 2)} yv',
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: AppColors.electricBlueLight,
+                              fontWeight: FontWeight.w800,
+                              fontSize: 11,
+                              height: 1,
+                              fontFeatures: const [
+                                FontFeature.tabularFigures(),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                      const Spacer(),
+                      if (onYevmiyeliTap != null)
+                        Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: onYevmiyeliTap,
+                            borderRadius: BorderRadius.circular(6),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 4,
+                                vertical: 4,
                               ),
-                      icon: const Icon(Icons.remove_circle_outline, size: 20),
-                    ),
-                    Text(
-                      overtimeHours == overtimeHours.roundToDouble()
-                          ? '${overtimeHours.toStringAsFixed(0)} sa'
-                          : '${overtimeHours.toStringAsFixed(1)} sa',
-                      style: theme.textTheme.labelLarge?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    IconButton(
-                      visualDensity: VisualDensity.compact,
-                      onPressed: overtimeHours >= 12
-                          ? null
-                          : () => onSetOvertime(
-                                (overtimeHours + 0.5).clamp(0, 12),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    yevmiyeIsTotal > 0
+                                        ? Icons.handyman_rounded
+                                        : Icons.handyman_outlined,
+                                    size: 14,
+                                    color: AppColors.electricBlue,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    yevmiyeIsTotal > 0
+                                        ? '${formatYevmiyeCount(yevmiyeIsTotal)} yv'
+                                        : 'Yevmiyeli',
+                                    style: theme.textTheme.labelSmall?.copyWith(
+                                      color: AppColors.electricBlue,
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 11,
+                                      height: 1,
+                                    ),
+                                  ),
+                                ],
                               ),
-                      icon: const Icon(Icons.add_circle_outline, size: 20),
-                    ),
-                    const SizedBox(width: AppSpacing.sm),
-                    Text(
-                      '${yevmiye.toStringAsFixed(yevmiye == yevmiye.roundToDouble() ? 0 : 2)} yv',
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: AppColors.electricBlueLight,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-              if (onYevmiyeliTap != null) ...[
-                const SizedBox(height: AppSpacing.xs),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: TextButton.icon(
-                    onPressed: onYevmiyeliTap,
-                    icon: Icon(
-                      yevmiyeIsTotal > 0
-                          ? Icons.handyman
-                          : Icons.handyman_outlined,
-                      size: 16,
-                    ),
-                    label: Text(
-                      yevmiyeIsTotal > 0
-                          ? 'Yevmiye iş · ${formatYevmiyeCount(yevmiyeIsTotal)} yv'
-                          : 'Yevmiyeli iş',
-                    ),
-                    style: TextButton.styleFrom(
-                      foregroundColor: AppColors.electricBlue,
-                      visualDensity: VisualDensity.compact,
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                    ),
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                 ),
               ],
               if (note != null && !noteOpen) ...[
-                const SizedBox(height: AppSpacing.xs),
+                const SizedBox(height: 3),
                 Row(
                   children: [
                     Icon(
                       Icons.chat_bubble_outline,
-                      size: 12,
+                      size: 10,
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
                     const SizedBox(width: 4),
                     Expanded(
-                      child: Text(note!, style: theme.textTheme.bodySmall),
+                      child: Text(
+                        note!,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          height: 1.15,
+                          fontSize: 11,
+                        ),
+                      ),
                     ),
                   ],
                 ),
               ],
               if (noteOpen) ...[
-                const SizedBox(height: AppSpacing.sm),
+                const SizedBox(height: 4),
                 TextField(
                   controller: noteController,
                   maxLines: 2,
+                  style: theme.textTheme.bodySmall,
                   decoration: const InputDecoration(
+                    isDense: true,
                     hintText: 'Not ekle...',
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 8,
+                    ),
                   ),
                 ),
-                const SizedBox(height: AppSpacing.xs),
+                const SizedBox(height: 4),
                 Align(
                   alignment: Alignment.centerRight,
                   child: FilledButton(
                     onPressed: onSaveNote,
+                    style: FilledButton.styleFrom(
+                      visualDensity: VisualDensity.compact,
+                      minimumSize: const Size(0, 30),
+                      padding: const EdgeInsets.symmetric(horizontal: 14),
+                    ),
                     child: const Text('Kaydet'),
                   ),
                 ),
               ],
               if (dropdownOpen) ...[
-                const SizedBox(height: AppSpacing.sm),
+                const SizedBox(height: 4),
                 for (final s in AttendanceStatus.values)
                   ListTile(
                     dense: true,
+                    visualDensity: VisualDensity.compact,
+                    minVerticalPadding: 0,
                     contentPadding: EdgeInsets.zero,
                     leading: Container(
-                      width: 10,
-                      height: 10,
+                      width: 8,
+                      height: 8,
                       decoration: BoxDecoration(
                         color: s.color,
                         shape: BoxShape.circle,
@@ -2658,16 +2740,16 @@ class _PersonCard extends StatelessWidget {
                     ),
                     title: Text(
                       s.label,
-                      style: theme.textTheme.labelLarge?.copyWith(
+                      style: theme.textTheme.labelMedium?.copyWith(
                         color: AppColors.statusInkOnCard(s.color),
                         fontWeight: FontWeight.w600,
                       ),
                     ),
                     trailing: status == s
                         ? Icon(
-                            Icons.check,
+                            Icons.check_rounded,
+                            size: 16,
                             color: AppColors.statusInkOnCard(s.color),
-                            size: 18,
                           )
                         : null,
                     selected: status == s,
@@ -2677,6 +2759,34 @@ class _PersonCard extends StatelessWidget {
             ],
           );
         },
+      ),
+    );
+  }
+}
+
+class _CompactStepperButton extends StatelessWidget {
+  const _CompactStepperButton({
+    required this.icon,
+    required this.enabled,
+    required this.onPressed,
+  });
+
+  final IconData icon;
+  final bool enabled;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = Theme.of(context).colorScheme.onSurface;
+    return IconButton(
+      visualDensity: VisualDensity.compact,
+      constraints: const BoxConstraints(minWidth: 26, minHeight: 26),
+      padding: EdgeInsets.zero,
+      onPressed: enabled ? onPressed : null,
+      icon: Icon(
+        icon,
+        size: 16,
+        color: enabled ? color : color.withValues(alpha: 0.28),
       ),
     );
   }

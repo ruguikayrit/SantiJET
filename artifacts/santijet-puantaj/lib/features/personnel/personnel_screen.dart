@@ -35,6 +35,21 @@ class _PersonnelScreenState extends ConsumerState<PersonnelScreen> {
   final Set<String> _collapsedCompanies = {};
   bool _selectionMode = false;
   final Set<String> _selectedIds = {};
+  String? _dedupedForProjectId;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final project = ref.read(activeProjectProvider);
+    final id = project?.id;
+    if (id == null || id == _dedupedForProjectId) return;
+    _dedupedForProjectId = id;
+    // Senkron sonrası biriken mükerrerleri bir kez temizle.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      ref.read(personnelProvider.notifier).dedupeForProject(id);
+    });
+  }
 
   List<({String company, List<Person> people})> _groupByCompany(
     List<Person> people,

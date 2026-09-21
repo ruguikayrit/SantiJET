@@ -10,6 +10,7 @@ import 'package:printing/printing.dart';
 
 import '../../core/constants/app_info.dart';
 import '../../domain/enums/attendance_status.dart';
+import 'pdf_memory_image.dart';
 import 'puantaj_report_builder.dart';
 import 'report_file_access_stub.dart'
     if (dart.library.html) 'report_file_access_web.dart'
@@ -144,12 +145,12 @@ class PuantajExportService {
 
   Future<void> _loadBrandAssets() async {
     try {
-      _boltImage ??= pw.MemoryImage(
+      _boltImage ??= pdfMemoryImage(
         (await rootBundle.load('assets/images/splash_bolt.png'))
             .buffer
             .asUint8List(),
       );
-      _wordmarkImage ??= pw.MemoryImage(
+      _wordmarkImage ??= pdfMemoryImage(
         (await rootBundle.load('assets/images/splash_wordmark_light.png'))
             .buffer
             .asUint8List(),
@@ -162,7 +163,7 @@ class PuantajExportService {
   pw.MemoryImage? _decodeLogo(String base64Data) {
     if (base64Data.trim().isEmpty) return null;
     try {
-      return pw.MemoryImage(base64Decode(base64Data));
+      return pdfMemoryImage(base64Decode(base64Data));
     } catch (_) {
       return null;
     }

@@ -175,7 +175,7 @@ class _TaskCalendarPanelState extends State<TaskCalendarPanel> {
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         AppSpacing.md,
-        AppSpacing.afterHeader,
+        AppSpacing.xs,
         AppSpacing.md,
         0,
       ),
@@ -190,42 +190,48 @@ class _TaskCalendarPanelState extends State<TaskCalendarPanel> {
             InkWell(
               onTap: () => setState(() => _expanded = !_expanded),
               borderRadius: AppRadii.md,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.sm,
-                  vertical: AppSpacing.sm,
-                ),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.calendar_month_outlined,
-                      color: theme.colorScheme.primary,
-                    ),
-                    const SizedBox(width: AppSpacing.sm),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Görev takvimi',
-                            style: theme.textTheme.titleSmall?.copyWith(
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          Text(
-                            _expanded
-                                ? label
-                                : 'Mavi başlangıç · kırmızı planlanan bitiş',
-                            style: theme.textTheme.labelSmall,
-                          ),
-                        ],
+              child: SizedBox(
+                height: 36,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.calendar_month_outlined,
+                        size: 18,
+                        color: theme.colorScheme.primary,
                       ),
-                    ),
-                    Icon(
-                      _expanded ? Icons.expand_less : Icons.expand_more,
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ],
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          _expanded ? 'Takvim · $label' : 'Görev takvimi',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.labelLarge?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            height: 1.1,
+                          ),
+                        ),
+                      ),
+                      if (!_expanded) ...[
+                        Text(
+                          'Mavi · kırmızı',
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                            fontSize: 10,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                      ],
+                      Icon(
+                        _expanded
+                            ? Icons.expand_less_rounded
+                            : Icons.expand_more_rounded,
+                        size: 20,
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -244,6 +250,7 @@ class _TaskCalendarPanelState extends State<TaskCalendarPanel> {
                       children: [
                         IconButton(
                           tooltip: 'Önceki ay',
+                          visualDensity: VisualDensity.compact,
                           onPressed: () => setState(() {
                             _month = DateTime(_month.year, _month.month - 1);
                           }),

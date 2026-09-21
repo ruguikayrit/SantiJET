@@ -11,6 +11,7 @@ import '../../features/daily_report/widgets/period_production_chart_slices.dart'
 import 'period_site_report_builder.dart';
 import 'period_site_report_export_sections.dart';
 import 'period_site_report_pdf_chart_capture.dart';
+import 'pdf_memory_image.dart';
 import 'production_chart_options.dart';
 import 'report_file_access_stub.dart'
     if (dart.library.html) 'report_file_access_web.dart'
@@ -429,7 +430,7 @@ class PeriodSiteReportExportService {
     const maxWidth = 760.0;
     final scale = maxWidth / chart.logicalWidth;
     return pw.Image(
-      pw.MemoryImage(chart.bytes),
+      pdfMemoryImage(chart.bytes),
       width: maxWidth,
       height: chart.logicalHeight * scale,
       fit: pw.BoxFit.contain,

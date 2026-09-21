@@ -299,6 +299,60 @@ class PersonnelNotifier extends StateNotifier<List<Person>> {
     _persist(projectId);
   }
 
+  /// Aynı projede mükerrer personeli tekilleştir (ad+meslek+firma+ekip).
+  /// Senkron / yerel→bulut taşıma sonrası oluşabilir.
+  /// Dönen: silinen mükerrer id’leri.
+  List<String> dedupeForProject(String projectId) {
+    final mine = state.where((p) => p.projectId == projectId).toList();
+    if (mine.length < 2) return const [];
+
+    final keepByKey = <String, Person>{};
+    final dropIds = <String>[];
+    for (final p in mine) {
+      final key = _duplicateKey(p);
+      final existing = keepByKey[key];
+      if (existing == null) {
+        keepByKey[key] = p;
+        continue;
+      }
+      // Aynı anahtar: daha uzun id / daha dolu kaydı tut, diğerini at.
+      final preferNew = _richerPerson(p, existing);
+      if (preferNew) {
+        dropIds.add(existing.id);
+        keepByKey[key] = p;
+      } else {
+        dropIds.add(p.id);
+      }
+    }
+    if (dropIds.isEmpty) return const [];
+
+    final drop = dropIds.toSet();
+    state = [
+      for (final p in state)
+        if (!(p.projectId == projectId && drop.contains(p.id))) p,
+    ];
+    _persist(projectId);
+    return dropIds;
+  }
+
+  static String _duplicateKey(Person p) {
+    String n(String s) => s.trim().toLowerCase();
+    return '${n(p.name)}|${n(p.profession)}|${n(p.company)}|${n(p.team)}';
+  }
+
+  static bool _richerPerson(Person a, Person b) {
+    int score(Person p) =>
+        (p.phone.trim().isNotEmpty ? 1 : 0) +
+        (p.tc.trim().isNotEmpty ? 1 : 0) +
+        (p.iban.trim().isNotEmpty ? 1 : 0) +
+        (p.hireDate.trim().isNotEmpty ? 1 : 0) +
+        (p.address.trim().isNotEmpty ? 1 : 0);
+    final sa = score(a);
+    final sb = score(b);
+    if (sa != sb) return sa > sb;
+    return a.id.compareTo(b.id) <= 0;
+  }
+
   void replaceAll(List<Person> items) {
     state = List<Person>.from(items);
     _persist();
