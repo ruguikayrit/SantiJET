@@ -104,8 +104,27 @@ class SahaRealtimeSyncController {
   String? _listeningProjectId;
   final _lastLocalWrite = <String, DateTime>{};
   final _pushTimers = <String, Timer>{};
+  final _dirtyDomains = <String, Set<String>>{};
   bool _applyingRemote = false;
   bool _hooksWired = false;
+
+  static const _domainAttendance = 'attendance';
+  static const _domainPersonnel = 'personnel';
+  static const _domainProduction = 'production';
+  static const _domainTasks = 'tasks';
+  static const _domainDailyReports = 'daily_reports';
+  static const _domainYevmiyeli = 'yevmiyeli';
+  static const _domainUninsured = 'uninsured';
+
+  static const _allDomains = {
+    _domainAttendance,
+    _domainPersonnel,
+    _domainProduction,
+    _domainTasks,
+    _domainDailyReports,
+    _domainYevmiyeli,
+    _domainUninsured,
+  };
 
   SupabaseRowSync get _rows => _ref.read(supabaseRowSyncProvider);
 
@@ -113,14 +132,20 @@ class SahaRealtimeSyncController {
   void ensureLocalWriteHooks() {
     if (_hooksWired) return;
     _hooksWired = true;
-    void hook(String projectId) => schedulePushAfterLocalWrite(projectId);
-    _ref.read(attendanceProvider.notifier).onLocalProjectChanged = hook;
-    _ref.read(personnelProvider.notifier).onLocalProjectChanged = hook;
-    _ref.read(productionProvider.notifier).onLocalProjectChanged = hook;
-    _ref.read(tasksProvider.notifier).onLocalProjectChanged = hook;
-    _ref.read(dailyReportsProvider.notifier).onLocalProjectChanged = hook;
-    _ref.read(yevmiyeliIsProvider.notifier).onLocalProjectChanged = hook;
-    _ref.read(uninsuredTeamsProvider.notifier).onLocalProjectChanged = hook;
+    _ref.read(attendanceProvider.notifier).onLocalProjectChanged =
+        (id) => schedulePushAfterLocalWrite(id, domains: {_domainAttendance});
+    _ref.read(personnelProvider.notifier).onLocalProjectChanged =
+        (id) => schedulePushAfterLocalWrite(id, domains: {_domainPersonnel});
+    _ref.read(productionProvider.notifier).onLocalProjectChanged =
+        (id) => schedulePushAfterLocalWrite(id, domains: {_domainProduction});
+    _ref.read(tasksProvider.notifier).onLocalProjectChanged =
+        (id) => schedulePushAfterLocalWrite(id, domains: {_domainTasks});
+    _ref.read(dailyReportsProvider.notifier).onLocalProjectChanged = (id) =>
+        schedulePushAfterLocalWrite(id, domains: {_domainDailyReports});
+    _ref.read(yevmiyeliIsProvider.notifier).onLocalProjectChanged =
+        (id) => schedulePushAfterLocalWrite(id, domains: {_domainYevmiyeli});
+    _ref.read(uninsuredTeamsProvider.notifier).onLocalProjectChanged =
+        (id) => schedulePushAfterLocalWrite(id, domains: {_domainUninsured});
   }
 
   void dispose() {
@@ -251,13 +276,15 @@ class SahaRealtimeSyncController {
     if (!SupabaseService.isReady) return;
     _applyingRemote = true;
     try {
-      await _pullAttendance(projectId);
-      await _pullPersonnel(projectId);
-      await _pullProduction(projectId);
-      await _pullTasks(projectId);
-      await _pullDailyReports(projectId);
-      await _pullYevmiyeli(projectId);
-      await _pullUninsured(projectId);
+      await Future.wait([
+        _pullAttendance(projectId),
+        _pullPersonnel(projectId),
+        _pullProduction(projectId),
+        _pullTasks(projectId),
+        _pullDailyReports(projectId),
+        _pullYevmiyeli(projectId),
+        _pullUninsured(projectId),
+      ]);
 
       // Geçiş: satır tablolar boşsa eski snapshot'tan doldur (bir kez push).
       await _migrateFromSnapshotsIfNeeded(projectId);
@@ -266,7 +293,11 @@ class SahaRealtimeSyncController {
     }
   }
 
-  Future<String> pushProject(String projectId) async {
+  Future<String> pushProject(
+    String projectId, {
+    Set<String>? onlyDomains,
+    bool includeSnapshots = true,
+  }) async {
     final user = _ref.read(authProvider).user;
     if (user == null || !SupabaseService.isReady) return projectId;
 
@@ -277,6 +308,10 @@ class SahaRealtimeSyncController {
 
     if (!_canEdit(projectId)) return projectId;
 
+    final domains = onlyDomains == null || onlyDomains.isEmpty
+        ? _allDomains
+        : onlyDomains;
+
     _ref.read(sahaSyncStateProvider.notifier).set(
           SahaSyncState(
             phase: SahaSyncPhase.syncing,
@@ -285,119 +320,156 @@ class SahaRealtimeSyncController {
         );
     try {
       final now = DateTime.now().toUtc();
-      final att = _ref
-          .read(attendanceProvider)
-          .where((a) => a.projectId == projectId)
-          .toList();
-      for (final a in att) {
-        _lastLocalWrite[
-            'saha_attendance|${a.id}|${a.personId}|${a.date}'] = now;
-      }
-      await _rows.upsertAttendanceBatch(rows: att, userId: user.id);
+      final jobs = <Future<void>>[];
 
-      final people = _ref
-          .read(personnelProvider)
-          .where((p) => p.projectId == projectId)
-          .toList();
-      for (final p in people) {
-        _lastLocalWrite['saha_personnel|${p.id}||'] = now;
+      if (domains.contains(_domainAttendance)) {
+        final att = _ref
+            .read(attendanceProvider)
+            .where((a) => a.projectId == projectId)
+            .toList();
+        for (final a in att) {
+          _lastLocalWrite[
+              'saha_attendance|${a.id}|${a.personId}|${a.date}'] = now;
+        }
+        jobs.add(_rows.upsertAttendanceBatch(rows: att, userId: user.id));
       }
-      await _rows.upsertPayloadBatch(
-        table: 'saha_personnel',
-        projectId: projectId,
-        userId: user.id,
-        rows: [
-          for (final p in people)
-            (id: p.id, payload: p.toJson(), date: null),
-        ],
-      );
 
-      final productions = _ref
-          .read(productionProvider)
-          .where((p) => p.projectId == projectId)
-          .toList();
-      for (final p in productions) {
-        _lastLocalWrite['saha_production|${p.id}||'] = now;
+      if (domains.contains(_domainPersonnel)) {
+        final people = _ref
+            .read(personnelProvider)
+            .where((p) => p.projectId == projectId)
+            .toList();
+        for (final p in people) {
+          _lastLocalWrite['saha_personnel|${p.id}||'] = now;
+        }
+        jobs.add(
+          _rows.upsertPayloadBatch(
+            table: 'saha_personnel',
+            projectId: projectId,
+            userId: user.id,
+            rows: [
+              for (final p in people)
+                (id: p.id, payload: p.toJson(), date: null),
+            ],
+          ),
+        );
       }
-      await _rows.upsertPayloadBatch(
-        table: 'saha_production',
-        projectId: projectId,
-        userId: user.id,
-        rows: [
-          for (final p in productions)
-            (id: p.id, payload: p.toJson(), date: null),
-        ],
-      );
 
-      final tasks = _ref
-          .read(tasksProvider)
-          .where((t) => t.projectId == projectId)
-          .toList();
-      for (final t in tasks) {
-        _lastLocalWrite['saha_tasks|${t.id}||'] = now;
+      if (domains.contains(_domainProduction)) {
+        final productions = _ref
+            .read(productionProvider)
+            .where((p) => p.projectId == projectId)
+            .toList();
+        for (final p in productions) {
+          _lastLocalWrite['saha_production|${p.id}||'] = now;
+        }
+        jobs.add(
+          _rows.upsertPayloadBatch(
+            table: 'saha_production',
+            projectId: projectId,
+            userId: user.id,
+            rows: [
+              for (final p in productions)
+                (id: p.id, payload: p.toJson(), date: null),
+            ],
+          ),
+        );
       }
-      await _rows.upsertPayloadBatch(
-        table: 'saha_tasks',
-        projectId: projectId,
-        userId: user.id,
-        rows: [
-          for (final t in tasks) (id: t.id, payload: t.toJson(), date: null),
-        ],
-      );
 
-      final reports = _ref
-          .read(dailyReportsProvider)
-          .where((r) => r.projectId == projectId)
-          .toList();
-      for (final r in reports) {
-        _lastLocalWrite['saha_daily_reports|${r.id}||'] = now;
+      if (domains.contains(_domainTasks)) {
+        final tasks = _ref
+            .read(tasksProvider)
+            .where((t) => t.projectId == projectId)
+            .toList();
+        for (final t in tasks) {
+          _lastLocalWrite['saha_tasks|${t.id}||'] = now;
+        }
+        jobs.add(
+          _rows.upsertPayloadBatch(
+            table: 'saha_tasks',
+            projectId: projectId,
+            userId: user.id,
+            rows: [
+              for (final t in tasks)
+                (id: t.id, payload: t.toCloudJson(), date: null),
+            ],
+          ),
+        );
       }
-      await _rows.upsertPayloadBatch(
-        table: 'saha_daily_reports',
-        projectId: projectId,
-        userId: user.id,
-        rows: [
-          for (final r in reports)
-            (id: r.id, payload: r.toJson(), date: r.date),
-        ],
-      );
 
-      final yev = _ref
-          .read(yevmiyeliIsProvider)
-          .where((e) => e.projectId == projectId)
-          .toList();
-      for (final e in yev) {
-        _lastLocalWrite['saha_yevmiyeli|${e.id}||'] = now;
+      if (domains.contains(_domainDailyReports)) {
+        final reports = _ref
+            .read(dailyReportsProvider)
+            .where((r) => r.projectId == projectId)
+            .toList();
+        for (final r in reports) {
+          _lastLocalWrite['saha_daily_reports|${r.id}||'] = now;
+        }
+        jobs.add(
+          _rows.upsertPayloadBatch(
+            table: 'saha_daily_reports',
+            projectId: projectId,
+            userId: user.id,
+            rows: [
+              for (final r in reports)
+                (id: r.id, payload: r.toJson(), date: r.date),
+            ],
+          ),
+        );
       }
-      await _rows.upsertPayloadBatch(
-        table: 'saha_yevmiyeli',
-        projectId: projectId,
-        userId: user.id,
-        rows: [
-          for (final e in yev) (id: e.id, payload: e.toJson(), date: null),
-        ],
-      );
 
-      final teams = _ref
-          .read(uninsuredTeamsProvider)
-          .where((e) => e.projectId == projectId)
-          .toList();
-      for (final e in teams) {
-        _lastLocalWrite['saha_uninsured_teams|${e.id}||'] = now;
+      if (domains.contains(_domainYevmiyeli)) {
+        final yev = _ref
+            .read(yevmiyeliIsProvider)
+            .where((e) => e.projectId == projectId)
+            .toList();
+        for (final e in yev) {
+          _lastLocalWrite['saha_yevmiyeli|${e.id}||'] = now;
+        }
+        jobs.add(
+          _rows.upsertPayloadBatch(
+            table: 'saha_yevmiyeli',
+            projectId: projectId,
+            userId: user.id,
+            rows: [
+              for (final e in yev)
+                (id: e.id, payload: e.toJson(), date: null),
+            ],
+          ),
+        );
       }
-      await _rows.upsertPayloadBatch(
-        table: 'saha_uninsured_teams',
-        projectId: projectId,
-        userId: user.id,
-        rows: [
-          for (final e in teams) (id: e.id, payload: e.toJson(), date: null),
-        ],
-      );
 
-      // Geriye dönük uyumluluk — snapshot da güncelle.
-      await _ref.read(collaborationControllerProvider).pushDomainSnapshotsOnly(
-            projectId,
-          );
+      if (domains.contains(_domainUninsured)) {
+        final teams = _ref
+            .read(uninsuredTeamsProvider)
+            .where((e) => e.projectId == projectId)
+            .toList();
+        for (final e in teams) {
+          _lastLocalWrite['saha_uninsured_teams|${e.id}||'] = now;
+        }
+        jobs.add(
+          _rows.upsertPayloadBatch(
+            table: 'saha_uninsured_teams',
+            projectId: projectId,
+            userId: user.id,
+            rows: [
+              for (final e in teams)
+                (id: e.id, payload: e.toJson(), date: null),
+            ],
+          ),
+        );
+      }
+
+      if (jobs.isNotEmpty) {
+        await Future.wait(jobs);
+      }
+
+      // Tam senkron (manuel) — geriye dönük snapshot. Otomatik flush'ta atlanır.
+      if (includeSnapshots) {
+        await _ref
+            .read(collaborationControllerProvider)
+            .pushDomainSnapshotsOnly(projectId);
+      }
 
       _ref.read(sahaSyncStateProvider.notifier).set(
             SahaSyncState(
@@ -419,14 +491,24 @@ class SahaRealtimeSyncController {
     }
   }
 
-  /// Yerel yazma sonrası debounced push (tek satır / batch).
-  void schedulePushAfterLocalWrite(String projectId) {
+  /// Yerel yazma sonrası debounced push — yalnız kirli domain.
+  void schedulePushAfterLocalWrite(
+    String projectId, {
+    Set<String> domains = const {},
+  }) {
     if (_applyingRemote) return;
     if (!SupabaseService.isReady) return;
     if (!_canEdit(projectId)) return;
 
+    final bucket = _dirtyDomains.putIfAbsent(projectId, () => <String>{});
+    if (domains.isEmpty) {
+      bucket.addAll(_allDomains);
+    } else {
+      bucket.addAll(domains);
+    }
+
     _pushTimers[projectId]?.cancel();
-    _pushTimers[projectId] = Timer(const Duration(milliseconds: 350), () {
+    _pushTimers[projectId] = Timer(const Duration(milliseconds: 280), () {
       unawaited(_flushLocalWrites(projectId));
     });
   }
@@ -435,11 +517,17 @@ class SahaRealtimeSyncController {
     final user = _ref.read(authProvider).user;
     if (user == null || !SupabaseService.isReady) return;
     if (!_canEdit(projectId)) return;
+    final dirty = _dirtyDomains.remove(projectId);
+    if (dirty == null || dirty.isEmpty) return;
     try {
-      // Son yazılan domainleri tam proje push ile güvenceye al (basit + doğru).
-      // Debounce sayesinde toplu girişlerde tek istek olur.
-      await pushProject(projectId);
+      await pushProject(
+        projectId,
+        onlyDomains: dirty,
+        includeSnapshots: false,
+      );
     } catch (e, st) {
+      // Başarısız domainleri tekrar kuyruğa al.
+      _dirtyDomains.putIfAbsent(projectId, () => <String>{}).addAll(dirty);
       debugPrint('SahaRealtimeSync flush: $e\n$st');
       _ref.read(sahaSyncStateProvider.notifier).set(
             SahaSyncState(

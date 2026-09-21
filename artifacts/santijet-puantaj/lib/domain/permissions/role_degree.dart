@@ -3,7 +3,7 @@ import '../entities/person.dart';
 
 /// Meslek → rol derecesi.
 ///
-/// 1. derece: görev oluşturup atayabilir; atadığı görevleri görür.
+/// 1. derece: görev oluşturup atayabilir; projedeki tüm görevleri görür.
 /// 2. derece (ve altı): yalnızca kendisine atanan görevleri görür
 /// (ör. Formen, Saha Mühendisi’ne atanan görevi görmez).
 abstract final class RoleDegree {

@@ -386,7 +386,14 @@ class TasksNotifier extends StateNotifier<List<SiteTask>> {
   void replaceAllQuiet(List<SiteTask> items) {
     suppressCloud = true;
     try {
-      state = _promoteStartedTasks(List<SiteTask>.from(items));
+      final byId = {for (final t in state) t.id: t};
+      final merged = [
+        for (final remote in items)
+          byId.containsKey(remote.id)
+              ? _mergeRemoteTask(byId[remote.id]!, remote)
+              : remote,
+      ];
+      state = _promoteStartedTasks(List<SiteTask>.from(merged));
       _writeList(_box, _key, state.map((e) => e.toJson()).toList());
     } finally {
       suppressCloud = false;
@@ -397,18 +404,27 @@ class TasksNotifier extends StateNotifier<List<SiteTask>> {
     suppressCloud = true;
     try {
       final i = state.indexWhere((t) => t.id == task.id);
+      final merged = i >= 0 ? _mergeRemoteTask(state[i], task) : task;
       if (i >= 0) {
         state = [
           for (var j = 0; j < state.length; j++)
-            if (j == i) task else state[j],
+            if (j == i) merged else state[j],
         ];
       } else {
-        state = [...state, task];
+        state = [...state, merged];
       }
       _writeList(_box, _key, state.map((e) => e.toJson()).toList());
     } finally {
       suppressCloud = false;
     }
+  }
+
+  /// Buluttan gelen görevde foto base64 yoksa yerel görselleri koru.
+  static SiteTask _mergeRemoteTask(SiteTask local, SiteTask remote) {
+    final remoteHasBytes =
+        remote.photos.any((p) => p.dataBase64.trim().isNotEmpty);
+    if (remoteHasBytes || local.photos.isEmpty) return remote;
+    return remote.copyWith(photos: local.photos);
   }
 
   void deleteRemote(String id) {

@@ -249,12 +249,11 @@ class SiteTask extends Equatable {
   DateTime? get actualDeliveryDateTime =>
       PuantajDate.tryParse(actualDeliveryDate);
 
-  /// Görüntüleyen yalnızca atayan veya atanan ise görür.
+  /// Görünürlük — 1. derece tüm proje görevlerini görür (çok kullanıcılı senkron);
+  /// saha personeli yalnız kendisine atananları görür.
   bool isVisibleTo(Person viewer) {
-    if (assigneePersonId.isNotEmpty || assignerPersonId.isNotEmpty) {
-      return viewer.id == assigneePersonId || viewer.id == assignerPersonId;
-    }
-    return RoleDegree.isFirstDegree(viewer);
+    if (RoleDegree.isFirstDegree(viewer)) return true;
+    return assigneePersonId.isNotEmpty && viewer.id == assigneePersonId;
   }
 
   bool isAssigner(Person person) =>
@@ -344,6 +343,22 @@ class SiteTask extends Equatable {
         'createdAt': createdAt?.toIso8601String(),
         'updatedAt': updatedAt?.toIso8601String(),
       };
+
+  /// Bulut satırı — base64 fotoğraflar hariç (payload şişmesini önler).
+  Map<String, dynamic> toCloudJson() {
+    final json = toJson();
+    json['photos'] = [
+      for (final p in photos)
+        {
+          'id': p.id,
+          'mimeType': p.mimeType,
+          'createdAt': p.createdAt?.toIso8601String(),
+          'phase': p.phase.storage,
+          'dataBase64': '',
+        },
+    ];
+    return json;
+  }
 
   factory SiteTask.fromJson(Map<String, dynamic> json) {
     final rawPhotos = json['photos'];

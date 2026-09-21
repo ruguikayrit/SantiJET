@@ -958,8 +958,6 @@ class _HomeSyncBar extends ConsumerWidget {
     final isLive = sync.phase == SahaSyncPhase.live;
     final isSyncing = sync.phase == SahaSyncPhase.syncing || busy;
     final isError = sync.phase == SahaSyncPhase.error;
-    final isOffline = sync.phase == SahaSyncPhase.offline ||
-        sync.phase == SahaSyncPhase.idle;
 
     final accent = isError
         ? theme.colorScheme.error
@@ -1053,36 +1051,9 @@ class _HomeSyncBar extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(width: 8),
-                FilledButton.tonal(
+                _SyncActionButton(
+                  busy: isSyncing,
                   onPressed: isSyncing ? null : onSync,
-                  style: FilledButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 10,
-                    ),
-                    minimumSize: const Size(0, 40),
-                    visualDensity: VisualDensity.compact,
-                    foregroundColor: isOffline || isError
-                        ? AppColors.electricBlue
-                        : accent,
-                  ),
-                  child: isSyncing
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2.2),
-                        )
-                      : const Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.sync_rounded, size: 18),
-                            SizedBox(width: 6),
-                            Text(
-                              'Senkronize et',
-                              style: TextStyle(fontWeight: FontWeight.w600),
-                            ),
-                          ],
-                        ),
                 ),
               ],
             ),
@@ -1111,7 +1082,68 @@ class _HomeSyncBar extends ConsumerWidget {
   }
 }
 
-class _SyncStatusChip extends StatelessWidget {
+/// Canlı kartına uyumlu senkron aksiyonu — cam / outline pill.
+class _SyncActionButton extends StatelessWidget {
+  const _SyncActionButton({
+    required this.busy,
+    required this.onPressed,
+  });
+
+  final bool busy;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final ink = AppColors.electricBlueLight;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(18),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          height: 34,
+          padding: const EdgeInsets.symmetric(horizontal: 11),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(18),
+            color: ink.withValues(alpha: busy ? 0.08 : 0.14),
+            border: Border.all(
+              color: ink.withValues(alpha: busy ? 0.22 : 0.42),
+            ),
+          ),
+          child: busy
+              ? SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: ink,
+                  ),
+                )
+              : Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.sync_rounded, size: 15, color: ink),
+                    const SizedBox(width: 5),
+                    Text(
+                      'Senkron',
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: ink,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.2,
+                        height: 1,
+                      ),
+                    ),
+                  ],
+                ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SyncStatusChip extends StatefulWidget {
   const _SyncStatusChip({
     required this.label,
     required this.color,
@@ -1125,7 +1157,46 @@ class _SyncStatusChip extends StatelessWidget {
   final bool spinning;
 
   @override
+  State<_SyncStatusChip> createState() => _SyncStatusChipState();
+}
+
+class _SyncStatusChipState extends State<_SyncStatusChip>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _pulse;
+
+  @override
+  void initState() {
+    super.initState();
+    _pulse = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1600),
+    );
+    if (widget.pulsing) {
+      _pulse.repeat(reverse: true);
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant _SyncStatusChip oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.pulsing && !_pulse.isAnimating) {
+      _pulse.repeat(reverse: true);
+    } else if (!widget.pulsing && _pulse.isAnimating) {
+      _pulse
+        ..stop()
+        ..value = 0;
+    }
+  }
+
+  @override
+  void dispose() {
+    _pulse.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final color = widget.color;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
       decoration: BoxDecoration(
@@ -1136,7 +1207,7 @@ class _SyncStatusChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (spinning)
+          if (widget.spinning)
             SizedBox(
               width: 8,
               height: 8,
@@ -1145,6 +1216,56 @@ class _SyncStatusChip extends StatelessWidget {
                 color: color,
               ),
             )
+          else if (widget.pulsing)
+            AnimatedBuilder(
+              animation: _pulse,
+              builder: (context, _) {
+                final t = Curves.easeInOut.transform(_pulse.value);
+                final glow = 0.25 + (t * 0.55);
+                final core = 0.55 + (t * 0.45);
+                final spread = 1.0 + (t * 3.5);
+                final blur = 3.0 + (t * 7.0);
+                return SizedBox(
+                  width: 14,
+                  height: 14,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Container(
+                        width: 14,
+                        height: 14,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: color.withValues(alpha: glow * 0.35),
+                          boxShadow: [
+                            BoxShadow(
+                              color: color.withValues(alpha: glow),
+                              blurRadius: blur,
+                              spreadRadius: spread * 0.35,
+                            ),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        width: 7,
+                        height: 7,
+                        decoration: BoxDecoration(
+                          color: color.withValues(alpha: core),
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: color.withValues(alpha: glow),
+                              blurRadius: 4,
+                              spreadRadius: 0.2,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            )
           else
             Container(
               width: 8,
@@ -1152,20 +1273,11 @@ class _SyncStatusChip extends StatelessWidget {
               decoration: BoxDecoration(
                 color: color,
                 shape: BoxShape.circle,
-                boxShadow: pulsing
-                    ? [
-                        BoxShadow(
-                          color: color.withValues(alpha: 0.55),
-                          blurRadius: 6,
-                          spreadRadius: 0.5,
-                        ),
-                      ]
-                    : null,
               ),
             ),
           const SizedBox(width: 7),
           Text(
-            label,
+            widget.label,
             style: TextStyle(
               color: color,
               fontWeight: FontWeight.w700,

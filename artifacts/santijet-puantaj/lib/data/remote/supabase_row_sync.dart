@@ -124,20 +124,25 @@ class SupabaseRowSync {
     required List<({String id, Map<String, dynamic> payload, String? date})>
         rows,
     required String userId,
+    int chunkSize = 40,
   }) async {
     if (rows.isEmpty) return;
     final now = DateTime.now().toUtc().toIso8601String();
-    await _client.from(table).upsert([
-      for (final r in rows)
-        {
-          'id': r.id,
-          'project_id': projectId,
-          'payload': r.payload,
-          'updated_at': now,
-          'updated_by': userId,
-          if (r.date != null) 'date': r.date,
-        },
-    ]);
+    for (var i = 0; i < rows.length; i += chunkSize) {
+      final end = (i + chunkSize < rows.length) ? i + chunkSize : rows.length;
+      final slice = rows.sublist(i, end);
+      await _client.from(table).upsert([
+        for (final r in slice)
+          {
+            'id': r.id,
+            'project_id': projectId,
+            'payload': r.payload,
+            'updated_at': now,
+            'updated_by': userId,
+            if (r.date != null) 'date': r.date,
+          },
+      ]);
+    }
   }
 
   Future<void> deletePayloadRow({

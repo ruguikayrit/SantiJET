@@ -76,9 +76,28 @@ void main() {
       expect(task.isVisibleTo(usta), isTrue);
       expect(task.isVisibleTo(formen), isFalse);
     });
+
+    test('başka 1. derece üye tüm görevleri görür', () {
+      final otherMuhendis = Person(
+        id: 'm2',
+        projectId: 'p',
+        name: 'Ayşe',
+        profession: 'Şantiye Şefi',
+      );
+      const task = SiteTask(
+        id: 't1',
+        projectId: 'p',
+        title: 'Metraj kontrol',
+        assignerPersonId: 'm1',
+        assignerName: 'Ali',
+        assigneePersonId: 'u1',
+        assignee: 'Can',
+      );
+      expect(task.isVisibleTo(otherMuhendis), isTrue);
+    });
   });
 
-  group('TasksNotifier.applyStatus', () {
+  group('TasksNotifier.applyStatusChange', () {
     test('tamamlanınca gerçek teslim tarihi yazar', () {
       const task = SiteTask(
         id: 't1',
@@ -86,17 +105,25 @@ void main() {
         title: 'WC aksesuar',
         status: TaskStatus.todo,
       );
-      final done = TasksNotifier.applyStatus(task, TaskStatus.done);
+      final done = TasksNotifier.applyStatusChange(
+        task,
+        status: TaskStatus.done,
+        actualDeliveryDate: PuantajDate.today(),
+      );
       expect(done.status, TaskStatus.done);
       expect(done.actualDeliveryDate, PuantajDate.today());
 
-      final again = TasksNotifier.applyStatus(
+      final again = TasksNotifier.applyStatusChange(
         done.copyWith(actualDeliveryDate: '10.08.2026'),
-        TaskStatus.done,
+        status: TaskStatus.done,
+        actualDeliveryDate: '10.08.2026',
       );
       expect(again.actualDeliveryDate, '10.08.2026');
 
-      final reopen = TasksNotifier.applyStatus(again, TaskStatus.todo);
+      final reopen = TasksNotifier.applyStatusChange(
+        again,
+        status: TaskStatus.todo,
+      );
       expect(reopen.status, TaskStatus.todo);
       expect(reopen.actualDeliveryDate, isEmpty);
     });

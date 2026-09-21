@@ -449,7 +449,7 @@ class CollaborationController {
     final tasks = _ref
         .read(tasksProvider)
         .where((t) => t.projectId == projectId)
-        .map((e) => e.toJson())
+        .map((e) => e.toCloudJson())
         .toList();
     final reports = _ref
         .read(dailyReportsProvider)
