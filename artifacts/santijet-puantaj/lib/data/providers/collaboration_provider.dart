@@ -365,6 +365,8 @@ class CollaborationController {
     }
   }
 
+  /// Üyelik listesini günceller — domain verisi (puantaj/imalat/görev) çekmez.
+  /// Domain senkronu yalnız aktif proje için [SahaRealtimeSyncController] yapar.
   Future<void> pullMyProjects() async {
     final user = _ref.read(authProvider).user;
     if (user == null) return;
@@ -376,10 +378,6 @@ class CollaborationController {
 
     _ref.read(projectsProvider.notifier).mergeProjects(rows.map((e) => e.$1));
     _ref.read(projectMembersListProvider.notifier).merge(rows.map((e) => e.$2));
-
-    for (final (project, _) in rows) {
-      await pullDomain(project.id);
-    }
   }
 
   Future<void> refreshMembers(String projectId) async {
