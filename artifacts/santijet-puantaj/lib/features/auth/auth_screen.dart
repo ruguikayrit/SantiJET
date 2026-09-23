@@ -5,8 +5,13 @@ import 'package:go_router/go_router.dart';
 import '../../core/config/supabase_config.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/utils/text_format.dart';
+import '../../data/providers/active_operator_provider.dart';
+import '../../data/providers/app_data_provider.dart';
 import '../../data/providers/auth_provider.dart';
+import '../../data/providers/collaboration_provider.dart';
 import '../../data/remote/supabase_service.dart';
+import '../../domain/enums/project_role.dart';
+import '../../domain/permissions/role_degree.dart';
 
 class AuthScreen extends ConsumerStatefulWidget {
   const AuthScreen({super.key});
@@ -77,6 +82,34 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     }
   }
 
+  String _membershipTypeLabel() {
+    final membership = ref.watch(activeProjectMembershipProvider);
+    if (membership != null) return membership.role.label;
+
+    final project = ref.watch(activeProjectProvider);
+    final userId = ref.watch(authProvider).user?.id;
+    if (project != null &&
+        userId != null &&
+        project.ownerId != null &&
+        project.ownerId == userId) {
+      return ProjectRole.owner.label;
+    }
+    if (project != null) return 'Yerel';
+    return '—';
+  }
+
+  String _dutyLabel() {
+    final operator = ref.watch(activeOperatorProvider);
+    if (operator == null) return '—';
+    return RoleDegree.isFirstDegree(operator) ? '1. Derece' : 'Saha';
+  }
+
+  String _professionLabel() {
+    final profession = ref.watch(activeOperatorProvider)?.profession.trim() ?? '';
+    if (profession.isEmpty) return '—';
+    return titleCaseTr(profession);
+  }
+
   @override
   Widget build(BuildContext context) {
     final auth = ref.watch(authProvider);
@@ -93,10 +126,15 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
           padding: const EdgeInsets.all(AppSpacing.lg),
           children: [
             ListTile(
-              leading: const Icon(Icons.account_circle),
-              title: Text(auth.user!.displayName),
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.account_circle, size: 40),
+              title: Text(titleCaseTr(auth.user!.displayName)),
               subtitle: Text(auth.user!.email),
             ),
+            const SizedBox(height: AppSpacing.sm),
+            _AccountInfoRow(label: 'Meslek', value: _professionLabel()),
+            _AccountInfoRow(label: 'Görevi', value: _dutyLabel()),
+            _AccountInfoRow(label: 'Üyelik tipi', value: _membershipTypeLabel()),
             const SizedBox(height: AppSpacing.md),
             FilledButton(
               onPressed: () async {
@@ -170,6 +208,43 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
               _register
                   ? 'Zaten hesabım var — giriş yap'
                   : 'Hesap oluştur',
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AccountInfoRow extends StatelessWidget {
+  const _AccountInfoRow({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 110,
+            child: Text(
+              label,
+              style: theme.textTheme.labelLarge?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: theme.textTheme.bodyLarge?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
         ],

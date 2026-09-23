@@ -266,6 +266,21 @@ class _HomeTaskSummaryDialog extends ConsumerWidget {
                 style: theme.textTheme.bodyMedium,
               ),
             ],
+            if (task.notes.trim().isNotEmpty) ...[
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                'Notlar / Gelişmeler',
+                style: theme.textTheme.labelMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                task.notes.trim(),
+                style: theme.textTheme.bodyMedium,
+              ),
+            ],
           ],
         ),
       ),

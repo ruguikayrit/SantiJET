@@ -171,6 +171,7 @@ class SiteTask extends Equatable {
     required this.projectId,
     required this.title,
     this.description = '',
+    this.notes = '',
     this.category = '',
     this.tag = '',
     this.assignee = '',
@@ -194,6 +195,9 @@ class SiteTask extends Equatable {
   final String projectId;
   final String title;
   final String description;
+
+  /// Saha notları / gelişmeler — açıklamadan ayrı serbest metin.
+  final String notes;
 
   /// Kullanıcı tanımlı kategori (ör. Satın Alma, Saha, Ofis).
   final String category;
@@ -267,6 +271,7 @@ class SiteTask extends Equatable {
     String? projectId,
     String? title,
     String? description,
+    String? notes,
     String? category,
     String? tag,
     String? assignee,
@@ -290,6 +295,7 @@ class SiteTask extends Equatable {
       projectId: projectId ?? this.projectId,
       title: title ?? this.title,
       description: description ?? this.description,
+      notes: notes ?? this.notes,
       category: category ?? this.category,
       tag: tag ?? this.tag,
       assignee: assignee ?? this.assignee,
@@ -323,6 +329,7 @@ class SiteTask extends Equatable {
         'projectId': projectId,
         'title': title,
         'description': description,
+        'notes': notes,
         'category': category,
         'tag': tag,
         'assignee': assignee,
@@ -375,6 +382,7 @@ class SiteTask extends Equatable {
       projectId: json['projectId'] as String? ?? '',
       title: json['title'] as String? ?? '',
       description: json['description'] as String? ?? '',
+      notes: json['notes'] as String? ?? '',
       category: json['category'] as String? ?? '',
       tag: json['tag'] as String? ?? '',
       assignee: json['assignee'] as String? ?? '',
@@ -406,6 +414,7 @@ class SiteTask extends Equatable {
         projectId,
         title,
         description,
+        notes,
         category,
         tag,
         assignee,

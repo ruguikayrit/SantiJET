@@ -101,6 +101,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
       [
         task.title,
         task.description,
+        task.notes,
         task.category,
         task.tag,
         TaskTagCatalog.cardLabel(task.tag),
@@ -424,6 +425,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
 
     final titleCtrl = TextEditingController(text: existing?.title ?? '');
     final descCtrl = TextEditingController(text: existing?.description ?? '');
+    final notesCtrl = TextEditingController(text: existing?.notes ?? '');
     var earliestStart = existing?.earliestStart ?? '';
     var latestDelivery = existing?.dueDate ?? '';
     var category = existing?.category.trim() ?? '';
@@ -629,6 +631,15 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                       enabled: canEditFields,
                       decoration: const InputDecoration(
                         labelText: 'Açıklama',
+                      ),
+                      maxLines: 3,
+                      textCapitalization: TextCapitalization.sentences,
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    TextField(
+                      controller: notesCtrl,
+                      decoration: const InputDecoration(
+                        labelText: 'Notlar / Gelişmeler',
                       ),
                       maxLines: 3,
                       textCapitalization: TextCapitalization.sentences,
@@ -1502,8 +1513,10 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
 
     final title = titleCtrl.text.trim();
     final description = descCtrl.text.trim();
+    final notes = notesCtrl.text.trim();
     titleCtrl.dispose();
     descCtrl.dispose();
+    notesCtrl.dispose();
     if (saved != true ||
         title.isEmpty ||
         assignee == null ||
@@ -1521,6 +1534,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
             projectId: project.id,
             title: title,
             description: description,
+            notes: notes,
             category: category,
             tag: tag,
             earliestStart: earliestStart,
@@ -1535,6 +1549,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
             existing.copyWith(
               title: title,
               description: description,
+              notes: notes,
               category: category,
               tag: tag,
               earliestStart: earliestStart,
@@ -1552,7 +1567,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
           );
     } else {
       ref.read(tasksProvider.notifier).upsert(
-            existing.copyWith(photos: photos),
+            existing.copyWith(photos: photos, notes: notes),
           );
     }
   }
@@ -1965,6 +1980,23 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                                       const SizedBox(height: 6),
                                       Text(
                                         task.description,
+                                        style: theme.textTheme.bodyMedium,
+                                      ),
+                                    ],
+                                    if (task.notes.trim().isNotEmpty) ...[
+                                      const SizedBox(height: 6),
+                                      Text(
+                                        'Notlar / Gelişmeler',
+                                        style: theme.textTheme.labelMedium
+                                            ?.copyWith(
+                                          fontWeight: FontWeight.w700,
+                                          color: theme
+                                              .colorScheme.onSurfaceVariant,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        task.notes.trim(),
                                         style: theme.textTheme.bodyMedium,
                                       ),
                                     ],

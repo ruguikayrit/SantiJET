@@ -7,6 +7,7 @@ import '../../core/design_system/sj_card.dart';
 import '../../core/routing/app_routes.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
+import '../../core/theme/app_typography.dart';
 import '../../core/theme/theme_mode_provider.dart';
 import '../../data/providers/app_data_provider.dart';
 import '../../data/providers/backup_provider.dart';
@@ -703,15 +704,25 @@ class _SettingsTile extends StatelessWidget {
   }
 }
 
-/// Hakkında — Demir AboutScreen düzeni, Puantaj metni.
+/// Hakkında — siyah zemin; logo altında Tipografi / SAHA.
 class AboutScreen extends StatelessWidget {
   const AboutScreen({super.key});
+
+  static const _bg = Colors.black;
+  static const _fg = Colors.white;
+  static const _fgMuted = Color(0xFFB0B0B0);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.canvas,
-      appBar: AppBar(title: const Text('Hakkında')),
+      backgroundColor: _bg,
+      appBar: AppBar(
+        title: const Text('Hakkında'),
+        backgroundColor: _bg,
+        foregroundColor: _fg,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+      ),
       body: Padding(
         padding: const EdgeInsets.all(AppSpacing.md),
         child: Column(
@@ -723,27 +734,47 @@ class AboutScreen extends StatelessWidget {
               fit: BoxFit.contain,
               filterQuality: FilterQuality.high,
             ),
-            const SizedBox(height: 4),
-            Text(
-              AppInfo.displayName,
-              style: Theme.of(context).textTheme.headlineLarge,
-            ),
             const SizedBox(height: 8),
             Text(
+              'Tipografi',
+              style: AppTypography.displayMedium.copyWith(
+                color: _fg,
+                letterSpacing: 2,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              AppInfo.productLabel,
+              style: AppTypography.displayLarge.copyWith(
+                color: AppColors.electricBlue,
+                letterSpacing: 6,
+                fontSize: 28,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 12),
+            Text(
               'Versiyon ${AppInfo.version}',
-              style: Theme.of(context).textTheme.bodyMedium,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: _fgMuted,
+                  ),
             ),
             const SizedBox(height: 24),
             Text(
               'Saha operasyonu, günlük rapor, personel devam, yevmiye, '
               'imalat ve verim takibi. ${AppInfo.tagline}',
-              style: Theme.of(context).textTheme.bodyMedium,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: _fgMuted,
+                  ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),
             Text(
               'Destek: ${AppInfo.supportEmail}',
-              style: Theme.of(context).textTheme.labelMedium,
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                    color: _fgMuted,
+                  ),
               textAlign: TextAlign.center,
             ),
           ],
