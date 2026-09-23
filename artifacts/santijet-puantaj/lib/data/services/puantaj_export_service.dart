@@ -128,7 +128,7 @@ class PuantajExportService {
             _matrixTable(report.visual)
           else
             _dailyTable(report.visual),
-          if (report.plainTable && report.summaryLines.isNotEmpty) ...[
+          if (report.summaryLines.isNotEmpty) ...[
             pw.SizedBox(height: 10),
             for (final line in report.summaryLines)
               pw.Text(
@@ -314,16 +314,18 @@ class PuantajExportService {
   pw.Widget _matrixTable(PuantajReportVisual visual) {
     final dayCount = visual.dayHeaders.length;
     final statusColumns = visual.effectiveStatusColumns;
-    // A4 landscape ~842pt kullanılabilir; isim + günler + durum özetleri.
-    const nameW = 72.0;
-    const summaryW = 29.0;
-    const totalW = 34.0;
+    // A4 landscape ~842pt kullanılabilir; isim + günler + durum özetleri + mesai.
+    const nameW = 68.0;
+    const summaryW = 28.0;
+    const overtimeW = 32.0;
+    const totalW = 32.0;
     final summaryTotalW = statusColumns.length * summaryW;
     final dayW = dayCount <= 0
         ? 14.0
-        : ((842 - 36 - nameW - summaryTotalW - totalW) / dayCount)
+        : ((842 - 36 - nameW - summaryTotalW - overtimeW - totalW) / dayCount)
             .clamp(8.0, 22.0);
-    final tableW = nameW + dayCount * dayW + summaryTotalW + totalW;
+    final tableW =
+        nameW + dayCount * dayW + summaryTotalW + overtimeW + totalW;
 
     pw.Widget dayCell(pw.Widget child) => pw.SizedBox(
           width: dayW,
@@ -334,11 +336,14 @@ class PuantajExportService {
           child: pw.Center(child: child),
         );
     final statusTotals = List<int>.filled(statusColumns.length, 0);
+    var overtimeTotal = 0.0;
     for (final company in visual.companies) {
       for (final row in company.rows) {
         for (var i = 0; i < row.statusCounts.length; i++) {
           statusTotals[i] += row.statusCounts[i];
         }
+        final ot = double.tryParse(row.overtime.replaceAll(',', '.'));
+        if (ot != null) overtimeTotal += ot;
       }
     }
     final generalTotal = statusTotals.asMap().entries.fold<int>(
@@ -348,6 +353,12 @@ class PuantajExportService {
             return status.countsInGeneralTotal ? sum + entry.value : sum;
           },
         );
+
+    String mesaiCell(String raw) {
+      final t = raw.trim();
+      if (t.isEmpty || t == '0') return '—';
+      return t;
+    }
 
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
@@ -393,6 +404,14 @@ class PuantajExportService {
                 ),
               ),
             pw.SizedBox(
+              width: overtimeW,
+              child: pw.Text(
+                'Mesai\n(sa)',
+                textAlign: pw.TextAlign.center,
+                style: const pw.TextStyle(fontSize: 6.5, color: _inkMuted),
+              ),
+            ),
+            pw.SizedBox(
               width: totalW,
               child: pw.Text(
                 'Genel\nToplam',
@@ -431,24 +450,10 @@ class PuantajExportService {
                     width: nameW,
                     child: pw.Padding(
                       padding: const pw.EdgeInsets.symmetric(horizontal: 2),
-                      child: pw.Column(
-                        crossAxisAlignment: pw.CrossAxisAlignment.start,
-                        children: [
-                          pw.Text(
-                            row.name,
-                            maxLines: 2,
-                            style: const pw.TextStyle(fontSize: 7, color: _ink),
-                          ),
-                          for (final line in row.employmentDateLines)
-                            pw.Text(
-                              line,
-                              maxLines: 1,
-                              style: const pw.TextStyle(
-                                fontSize: 5.5,
-                                color: _inkMuted,
-                              ),
-                            ),
-                        ],
+                      child: pw.Text(
+                        row.name,
+                        maxLines: 2,
+                        style: const pw.TextStyle(fontSize: 7, color: _ink),
                       ),
                     ),
                   ),
@@ -468,6 +473,20 @@ class PuantajExportService {
                         ),
                       ),
                     ),
+                  pw.SizedBox(
+                    width: overtimeW,
+                    child: pw.Text(
+                      mesaiCell(row.overtime),
+                      textAlign: pw.TextAlign.center,
+                      style: pw.TextStyle(
+                        fontSize: 7,
+                        fontWeight: pw.FontWeight.bold,
+                        color: mesaiCell(row.overtime) == '—'
+                            ? _inkMuted
+                            : _electricBlue,
+                      ),
+                    ),
+                  ),
                   pw.SizedBox(
                     width: totalW,
                     child: pw.Text(
@@ -528,14 +547,32 @@ class PuantajExportService {
                   ),
                 ),
               pw.SizedBox(
-                width: totalW,
+                width: overtimeW,
                 child: pw.Text(
-                  '$generalTotal',
+                  overtimeTotal > 0
+                      ? (overtimeTotal == overtimeTotal.roundToDouble()
+                          ? overtimeTotal.toStringAsFixed(0)
+                          : overtimeTotal.toStringAsFixed(1))
+                      : '—',
                   textAlign: pw.TextAlign.center,
                   style: pw.TextStyle(
                     fontSize: 7,
                     fontWeight: pw.FontWeight.bold,
-                    color: _fromFlutter(AttendanceStatus.present.color),
+                    color: overtimeTotal > 0 ? _electricBlue : _inkMuted,
+                  ),
+                ),
+              ),
+              pw.SizedBox(
+                width: totalW,
+                child: pw.Text(
+                  generalTotal > 0 ? '$generalTotal' : '–',
+                  textAlign: pw.TextAlign.center,
+                  style: pw.TextStyle(
+                    fontSize: 7,
+                    fontWeight: pw.FontWeight.bold,
+                    color: generalTotal > 0
+                        ? _fromFlutter(AttendanceStatus.present.color)
+                        : _inkMuted,
                   ),
                 ),
               ),
@@ -547,9 +584,60 @@ class PuantajExportService {
   }
 
   pw.Widget _dailyTable(PuantajReportVisual visual) {
+    const nameFlex = 3;
+    const statusW = 64.0;
+    const numW = 40.0;
+    const noteW = 72.0;
+
+    pw.Widget headerCell(String text, {double? width, int flex = 0}) {
+      final child = pw.Text(
+        text,
+        textAlign: width != null ? pw.TextAlign.center : pw.TextAlign.left,
+        style: pw.TextStyle(
+          fontSize: 7,
+          fontWeight: pw.FontWeight.bold,
+          color: _electricBlue,
+        ),
+      );
+      if (width != null) {
+        return pw.SizedBox(width: width, child: pw.Center(child: child));
+      }
+      return pw.Expanded(flex: flex, child: child);
+    }
+
+    String hoursLabel(String raw) {
+      final t = raw.trim();
+      if (t.isEmpty || t == '0') return '—';
+      return '$t sa';
+    }
+
+    String mesaiLabel(String raw) {
+      final t = raw.trim();
+      if (t.isEmpty || t == '0') return '—';
+      return '$t sa';
+    }
+
     return pw.Column(
       crossAxisAlignment: pw.CrossAxisAlignment.start,
       children: [
+        pw.Container(
+          padding: const pw.EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+          decoration: const pw.BoxDecoration(
+            border: pw.Border(
+              bottom: pw.BorderSide(color: _rowBorder, width: 0.8),
+            ),
+          ),
+          child: pw.Row(
+            children: [
+              headerCell('Personel', flex: nameFlex),
+              headerCell('Durum', width: statusW + 20),
+              headerCell('Saat', width: numW),
+              headerCell('Mesai', width: numW),
+              headerCell('Adam-gün', width: numW + 8),
+              headerCell('Not', width: noteW),
+            ],
+          ),
+        ),
         for (final company in visual.companies) ...[
           pw.Container(
             width: double.infinity,
@@ -564,7 +652,6 @@ class PuantajExportService {
               ),
             ),
           ),
-          pw.SizedBox(height: 2),
           for (final row in company.rows)
             pw.Container(
               decoration: const pw.BoxDecoration(
@@ -578,7 +665,7 @@ class PuantajExportService {
                 crossAxisAlignment: pw.CrossAxisAlignment.center,
                 children: [
                   pw.Expanded(
-                    flex: 3,
+                    flex: nameFlex,
                     child: pw.Column(
                       crossAxisAlignment: pw.CrossAxisAlignment.start,
                       children: [
@@ -598,43 +685,83 @@ class PuantajExportService {
                               color: _inkMuted,
                             ),
                           ),
-                        for (final line in row.employmentDateLines)
-                          pw.Text(
-                            line,
-                            style: const pw.TextStyle(
-                              fontSize: 6.5,
-                              color: _inkMuted,
-                            ),
-                          ),
                       ],
                     ),
                   ),
-                  _statusBadge(
-                    row.statuses.isEmpty ? null : row.statuses.first,
-                    size: 14,
-                  ),
-                  pw.SizedBox(width: 6),
                   pw.SizedBox(
-                    width: 70,
-                    child: pw.Text(
-                      (row.statuses.isEmpty ? null : row.statuses.first)
-                              ?.label ??
-                          '—',
-                      style: const pw.TextStyle(fontSize: 8, color: _ink),
+                    width: statusW + 20,
+                    child: pw.Row(
+                      children: [
+                        _statusBadge(
+                          row.statuses.isEmpty ? null : row.statuses.first,
+                          size: 12,
+                        ),
+                        pw.SizedBox(width: 4),
+                        pw.Expanded(
+                          child: pw.Text(
+                            (row.statuses.isEmpty
+                                        ? null
+                                        : row.statuses.first)
+                                    ?.label ??
+                                '—',
+                            maxLines: 1,
+                            style: const pw.TextStyle(
+                              fontSize: 7.5,
+                              color: _ink,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   pw.SizedBox(
-                    width: 48,
+                    width: numW,
                     child: pw.Text(
-                      row.yevmiye.isEmpty ? '' : '${row.yevmiye} yv',
-                      textAlign: pw.TextAlign.right,
+                      hoursLabel(row.hours),
+                      textAlign: pw.TextAlign.center,
+                      style: pw.TextStyle(
+                        fontSize: 8,
+                        fontWeight: pw.FontWeight.bold,
+                        color: _ink,
+                      ),
+                    ),
+                  ),
+                  pw.SizedBox(
+                    width: numW,
+                    child: pw.Text(
+                      mesaiLabel(row.overtime),
+                      textAlign: pw.TextAlign.center,
+                      style: pw.TextStyle(
+                        fontSize: 8,
+                        fontWeight: pw.FontWeight.bold,
+                        color: mesaiLabel(row.overtime) == '—'
+                            ? _inkMuted
+                            : _electricBlue,
+                      ),
+                    ),
+                  ),
+                  pw.SizedBox(
+                    width: numW + 8,
+                    child: pw.Text(
+                      row.yevmiye.isEmpty || row.yevmiye == '0'
+                          ? '—'
+                          : '${row.yevmiye} yv',
+                      textAlign: pw.TextAlign.center,
                       style: const pw.TextStyle(fontSize: 8, color: _inkMuted),
+                    ),
+                  ),
+                  pw.SizedBox(
+                    width: noteW,
+                    child: pw.Text(
+                      row.note.trim().isEmpty ? '' : row.note,
+                      maxLines: 2,
+                      style: const pw.TextStyle(fontSize: 6.5, color: _inkMuted),
                     ),
                   ),
                 ],
               ),
             ),
-          pw.SizedBox(height: 8),
+          pw.SizedBox(height: 6),
         ],
       ],
     );

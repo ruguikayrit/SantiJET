@@ -638,7 +638,7 @@ abstract final class PuantajReportBuilder {
       'Çıkış',
       'Durum',
       'Saat',
-      'Mesai',
+      'Mesai\n(sa)',
       'Adam-gün',
       'Not',
     ];
@@ -649,6 +649,7 @@ abstract final class PuantajReportBuilder {
     };
     var none = 0;
     var totalAg = 0.0;
+    var totalOt = 0.0;
 
     for (final group in _grouped(people)) {
       final visualRows = <PuantajVisualPersonRow>[];
@@ -698,6 +699,7 @@ abstract final class PuantajReportBuilder {
         final ot = a?.overtimeHours ?? 0;
         final yev = a?.yevmiye ?? 0;
         totalAg += yev;
+        totalOt += ot;
         rows.add([
           p.name,
           group.company,
@@ -706,7 +708,7 @@ abstract final class PuantajReportBuilder {
           leaveLabel,
           status.label,
           hours.toString(),
-          _fmtNum(ot),
+          ot > 0 ? _fmtNum(ot) : '',
           _fmtNum(yev),
           a?.note ?? '',
         ]);
@@ -716,7 +718,7 @@ abstract final class PuantajReportBuilder {
             statuses: [status],
             team: p.team,
             hours: hours.toString(),
-            overtime: _fmtNum(ot),
+            overtime: ot > 0 ? _fmtNum(ot) : '',
             yevmiye: _fmtNum(yev),
             note: a?.note ?? '',
             hireDateLine: hireLine,
@@ -730,18 +732,23 @@ abstract final class PuantajReportBuilder {
       );
     }
 
+    final summary = _summaryLines(
+      counts: counts,
+      none: none,
+      totalAg: totalAg,
+      legend: false,
+      statusColumns: statusColumns,
+    );
+    if (totalOt > 0) {
+      summary.add('Toplam mesai: ${_fmtNum(totalOt)} sa');
+    }
+
     return PuantajReportData(
       title: 'Puantaj — Günlük',
       subtitle: '$projectName · $date',
       headers: headers,
       rows: rows,
-      summaryLines: _summaryLines(
-        counts: counts,
-        none: none,
-        totalAg: totalAg,
-        legend: false,
-        statusColumns: statusColumns,
-      ),
+      summaryLines: summary,
       landscape: false,
       fileStem: 'gunluk-${_fileDate(date)}',
       visual: PuantajReportVisual(
@@ -750,6 +757,7 @@ abstract final class PuantajReportBuilder {
         companies: visualCompanies,
         statusColumns: statusColumns,
       ),
+      sumColumnIndexes: const {7, 8},
     );
   }
 
@@ -782,6 +790,7 @@ abstract final class PuantajReportBuilder {
       'Çıkış',
       ...dayHeaders,
       for (final s in statusColumns) s.label,
+      'Mesai\n(sa)',
       'Genel Toplam',
     ];
     final rows = <List<String>>[];
@@ -791,12 +800,14 @@ abstract final class PuantajReportBuilder {
     };
     var noneCells = 0;
     var totalAg = 0.0;
+    var totalOt = 0.0;
     final footer = List<int>.filled(days.length, 0);
 
     for (final group in _grouped(people)) {
       final visualRows = <PuantajVisualPersonRow>[];
       for (final p in group.users) {
         var rowAg = 0.0;
+        var rowOt = 0.0;
         final cells = <String>[];
         final statuses = <AttendanceStatus?>[];
         final rowStatusCounts = <AttendanceStatus, int>{
@@ -822,6 +833,7 @@ abstract final class PuantajReportBuilder {
             counts[status] = (counts[status] ?? 0) + 1;
             rowStatusCounts[status] = (rowStatusCounts[status] ?? 0) + 1;
             rowAg += a?.yevmiye ?? 0;
+            rowOt += a?.overtimeHours ?? 0;
             cells.add(status.short);
             statuses.add(status);
             if (status.isWorkedDay) {
@@ -830,6 +842,7 @@ abstract final class PuantajReportBuilder {
           }
         }
         totalAg += rowAg;
+        totalOt += rowOt;
         final generalTotal = statusColumns
             .where((s) => s.countsInGeneralTotal)
             .fold<int>(0, (sum, s) => sum + (rowStatusCounts[s] ?? 0));
@@ -841,6 +854,7 @@ abstract final class PuantajReportBuilder {
           leaveLabel,
           ...cells,
           for (final s in statusColumns) '${rowStatusCounts[s] ?? 0}',
+          rowOt > 0 ? _fmtNum(rowOt) : '',
           '$generalTotal',
         ]);
         visualRows.add(
@@ -851,6 +865,7 @@ abstract final class PuantajReportBuilder {
               for (final s in statusColumns) rowStatusCounts[s] ?? 0,
             ],
             team: p.team,
+            overtime: rowOt > 0 ? _fmtNum(rowOt) : '',
             totalLabel: generalTotal > 0 ? '$generalTotal' : '–',
             yevmiye: _fmtNum(rowAg),
             hireDateLine: hireLine,
@@ -863,18 +878,23 @@ abstract final class PuantajReportBuilder {
       );
     }
 
+    final summary = _summaryLines(
+      counts: counts,
+      none: noneCells,
+      totalAg: totalAg,
+      legend: true,
+      statusColumns: statusColumns,
+    );
+    if (totalOt > 0) {
+      summary.add('Toplam mesai: ${_fmtNum(totalOt)} sa');
+    }
+
     return PuantajReportData(
       title: 'Puantaj — $periodLabel',
       subtitle: '$projectName · $rangeLabel',
       headers: headers,
       rows: rows,
-      summaryLines: _summaryLines(
-        counts: counts,
-        none: noneCells,
-        totalAg: totalAg,
-        legend: true,
-        statusColumns: statusColumns,
-      ),
+      summaryLines: summary,
       landscape: true,
       fileStem: fileStem,
       visual: PuantajReportVisual(
@@ -884,6 +904,7 @@ abstract final class PuantajReportBuilder {
         footerPresentCounts: footer,
         statusColumns: statusColumns,
       ),
+      sumColumnIndexes: {headers.length - 2},
     );
   }
 
