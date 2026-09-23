@@ -5,6 +5,7 @@ import '../../core/design_system/sj_status_badge.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_radii.dart';
 import '../../core/theme/app_spacing.dart';
+import '../../core/utils/text_format.dart';
 import '../../data/providers/active_operator_provider.dart';
 import '../../data/providers/tasks_provider.dart';
 import '../../domain/catalogs/task_tags.dart';
@@ -161,7 +162,10 @@ class _HomeTaskSummaryDialog extends ConsumerWidget {
 
     return AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: AppRadii.md),
-      title: Text(task.title, style: theme.textTheme.titleMedium),
+      title: Text(
+        upperCaseTr(task.title),
+        style: theme.textTheme.titleMedium,
+      ),
       content: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

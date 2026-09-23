@@ -52,6 +52,13 @@ void main() {
     expect(sentenceCaseTr('• çatıda yalıtım'), '• Çatıda yalıtım');
   });
 
+  test('upperCaseTr: Türkçe tüm harfleri büyütür', () {
+    expect(upperCaseTr('Aksesuar boya'), 'AKSESUAR BOYA');
+    expect(upperCaseTr('Alçıpan Kaplama'), 'ALÇIPAN KAPLAMA');
+    expect(upperCaseTr('ışık'), 'IŞIK');
+    expect(upperCaseTr('istanbul'), 'İSTANBUL');
+  });
+
   test('DailyReportPhoto.caption: kayıtta cümle biçimi', () {
     final photo = DailyReportPhoto(
       id: 'ph1',

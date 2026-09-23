@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/design_system/sj_card.dart';
 import '../../core/design_system/sj_empty_state.dart';
+import '../../core/design_system/sj_modal.dart';
 import '../../core/routing/app_routes.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_radii.dart';
@@ -18,6 +19,7 @@ import '../../data/providers/collaboration_provider.dart';
 import '../../data/providers/saha_realtime_sync_provider.dart';
 import '../../data/providers/tasks_provider.dart';
 import '../../domain/catalogs/task_tags.dart';
+import '../../domain/entities/person.dart';
 import '../../domain/entities/project.dart';
 import '../../domain/entities/site_task.dart';
 import '../../domain/enums/attendance_status.dart';
@@ -179,6 +181,135 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
+  void _showDailyPuantajStatusList({
+    required BuildContext context,
+    required String title,
+    required Color color,
+    required List<Person> people,
+  }) {
+    final theme = SJModal.sheetThemeOf(context);
+    final sorted = [...people]
+      ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => Theme(
+        data: theme,
+        child: Dialog(
+          backgroundColor: SJModal.sheetSurface,
+          shape: RoundedRectangleBorder(borderRadius: AppRadii.lg),
+          insetPadding: const EdgeInsets.symmetric(horizontal: 28, vertical: 48),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: 400,
+              maxHeight: MediaQuery.sizeOf(ctx).height * 0.62,
+            ),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: 10,
+                        height: 10,
+                        decoration: BoxDecoration(
+                          color: color,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          '$title · ${sorted.length}',
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        tooltip: 'Kapat',
+                        visualDensity: VisualDensity.compact,
+                        onPressed: () => Navigator.of(ctx).pop(),
+                        icon: const Icon(Icons.close_rounded, size: 20),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Bugünkü personel listesi',
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Flexible(
+                    child: sorted.isEmpty
+                        ? Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 28),
+                            child: Text(
+                              'Bu durumda personel yok.',
+                              textAlign: TextAlign.center,
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          )
+                        : ListView.separated(
+                            shrinkWrap: true,
+                            itemCount: sorted.length,
+                            separatorBuilder: (_, __) => Divider(
+                              height: 1,
+                              color: theme.dividerColor,
+                            ),
+                            itemBuilder: (context, i) {
+                              final p = sorted[i];
+                              final meta = [
+                                if (p.team.trim().isNotEmpty)
+                                  titleCaseTr(p.team),
+                                if (p.profession.trim().isNotEmpty)
+                                  titleCaseTr(p.profession),
+                              ].join(' · ');
+                              return ListTile(
+                                dense: true,
+                                contentPadding: EdgeInsets.zero,
+                                title: Text(
+                                  titleCaseTr(p.name),
+                                  style: theme.textTheme.titleSmall?.copyWith(
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                                subtitle: meta.isEmpty
+                                    ? null
+                                    : Text(
+                                        meta,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: theme.textTheme.labelSmall,
+                                      ),
+                              );
+                            },
+                          ),
+                  ),
+                  const SizedBox(height: 8),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton(
+                      onPressed: () => Navigator.of(ctx).pop(),
+                      child: const Text('Kapat'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final project = ref.watch(activeProjectProvider);
@@ -221,14 +352,25 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final todayRecords = attendance
         .where((a) => a.projectId == project.id && a.date == today)
         .toList();
-    final present = todayRecords
-        .where((a) => a.status == AttendanceStatus.present)
-        .length;
-    final half = todayRecords
-        .where((a) => a.status == AttendanceStatus.half)
-        .length;
+    final byPersonStatus = <String, AttendanceStatus>{
+      for (final a in todayRecords) a.personId: a.status,
+    };
+    final presentPeople = people
+        .where((p) => byPersonStatus[p.id] == AttendanceStatus.present)
+        .toList();
+    final halfPeople = people
+        .where((p) => byPersonStatus[p.id] == AttendanceStatus.half)
+        .toList();
     // Yok = kayıtlı personel − mevcut − yarım
-    final absent = (people.length - present - half).clamp(0, people.length);
+    final absentPeople = people
+        .where((p) {
+          final s = byPersonStatus[p.id];
+          return s != AttendanceStatus.present && s != AttendanceStatus.half;
+        })
+        .toList();
+    final present = presentPeople.length;
+    final half = halfPeople.length;
+    final absent = absentPeople.length;
     final overtimeHours =
         todayRecords.fold<double>(0, (sum, a) => sum + a.overtimeHours);
 
@@ -324,6 +466,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                     label: 'Mevcut',
                                     value: '$present',
                                     color: AttendanceStatus.present.color,
+                                    onTap: () => _showDailyPuantajStatusList(
+                                      context: context,
+                                      title: 'Mevcut',
+                                      color: AttendanceStatus.present.color,
+                                      people: presentPeople,
+                                    ),
                                   ),
                                 ),
                                 const SizedBox(width: AppSpacing.xs),
@@ -332,6 +480,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                     label: 'Yarım',
                                     value: '$half',
                                     color: AttendanceStatus.half.color,
+                                    onTap: () => _showDailyPuantajStatusList(
+                                      context: context,
+                                      title: 'Yarım',
+                                      color: AttendanceStatus.half.color,
+                                      people: halfPeople,
+                                    ),
                                   ),
                                 ),
                                 const SizedBox(width: AppSpacing.xs),
@@ -340,6 +494,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                     label: 'Yok',
                                     value: '$absent',
                                     color: AttendanceStatus.absent.color,
+                                    onTap: () => _showDailyPuantajStatusList(
+                                      context: context,
+                                      title: 'Yok',
+                                      color: AttendanceStatus.absent.color,
+                                      people: absentPeople,
+                                    ),
                                   ),
                                 ),
                               ],
@@ -574,7 +734,7 @@ class _HomeUrgentTaskTile extends StatelessWidget {
               const SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: Text(
-                  sentenceCaseTr(task.title),
+                  upperCaseTr(task.title),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: theme.textTheme.titleSmall?.copyWith(
@@ -735,43 +895,56 @@ class _SummarySection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SJCard(
-      onTap: onTap,
       child: Builder(
         builder: (context) {
           final theme = Theme.of(context);
+          final header = Row(
+            children: [
+              Icon(icon, size: 20, color: theme.colorScheme.primary),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Text(title, style: theme.textTheme.titleMedium),
+              ),
+              if (onInfoTap != null)
+                IconButton(
+                  tooltip: 'Hesaplama mantığı',
+                  onPressed: onInfoTap,
+                  visualDensity: VisualDensity.compact,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(
+                    minWidth: 32,
+                    minHeight: 32,
+                  ),
+                  icon: Icon(
+                    Icons.info_outline,
+                    size: 20,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              if (onTap != null)
+                Icon(
+                  Icons.chevron_right,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+            ],
+          );
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Row(
-                children: [
-                  Icon(icon, size: 20, color: theme.colorScheme.primary),
-                  const SizedBox(width: AppSpacing.sm),
-                  Expanded(
-                    child: Text(title, style: theme.textTheme.titleMedium),
+              if (onTap != null)
+                Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    onTap: onTap,
+                    borderRadius: AppRadii.sm,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 2),
+                      child: header,
+                    ),
                   ),
-                  if (onInfoTap != null)
-                    IconButton(
-                      tooltip: 'Hesaplama mantığı',
-                      onPressed: onInfoTap,
-                      visualDensity: VisualDensity.compact,
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(
-                        minWidth: 32,
-                        minHeight: 32,
-                      ),
-                      icon: Icon(
-                        Icons.info_outline,
-                        size: 20,
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  if (onTap != null)
-                    Icon(
-                      Icons.chevron_right,
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                ],
-              ),
+                )
+              else
+                header,
               const SizedBox(height: AppSpacing.md),
               child,
             ],

@@ -119,7 +119,7 @@ abstract final class TaskReportBuilder {
               if (list[i].photos.any((p) => p.dataBase64.trim().isNotEmpty))
                 TaskReportPhotoGroup(
                   index: i + 1,
-                  title: sentenceCaseTr(list[i].title),
+                  title: upperCaseTr(list[i].title),
                   photos: [
                     for (final p in list[i].photos)
                       if (p.dataBase64.trim().isNotEmpty) p,
@@ -143,7 +143,7 @@ abstract final class TaskReportBuilder {
   static String _cellValue(SiteTask task, TaskExportColumn column, int index) {
     return switch (column) {
       TaskExportColumn.number => '$index',
-      TaskExportColumn.title => sentenceCaseTr(task.title),
+      TaskExportColumn.title => upperCaseTr(task.title),
       TaskExportColumn.tag => task.tag.trim().isEmpty
           ? '—'
           : TaskTagCatalog.cardLabel(task.tag),

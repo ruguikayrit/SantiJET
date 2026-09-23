@@ -1909,14 +1909,10 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                                       CrossAxisAlignment.stretch,
                                   children: [
                                     Text(
-                                      task.title,
+                                      upperCaseTr(task.title),
                                       style:
                                           theme.textTheme.titleMedium?.copyWith(
                                         fontWeight: FontWeight.w700,
-                                        decoration:
-                                            task.status == TaskStatus.done
-                                                ? TextDecoration.lineThrough
-                                                : null,
                                       ),
                                     ),
                                     if (task.category.trim().isNotEmpty ||
@@ -2360,7 +2356,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                                                   title:
                                                       const Text('Görevi sil'),
                                                   content: Text(
-                                                    '“${task.title}” silinsin mi?',
+                                                    '“${upperCaseTr(task.title)}” silinsin mi?',
                                                   ),
                                                   actions: [
                                                     TextButton(

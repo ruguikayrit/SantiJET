@@ -36,6 +36,16 @@ String sentenceCaseTr(String input) {
   return '$before${_upperTr(first)}$rest';
 }
 
+/// Türkçe büyük harf: `i` → `İ`, `ı` → `I`.
+String upperCaseTr(String input) {
+  if (input.isEmpty) return input;
+  final b = StringBuffer();
+  for (final unit in input.runes) {
+    b.write(_upperTr(String.fromCharCode(unit)));
+  }
+  return b.toString();
+}
+
 bool _isLetterRune(int rune) {
   final c = String.fromCharCode(rune);
   final lower = _lowerTr(c);

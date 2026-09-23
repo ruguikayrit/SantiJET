@@ -6,6 +6,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_radii.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/utils/puantaj_date.dart';
+import '../../../core/utils/text_format.dart';
 import '../../../domain/entities/site_task.dart';
 
 /// Açılır ay takvimi — mavi: başlangıç, kırmızı: planlanan bitiş.
@@ -128,7 +129,7 @@ class _TaskCalendarPanelState extends State<TaskCalendarPanel> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  t.title,
+                                  upperCaseTr(t.title),
                                   style: theme.textTheme.titleSmall?.copyWith(
                                     fontWeight: FontWeight.w700,
                                   ),
