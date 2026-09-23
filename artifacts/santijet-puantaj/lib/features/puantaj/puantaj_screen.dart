@@ -2431,7 +2431,6 @@ class _PersonCard extends StatelessWidget {
     final worked = status?.isWorkedDay ?? false;
     final baseHours = status?.hours ?? 0;
     final yevmiye = worked ? (baseHours + overtimeHours) / 8.0 : 0.0;
-    final employmentLines = AttendanceDisplay.employmentDateLines(person);
 
     return SJCard(
       padding: const EdgeInsets.fromLTRB(10, 6, 8, 6),
@@ -2471,12 +2470,9 @@ class _PersonCard extends StatelessWidget {
                                 letterSpacing: -0.1,
                               ),
                             ),
-                            if (meta.isNotEmpty || employmentLines.isNotEmpty)
+                            if (meta.isNotEmpty)
                               Text(
-                                [
-                                  if (meta.isNotEmpty) meta,
-                                  ...employmentLines,
-                                ].join(' · '),
+                                meta,
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: theme.textTheme.labelSmall?.copyWith(
@@ -3181,17 +3177,6 @@ class _CetvelView extends ConsumerWidget {
                         ).withValues(alpha: 0.35),
                       ),
                     ),
-                    for (final line
-                        in AttendanceDisplay.employmentDateLines(person))
-                      Text(
-                        line,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                          fontSize: 9,
-                        ),
-                      ),
                   ],
                 ),
               ),
