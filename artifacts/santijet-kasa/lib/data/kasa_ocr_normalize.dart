@@ -11,15 +11,18 @@ abstract final class KasaOcrNormalize {
     caseSensitive: false,
   );
 
+  /// Türkçe başlık/hücre eşlemesi — `AÇIKLAMA` → `aciklama`.
   static String fold(String s) => s
+      .replaceAll('İ', 'i')
+      .replaceAll('I', 'i')
       .toLowerCase()
       .replaceAll('ı', 'i')
-      .replaceAll('İ', 'i')
       .replaceAll('ş', 's')
       .replaceAll('ğ', 'g')
       .replaceAll('ü', 'u')
       .replaceAll('ö', 'o')
-      .replaceAll('ç', 'c');
+      .replaceAll('ç', 'c')
+      .replaceAll('\u0307', ''); // combining dot left by some İ→i paths
 
   static double? parseMoney(String? raw) {
     if (raw == null || raw.trim().isEmpty) return null;

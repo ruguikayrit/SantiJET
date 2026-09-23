@@ -11,6 +11,7 @@ import '../domain/kasa_rules.dart';
 import '../domain/kasa_transfer_format.dart';
 import '../domain/money_format.dart';
 import 'kasa_export_service.dart';
+import 'kasa_ocr_normalize.dart';
 
 /// JPG / PDF belge seçimi sonucu — form taslağı.
 class BelgeImportDraft {
@@ -162,10 +163,10 @@ class KasaImportService {
   int _findHeaderRow(List<List<Data?>> rows) {
     for (var i = 0; i < rows.length && i < 12; i++) {
       final joined = rows[i]
-          .map((c) => (c?.value?.toString() ?? '').toLowerCase())
+          .map((c) => KasaOcrNormalize.fold(c?.value?.toString() ?? ''))
           .join('|');
       if (joined.contains('tarih') &&
-          (joined.contains('açıklama') || joined.contains('aciklama')) &&
+          joined.contains('aciklama') &&
           (joined.contains('gelir') || joined.contains('gider'))) {
         return i;
       }
@@ -173,7 +174,7 @@ class KasaImportService {
     // Dışa aktarım formatı: başlık 5. satır civarı
     for (var i = 0; i < rows.length && i < 12; i++) {
       final joined = rows[i]
-          .map((c) => (c?.value?.toString() ?? '').toLowerCase())
+          .map((c) => KasaOcrNormalize.fold(c?.value?.toString() ?? ''))
           .join('|');
       if (joined.contains('tarih') && joined.contains('tedarik')) {
         return i;
@@ -185,10 +186,12 @@ class KasaImportService {
   Map<String, int> _columnMap(List<Data?> header) {
     final map = <String, int>{};
     for (var i = 0; i < header.length; i++) {
-      final raw = (header[i]?.value?.toString() ?? '').toLowerCase().trim();
+      final raw = KasaOcrNormalize.fold(
+        (header[i]?.value?.toString() ?? '').trim(),
+      );
       if (raw.contains('tarih')) map.putIfAbsent('tarih', () => i);
       if (raw.contains('tedarik')) map.putIfAbsent('tedarikci', () => i);
-      if (raw.contains('açıklama') || raw.contains('aciklama')) {
+      if (raw.contains('aciklama')) {
         if (raw.contains('ek')) {
           map.putIfAbsent('ek', () => i);
         } else {
@@ -201,14 +204,14 @@ class KasaImportService {
       if (raw == 'gider' || raw.startsWith('gider')) {
         map.putIfAbsent('gider', () => i);
       }
-      if (raw.contains('ödeme') || raw.contains('odeme')) {
+      if (raw.contains('odeme')) {
         map.putIfAbsent('odeme', () => i);
       }
       if (raw.contains('belge')) map.putIfAbsent('belge', () => i);
-      if (raw.contains('şantiye') || raw.contains('santiye')) {
+      if (raw.contains('santiye')) {
         map.putIfAbsent('santiye', () => i);
       }
-      if (raw.contains('ek açıklama') || raw.contains('ek aciklama')) {
+      if (raw.contains('ek aciklama')) {
         map.putIfAbsent('ek', () => i);
       }
     }

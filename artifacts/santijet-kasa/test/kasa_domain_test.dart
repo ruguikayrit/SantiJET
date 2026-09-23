@@ -1,3 +1,6 @@
+import 'dart:typed_data';
+
+import 'package:excel/excel.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:santijet_kasa/domain/csv_export.dart';
@@ -423,6 +426,42 @@ void main() {
       );
       expect(pdf.belgeTuru, BelgeTuru.fatura);
       expect(pdf.ekAciklama, contains('PDF'));
+    });
+
+    test('finds Turkish uppercase header row AÇIKLAMA/GİDER', () {
+      final excel = Excel.createExcel();
+      final sheet = excel['Sheet1'];
+      sheet.appendRow([
+        TextCellValue('TARİH'),
+        TextCellValue('TEDARİKÇİ'),
+        TextCellValue('AÇIKLAMA'),
+        TextCellValue('GELİR'),
+        TextCellValue('GİDER'),
+        TextCellValue('ÖDEME ŞEKLİ'),
+        TextCellValue('BELGE TÜRÜ'),
+        TextCellValue('ŞANTİYE'),
+        TextCellValue('EK AÇIKLAMA'),
+      ]);
+      sheet.appendRow([
+        TextCellValue('11.08.2024'),
+        TextCellValue('YEŞİLLER TEKNİK'),
+        TextCellValue('CİVATA SOMUN'),
+        TextCellValue(''),
+        DoubleCellValue(350),
+        TextCellValue('ŞAHSİ K. KARTI'),
+        TextCellValue('FİŞ'),
+        TextCellValue('İZMİT/ESFANE'),
+        TextCellValue('ÜMİT USTA'),
+      ]);
+      final bytes = Uint8List.fromList(excel.encode()!);
+      final parsed = KasaImportService().parseExcelBytes(
+        bytes,
+        now: DateTime(2026, 9, 8),
+      );
+      expect(parsed.hareketler.length, 1);
+      expect(parsed.hareketler.first.gider, 350);
+      expect(parsed.hareketler.first.aciklama, contains('CİVATA'));
+      expect(parsed.hareketler.first.santiye, 'İZMİT/ESFANE');
     });
   });
 
