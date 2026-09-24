@@ -15,7 +15,6 @@ import '../../data/filters_provider.dart';
 import '../../data/hareketler_store.dart';
 import '../../data/settings_store.dart';
 import '../../domain/hareket_filters.dart';
-import '../../domain/kasa_lookups.dart';
 import 'hareket_tile.dart';
 
 enum _TransferMode { move, copy }
@@ -242,28 +241,6 @@ class _HareketlerScreenState extends ConsumerState<HareketlerScreen> {
                       onTap: () => ref
                           .read(hareketFiltersProvider.notifier)
                           .setOnlyGider(!filters.onlyGider),
-                    ),
-                    _MenuChip(
-                      label: filters.odemeSekli ?? 'Ödeme',
-                      selected: filters.odemeSekli != null,
-                      items: OdemeSekli.all,
-                      onSelected: (v) => ref
-                          .read(hareketFiltersProvider.notifier)
-                          .setOdemeSekli(v),
-                      onClear: () => ref
-                          .read(hareketFiltersProvider.notifier)
-                          .setOdemeSekli(null),
-                    ),
-                    _MenuChip(
-                      label: filters.belgeTuru ?? 'Belge',
-                      selected: filters.belgeTuru != null,
-                      items: BelgeTuru.all,
-                      onSelected: (v) => ref
-                          .read(hareketFiltersProvider.notifier)
-                          .setBelgeTuru(v),
-                      onClear: () => ref
-                          .read(hareketFiltersProvider.notifier)
-                          .setBelgeTuru(null),
                     ),
                     if (tedarikciler.isNotEmpty)
                       _MenuChip(
