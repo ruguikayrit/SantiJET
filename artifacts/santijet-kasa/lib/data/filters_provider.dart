@@ -40,6 +40,8 @@ class HareketFiltersNotifier extends StateNotifier<HareketFilters> {
     );
   }
 
+  void setSort(HareketSort sort) => state = state.copyWith(sort: sort);
+
   void clear() => state = const HareketFilters();
 }
 

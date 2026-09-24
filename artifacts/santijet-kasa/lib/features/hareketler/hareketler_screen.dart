@@ -11,10 +11,11 @@ import '../../core/theme/app_typography.dart';
 import '../../core/widgets/santijet_header.dart';
 import '../../data/filters_provider.dart';
 import '../../data/hareketler_store.dart';
+import '../../domain/hareket_filters.dart';
 import '../../domain/kasa_lookups.dart';
 import 'hareket_tile.dart';
 
-/// Hareket listesi — filtre chip’leri + arama.
+/// Hareket listesi — filtre chip’leri + arama + sıra.
 class HareketlerScreen extends ConsumerWidget {
   const HareketlerScreen({super.key});
 
@@ -61,6 +62,21 @@ class HareketlerScreen extends ConsumerWidget {
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
                 children: [
+                  _MenuChip(
+                    label: filters.sort.chipLabel,
+                    selected: filters.hasCustomSort,
+                    items: HareketSort.values.map((s) => s.label).toList(),
+                    onSelected: (v) {
+                      final match = HareketSort.values.firstWhere(
+                        (s) => s.label == v,
+                        orElse: () => HareketSort.tarihYeni,
+                      );
+                      ref.read(hareketFiltersProvider.notifier).setSort(match);
+                    },
+                    onClear: () => ref
+                        .read(hareketFiltersProvider.notifier)
+                        .setSort(HareketSort.tarihYeni),
+                  ),
                   _Chip(
                     label: 'Gelir',
                     selected: filters.onlyGelir,
@@ -132,7 +148,7 @@ class HareketlerScreen extends ConsumerWidget {
                       }
                     },
                   ),
-                  if (!filters.isEmpty)
+                  if (!filters.isEmpty || filters.hasCustomSort)
                     _Chip(
                       label: 'Temizle',
                       selected: false,

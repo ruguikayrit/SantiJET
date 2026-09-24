@@ -1,5 +1,32 @@
 import 'kasa_hareket.dart';
 
+/// Liste sıralama — varsayılan en yeni tarih.
+enum HareketSort {
+  tarihYeni,
+  tarihEski,
+  tutarBuyuk,
+  tutarKucuk,
+  tedarikciAZ,
+}
+
+extension HareketSortLabel on HareketSort {
+  String get label => switch (this) {
+        HareketSort.tarihYeni => 'Tarih · yeni',
+        HareketSort.tarihEski => 'Tarih · eski',
+        HareketSort.tutarBuyuk => 'Tutar · büyük',
+        HareketSort.tutarKucuk => 'Tutar · küçük',
+        HareketSort.tedarikciAZ => 'Tedarikçi · A–Z',
+      };
+
+  String get chipLabel => switch (this) {
+        HareketSort.tarihYeni => 'Sıra',
+        HareketSort.tarihEski => 'Eski önce',
+        HareketSort.tutarBuyuk => 'Büyük tutar',
+        HareketSort.tutarKucuk => 'Küçük tutar',
+        HareketSort.tedarikciAZ => 'A–Z',
+      };
+}
+
 /// Hareket listesi filtreleri.
 class HareketFilters {
   const HareketFilters({
@@ -12,6 +39,7 @@ class HareketFilters {
     this.onlyGider = false,
     this.from,
     this.to,
+    this.sort = HareketSort.tarihYeni,
   });
 
   final String query;
@@ -23,6 +51,7 @@ class HareketFilters {
   final bool onlyGider;
   final DateTime? from;
   final DateTime? to;
+  final HareketSort sort;
 
   bool get isEmpty =>
       query.trim().isEmpty &&
@@ -34,6 +63,8 @@ class HareketFilters {
       !onlyGider &&
       from == null &&
       to == null;
+
+  bool get hasCustomSort => sort != HareketSort.tarihYeni;
 
   HareketFilters copyWith({
     String? query,
@@ -51,6 +82,7 @@ class HareketFilters {
     bool clearFrom = false,
     DateTime? to,
     bool clearTo = false,
+    HareketSort? sort,
   }) {
     return HareketFilters(
       query: query ?? this.query,
@@ -62,6 +94,7 @@ class HareketFilters {
       onlyGider: onlyGider ?? this.onlyGider,
       from: clearFrom ? null : (from ?? this.from),
       to: clearTo ? null : (to ?? this.to),
+      sort: sort ?? this.sort,
     );
   }
 }
@@ -81,12 +114,37 @@ bool _eqField(String? filter, String value) {
   return value.trim() == filter.trim();
 }
 
+int _compareBySort(KasaHareket a, KasaHareket b, HareketSort sort) {
+  switch (sort) {
+    case HareketSort.tarihYeni:
+      final byDate = b.tarih.compareTo(a.tarih);
+      if (byDate != 0) return byDate;
+      return b.updatedAt.compareTo(a.updatedAt);
+    case HareketSort.tarihEski:
+      final byDate = a.tarih.compareTo(b.tarih);
+      if (byDate != 0) return byDate;
+      return a.updatedAt.compareTo(b.updatedAt);
+    case HareketSort.tutarBuyuk:
+      final byAmt = b.tutar.compareTo(a.tutar);
+      if (byAmt != 0) return byAmt;
+      return b.tarih.compareTo(a.tarih);
+    case HareketSort.tutarKucuk:
+      final byAmt = a.tutar.compareTo(b.tutar);
+      if (byAmt != 0) return byAmt;
+      return b.tarih.compareTo(a.tarih);
+    case HareketSort.tedarikciAZ:
+      final byName = _foldTr(a.tedarikci).compareTo(_foldTr(b.tedarikci));
+      if (byName != 0) return byName;
+      return b.tarih.compareTo(a.tarih);
+  }
+}
+
 List<KasaHareket> filterHareketler(
   Iterable<KasaHareket> source,
   HareketFilters filters,
 ) {
   final q = _foldTr(filters.query.trim());
-  return source.where((h) {
+  final out = source.where((h) {
     if (!_eqField(filters.santiye, h.santiye)) return false;
     if (!_eqField(filters.tedarikci, h.tedarikci)) return false;
     if (!_eqField(filters.odemeSekli, h.odemeSekli)) return false;
@@ -119,6 +177,9 @@ List<KasaHareket> filterHareketler(
     }
     return true;
   }).toList();
+
+  out.sort((a, b) => _compareBySort(a, b, filters.sort));
+  return out;
 }
 
 /// Şantiye / ödeme / belge kırılımı.

@@ -353,6 +353,67 @@ void main() {
         isTrue,
       );
     });
+
+    test('sort by amount, date and supplier', () {
+      final now = DateTime(2026, 9, 8);
+      final rows = [
+        KasaHareket(
+          id: 'a',
+          tarih: now,
+          aciklama: 'küçük',
+          gider: 10,
+          tedarikci: 'ZETA',
+          createdAt: now,
+          updatedAt: now,
+        ),
+        KasaHareket(
+          id: 'b',
+          tarih: now.subtract(const Duration(days: 1)),
+          aciklama: 'büyük',
+          gider: 500,
+          tedarikci: 'ALPHA',
+          createdAt: now,
+          updatedAt: now,
+        ),
+        KasaHareket(
+          id: 'c',
+          tarih: now.add(const Duration(days: 1)),
+          aciklama: 'orta',
+          gelir: 100,
+          tedarikci: 'BETA',
+          createdAt: now,
+          updatedAt: now,
+        ),
+      ];
+      expect(
+        filterHareketler(
+          rows,
+          const HareketFilters(sort: HareketSort.tutarBuyuk),
+        ).map((h) => h.id).toList(),
+        ['b', 'c', 'a'],
+      );
+      expect(
+        filterHareketler(
+          rows,
+          const HareketFilters(sort: HareketSort.tutarKucuk),
+        ).map((h) => h.id).toList(),
+        ['a', 'c', 'b'],
+      );
+      expect(
+        filterHareketler(
+          rows,
+          const HareketFilters(sort: HareketSort.tarihEski),
+        ).map((h) => h.id).toList(),
+        ['b', 'a', 'c'],
+      );
+      expect(
+        filterHareketler(
+          rows,
+          const HareketFilters(sort: HareketSort.tedarikciAZ),
+        ).map((h) => h.tedarikci).toList(),
+        ['ALPHA', 'BETA', 'ZETA'],
+      );
+    });
   });
 
   group('CsvExport', () {
