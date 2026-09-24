@@ -163,13 +163,6 @@ class _HareketlerScreenState extends ConsumerState<HareketlerScreen> {
   Widget build(BuildContext context) {
     final filters = ref.watch(hareketFiltersProvider);
     final filtered = ref.watch(filteredHareketlerProvider);
-    final scoped = ref.watch(santiyeScopedHareketlerProvider);
-    final tedarikciler = scoped
-        .map((h) => h.tedarikci.trim())
-        .where((t) => t.isNotEmpty)
-        .toSet()
-        .toList()
-      ..sort();
     final ids = filtered.map((h) => h.id).toList();
 
     return Scaffold(
@@ -242,18 +235,6 @@ class _HareketlerScreenState extends ConsumerState<HareketlerScreen> {
                           .read(hareketFiltersProvider.notifier)
                           .setOnlyGider(!filters.onlyGider),
                     ),
-                    if (tedarikciler.isNotEmpty)
-                      _MenuChip(
-                        label: filters.tedarikci ?? 'Tedarikçi',
-                        selected: filters.tedarikci != null,
-                        items: tedarikciler,
-                        onSelected: (v) => ref
-                            .read(hareketFiltersProvider.notifier)
-                            .setTedarikci(v),
-                        onClear: () => ref
-                            .read(hareketFiltersProvider.notifier)
-                            .setTedarikci(null),
-                      ),
                     _Chip(
                       label: 'Tarih',
                       selected: filters.from != null || filters.to != null,
