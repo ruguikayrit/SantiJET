@@ -250,6 +250,62 @@ void main() {
     });
   });
 
+  group('move/copy to santiye', () {
+    test('move changes santiye and keeps id', () {
+      final now = DateTime(2026, 9, 8);
+      final rows = [
+        KasaHareket(
+          id: 'a',
+          tarih: now,
+          aciklama: 'Civata',
+          gider: 10,
+          santiye: 'İZMİT/EFSANE',
+          createdAt: now,
+          updatedAt: now,
+        ),
+        KasaHareket(
+          id: 'b',
+          tarih: now,
+          aciklama: 'Avans',
+          gelir: 100,
+          santiye: 'İZMİT/EFSANE',
+          createdAt: now,
+          updatedAt: now,
+        ),
+      ];
+      final moved = rows.map((h) {
+        if (h.id != 'a') return h;
+        return h.copyWith(santiye: 'ANKARA/X', updatedAt: now);
+      }).toList();
+      expect(moved.firstWhere((h) => h.id == 'a').santiye, 'ANKARA/X');
+      expect(moved.firstWhere((h) => h.id == 'b').santiye, 'İZMİT/EFSANE');
+      expect(moved.length, 2);
+    });
+
+    test('copy duplicates with new id and target santiye', () {
+      final now = DateTime(2026, 9, 8);
+      final source = KasaHareket(
+        id: 'a',
+        tarih: now,
+        aciklama: 'Civata',
+        gider: 10,
+        santiye: 'İZMİT/EFSANE',
+        createdAt: now,
+        updatedAt: now,
+      );
+      final copy = source.copyWith(
+        id: 'a-copy',
+        santiye: 'ANKARA/X',
+        createdAt: now,
+        updatedAt: now,
+      );
+      expect(copy.id, isNot(source.id));
+      expect(copy.santiye, 'ANKARA/X');
+      expect(copy.gider, source.gider);
+      expect(copy.aciklama, source.aciklama);
+    });
+  });
+
   group('filter + demo', () {
     test('demo data is valid and balances', () {
       final demo = buildDemoHareketler(now: DateTime(2026, 9, 8));

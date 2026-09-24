@@ -18,6 +18,8 @@ Turuncu **STAGING ÖNİZLEME** şeridi yok: `build-kasa-pages.sh` `#santijet-sta
 - Bildirim zili ve avatar yok.
 - Üst özet: TOPLAM GELİR · TOPLAM GİDER · GÜNCEL KASA (= gelir − gider; negatif kırmızı).
 - Ana sayfa **Şantiye seçin** kartı (Beton ProjectSwitcher deseni): aktif şantiye Hive’da; özet/hareketler/rapor bu kapsama göre filtrelenir. Hareket formunda şantiye alanı yok — aktif şantiye otomatik yazılır.
+- Hareketler: basılı tut → çoklu seçim → **Taşı** / **Kopyala** hedef şantiyeye.
+  Taşı aynı kaydı taşır; kopyala yeni id ile çoğaltır.
 - Ayarlar → Veri: **JSON dışa aktar / JSON içe aktar** (`KasaJsonBackup`).
   İçe aktarım mevcut hareketlerin yerini alır. Abonelik/bulut yok.
 

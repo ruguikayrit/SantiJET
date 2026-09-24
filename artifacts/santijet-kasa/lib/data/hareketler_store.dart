@@ -65,6 +65,55 @@ class HareketlerNotifier extends StateNotifier<List<KasaHareket>> {
     await _persist();
   }
 
+  /// Seçili hareketleri hedef şantiyeye taşır (aynı id, şantiye değişir).
+  Future<int> moveToSantiye({
+    required Set<String> ids,
+    required String targetSantiye,
+  }) async {
+    final target = targetSantiye.trim();
+    if (ids.isEmpty || target.isEmpty) return 0;
+    final stamp = DateTime.now();
+    var count = 0;
+    state = state.map((h) {
+      if (!ids.contains(h.id) || h.santiye.trim() == target) return h;
+      count++;
+      return h.copyWith(santiye: target, updatedAt: stamp);
+    }).toList()
+      ..sort((a, b) => b.tarih.compareTo(a.tarih));
+    if (count > 0) await _persist();
+    return count;
+  }
+
+  /// Seçili hareketlerin kopyasını hedef şantiyeye ekler (yeni id).
+  Future<int> copyToSantiye({
+    required Set<String> ids,
+    required String targetSantiye,
+    required String Function() newId,
+  }) async {
+    final target = targetSantiye.trim();
+    if (ids.isEmpty || target.isEmpty) return 0;
+    final stamp = DateTime.now();
+    final copies = <KasaHareket>[];
+    for (final h in state) {
+      if (!ids.contains(h.id)) continue;
+      copies.add(
+        h.copyWith(
+          id: newId(),
+          santiye: target,
+          createdAt: stamp,
+          updatedAt: stamp,
+        ),
+      );
+    }
+    if (copies.isEmpty) return 0;
+    for (final item in copies) {
+      assertValidHareket(item);
+    }
+    state = [...copies, ...state]..sort((a, b) => b.tarih.compareTo(a.tarih));
+    await _persist();
+    return copies.length;
+  }
+
   Future<void> clear() async {
     state = const [];
     await _persist();

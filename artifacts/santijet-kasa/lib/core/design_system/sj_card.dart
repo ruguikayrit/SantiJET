@@ -13,6 +13,7 @@ class SJCard extends StatelessWidget {
   const SJCard({
     required this.child,
     this.onTap,
+    this.onLongPress,
     this.padding = const EdgeInsets.all(AppSpacing.md),
     this.accentColor,
     this.selected = false,
@@ -21,6 +22,7 @@ class SJCard extends StatelessWidget {
 
   final Widget child;
   final VoidCallback? onTap;
+  final VoidCallback? onLongPress;
   final EdgeInsetsGeometry padding;
   final Color? accentColor;
   final bool selected;
@@ -270,12 +272,13 @@ class SJCard extends StatelessWidget {
       child: content,
     );
 
-    if (onTap == null) return decorated;
+    if (onTap == null && onLongPress == null) return decorated;
 
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
+        onLongPress: onLongPress,
         borderRadius: AppRadii.md,
         child: decorated,
       ),
