@@ -15,7 +15,6 @@ class HareketTile extends StatelessWidget {
     this.onTap,
     this.onLongPress,
     this.selected = false,
-    this.selecting = false,
     super.key,
   });
 
@@ -23,7 +22,6 @@ class HareketTile extends StatelessWidget {
   final VoidCallback? onTap;
   final VoidCallback? onLongPress;
   final bool selected;
-  final bool selecting;
 
   @override
   Widget build(BuildContext context) {
@@ -40,34 +38,20 @@ class HareketTile extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (selecting) ...[
-            Padding(
-              padding: const EdgeInsets.only(right: AppSpacing.sm, top: 8),
-              child: Icon(
-                selected
-                    ? Icons.check_circle
-                    : Icons.radio_button_unchecked,
-                color: selected
-                    ? AppColors.electricBlue
-                    : AppColors.cardTextMuted,
-                size: 22,
-              ),
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: amountColor.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(10),
             ),
-          ] else
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: amountColor.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(
-                isGelir ? Icons.south_west : Icons.north_east,
-                color: amountColor,
-                size: 20,
-              ),
+            child: Icon(
+              isGelir ? Icons.south_west : Icons.north_east,
+              color: amountColor,
+              size: 20,
             ),
-          if (!selecting) const SizedBox(width: AppSpacing.sm),
+          ),
+          const SizedBox(width: AppSpacing.sm),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

@@ -205,7 +205,7 @@ class _HareketlerScreenState extends ConsumerState<HareketlerScreen> {
                       const EdgeInsets.symmetric(horizontal: AppSpacing.md),
                   children: [
                     _MenuChip(
-                      label: filters.sort.chipLabel,
+                      label: 'Sıra',
                       selected: filters.hasCustomSort,
                       items: HareketSort.values.map((s) => s.label).toList(),
                       onSelected: (v) {
@@ -260,13 +260,14 @@ class _HareketlerScreenState extends ConsumerState<HareketlerScreen> {
                         }
                       },
                     ),
-                    if (!filters.isEmpty || filters.hasCustomSort)
-                      _Chip(
-                        label: 'Temizle',
-                        selected: false,
-                        onTap: () =>
-                            ref.read(hareketFiltersProvider.notifier).clear(),
-                      ),
+                    _Chip(
+                      label: 'Temizle',
+                      selected: false,
+                      enabled:
+                          !filters.isEmpty || filters.hasCustomSort,
+                      onTap: () =>
+                          ref.read(hareketFiltersProvider.notifier).clear(),
+                    ),
                   ],
                 ),
               ),
@@ -315,7 +316,6 @@ class _HareketlerScreenState extends ConsumerState<HareketlerScreen> {
                               const EdgeInsets.only(bottom: AppSpacing.sm),
                           child: HareketTile(
                             hareket: h,
-                            selecting: _selecting,
                             selected: isSelected,
                             onLongPress: () {
                               if (!_selecting) {
@@ -385,11 +385,13 @@ class _Chip extends StatelessWidget {
     required this.label,
     required this.selected,
     required this.onTap,
+    this.enabled = true,
   });
 
   final String label;
   final bool selected;
   final VoidCallback onTap;
+  final bool enabled;
 
   @override
   Widget build(BuildContext context) {
@@ -398,11 +400,15 @@ class _Chip extends StatelessWidget {
       child: FilterChip(
         label: Text(label),
         selected: selected,
-        onSelected: (_) => onTap(),
+        showCheckmark: false,
+        onSelected: enabled ? (_) => onTap() : null,
         selectedColor: AppColors.electricBlue.withValues(alpha: 0.2),
-        checkmarkColor: AppColors.electricBlue,
         labelStyle: AppTypography.labelMedium.copyWith(
-          color: selected ? AppColors.electricBlue : AppColors.textSecondary,
+          color: !enabled
+              ? AppColors.textMuted
+              : selected
+                  ? AppColors.electricBlue
+                  : AppColors.textSecondary,
         ),
         side: BorderSide(
           color: selected ? AppColors.electricBlue : AppColors.border,
@@ -453,9 +459,9 @@ class _MenuChip extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
             ),
             selected: selected,
+            showCheckmark: false,
             onSelected: (_) {},
             selectedColor: AppColors.electricBlue.withValues(alpha: 0.2),
-            checkmarkColor: AppColors.electricBlue,
             labelStyle: AppTypography.labelMedium.copyWith(
               color:
                   selected ? AppColors.electricBlue : AppColors.textSecondary,
