@@ -648,7 +648,6 @@ class _CatalogItemCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final deleteBlocked = blockDeleteWhenUsed && used > 0;
     return SJCard(
       onTap: onEdit,
@@ -658,70 +657,76 @@ class _CatalogItemCard extends StatelessWidget {
         AppSpacing.xs,
         AppSpacing.xs,
       ),
-      child: SizedBox(
-        height: usageLabel != null ? 56 : 48,
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    name,
-                    style: theme.textTheme.titleSmall,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  if (usageLabel != null)
-                    Text(
-                      usageLabel!(name, used),
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: deleteBlocked
-                            ? theme.colorScheme.primary
-                            : theme.colorScheme.onSurfaceVariant,
+      // Kart kontrast teması — Theme.of dış context'ten alınmamalı.
+      child: Builder(
+        builder: (context) {
+          final theme = Theme.of(context);
+          return SizedBox(
+            height: usageLabel != null ? 56 : 48,
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        name,
+                        style: theme.textTheme.titleSmall,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                ],
-              ),
+                      if (usageLabel != null)
+                        Text(
+                          usageLabel!(name, used),
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: deleteBlocked
+                                ? theme.colorScheme.primary
+                                : theme.colorScheme.onSurfaceVariant,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  icon: Icon(
+                    Icons.edit_outlined,
+                    size: 20,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                  tooltip: 'Düzenle',
+                  visualDensity: VisualDensity.compact,
+                  constraints: const BoxConstraints(
+                    minWidth: 36,
+                    minHeight: 36,
+                  ),
+                  padding: EdgeInsets.zero,
+                  onPressed: onEdit,
+                ),
+                IconButton(
+                  icon: Icon(
+                    Icons.delete_outline,
+                    size: 20,
+                    color: deleteBlocked
+                        ? theme.colorScheme.onSurface.withValues(alpha: 0.28)
+                        : theme.colorScheme.error,
+                  ),
+                  tooltip:
+                      deleteBlocked ? 'Kullanıldığı için silinemez' : 'Sil',
+                  visualDensity: VisualDensity.compact,
+                  constraints: const BoxConstraints(
+                    minWidth: 36,
+                    minHeight: 36,
+                  ),
+                  padding: EdgeInsets.zero,
+                  onPressed: onDelete,
+                ),
+              ],
             ),
-            IconButton(
-              icon: Icon(
-                Icons.edit_outlined,
-                size: 20,
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-              tooltip: 'Düzenle',
-              visualDensity: VisualDensity.compact,
-              constraints: const BoxConstraints(
-                minWidth: 36,
-                minHeight: 36,
-              ),
-              padding: EdgeInsets.zero,
-              onPressed: onEdit,
-            ),
-            IconButton(
-              icon: Icon(
-                Icons.delete_outline,
-                size: 20,
-                color: deleteBlocked
-                    ? theme.colorScheme.onSurface.withValues(alpha: 0.28)
-                    : theme.colorScheme.error,
-              ),
-              tooltip:
-                  deleteBlocked ? 'Kullanıldığı için silinemez' : 'Sil',
-              visualDensity: VisualDensity.compact,
-              constraints: const BoxConstraints(
-                minWidth: 36,
-                minHeight: 36,
-              ),
-              padding: EdgeInsets.zero,
-              onPressed: onDelete,
-            ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
