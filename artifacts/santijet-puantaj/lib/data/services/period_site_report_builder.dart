@@ -175,6 +175,8 @@ class PeriodSiteReportData {
     required this.personelSummary,
     required this.ekipPuantaj,
     required this.yevmiyeli,
+    required this.machines,
+    required this.vehicles,
     required this.imalatRows,
     required this.verimRows,
     required this.imalatGroupSummaries,
@@ -189,6 +191,8 @@ class PeriodSiteReportData {
   final PeriodPersonelSummary personelSummary;
   final PuantajReportData ekipPuantaj;
   final PuantajReportData yevmiyeli;
+  final PeriodMachineTable machines;
+  final PeriodMachineTable vehicles;
   final List<PeriodImalatRow> imalatRows;
   final List<PeriodVerimRow> verimRows;
   final List<ProductionGroupSummary> imalatGroupSummaries;
@@ -197,6 +201,49 @@ class PeriodSiteReportData {
 
   bool get hasImalat => imalatRows.isNotEmpty;
   bool get hasVerim => verimRows.isNotEmpty;
+}
+
+/// Dönem iş makinesi / vasıta puantaj tablosu (günlük raporlardan toplanır).
+class PeriodMachineTable {
+  const PeriodMachineTable({
+    required this.headers,
+    required this.rows,
+    required this.vehicle,
+  });
+
+  final List<String> headers;
+  final List<List<String>> rows;
+  final bool vehicle;
+
+  bool get isEmpty => rows.isEmpty;
+
+  /// Saat sütunu (makine: 4, vasıta: 3) — alt toplam.
+  Set<int> get sumColumnIndexes => {vehicle ? 3 : 4};
+
+  static PeriodMachineTable empty({required bool vehicle}) => PeriodMachineTable(
+        headers: vehicle
+            ? const [
+                'Vasıta',
+                'Marka/Model',
+                'Plaka',
+                'Saat',
+                'Gün',
+                'Şoför',
+                'Yapılan iş',
+              ]
+            : const [
+                'Makine',
+                'Tip',
+                'Firma',
+                'Plaka',
+                'Saat',
+                'Gün',
+                'Operatör',
+                'Yapılan iş',
+              ],
+        rows: const [],
+        vehicle: vehicle,
+      );
 }
 
 abstract final class PeriodSiteReportBuilder {
@@ -208,6 +255,7 @@ abstract final class PeriodSiteReportBuilder {
     required List<UninsuredTeamEntry> uninsuredTeams,
     List<YevmiyeliIsKaydi> yevmiyeliEntries = const [],
     required List<Production> productions,
+    List<DailyReport> dailyReports = const [],
     required PuantajReportPeriod period,
     required String anchorDate,
   }) {
@@ -360,6 +408,12 @@ abstract final class PeriodSiteReportBuilder {
       daySet,
     );
 
+    final periodDaily = dailyReports
+        .where((r) => r.projectId == projectId && daySet.contains(r.date))
+        .toList();
+    final machines = _buildMachineTable(periodDaily, vehicle: false);
+    final vehicles = _buildMachineTable(periodDaily, vehicle: true);
+
     return PeriodSiteReportData(
       periodLabel: periodLabel,
       rangeLabel: rangeLabel,
@@ -368,11 +422,90 @@ abstract final class PeriodSiteReportBuilder {
       personelSummary: personelSummary,
       ekipPuantaj: ekipPuantaj,
       yevmiyeli: yevmiyeli,
+      machines: machines,
+      vehicles: vehicles,
       imalatRows: imalatRows,
       verimRows: verimRows,
       imalatGroupSummaries: imalatGroupSummaries,
       period: period,
       fileStem: fileStem,
+    );
+  }
+
+  static String _foldKey(String raw) => raw.trim().toLowerCase();
+
+  static String _fmtHours(double v) {
+    if (v <= 0) return '—';
+    if (v == v.roundToDouble()) return v.toStringAsFixed(0);
+    return v.toStringAsFixed(1);
+  }
+
+  static PeriodMachineTable _buildMachineTable(
+    List<DailyReport> reports, {
+    required bool vehicle,
+  }) {
+    final buckets = <String, _MachineAgg>{};
+    for (final report in reports) {
+      final items = vehicle ? report.vehicles : report.machines;
+      for (final m in items) {
+        final name = m.name.trim();
+        if (name.isEmpty) continue;
+        final key = [
+          _foldKey(name),
+          _foldKey(m.type),
+          _foldKey(m.plateOrId),
+          if (!vehicle) _foldKey(m.company),
+        ].join('|');
+        final agg = buckets.putIfAbsent(
+          key,
+          () => _MachineAgg(
+            name: name,
+            type: m.type.trim(),
+            plateOrId: m.plateOrId.trim(),
+            company: m.company.trim(),
+          ),
+        );
+        agg.hours += m.hoursWorked;
+        agg.days.add(report.date);
+        final op = m.operatorName.trim();
+        if (op.isNotEmpty) agg.operators.add(op);
+        final work = m.workDescription.trim();
+        if (work.isNotEmpty) agg.works.add(work);
+      }
+    }
+
+    final sorted = buckets.values.toList()
+      ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+
+    final rows = <List<String>>[
+      for (final a in sorted)
+        if (vehicle)
+          [
+            a.name,
+            a.type.isEmpty ? '—' : a.type,
+            a.plateOrId.isEmpty ? '—' : a.plateOrId,
+            _fmtHours(a.hours),
+            '${a.days.length}',
+            a.operators.isEmpty ? '—' : a.operators.join(', '),
+            a.works.isEmpty ? '—' : a.works.join(' · '),
+          ]
+        else
+          [
+            a.name,
+            a.type.isEmpty ? '—' : a.type,
+            a.company.isEmpty ? '—' : a.company,
+            a.plateOrId.isEmpty ? '—' : a.plateOrId,
+            _fmtHours(a.hours),
+            '${a.days.length}',
+            a.operators.isEmpty ? '—' : a.operators.join(', '),
+            a.works.isEmpty ? '—' : a.works.join(' · '),
+          ],
+    ];
+
+    return PeriodMachineTable(
+      headers: PeriodMachineTable.empty(vehicle: vehicle).headers,
+      rows: rows,
+      vehicle: vehicle,
     );
   }
 
@@ -511,4 +644,22 @@ abstract final class PeriodSiteReportBuilder {
     if (p.length != 3) return date.replaceAll('.', '-');
     return '${p[2]}-${p[1]}';
   }
+}
+
+class _MachineAgg {
+  _MachineAgg({
+    required this.name,
+    required this.type,
+    required this.plateOrId,
+    required this.company,
+  });
+
+  final String name;
+  final String type;
+  final String plateOrId;
+  final String company;
+  double hours = 0;
+  final days = <String>{};
+  final operators = <String>{};
+  final works = <String>{};
 }

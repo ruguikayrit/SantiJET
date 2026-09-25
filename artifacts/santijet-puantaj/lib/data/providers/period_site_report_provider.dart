@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../services/period_site_report_builder.dart';
 import '../services/puantaj_report_builder.dart';
 import 'app_data_provider.dart';
+import 'daily_report_provider.dart';
 import 'production_provider.dart';
 import 'uninsured_teams_provider.dart';
 import 'yevmiyeli_is_provider.dart';
@@ -24,6 +25,7 @@ final periodSiteReportProvider =
   final uninsured = ref.watch(uninsuredTeamsProvider);
   final yevmiyeli = ref.watch(yevmiyeliIsProvider);
   final productions = ref.watch(productionProvider);
+  final dailyReports = ref.watch(dailyReportsProvider);
 
   return PeriodSiteReportBuilder.build(
     projectId: project.id,
@@ -33,6 +35,7 @@ final periodSiteReportProvider =
     uninsuredTeams: uninsured,
     yevmiyeliEntries: yevmiyeli,
     productions: productions,
+    dailyReports: dailyReports,
     period: key.period,
     anchorDate: key.anchorDate,
   );

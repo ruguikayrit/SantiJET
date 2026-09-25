@@ -253,7 +253,7 @@ class _GroupKpiCard extends StatelessWidget {
         borderRadius: AppRadii.sm,
         child: Container(
           constraints: const BoxConstraints(minHeight: 132),
-          padding: const EdgeInsets.fromLTRB(10, 10, 10, 8),
+          padding: const EdgeInsets.fromLTRB(8, 10, 8, 8),
           decoration: BoxDecoration(
             color: accent.withValues(alpha: 0.1),
             borderRadius: AppRadii.sm,
@@ -364,16 +364,23 @@ class _ProgressLine extends StatelessWidget {
       children: [
         Row(
           children: [
-            SizedBox(
-              width: 58,
-              child: Text(
-                label,
-                style: theme.textTheme.labelSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  fontSize: 10,
+            Flexible(
+              flex: 0,
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 52),
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 10,
+                    height: 1.1,
+                  ),
                 ),
               ),
             ),
+            const SizedBox(width: 4),
             Expanded(
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(3),
@@ -386,12 +393,19 @@ class _ProgressLine extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 4),
-            Text(
-              display != null ? '%${display.toStringAsFixed(0)}' : '—',
-              style: theme.textTheme.labelSmall?.copyWith(
-                fontWeight: FontWeight.w800,
-                color: ink,
-                fontSize: 10,
+            SizedBox(
+              width: 28,
+              child: Text(
+                display != null ? '%${display.toStringAsFixed(0)}' : '—',
+                maxLines: 1,
+                textAlign: TextAlign.right,
+                overflow: TextOverflow.clip,
+                style: theme.textTheme.labelSmall?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  color: ink,
+                  fontSize: 10,
+                  height: 1.1,
+                ),
               ),
             ),
           ],

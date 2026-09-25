@@ -185,6 +185,20 @@ class _PeriodExportSectionsPickerSheetState
                   ),
                 ),
                 _sectionTile(
+                  title: 'İş makinesi puantajı',
+                  value: _sections.machines,
+                  onChanged: (v) => setState(
+                    () => _sections = _sections.copyWith(machines: v),
+                  ),
+                ),
+                _sectionTile(
+                  title: 'Vasıta puantajı',
+                  value: _sections.vehicles,
+                  onChanged: (v) => setState(
+                    () => _sections = _sections.copyWith(vehicles: v),
+                  ),
+                ),
+                _sectionTile(
                   title: 'Yapılan işler (İmalat)',
                   value: _sections.imalat,
                   onChanged: (v) => setState(

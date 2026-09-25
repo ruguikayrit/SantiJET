@@ -5,6 +5,8 @@ class PeriodSiteReportExportSections {
     this.personel = true,
     this.ekip = true,
     this.yevmiyeli = true,
+    this.machines = true,
+    this.vehicles = true,
     this.imalat = true,
     this.verim = true,
   });
@@ -18,6 +20,8 @@ class PeriodSiteReportExportSections {
         personel: false,
         ekip: false,
         yevmiyeli: false,
+        machines: false,
+        vehicles: false,
         imalat: false,
         verim: false,
       );
@@ -26,17 +30,28 @@ class PeriodSiteReportExportSections {
   final bool personel;
   final bool ekip;
   final bool yevmiyeli;
+  final bool machines;
+  final bool vehicles;
   final bool imalat;
   final bool verim;
 
   bool get hasAny =>
-      puantajCounts || personel || ekip || yevmiyeli || imalat || verim;
+      puantajCounts ||
+      personel ||
+      ekip ||
+      yevmiyeli ||
+      machines ||
+      vehicles ||
+      imalat ||
+      verim;
 
   PeriodSiteReportExportSections copyWith({
     bool? puantajCounts,
     bool? personel,
     bool? ekip,
     bool? yevmiyeli,
+    bool? machines,
+    bool? vehicles,
     bool? imalat,
     bool? verim,
   }) {
@@ -45,6 +60,8 @@ class PeriodSiteReportExportSections {
       personel: personel ?? this.personel,
       ekip: ekip ?? this.ekip,
       yevmiyeli: yevmiyeli ?? this.yevmiyeli,
+      machines: machines ?? this.machines,
+      vehicles: vehicles ?? this.vehicles,
       imalat: imalat ?? this.imalat,
       verim: verim ?? this.verim,
     );
@@ -55,6 +72,8 @@ class PeriodSiteReportExportSections {
         'personel': personel,
         'ekip': ekip,
         'yevmiyeli': yevmiyeli,
+        'machines': machines,
+        'vehicles': vehicles,
         'imalat': imalat,
         'verim': verim,
       };
@@ -71,6 +90,8 @@ class PeriodSiteReportExportSections {
       personel: flag('personel'),
       ekip: flag('ekip'),
       yevmiyeli: flag('yevmiyeli'),
+      machines: flag('machines'),
+      vehicles: flag('vehicles'),
       imalat: flag('imalat'),
       verim: flag('verim'),
     );

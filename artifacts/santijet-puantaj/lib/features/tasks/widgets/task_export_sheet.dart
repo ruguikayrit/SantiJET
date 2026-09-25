@@ -477,6 +477,13 @@ class _TaskExportSheetState extends ConsumerState<TaskExportSheet> {
             ),
           ],
         ),
+        const SizedBox(height: AppSpacing.sm),
+        SJButton(
+          label: 'İptal',
+          variant: SJButtonVariant.ghost,
+          expanded: true,
+          onPressed: _busy ? null : () => Navigator.of(context).pop(),
+        ),
         if (_error != null) ...[
           const SizedBox(height: AppSpacing.sm),
           Text(

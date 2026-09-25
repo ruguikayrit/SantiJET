@@ -215,6 +215,20 @@ class PeriodSiteReportExportService {
       }
       body.add(pw.SizedBox(height: 12));
     }
+    if (sections.machines) {
+      startSectionPage();
+      body.add(_pdfSectionTitle('İş makinesi puantajı'));
+      body.add(pw.SizedBox(height: 6));
+      body.add(_pdfTable(report.machines.headers, report.machines.rows));
+      body.add(pw.SizedBox(height: 12));
+    }
+    if (sections.vehicles) {
+      startSectionPage();
+      body.add(_pdfSectionTitle('Vasıta puantajı'));
+      body.add(pw.SizedBox(height: 6));
+      body.add(_pdfTable(report.vehicles.headers, report.vehicles.rows));
+      body.add(pw.SizedBox(height: 12));
+    }
     if (sections.imalat) {
       startSectionPage();
       body.add(_pdfSectionTitle('Yapılan işler (İmalat)'));
@@ -587,6 +601,22 @@ class PeriodSiteReportExportService {
         'Yevmiyeli',
         report.yevmiyeli.headers,
         report.yevmiyeli.rowsWithTotals,
+      );
+    }
+    if (sections.machines) {
+      _writeSheet(
+        excel,
+        'İş makinesi',
+        report.machines.headers,
+        report.machines.rows,
+      );
+    }
+    if (sections.vehicles) {
+      _writeSheet(
+        excel,
+        'Vasıta',
+        report.vehicles.headers,
+        report.vehicles.rows,
       );
     }
     if (sections.imalat) {

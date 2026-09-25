@@ -134,17 +134,6 @@ class _VerimProductionChartsState extends State<VerimProductionCharts> {
         metrics: metrics,
         unit: unit,
       ),
-      const SizedBox(height: AppSpacing.sm),
-      Text(
-        widget.onlyDates != null
-            ? 'Dönem içi kümülatif süre, metraj ve adam-gün; verim birim '
-                'verim yüzdesidir. Eksenler plana göre 100 üzerinden ölçeklenir.'
-            : 'Son güne kadar kümülatif süre, metraj ve adam-gün; verim birim '
-                'verim yüzdesidir. Eksenler plana göre 100 üzerinden ölçeklenir.',
-        style: theme.textTheme.labelSmall?.copyWith(
-          color: theme.colorScheme.onSurfaceVariant,
-        ),
-      ),
     ];
 
     return Column(
