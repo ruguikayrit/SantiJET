@@ -704,16 +704,20 @@ class _SettingsTile extends StatelessWidget {
   }
 }
 
-/// Hakkında — siyah zemin; logo altında Tipografi / SAHA.
+/// Hakkında — siyah zemin; logo + wordmark + SAHA (splash ile aynı marka).
 class AboutScreen extends StatelessWidget {
   const AboutScreen({super.key});
 
   static const _bg = Colors.black;
   static const _fg = Colors.white;
   static const _fgMuted = Color(0xFFB0B0B0);
+  static const _wordmarkAspect = 895 / 150;
 
   @override
   Widget build(BuildContext context) {
+    const wordmarkWidth = 260.0;
+    final wordmarkHeight = wordmarkWidth / _wordmarkAspect;
+
     return Scaffold(
       backgroundColor: _bg,
       appBar: AppBar(
@@ -735,15 +739,14 @@ class AboutScreen extends StatelessWidget {
               filterQuality: FilterQuality.high,
             ),
             const SizedBox(height: 8),
-            Text(
-              'Tipografi',
-              style: AppTypography.displayMedium.copyWith(
-                color: _fg,
-                letterSpacing: 2,
-              ),
-              textAlign: TextAlign.center,
+            Image.asset(
+              'assets/images/splash_wordmark.png',
+              width: wordmarkWidth,
+              height: wordmarkHeight,
+              fit: BoxFit.contain,
+              filterQuality: FilterQuality.high,
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 8),
             Text(
               AppInfo.productLabel,
               style: AppTypography.displayLarge.copyWith(
