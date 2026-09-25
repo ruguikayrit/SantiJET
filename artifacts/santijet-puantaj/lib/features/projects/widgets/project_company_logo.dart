@@ -54,6 +54,8 @@ class ProjectCompanyLogo extends StatelessWidget {
             width: size,
             height: size,
             fit: BoxFit.contain,
+            cacheWidth: (size * 3).round(),
+            gaplessPlayback: true,
             errorBuilder: (_, __, ___) => fallback,
           ),
         ),

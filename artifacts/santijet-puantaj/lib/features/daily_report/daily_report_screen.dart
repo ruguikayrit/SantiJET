@@ -1965,6 +1965,9 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
                                                 width: 72,
                                                 height: 72,
                                                 fit: BoxFit.cover,
+                                                cacheWidth: 216,
+                                                cacheHeight: 216,
+                                                gaplessPlayback: true,
                                                 errorBuilder: (_, __, ___) =>
                                                     Container(
                                                   width: 72,
@@ -2212,6 +2215,9 @@ class _DailyReportScreenState extends ConsumerState<DailyReportScreen> {
                                             width: 72,
                                             height: 72,
                                             fit: BoxFit.cover,
+                                            cacheWidth: 216,
+                                            cacheHeight: 216,
+                                            gaplessPlayback: true,
                                             errorBuilder: (_, __, ___) =>
                                                 Container(
                                               width: 72,

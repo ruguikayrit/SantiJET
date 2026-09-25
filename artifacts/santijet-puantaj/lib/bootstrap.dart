@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -19,7 +20,43 @@ import 'data/remote/supabase_service.dart';
 
 /// Uygulama başlatma — Demir / BFA `bootstrap()` deseniyle hizalı.
 Future<void> bootstrap() async {
-  WidgetsFlutterBinding.ensureInitialized();
+  // Tek bir yakalanmamış hata uygulamayı kapatmasın: hataları logla,
+  // widget hatalarında kırmızı ekran yerine sade bir yer tutucu göster.
+  runZonedGuarded<Future<void>>(
+    () async {
+      WidgetsFlutterBinding.ensureInitialized();
+
+      FlutterError.onError = (details) {
+        FlutterError.presentError(details);
+        debugPrint('FlutterError yakalandı: ${details.exceptionAsString()}');
+      };
+
+      ErrorWidget.builder = (details) {
+        return Material(
+          color: const Color(0xFF05070A),
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Text(
+                'Bir şeyler ters gitti. Ekranı yenileyin.',
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Colors.white70, fontSize: 14),
+              ),
+            ),
+          ),
+        );
+      };
+
+      await _startApp();
+    },
+    (error, stack) {
+      debugPrint('Yakalanmamış hata: $error');
+      debugPrintStack(stackTrace: stack);
+    },
+  );
+}
+
+Future<void> _startApp() async {
   await Hive.initFlutter();
   final boxes = await Future.wait([
     Hive.openBox('settings'),

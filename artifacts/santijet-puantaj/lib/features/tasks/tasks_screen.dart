@@ -708,6 +708,12 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                                   fit: BoxFit.cover,
                                   width: 88,
                                   height: 88,
+                                  cacheWidth: 264,
+                                  cacheHeight: 264,
+                                  gaplessPlayback: true,
+                                  errorBuilder: (_, __, ___) => const Icon(
+                                    Icons.broken_image_outlined,
+                                  ),
                                 );
                               } catch (_) {
                                 image = ColoredBox(
@@ -2048,6 +2054,16 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                                                           width: 64,
                                                           height: 64,
                                                           fit: BoxFit.cover,
+                                                          cacheWidth: 192,
+                                                          cacheHeight: 192,
+                                                          gaplessPlayback: true,
+                                                          errorBuilder:
+                                                              (_, __, ___) =>
+                                                                  const Icon(
+                                                            Icons
+                                                                .broken_image_outlined,
+                                                            size: 24,
+                                                          ),
                                                         ),
                                                       ),
                                                     ),
