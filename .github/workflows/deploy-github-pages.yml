@@ -16,6 +16,7 @@ on:
       - 'artifacts/santijet-tahvil/**'
       - 'artifacts/santijet-kasa/**'
       - 'artifacts/santijet-is-programi/**'
+      - 'artifacts/santijet-pro/**'
       - '.github/workflows/deploy-github-pages.yml'
       - '.github/scripts/**'
   workflow_dispatch:
@@ -91,10 +92,14 @@ jobs:
               - 'artifacts/santijet-kasa/**'
             is_programi:
               - 'artifacts/santijet-is-programi/**'
+            santijet_pro:
+              - 'artifacts/santijet-pro/**'
             deploy_infra:
               # Build çıktısını değiştiren betikler. Yalnızca workflow YAML
               # değişince tüm app'leri yeniden derleme (hızlı önizleme).
+              # Yeni kabuk betiği diğer uygulamaları yeniden derlemesin.
               - '.github/scripts/**'
+              - '!.github/scripts/build-santijet-pro-pages.sh'
 
       - name: Prepare site directory
         run: mkdir -p site pages-cache/demir-root
@@ -733,6 +738,61 @@ jobs:
           path: site/is-programi
           key: pages-is-programi-v1-${{ hashFiles('.github/scripts/build-is-programi-pages.sh', 'artifacts/santijet-is-programi/**', 'staging-src/artifacts/santijet-is-programi/**') }}
 
+      # --- ŞantiJET Pro kabuk (/santijet-pro/, kilitli /pro/ hub değil) ---
+      - name: Restore ŞantiJET Pro bundle cache
+        id: cache-santijet-pro
+        uses: actions/cache/restore@v4
+        with:
+          path: site/santijet-pro
+          key: pages-santijet-pro-v1-${{ hashFiles('.github/scripts/build-santijet-pro-pages.sh', 'artifacts/santijet-pro/**', 'staging-src/artifacts/santijet-pro/**') }}
+          restore-keys: |
+            pages-santijet-pro-v1-
+
+      - name: Plan ŞantiJET Pro build
+        id: plan-santijet-pro
+        env:
+          CHANGED: ${{ steps.filter.outputs.santijet_pro }}
+          INFRA: ${{ steps.filter.outputs.deploy_infra }}
+          FULL: ${{ github.event_name == 'workflow_dispatch' && inputs.full_rebuild }}
+          CACHE_HIT: ${{ steps.cache-santijet-pro.outputs.cache-hit }}
+        run: |
+          if [ "$FULL" = "true" ] || [ "$INFRA" = "true" ] || [ "$CHANGED" = "true" ] || [ "$CACHE_HIT" != "true" ]; then
+            echo "build=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "build=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Setup Flutter for ŞantiJET Pro
+        if: steps.plan-santijet-pro.outputs.build == 'true'
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: '3.47.3'
+          cache: true
+          cache-key: flutter-santijet-pro-3.47.3
+
+      - name: Build ŞantiJET Pro web (staging preview)
+        if: steps.plan-santijet-pro.outputs.build == 'true'
+        id: santijet_pro_build
+        env:
+          GITHUB_REPOSITORY_NAME: ${{ github.event.repository.name }}
+        run: |
+          if [ -f staging-src/.github/scripts/build-santijet-pro-pages.sh ]; then
+            bash staging-src/.github/scripts/build-santijet-pro-pages.sh
+          elif [ -f .github/scripts/build-santijet-pro-pages.sh ]; then
+            bash .github/scripts/build-santijet-pro-pages.sh
+          else
+            echo "::error::build-santijet-pro-pages.sh missing"
+            exit 1
+          fi
+
+      - name: Save ŞantiJET Pro bundle cache
+        if: steps.plan-santijet-pro.outputs.build == 'true' && steps.santijet_pro_build.outcome == 'success'
+        uses: actions/cache/save@v4
+        with:
+          path: site/santijet-pro
+          key: pages-santijet-pro-v1-${{ hashFiles('.github/scripts/build-santijet-pro-pages.sh', 'artifacts/santijet-pro/**', 'staging-src/artifacts/santijet-pro/**') }}
+
       - name: Incremental build plan summary
         run: |
           echo "Deploy plan (build=true → derlendi, build=false → önbellekten alındı):"
@@ -746,6 +806,7 @@ jobs:
           echo "  Tahvil:       ${{ steps.plan-tahvil.outputs.build }} (changed=${{ steps.filter.outputs.tahvil }})"
           echo "  Kasa:         ${{ steps.plan-kasa.outputs.build }} (changed=${{ steps.filter.outputs.kasa }})"
           echo "  İş Programı:  ${{ steps.plan-is-programi.outputs.build }} (changed=${{ steps.filter.outputs.is_programi }})"
+          echo "  ŞantiJET Pro: ${{ steps.plan-santijet-pro.outputs.build }} (changed=${{ steps.filter.outputs.santijet_pro }})"
           echo "  Infra:        changed=${{ steps.filter.outputs.deploy_infra }}"
 
       - name: Verify site bundle
@@ -790,6 +851,9 @@ jobs:
           if [ ! -f site/is-programi/index.html ]; then
             echo "::warning::İş Programı bundle missing (site/is-programi/index.html)."
           fi
+          if [ ! -f site/santijet-pro/index.html ]; then
+            echo "::warning::ŞantiJET Pro bundle missing (site/santijet-pro/index.html)."
+          fi
           echo "Site bundle OK:"
           find site -maxdepth 3 -type f -name 'index.html' | sort
 
@@ -817,3 +881,4 @@ jobs:
           echo "Tahvil staging: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/tahvil/"
           echo "Kasa staging: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/kasa/"
           echo "İş Programı staging: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/is-programi/"
+          echo "ŞantiJET Pro staging: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/santijet-pro/"
