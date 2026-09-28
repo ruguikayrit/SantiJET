@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_web_plugins/url_strategy.dart';
 
 import 'app.dart';
+import 'url_strategy_stub.dart' if (dart.library.html) 'url_strategy_web.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  // Statik önizlemede /demir yenilemesi 404 olmasın.
-  setUrlStrategy(const HashUrlStrategy());
+  useHashUrlStrategy();
   ErrorWidget.builder = (details) {
     return ColoredBox(
       color: const Color(0xFF05070A),
