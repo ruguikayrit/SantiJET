@@ -1207,7 +1207,7 @@ class _PuantajTopBar extends StatelessWidget {
                     children: [
                       Icon(Icons.chevron_left, color: ProColors.text, size: 22),
                       Text(
-                        'Saha Turu',
+                        'Saha',
                         style: TextStyle(fontFamily: 'Inter', fontSize: 14, color: ProColors.text),
                       ),
                     ],

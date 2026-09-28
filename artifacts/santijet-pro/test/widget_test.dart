@@ -3,6 +3,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:santijet_pro/app.dart';
 import 'package:santijet_pro/modules/pro_module.dart';
 
+Future<void> _ac(WidgetTester tester) async {
+  await tester.pumpWidget(const SantijetProApp());
+  await tester.pump(const Duration(milliseconds: 1700));
+  await tester.pumpAndSettle();
+}
+
 void main() {
   test('modül listesi Pro kararlarıyla uyumlu', () {
     final ids = ProModule.catalog.map((module) => module.id).toList();
@@ -20,13 +26,29 @@ void main() {
     expect(ids, isNot(contains('celik')));
   });
 
+  testWidgets('açılış ekranı PRO markasını gösterir', (tester) async {
+    tester.view.physicalSize = const Size(800, 1600);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(const SantijetProApp());
+    expect(find.text('PRO'), findsOneWidget);
+    expect(find.text('Metraj'), findsNothing);
+    expect(find.byType(Image), findsWidgets);
+
+    await tester.pump(const Duration(milliseconds: 1700));
+    await tester.pumpAndSettle();
+    expect(find.text('Metraj'), findsWidgets);
+  });
+
   testWidgets('dashboard modülleri gösterir', (tester) async {
     tester.view.physicalSize = const Size(800, 2800);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    await tester.pumpWidget(const SantijetProApp());
+    await _ac(tester);
     expect(find.text('Metraj'), findsWidgets);
     expect(find.text('Süre'), findsOneWidget);
     expect(find.text('Adam-gün'), findsOneWidget);
@@ -110,7 +132,7 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    await tester.pumpWidget(const SantijetProApp());
+    await _ac(tester);
     await tester.tap(find.byKey(const Key('quick-add')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('module-saha')));
@@ -194,13 +216,115 @@ void main() {
     expect(find.text('Günlük İmalatlar'), findsNothing);
   });
 
+  testWidgets('saha turu ekranı görseli gösterir', (tester) async {
+    tester.view.physicalSize = const Size(800, 2800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await _ac(tester);
+    await tester.tap(find.byKey(const Key('quick-add')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('module-saha')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('saha-open-saha-turu')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Sahadaki durumu gözlemle, tespit et, kaydet.'), findsOneWidget);
+    expect(find.text('26 Eylül 2026'), findsOneWidget);
+    expect(find.text('Cuma'), findsOneWidget);
+    expect(find.text('Tur Geçmişi'), findsOneWidget);
+    expect(find.text('12'), findsOneWidget);
+    expect(find.text('Toplam Tespit'), findsOneWidget);
+    expect(find.text('Açık'), findsOneWidget);
+    expect(find.text('Devam Ediyor'), findsOneWidget);
+    expect(find.text('Tamamlandı'), findsWidgets);
+    expect(find.text('Yeni Saha Turu Başlat'), findsOneWidget);
+    expect(find.text('Son Turlar'), findsOneWidget);
+    expect(find.text('A Blok Genel Saha Turu'), findsOneWidget);
+    expect(find.text('B Blok İç Mekan Turu'), findsOneWidget);
+    expect(find.text('Şantiye Geneli Güvenlik Turu'), findsOneWidget);
+    expect(find.text('A Blok - 3. Kat Mekanik Kontrol'), findsOneWidget);
+    expect(find.text('8 tespit'), findsOneWidget);
+    expect(find.textContaining('github.io'), findsNothing);
+
+    await tester.tap(find.byKey(const Key('saha-turu-yeni')));
+    await tester.pumpAndSettle();
+    expect(find.text('Gözlem'), findsOneWidget);
+    expect(find.text('Tespit'), findsOneWidget);
+    expect(find.text('İstanbul Residence'), findsOneWidget);
+    expect(find.text('A Blok > 3. Kat > Daire 12'), findsOneWidget);
+    expect(find.text('Alçıpan'), findsOneWidget);
+    expect(find.text('Alçıpan imalatları devam ediyor. Genel durum uygun.'), findsOneWidget);
+    expect(find.text('47/500'), findsOneWidget);
+    expect(find.text('3/10'), findsOneWidget);
+    expect(find.text('Fotoğraf\nEkle'), findsOneWidget);
+    expect(find.text('Gözlemi Kaydet'), findsOneWidget);
+    expect(find.text('Ana Sayfa'), findsNothing);
+    expect(find.text('Göreve Dönüştür'), findsNothing);
+
+    await tester.tap(find.byKey(const Key('saha-turu-tespit')));
+    await tester.pumpAndSettle();
+    expect(find.text('Alçıpan derz uygulaması eksik.\n2 bölgede tespit edildi.'), findsOneWidget);
+    expect(find.text('48/500'), findsOneWidget);
+    expect(find.text('Göreve Dönüştür'), findsOneWidget);
+    expect(find.text('Göreve Dönüştürme'), findsNothing);
+    expect(find.text('Tespiti Kaydet'), findsOneWidget);
+    expect(find.text('Gözlemi Kaydet'), findsNothing);
+
+    await tester.tap(find.byKey(const Key('saha-turu-goreve-donustur')));
+    await tester.pumpAndSettle();
+    expect(find.text('Görev Oluştur - Özet'), findsOneWidget);
+    expect(find.text('Alçıpan derz eksiklerini tamamla'), findsOneWidget);
+    expect(find.text('Alçıpan Ekibi'), findsOneWidget);
+    expect(find.text('28 Eylül 2026'), findsOneWidget);
+    expect(find.text('Yüksek'), findsOneWidget);
+    expect(find.text('68/500'), findsOneWidget);
+    expect(find.text('Görevi Oluştur ve Kaydet'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('gorev-ozet-geri')));
+    await tester.pumpAndSettle();
+    expect(find.text('Tespiti Kaydet'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('yeni-saha-turu-back')));
+    await tester.pumpAndSettle();
+    expect(find.text('Yeni Saha Turu Başlat'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('saha-turu-back')));
+    await tester.pumpAndSettle();
+    expect(find.text('Saha operasyonlarını kolayca yönetin'), findsOneWidget);
+  });
+
+  testWidgets('yeni saha turu telefon genişliğinde taşmaz', (tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await _ac(tester);
+    await tester.tap(find.byKey(const Key('quick-add')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('module-saha')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('saha-open-saha-turu')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('saha-turu-yeni')));
+    await tester.pumpAndSettle();
+    expect(find.text('Gözlemi Kaydet'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('saha-turu-tespit')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('saha-turu-goreve-donustur')));
+    await tester.pumpAndSettle();
+    expect(find.text('Görev Oluştur - Özet'), findsOneWidget);
+  });
+
   testWidgets('saha masası personel ekranını açar', (tester) async {
     tester.view.physicalSize = const Size(800, 2800);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    await tester.pumpWidget(const SantijetProApp());
+    await _ac(tester);
     await tester.tap(find.byKey(const Key('quick-add')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('module-saha')));
@@ -240,7 +364,7 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    await tester.pumpWidget(const SantijetProApp());
+    await _ac(tester);
     await tester.tap(find.byKey(const Key('quick-add')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('module-saha')));
@@ -279,7 +403,7 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    await tester.pumpWidget(const SantijetProApp());
+    await _ac(tester);
     await tester.tap(find.byKey(const Key('quick-add')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('module-saha')));
@@ -317,7 +441,7 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    await tester.pumpWidget(const SantijetProApp());
+    await _ac(tester);
     await tester.tap(find.byKey(const Key('quick-add')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('module-saha')));
@@ -355,7 +479,7 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    await tester.pumpWidget(const SantijetProApp());
+    await _ac(tester);
     await tester.tap(find.byKey(const Key('quick-add')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('module-saha')));
@@ -393,7 +517,7 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    await tester.pumpWidget(const SantijetProApp());
+    await _ac(tester);
     await tester.tap(find.byKey(const Key('quick-add')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('module-demir')));

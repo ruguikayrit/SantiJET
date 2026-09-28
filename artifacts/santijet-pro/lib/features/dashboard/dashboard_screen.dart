@@ -4,6 +4,9 @@ import '../../core/theme/pro_theme.dart';
 
 part 'reports_desk.dart';
 part 'saha_desk.dart';
+part 'saha_turu_desk.dart';
+part 'yeni_saha_turu_desk.dart';
+part 'gorev_ozet_desk.dart';
 part 'puantaj_desk.dart';
 part 'personel_desk.dart';
 part 'gorevler_desk.dart';
@@ -26,7 +29,7 @@ class DashboardScreen extends StatefulWidget {
   State<DashboardScreen> createState() => _DashboardScreenState();
 }
 
-enum _Desk { home, modules, saha, puantaj, personel, gorevler, imalat, makine, malzeme, projects, reports, menu }
+enum _Desk { home, modules, saha, sahaTuru, yeniSahaTuru, puantaj, personel, gorevler, imalat, makine, malzeme, projects, reports, menu }
 
 class _DashboardScreenState extends State<DashboardScreen> {
   _Desk _desk = _Desk.home;
@@ -47,7 +50,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 onOpenImalat: () => setState(() => _desk = _Desk.imalat),
                 onOpenMakine: () => setState(() => _desk = _Desk.makine),
                 onOpenMalzeme: () => setState(() => _desk = _Desk.malzeme),
+                onOpenSahaTuru: () => setState(() => _desk = _Desk.sahaTuru),
               ),
+          _Desk.sahaTuru => _SahaTuruDesk(
+                onBack: () => setState(() => _desk = _Desk.saha),
+                onYeniTur: () => setState(() => _desk = _Desk.yeniSahaTuru),
+              ),
+          _Desk.yeniSahaTuru => _YeniSahaTuruDesk(onBack: () => setState(() => _desk = _Desk.sahaTuru)),
           _Desk.puantaj => _PuantajDesk(onBack: () => setState(() => _desk = _Desk.saha)),
           _Desk.personel => _PersonelDesk(onBack: () => setState(() => _desk = _Desk.saha)),
           _Desk.gorevler => _GorevlerDesk(onBack: () => setState(() => _desk = _Desk.saha)),
@@ -62,7 +71,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
           _Desk.menu => _MenuDesk(onSelect: (desk) => setState(() => _desk = desk)),
         },
       ),
-      bottomNavigationBar: _BottomBar(
+      bottomNavigationBar: _desk == _Desk.yeniSahaTuru
+          ? null
+          : _BottomBar(
         desk: _desk,
         onSelect: (desk) => setState(() => _desk = desk),
         onQuickAdd: () => setState(() {
@@ -835,7 +846,9 @@ class _BottomBar extends StatelessWidget {
                         style: TextStyle(
                           fontFamily: 'Inter',
                           fontSize: 10,
-                          color: desk == _Desk.modules ? ProColors.electricBlue : ProColors.textMuted,
+                          color: desk == _Desk.modules || desk == _Desk.sahaTuru
+                              ? ProColors.electricBlue
+                              : ProColors.textMuted,
                         ),
                       ),
                     ],

@@ -8,6 +8,7 @@ class _SahaDesk extends StatelessWidget {
     required this.onOpenImalat,
     required this.onOpenMakine,
     required this.onOpenMalzeme,
+    required this.onOpenSahaTuru,
   });
 
   final VoidCallback onOpenPuantaj;
@@ -16,6 +17,7 @@ class _SahaDesk extends StatelessWidget {
   final VoidCallback onOpenImalat;
   final VoidCallback onOpenMakine;
   final VoidCallback onOpenMalzeme;
+  final VoidCallback onOpenSahaTuru;
 
   @override
   Widget build(BuildContext context) {
@@ -57,6 +59,7 @@ class _SahaDesk extends StatelessWidget {
           onOpenMakine: onOpenMakine,
           onOpenImalat: onOpenImalat,
           onOpenMalzeme: onOpenMalzeme,
+          onOpenSahaTuru: onOpenSahaTuru,
         ),
       ],
     );
@@ -81,6 +84,7 @@ class _SahaGenelBody extends StatelessWidget {
     required this.onOpenMakine,
     required this.onOpenImalat,
     required this.onOpenMalzeme,
+    required this.onOpenSahaTuru,
   });
 
   final VoidCallback onOpenPuantaj;
@@ -89,6 +93,7 @@ class _SahaGenelBody extends StatelessWidget {
   final VoidCallback onOpenMakine;
   final VoidCallback onOpenImalat;
   final VoidCallback onOpenMalzeme;
+  final VoidCallback onOpenSahaTuru;
 
   static const actions = <_SahaAction>[
     _SahaAction('Günlük Rapor', 'Saha raporu', Icons.description_outlined, Color(0xFF1D4ED8), later: 'Günlük Rapor'),
@@ -125,6 +130,7 @@ class _SahaGenelBody extends StatelessWidget {
             onOpenMakine: onOpenMakine,
             onOpenImalat: onOpenImalat,
             onOpenMalzeme: onOpenMalzeme,
+            onOpenSahaTuru: onOpenSahaTuru,
           ),
         ),
       ],
@@ -141,6 +147,7 @@ class _SahaActionTile extends StatelessWidget {
     this.onOpenMakine,
     this.onOpenImalat,
     this.onOpenMalzeme,
+    this.onOpenSahaTuru,
   });
 
   final _SahaAction action;
@@ -150,6 +157,7 @@ class _SahaActionTile extends StatelessWidget {
   final VoidCallback? onOpenMakine;
   final VoidCallback? onOpenImalat;
   final VoidCallback? onOpenMalzeme;
+  final VoidCallback? onOpenSahaTuru;
 
   @override
   Widget build(BuildContext context) {
@@ -165,6 +173,7 @@ class _SahaActionTile extends StatelessWidget {
           'İmalat' => const Key('saha-open-imalat'),
           'Günlük Rapor' => const Key('saha-open-daily-report'),
           'Malzeme' => const Key('saha-open-malzeme'),
+          'Saha Turu' => const Key('saha-open-saha-turu'),
           _ => null,
         },
         borderRadius: BorderRadius.circular(14),
@@ -193,6 +202,10 @@ class _SahaActionTile extends StatelessWidget {
             onOpenMalzeme!();
             return;
           }
+          if (action.title == 'Saha Turu' && onOpenSahaTuru != null) {
+            onOpenSahaTuru!();
+            return;
+          }
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('${action.later} daha sonra eklenecek.')),
           );
@@ -203,7 +216,7 @@ class _SahaActionTile extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(action.icon, color: action.color, size: 26),
-              const SizedBox(height: 8),
+              const SizedBox(height: 4),
               Text(
                 action.title,
                 textAlign: TextAlign.center,

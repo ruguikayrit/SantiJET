@@ -9,6 +9,9 @@ abstract final class ProColors {
   static const textMuted = Color(0xB3FFFFFF);
   static const textFaint = Color(0x66FFFFFF);
   static const electricBlue = Color(0xFF0055FF);
+  static const electricBlueLight = Color(0xFF3B82F6);
+  static const electricBlueGlow = Color(0x334877DC);
+  static const blueprintGrid = Color(0x0B4876DC);
 }
 
 abstract final class ProTheme {
