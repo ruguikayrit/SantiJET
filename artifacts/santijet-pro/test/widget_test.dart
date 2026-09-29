@@ -318,6 +318,61 @@ void main() {
     expect(find.text('Görev Oluştur - Özet'), findsOneWidget);
   });
 
+  testWidgets('demo yükle ana sayfayı doldurur', (tester) async {
+    tester.view.physicalSize = const Size(390, 2400);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await _ac(tester);
+    expect(find.text('Henüz proje yok'), findsWidgets);
+    expect(find.text('%62'), findsNothing);
+
+    await tester.tap(find.text('Menü'));
+    await tester.pumpAndSettle();
+    expect(find.text('Demo Yükle'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('menu-demo-load')));
+    await tester.pump();
+    expect(find.text('Demo veriler yüklendi. Aktif proje: İstanbul Residence.'), findsOneWidget);
+    await tester.pumpAndSettle();
+
+    expect(find.text('İstanbul Residence'), findsWidgets);
+    expect(find.text('Henüz proje yok'), findsNothing);
+    expect(find.text('%62'), findsWidgets);
+    expect(find.text('212 gün'), findsOneWidget);
+    expect(find.text('4.180'), findsOneWidget);
+    expect(find.text('%71'), findsOneWidget);
+    expect(find.text('%54'), findsOneWidget);
+    expect(find.text('%38'), findsOneWidget);
+    expect(find.text('128 M₺'), findsOneWidget);
+    expect(find.text('4.800 m³'), findsOneWidget);
+    expect(find.text('6'), findsWidgets);
+
+    await tester.tap(find.text('Menü'));
+    await tester.pumpAndSettle();
+    expect(find.text('Demo yüklü'), findsOneWidget);
+    expect(find.text('İstanbul Residence'), findsWidgets);
+
+    await tester.tap(find.text('Proje Seç'));
+    await tester.pumpAndSettle();
+    expect(find.text('Aktif proje: İstanbul Residence'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('quick-add')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('module-saha')));
+    await tester.pumpAndSettle();
+    expect(find.text('İstanbul Residence'), findsWidgets);
+    await tester.tap(find.byKey(const Key('saha-open-saha-turu')));
+    await tester.pumpAndSettle();
+    expect(find.text('12'), findsOneWidget);
+    expect(find.text('A Blok Genel Saha Turu'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('saha-turu-yeni')));
+    await tester.pumpAndSettle();
+    expect(find.text('İstanbul Residence'), findsOneWidget);
+    expect(find.text('A Blok > 3. Kat > Daire 12'), findsOneWidget);
+  });
+
   testWidgets('saha masası personel ekranını açar', (tester) async {
     tester.view.physicalSize = const Size(800, 2800);
     tester.view.devicePixelRatio = 1;

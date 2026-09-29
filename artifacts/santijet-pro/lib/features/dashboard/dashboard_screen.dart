@@ -14,6 +14,38 @@ part 'imalat_desk.dart';
 part 'makine_desk.dart';
 part 'malzeme_desk.dart';
 
+class _DemoScope extends InheritedWidget {
+  const _DemoScope({required this.loaded, required super.child});
+
+  final bool loaded;
+
+  static bool of(BuildContext context) {
+    return context.dependOnInheritedWidgetOfExactType<_DemoScope>()?.loaded ?? false;
+  }
+
+  @override
+  bool updateShouldNotify(_DemoScope oldWidget) => loaded != oldWidget.loaded;
+}
+
+abstract final class _Demo {
+  static const project = 'İstanbul Residence';
+  static const place = 'İstanbul';
+  static const span = '01 Mar – 30 Ara 2026';
+  static const note = 'A Blok · şantiye açık';
+  static const metraj = '%62';
+  static const sure = '212 gün';
+  static const adamGun = '4.180';
+  static const verim = ['%71', '%54', '%38'];
+  static const butce = '128 M₺';
+  static const maliyet = '74 M₺';
+  static const kasa = '6,4 M₺';
+  static const hakedis = '61 M₺';
+  static const beton = ['4.800 m³', '42 m³', '2.960 m³', '%62'];
+  static const demir = ['860 t', '540 t', '%63'];
+  static const malzeme = ['6', '18', '14'];
+  static const program = ['%58', '1.640', '3'];
+}
+
 void _keepInPro(BuildContext context) {
   ScaffoldMessenger.of(context).showSnackBar(
     const SnackBar(content: Text('Kayıt bu uygulamada henüz tutulmuyor.')),
@@ -33,6 +65,17 @@ enum _Desk { home, modules, saha, sahaTuru, yeniSahaTuru, puantaj, personel, gor
 
 class _DashboardScreenState extends State<DashboardScreen> {
   _Desk _desk = _Desk.home;
+  var _demo = false;
+
+  void _loadDemo() {
+    setState(() {
+      _demo = true;
+      _desk = _Desk.home;
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Demo veriler yüklendi. Aktif proje: İstanbul Residence.')),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -40,7 +83,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
       backgroundColor: ProColors.canvas,
       body: SafeArea(
         bottom: false,
-        child: switch (_desk) {
+        child: _DemoScope(
+          loaded: _demo,
+          child: switch (_desk) {
           _Desk.home => _HomeDesk(onOpenSaha: () => setState(() => _desk = _Desk.saha)),
           _Desk.modules => _ModulesDesk(onOpenSaha: () => setState(() => _desk = _Desk.saha)),
           _Desk.saha => _SahaDesk(
@@ -63,13 +108,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
           _Desk.imalat => _ImalatDesk(onBack: () => setState(() => _desk = _Desk.saha)),
           _Desk.makine => _MakineDesk(onBack: () => setState(() => _desk = _Desk.saha)),
           _Desk.malzeme => _MalzemeDesk(onBack: () => setState(() => _desk = _Desk.saha)),
-          _Desk.projects => const _PlainDesk(
+          _Desk.projects => _PlainDesk(
               title: 'Projeler',
-              body: 'Ortak proje kaydı henüz bir uygulamaya bağlanmadı.',
+              body: _demo ? 'Aktif proje: İstanbul Residence' : 'Ortak proje kaydı henüz bir uygulamaya bağlanmadı.',
             ),
           _Desk.reports => const _ReportsDesk(),
-          _Desk.menu => _MenuDesk(onSelect: (desk) => setState(() => _desk = desk)),
+          _Desk.menu => _MenuDesk(
+              demoLoaded: _demo,
+              onSelect: (desk) => setState(() => _desk = desk),
+              onLoadDemo: _loadDemo,
+            ),
         },
+        ),
       ),
       bottomNavigationBar: _desk == _Desk.yeniSahaTuru
           ? null
@@ -189,21 +239,22 @@ class _ProjectHero extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final demo = _DemoScope.of(context);
     return ClipRRect(
       borderRadius: BorderRadius.circular(18),
       child: SizedBox(
         height: 128,
         child: Row(
           children: [
-            const Expanded(
+            Expanded(
               child: ColoredBox(
-                color: Color(0xFF10243F),
+                color: const Color(0xFF10243F),
                 child: Padding(
-                  padding: EdgeInsets.fromLTRB(14, 12, 8, 12),
+                  padding: const EdgeInsets.fromLTRB(14, 12, 8, 12),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
+                      const Text(
                         'AKTİF PROJE',
                         style: TextStyle(
                           fontFamily: 'Rajdhani',
@@ -212,12 +263,12 @@ class _ProjectHero extends StatelessWidget {
                           color: Color(0xFF9EC1FF),
                         ),
                       ),
-                      SizedBox(height: 2),
+                      const SizedBox(height: 2),
                       Text(
-                        'Henüz proje yok',
+                        demo ? _Demo.project : 'Henüz proje yok',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontFamily: 'Rajdhani',
                           fontWeight: FontWeight.w700,
                           fontSize: 22,
@@ -225,20 +276,27 @@ class _ProjectHero extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        'KPI değerleri proje bağlanınca dolacak',
+                        demo ? _Demo.note : 'KPI değerleri proje bağlanınca dolacak',
                         maxLines: 2,
-                        style: TextStyle(fontFamily: 'Inter', fontSize: 11, color: ProColors.textMuted),
+                        style: const TextStyle(fontFamily: 'Inter', fontSize: 11, color: ProColors.textMuted),
                       ),
-                      Spacer(),
+                      const Spacer(),
                       Row(
                         children: [
-                          Icon(Icons.place_outlined, size: 14, color: ProColors.textMuted),
-                          SizedBox(width: 4),
-                          Text('—', style: TextStyle(color: ProColors.text, fontSize: 12)),
-                          SizedBox(width: 12),
-                          Icon(Icons.calendar_today_outlined, size: 13, color: ProColors.textMuted),
-                          SizedBox(width: 4),
-                          Text('—', style: TextStyle(color: ProColors.text, fontSize: 12)),
+                          const Icon(Icons.place_outlined, size: 14, color: ProColors.textMuted),
+                          const SizedBox(width: 4),
+                          Text(demo ? _Demo.place : '—', style: const TextStyle(color: ProColors.text, fontSize: 12)),
+                          const SizedBox(width: 12),
+                          const Icon(Icons.calendar_today_outlined, size: 13, color: ProColors.textMuted),
+                          const SizedBox(width: 4),
+                          Flexible(
+                            child: Text(
+                              demo ? _Demo.span : '—',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(color: ProColors.text, fontSize: 12),
+                            ),
+                          ),
                         ],
                       ),
                     ],
@@ -276,6 +334,7 @@ class _VerimKpi extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final demo = _DemoScope.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -291,11 +350,11 @@ class _VerimKpi extends StatelessWidget {
         const SizedBox(height: 8),
         Row(
           children: [
-            Expanded(child: _VerimCard(label: 'İNŞAAT', color: const Color(0xFF16A34A), onTap: onOpenSaha)),
+            Expanded(child: _VerimCard(label: 'İNŞAAT', value: demo ? _Demo.verim[0] : '—', color: const Color(0xFF16A34A), onTap: onOpenSaha)),
             const SizedBox(width: 8),
-            Expanded(child: _VerimCard(label: 'ELEKTRİK', color: const Color(0xFFD97706), onTap: onOpenSaha)),
+            Expanded(child: _VerimCard(label: 'ELEKTRİK', value: demo ? _Demo.verim[1] : '—', color: const Color(0xFFD97706), onTap: onOpenSaha)),
             const SizedBox(width: 8),
-            Expanded(child: _VerimCard(label: 'MEKANİK', color: const Color(0xFFDC2626), onTap: onOpenSaha)),
+            Expanded(child: _VerimCard(label: 'MEKANİK', value: demo ? _Demo.verim[2] : '—', color: const Color(0xFFDC2626), onTap: onOpenSaha)),
           ],
         ),
       ],
@@ -304,9 +363,10 @@ class _VerimKpi extends StatelessWidget {
 }
 
 class _VerimCard extends StatelessWidget {
-  const _VerimCard({required this.label, required this.color, required this.onTap});
+  const _VerimCard({required this.label, required this.value, required this.color, required this.onTap});
 
   final String label;
+  final String value;
   final Color color;
   final VoidCallback onTap;
 
@@ -327,9 +387,9 @@ class _VerimCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                '—',
-                style: TextStyle(fontFamily: 'Rajdhani', fontWeight: FontWeight.w700, fontSize: 22, color: ProColors.text),
+              Text(
+                value,
+                style: const TextStyle(fontFamily: 'Rajdhani', fontWeight: FontWeight.w700, fontSize: 22, color: ProColors.text),
               ),
               const SizedBox(height: 4),
               Text(
@@ -371,16 +431,16 @@ class _SahaProgress extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(14),
           decoration: _cardDecoration(),
-          child: const Row(
+          child: Row(
             children: [
-              _Ring(label: 'Metraj'),
-              SizedBox(width: 14),
+              _Ring(label: 'Metraj', value: _DemoScope.of(context) ? _Demo.metraj : '—'),
+              const SizedBox(width: 14),
               Expanded(
                 child: Row(
                   children: [
-                    Expanded(child: _MetricColumn(label: 'Süre')),
-                    SizedBox(width: 12),
-                    Expanded(child: _MetricColumn(label: 'Adam-gün')),
+                    Expanded(child: _MetricColumn(label: 'Süre', value: _DemoScope.of(context) ? _Demo.sure : '—')),
+                    const SizedBox(width: 12),
+                    Expanded(child: _MetricColumn(label: 'Adam-gün', value: _DemoScope.of(context) ? _Demo.adamGun : '—')),
                   ],
                 ),
               ),
@@ -393,9 +453,10 @@ class _SahaProgress extends StatelessWidget {
 }
 
 class _Ring extends StatelessWidget {
-  const _Ring({required this.label});
+  const _Ring({required this.label, required this.value});
 
   final String label;
+  final String value;
 
   @override
   Widget build(BuildContext context) {
@@ -410,9 +471,9 @@ class _Ring extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Text(
-              '—',
-              style: TextStyle(
+            Text(
+              value,
+              style: const TextStyle(
                 fontFamily: 'Rajdhani',
                 fontWeight: FontWeight.w700,
                 fontSize: 22,
@@ -431,9 +492,10 @@ class _Ring extends StatelessWidget {
 }
 
 class _MetricColumn extends StatelessWidget {
-  const _MetricColumn({required this.label});
+  const _MetricColumn({required this.label, required this.value});
 
   final String label;
+  final String value;
 
   @override
   Widget build(BuildContext context) {
@@ -441,9 +503,9 @@ class _MetricColumn extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(label, style: const TextStyle(fontFamily: 'Inter', fontSize: 12, color: ProColors.textMuted)),
-        const Text(
-          '—',
-          style: TextStyle(fontFamily: 'Rajdhani', fontWeight: FontWeight.w700, fontSize: 22, color: ProColors.text),
+        Text(
+          value,
+          style: const TextStyle(fontFamily: 'Rajdhani', fontWeight: FontWeight.w700, fontSize: 22, color: ProColors.text),
         ),
         const SizedBox(height: 8),
         const SizedBox(
@@ -466,48 +528,54 @@ class _FinanceRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Column(
+    final demo = _DemoScope.of(context);
+    final empty = '—';
+    return Column(
       children: [
         Row(
           children: [
             Expanded(
               child: _FinanceTile(
                 title: 'Bütçe',
+                value: demo ? _Demo.butce : empty,
                 icon: Icons.pie_chart_outline,
-                colors: [Color(0xFF2563EB), Color(0xFF1D4ED8)],
+                colors: const [Color(0xFF2563EB), Color(0xFF1D4ED8)],
                 foot: 'Planlanan maliyet',
               ),
             ),
-            SizedBox(width: 8),
+            const SizedBox(width: 8),
             Expanded(
               child: _FinanceTile(
                 title: 'Maliyet',
+                value: demo ? _Demo.maliyet : empty,
                 icon: Icons.payments_outlined,
-                colors: [Color(0xFFF97316), Color(0xFFEA580C)],
+                colors: const [Color(0xFFF97316), Color(0xFFEA580C)],
                 foot: 'Yaklaşık maliyet',
               ),
             ),
           ],
         ),
-        SizedBox(height: 8),
+        const SizedBox(height: 8),
         Row(
           children: [
             Expanded(
               child: _FinanceTile(
                 title: 'Kasa',
+                value: demo ? _Demo.kasa : empty,
                 icon: Icons.account_balance_wallet_outlined,
-                colors: [Color(0xFF6366F1), Color(0xFF4F46E5)],
+                colors: const [Color(0xFF6366F1), Color(0xFF4F46E5)],
                 foot: 'Güncel kasa',
                 detail: 'Toplam gelir',
                 extra: 'Toplam gider',
               ),
             ),
-            SizedBox(width: 8),
+            const SizedBox(width: 8),
             Expanded(
               child: _FinanceTile(
                 title: 'Hakediş',
+                value: demo ? _Demo.hakedis : empty,
                 icon: Icons.description_outlined,
-                colors: [Color(0xFFE11D48), Color(0xFFBE123C)],
+                colors: const [Color(0xFFE11D48), Color(0xFFBE123C)],
                 foot: 'İşveren hakedişi',
               ),
             ),
@@ -521,6 +589,7 @@ class _FinanceRow extends StatelessWidget {
 class _FinanceTile extends StatelessWidget {
   const _FinanceTile({
     required this.title,
+    required this.value,
     required this.icon,
     required this.colors,
     required this.foot,
@@ -529,6 +598,7 @@ class _FinanceTile extends StatelessWidget {
   });
 
   final String title;
+  final String value;
   final IconData icon;
   final List<Color> colors;
   final String foot;
@@ -554,9 +624,9 @@ class _FinanceTile extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(fontFamily: 'Inter', fontSize: 13, color: Colors.white),
           ),
-          const Text(
-            '—',
-            style: TextStyle(fontFamily: 'Rajdhani', fontWeight: FontWeight.w700, fontSize: 26, color: Colors.white),
+          Text(
+            value,
+            style: const TextStyle(fontFamily: 'Rajdhani', fontWeight: FontWeight.w700, fontSize: 26, color: Colors.white),
           ),
           Text(
             foot,
@@ -590,21 +660,23 @@ class _SourceKpis extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Column(
+    final demo = _DemoScope.of(context);
+    const dash = ['—', '—', '—', '—'];
+    return Column(
       children: [
         Row(
           children: [
-            Expanded(child: _SourceCell(title: 'Beton', lines: ['Planlanan döküm', 'Bugünkü döküm', 'Gerçekleşen döküm', 'Keşif ilerlemesi'])),
-            SizedBox(width: 8),
-            Expanded(child: _SourceCell(title: 'Demir', lines: ['Planlanan tonaj', 'Beklenen kullanım', 'İlerleme'])),
+            Expanded(child: _SourceCell(title: 'Beton', lines: const ['Planlanan döküm', 'Bugünkü döküm', 'Gerçekleşen döküm', 'Keşif ilerlemesi'], values: demo ? _Demo.beton : dash)),
+            const SizedBox(width: 8),
+            Expanded(child: _SourceCell(title: 'Demir', lines: const ['Planlanan tonaj', 'Beklenen kullanım', 'İlerleme'], values: demo ? _Demo.demir : dash)),
           ],
         ),
-        SizedBox(height: 8),
+        const SizedBox(height: 8),
         Row(
           children: [
-            Expanded(child: _SourceCell(title: 'Malzeme', lines: ['Onay bekleyen', 'Onaylandı', 'Teslim edildi'])),
-            SizedBox(width: 8),
-            Expanded(child: _SourceCell(title: 'İş Programı', lines: ['Ortalama ilerleme', 'Kalan adam-gün', 'Geciken'])),
+            Expanded(child: _SourceCell(title: 'Malzeme', lines: const ['Onay bekleyen', 'Onaylandı', 'Teslim edildi'], values: demo ? _Demo.malzeme : dash)),
+            const SizedBox(width: 8),
+            Expanded(child: _SourceCell(title: 'İş Programı', lines: const ['Ortalama ilerleme', 'Kalan adam-gün', 'Geciken'], values: demo ? _Demo.program : dash)),
           ],
         ),
       ],
@@ -613,10 +685,11 @@ class _SourceKpis extends StatelessWidget {
 }
 
 class _SourceCell extends StatelessWidget {
-  const _SourceCell({required this.title, required this.lines});
+  const _SourceCell({required this.title, required this.lines, required this.values});
 
   final String title;
   final List<String> lines;
+  final List<String> values;
 
   @override
   Widget build(BuildContext context) {
@@ -630,15 +703,15 @@ class _SourceCell extends StatelessWidget {
             title,
             style: const TextStyle(fontFamily: 'Rajdhani', fontWeight: FontWeight.w700, fontSize: 14, color: ProColors.text),
           ),
-          for (final line in lines)
+          for (var i = 0; i < lines.length; i++)
             Padding(
               padding: const EdgeInsets.only(top: 2),
               child: Row(
                 children: [
                   Expanded(
-                    child: Text(line, style: const TextStyle(fontFamily: 'Inter', fontSize: 11, color: ProColors.textMuted)),
+                    child: Text(lines[i], style: const TextStyle(fontFamily: 'Inter', fontSize: 11, color: ProColors.textMuted)),
                   ),
-                  const Text('—', style: TextStyle(fontSize: 11, color: ProColors.text)),
+                  Text(i < values.length ? values[i] : '—', style: const TextStyle(fontSize: 11, color: ProColors.text)),
                 ],
               ),
             ),
@@ -917,9 +990,11 @@ class _PlainDesk extends StatelessWidget {
 }
 
 class _MenuDesk extends StatelessWidget {
-  const _MenuDesk({required this.onSelect});
+  const _MenuDesk({required this.onSelect, required this.onLoadDemo, required this.demoLoaded});
 
   final ValueChanged<_Desk> onSelect;
+  final VoidCallback onLoadDemo;
+  final bool demoLoaded;
 
   @override
   Widget build(BuildContext context) {
@@ -972,6 +1047,8 @@ class _MenuDesk extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 16),
+        _DemoLoadBar(loaded: demoLoaded, onTap: onLoadDemo),
+        const SizedBox(height: 10),
         const _SignOutBar(),
       ],
     );
@@ -1033,13 +1110,14 @@ class _AccountMetaRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Row(
+    final demo = _DemoScope.of(context);
+    return Row(
       children: [
         Expanded(
           child: _MetaChip(
             icon: Icons.apartment_outlined,
             label: 'Aktif Proje',
-            value: 'Henüz proje yok',
+            value: demo ? _Demo.project : 'Henüz proje yok',
           ),
         ),
         SizedBox(width: 10),
@@ -1104,9 +1182,13 @@ class _MenuSectionTitle extends StatelessWidget {
       children: [
         Icon(icon, size: 16, color: ProColors.textMuted),
         const SizedBox(width: 6),
-        Text(
-          title,
-          style: const TextStyle(fontFamily: 'Rajdhani', fontWeight: FontWeight.w700, fontSize: 16, color: ProColors.text),
+        Expanded(
+          child: Text(
+            title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontFamily: 'Rajdhani', fontWeight: FontWeight.w700, fontSize: 16, color: ProColors.text),
+          ),
         ),
       ],
     );
@@ -1202,6 +1284,51 @@ class _MenuTile extends StatelessWidget {
                 ),
               ],
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DemoLoadBar extends StatelessWidget {
+  const _DemoLoadBar({required this.loaded, required this.onTap});
+
+  final bool loaded;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: loaded ? const Color(0xFF14532D) : const Color(0xFF1D4ED8),
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        key: const Key('menu-demo-load'),
+        borderRadius: BorderRadius.circular(14),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+          child: Row(
+            children: [
+              Icon(loaded ? Icons.check_circle_outline : Icons.download_outlined, color: Colors.white, size: 20),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      loaded ? 'Demo yüklü' : 'Demo Yükle',
+                      style: const TextStyle(fontFamily: 'Rajdhani', fontWeight: FontWeight.w700, fontSize: 18, color: Colors.white),
+                    ),
+                    Text(
+                      loaded ? _Demo.project : 'İstanbul Residence örnek kayıtları',
+                      style: const TextStyle(fontFamily: 'Inter', fontSize: 12, color: Color(0xF2FFFFFF)),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_right, color: Colors.white),
+            ],
           ),
         ),
       ),
