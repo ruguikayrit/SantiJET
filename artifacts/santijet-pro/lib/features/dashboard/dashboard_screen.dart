@@ -389,12 +389,13 @@ class _VerimCard extends StatelessWidget {
             children: [
               Text(
                 value,
-                style: const TextStyle(fontFamily: 'Rajdhani', fontWeight: FontWeight.w700, fontSize: 22, color: ProColors.text),
+                style: const TextStyle(fontFamily: 'Rajdhani', fontWeight: FontWeight.w700, fontSize: 26, color: ProColors.text),
               ),
-              const SizedBox(height: 4),
               Text(
                 label,
-                style: TextStyle(fontFamily: 'Rajdhani', fontWeight: FontWeight.w700, fontSize: 12, letterSpacing: 0.4, color: color),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(fontFamily: 'Inter', fontSize: 13, color: color),
               ),
               const SizedBox(height: 8),
               const SizedBox(
