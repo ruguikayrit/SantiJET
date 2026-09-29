@@ -198,6 +198,7 @@ void main() {
     final today = DateTime.now();
     final daysInMonth = DateTime(today.year, today.month + 1, 0).day;
     expect(find.text('${5 * daysInMonth}'), findsOneWidget);
+    expect(find.textContaining('%'), findsNothing);
     expect(find.text('İstanbul Residence'), findsNothing);
     expect(find.text('A Blok'), findsNothing);
 
@@ -207,6 +208,7 @@ void main() {
     expect(find.text('Ay Özeti (Tüm Personel)'), findsOneWidget);
     expect(find.text('Mehmet Arslan'), findsOneWidget);
     expect(find.textContaining('30 kişi'), findsOneWidget);
+    expect(find.textContaining('%'), findsNothing);
 
     await tester.tap(find.byKey(const Key('puantaj-back')));
     await tester.pumpAndSettle();

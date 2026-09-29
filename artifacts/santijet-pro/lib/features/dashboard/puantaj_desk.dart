@@ -1967,23 +1967,6 @@ class _PuantajTotal extends StatelessWidget {
   }
 }
 
-(int, int, int, int) _dortYuzde(int first, int second, int third, int fourth) {
-  final parts = [first, second, third, fourth];
-  final whole = parts.fold<int>(0, (sum, value) => sum + value);
-  if (whole == 0) return (0, 0, 0, 0);
-  final raw = [for (final value in parts) value / whole];
-  final rounded = [for (final value in raw) (value * 100).round()];
-  final drift = rounded.fold<int>(0, (sum, value) => sum + value) - 100;
-  if (drift != 0) {
-    var index = 0;
-    for (var cursor = 1; cursor < raw.length; cursor++) {
-      if (raw[cursor] > raw[index]) index = cursor;
-    }
-    rounded[index] -= drift;
-  }
-  return (rounded[0], rounded[1], rounded[2], rounded[3]);
-}
-
 class _AyKisi {
   const _AyKisi(this.name, this.team, this.unvan, this.initials, this.color, this.sahada, this.yarim, this.izinli, this.yok);
 
@@ -2150,7 +2133,6 @@ class _AyEkipSatiri extends StatelessWidget {
     final izinli = people.fold<int>(0, (sum, person) => sum + person.izinli);
     final yok = people.fold<int>(0, (sum, person) => sum + person.yok);
     final toplam = sahada + yarim + izinli + yok;
-    final yuzde = _dortYuzde(sahada, yarim, izinli, yok);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
@@ -2178,10 +2160,10 @@ class _AyEkipSatiri extends StatelessWidget {
               ],
             ),
           ),
-          Expanded(flex: 2, child: _AySayi(value: sahada, percent: yuzde.$1, color: const Color(0xFF4ADE80))),
-          Expanded(flex: 2, child: _AySayi(value: yarim, percent: yuzde.$2, color: const Color(0xFFFBBF24))),
-          Expanded(flex: 2, child: _AySayi(value: izinli, percent: yuzde.$3, color: const Color(0xFF93C5FD))),
-          Expanded(flex: 2, child: _AySayi(value: yok, percent: yuzde.$4, color: const Color(0xFFFCA5A5))),
+          Expanded(flex: 2, child: _AySayi(value: sahada, color: const Color(0xFF4ADE80))),
+          Expanded(flex: 2, child: _AySayi(value: yarim, color: const Color(0xFFFBBF24))),
+          Expanded(flex: 2, child: _AySayi(value: izinli, color: const Color(0xFF93C5FD))),
+          Expanded(flex: 2, child: _AySayi(value: yok, color: const Color(0xFFFCA5A5))),
           Expanded(
             flex: 2,
             child: Text('$toplam', textAlign: TextAlign.center, style: const TextStyle(fontFamily: 'Rajdhani', fontWeight: FontWeight.w700, fontSize: 16, color: ProColors.text)),
@@ -2194,20 +2176,14 @@ class _AyEkipSatiri extends StatelessWidget {
 }
 
 class _AySayi extends StatelessWidget {
-  const _AySayi({required this.value, required this.percent, required this.color});
+  const _AySayi({required this.value, required this.color});
 
   final int value;
-  final int percent;
   final Color color;
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Text('$value', style: TextStyle(fontFamily: 'Rajdhani', fontWeight: FontWeight.w700, fontSize: 16, color: color)),
-        Text('%$percent', style: TextStyle(fontFamily: 'Inter', fontSize: 10, color: color.withValues(alpha: 0.8))),
-      ],
-    );
+    return Text('$value', textAlign: TextAlign.center, style: TextStyle(fontFamily: 'Rajdhani', fontWeight: FontWeight.w700, fontSize: 16, color: color));
   }
 }
 
@@ -2252,10 +2228,10 @@ class _AyPersonelTablosu extends StatelessWidget {
               Row(
                 children: [
                   Expanded(flex: 4, child: Text('Personel\n(${people.length} kişi)', style: const TextStyle(fontFamily: 'Inter', fontSize: 11, color: ProColors.textMuted))),
-                  const Expanded(flex: 2, child: Text('Sahada\nGün  %', textAlign: TextAlign.center, style: TextStyle(fontFamily: 'Inter', fontSize: 10, color: ProColors.textMuted))),
-                  const Expanded(flex: 2, child: Text('Yarım\nGün  %', textAlign: TextAlign.center, style: TextStyle(fontFamily: 'Inter', fontSize: 10, color: ProColors.textMuted))),
-                  const Expanded(flex: 2, child: Text('İzinli\nGün  %', textAlign: TextAlign.center, style: TextStyle(fontFamily: 'Inter', fontSize: 10, color: ProColors.textMuted))),
-                  const Expanded(flex: 2, child: Text('Yok\nGün  %', textAlign: TextAlign.center, style: TextStyle(fontFamily: 'Inter', fontSize: 10, color: ProColors.textMuted))),
+                  const Expanded(flex: 2, child: Text('Sahada\nGün', textAlign: TextAlign.center, style: TextStyle(fontFamily: 'Inter', fontSize: 10, color: ProColors.textMuted))),
+                  const Expanded(flex: 2, child: Text('Yarım\nGün', textAlign: TextAlign.center, style: TextStyle(fontFamily: 'Inter', fontSize: 10, color: ProColors.textMuted))),
+                  const Expanded(flex: 2, child: Text('İzinli\nGün', textAlign: TextAlign.center, style: TextStyle(fontFamily: 'Inter', fontSize: 10, color: ProColors.textMuted))),
+                  const Expanded(flex: 2, child: Text('Yok\nGün', textAlign: TextAlign.center, style: TextStyle(fontFamily: 'Inter', fontSize: 10, color: ProColors.textMuted))),
                   const _SigdirBaslik('Toplam\nGün', flex: 2),
                   const SizedBox(width: 14),
                 ],
@@ -2290,10 +2266,10 @@ class _AyPersonelTablosu extends StatelessWidget {
                           ],
                         ),
                       ),
-                      Expanded(flex: 2, child: _AySayi(value: person.sahada, percent: _dortYuzde(person.sahada, person.yarim, person.izinli, person.yok).$1, color: const Color(0xFF4ADE80))),
-                      Expanded(flex: 2, child: _AySayi(value: person.yarim, percent: _dortYuzde(person.sahada, person.yarim, person.izinli, person.yok).$2, color: const Color(0xFFFBBF24))),
-                      Expanded(flex: 2, child: _AySayi(value: person.izinli, percent: _dortYuzde(person.sahada, person.yarim, person.izinli, person.yok).$3, color: const Color(0xFF93C5FD))),
-                      Expanded(flex: 2, child: _AySayi(value: person.yok, percent: _dortYuzde(person.sahada, person.yarim, person.izinli, person.yok).$4, color: const Color(0xFFFCA5A5))),
+                      Expanded(flex: 2, child: _AySayi(value: person.sahada, color: const Color(0xFF4ADE80))),
+                      Expanded(flex: 2, child: _AySayi(value: person.yarim, color: const Color(0xFFFBBF24))),
+                      Expanded(flex: 2, child: _AySayi(value: person.izinli, color: const Color(0xFF93C5FD))),
+                      Expanded(flex: 2, child: _AySayi(value: person.yok, color: const Color(0xFFFCA5A5))),
                       Expanded(flex: 2, child: Text('${person.toplam}', textAlign: TextAlign.center, style: const TextStyle(fontFamily: 'Rajdhani', fontWeight: FontWeight.w700, fontSize: 15, color: ProColors.text))),
                       const Icon(Icons.chevron_right, size: 14, color: ProColors.textMuted),
                     ],
@@ -2328,7 +2304,6 @@ class _AyDagilim extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final yuzde = _dortYuzde(sahada, yarim, izinli, yok);
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -2360,11 +2335,11 @@ class _AyDagilim extends StatelessWidget {
           const SizedBox(height: 10),
           _ToplamSatiri(
             children: [
-              _PuantajTotal(value: '$sahada', label: 'Sahada\n%${yuzde.$1}', icon: Icons.groups, color: const Color(0xFF4ADE80), tint: const Color(0xFF14532D)),
-              _PuantajTotal(value: '$yarim', label: 'Yarım\n%${yuzde.$2}', icon: Icons.contrast, color: const Color(0xFFFBBF24), tint: const Color(0xFF78350F)),
-              _PuantajTotal(value: '$izinli', label: 'İzinli\n%${yuzde.$3}', icon: Icons.hotel, color: const Color(0xFF93C5FD), tint: const Color(0xFF1E3A8A)),
-              _PuantajTotal(value: '$yok', label: 'Yok\n%${yuzde.$4}', icon: Icons.do_not_disturb_on, color: const Color(0xFFFCA5A5), tint: const Color(0xFF7F1D1D)),
-              _PuantajTotal(value: '$toplam', label: 'Kişi-gün\n%100', icon: null, color: Colors.black, labelColor: Colors.black, tint: const Color(0xFFE5E7EB), solid: true),
+              _PuantajTotal(value: '$sahada', label: 'Sahada', icon: Icons.groups, color: const Color(0xFF4ADE80), tint: const Color(0xFF14532D)),
+              _PuantajTotal(value: '$yarim', label: 'Yarım', icon: Icons.contrast, color: const Color(0xFFFBBF24), tint: const Color(0xFF78350F)),
+              _PuantajTotal(value: '$izinli', label: 'İzinli', icon: Icons.hotel, color: const Color(0xFF93C5FD), tint: const Color(0xFF1E3A8A)),
+              _PuantajTotal(value: '$yok', label: 'Yok', icon: Icons.do_not_disturb_on, color: const Color(0xFFFCA5A5), tint: const Color(0xFF7F1D1D)),
+              _PuantajTotal(value: '$toplam', label: 'Kişi-gün', icon: null, color: Colors.black, labelColor: Colors.black, tint: const Color(0xFFE5E7EB), solid: true),
             ],
           ),
         ],
