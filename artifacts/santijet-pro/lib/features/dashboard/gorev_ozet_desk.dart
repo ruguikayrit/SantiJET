@@ -14,7 +14,14 @@ class _GorevOzetDesk extends StatelessWidget {
       padding: EdgeInsets.fromLTRB(16, 8, 16, 12 + alt),
       child: Column(
         children: [
-          _OzetBar(onBack: onBack),
+          _ModulDeskUst(
+            title: 'Göreve Dönüştür',
+            moduleIcon: _ModulDeskMark.sahaIcon,
+            moduleColor: _ModulDeskMark.sahaColor,
+            backKey: const Key('gorev-ozet-back'),
+            onBack: onBack,
+            backLabel: 'Tespit',
+          ),
           const SizedBox(height: 14),
           Expanded(
             child: SingleChildScrollView(
@@ -34,49 +41,6 @@ class _GorevOzetDesk extends StatelessWidget {
           _KaydetButton(label: 'Görevi Oluştur ve Kaydet', onTap: () => _keepInPro(context)),
           const SizedBox(height: 8),
           _GeriButton(onTap: onBack),
-        ],
-      ),
-    );
-  }
-}
-
-class _OzetBar extends StatelessWidget {
-  const _OzetBar({required this.onBack});
-
-  final VoidCallback onBack;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 40,
-      child: Row(
-        children: [
-          Expanded(
-            child: InkWell(
-              key: const Key('gorev-ozet-back'),
-              onTap: onBack,
-              borderRadius: BorderRadius.circular(8),
-              child: const Padding(
-                padding: EdgeInsets.symmetric(vertical: 6),
-                child: Row(
-                  children: [
-                    Icon(Icons.chevron_left, color: ProColors.text, size: 22),
-                    Text('Tespit', style: TextStyle(fontFamily: 'Inter', fontSize: 14, color: ProColors.text)),
-                    Text('  ›  ', style: TextStyle(fontFamily: 'Inter', fontSize: 14, color: ProColors.textMuted)),
-                    Flexible(
-                      child: Text(
-                        'Göreve Dönüştür',
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(fontFamily: 'Inter', fontSize: 14, color: ProColors.text),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 8),
-          const _ProMarka(bolt: 16, wordmark: 12, label: 12),
         ],
       ),
     );

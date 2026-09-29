@@ -36,7 +36,14 @@ class _YeniSahaTuruDeskState extends State<_YeniSahaTuruDesk> {
       padding: EdgeInsets.fromLTRB(16, 8, 16, 12 + alt),
       child: Column(
         children: [
-          _YeniTurBar(onBack: widget.onBack),
+          _ModulDeskUst(
+            title: 'Yeni Tur',
+            moduleIcon: _ModulDeskMark.sahaIcon,
+            moduleColor: _ModulDeskMark.sahaColor,
+            backKey: const Key('yeni-saha-turu-back'),
+            onBack: widget.onBack,
+            backLabel: 'Saha Turu',
+          ),
           const SizedBox(height: 16),
           _TurSekme(
             gozlem: _gozlem,
@@ -91,44 +98,6 @@ class _YeniSahaTuruDeskState extends State<_YeniSahaTuruDesk> {
             label: _gozlem ? 'Gözlemi Kaydet' : 'Tespiti Kaydet',
             onTap: () => _keepInPro(context),
           ),
-        ],
-      ),
-    );
-  }
-}
-
-class _YeniTurBar extends StatelessWidget {
-  const _YeniTurBar({required this.onBack});
-
-  final VoidCallback onBack;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 40,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          Row(
-            children: [
-              InkWell(
-                key: const Key('yeni-saha-turu-back'),
-                onTap: onBack,
-                borderRadius: BorderRadius.circular(8),
-                child: const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 6),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.chevron_left, color: ProColors.text, size: 22),
-                      Text('Saha Turu', style: TextStyle(fontFamily: 'Inter', fontSize: 15, color: ProColors.text)),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const _ProMarka(bolt: 18, wordmark: 14, label: 14),
         ],
       ),
     );

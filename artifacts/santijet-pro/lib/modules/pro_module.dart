@@ -40,13 +40,6 @@ class ProModule {
       icon: Icons.architecture_outlined,
     ),
     ProModule(
-      id: 'tahvil',
-      label: 'TAHVİL',
-      group: ProModuleGroup.imalat,
-      summary: 'Saha, temel, kolon, kiriş, döşeme',
-      icon: Icons.calculate_outlined,
-    ),
-    ProModule(
       id: 'malzeme',
       label: 'MALZEME',
       group: ProModuleGroup.tedarik,

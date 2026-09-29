@@ -297,6 +297,20 @@ class _PuantajDeskState extends State<_PuantajDesk> {
 
   DateTime get _weekStart => _selectedDay.subtract(Duration(days: _selectedDay.weekday - 1));
 
+  Future<void> _aySec() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDay,
+      firstDate: DateTime(2020, 1, 1),
+      lastDate: DateTime(2035, 12, 31),
+      helpText: 'Ay seçin',
+      initialDatePickerMode: DatePickerMode.year,
+      builder: _puantajTakvimTheme,
+    );
+    if (!mounted || picked == null) return;
+    setState(() => _selectedDay = DateTime(picked.year, picked.month, 1));
+  }
+
   Future<void> _addPerson() async {
     final result = await showDialog<(String, String)>(
       context: context,
@@ -333,28 +347,27 @@ class _PuantajDeskState extends State<_PuantajDesk> {
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
       children: [
-        _PuantajTopBar(onBack: widget.onBack),
-        const SizedBox(height: 16),
-        Row(
-          children: [
-            const _PuantajMark(),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Puantaj',
-                    style: TextStyle(fontFamily: 'Rajdhani', fontWeight: FontWeight.w700, fontSize: 26, color: ProColors.text),
-                  ),
-                  Text(
-                    _subtitle,
-                    style: const TextStyle(fontFamily: 'Inter', fontSize: 13, color: ProColors.textMuted),
-                  ),
-                ],
-              ),
+        _ModulDeskUst(
+          title: 'Puantaj',
+          moduleIcon: _ModulDeskMark.sahaIcon,
+          moduleColor: _ModulDeskMark.sahaColor,
+          backKey: const Key('puantaj-back'),
+          onBack: widget.onBack,
+          backLabel: 'Saha',
+          trailing: Container(
+            width: 34,
+            height: 34,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: ProColors.border),
             ),
-          ],
+            child: const Icon(Icons.calendar_today_outlined, size: 16, color: ProColors.text),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          _subtitle,
+          style: const TextStyle(fontFamily: 'Inter', fontSize: 13, color: ProColors.textMuted),
         ),
         const SizedBox(height: 14),
         _PuantajRangeBar(
@@ -372,6 +385,7 @@ class _PuantajDeskState extends State<_PuantajDesk> {
             kisiler: _ayListesi(_selectedDay),
             onPrevious: () => setState(() => _selectedDay = _shiftMonth(-1)),
             onNext: () => setState(() => _selectedDay = _shiftMonth(1)),
+            onPickMonth: _aySec,
             onSekme: (sekme) => setState(() => _aylikSekme = sekme),
             onEkip: (ekip) => setState(() => _haftaEkip = ekip),
             onQuery: (_) => setState(() {}),
@@ -645,14 +659,42 @@ class _HaftalikSayfa extends StatelessWidget {
 }
 
 class _HaftaAralikBar extends StatelessWidget {
-  const _HaftaAralikBar({required this.label, required this.onPrevious, required this.onNext});
+  const _HaftaAralikBar({
+    required this.label,
+    required this.onPrevious,
+    required this.onNext,
+    this.onLabelTap,
+    this.labelKey,
+  });
 
   final String label;
   final VoidCallback onPrevious;
   final VoidCallback onNext;
+  final VoidCallback? onLabelTap;
+  final Key? labelKey;
 
   @override
   Widget build(BuildContext context) {
+    final orta = Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const Icon(Icons.calendar_today_outlined, size: 14, color: ProColors.textMuted),
+        const SizedBox(width: 8),
+        Flexible(
+          child: Text(
+            label,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w600, fontSize: 14, color: ProColors.text),
+          ),
+        ),
+        if (onLabelTap != null) ...[
+          const SizedBox(width: 2),
+          const Icon(Icons.keyboard_arrow_down, size: 18, color: ProColors.textMuted),
+        ],
+      ],
+    );
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
       decoration: BoxDecoration(
@@ -668,21 +710,20 @@ class _HaftaAralikBar extends StatelessWidget {
             icon: const Icon(Icons.chevron_left, color: ProColors.textMuted),
           ),
           Expanded(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.calendar_today_outlined, size: 14, color: ProColors.textMuted),
-                const SizedBox(width: 8),
-                Flexible(
-                  child: Text(
-                    label,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w600, fontSize: 14, color: ProColors.text),
+            child: onLabelTap == null
+                ? orta
+                : Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      key: labelKey,
+                      onTap: onLabelTap,
+                      borderRadius: BorderRadius.circular(8),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
+                        child: orta,
+                      ),
+                    ),
                   ),
-                ),
-                const Icon(Icons.keyboard_arrow_down, size: 18, color: ProColors.textMuted),
-              ],
-            ),
           ),
           IconButton(
             visualDensity: VisualDensity.compact,
@@ -693,6 +734,21 @@ class _HaftaAralikBar extends StatelessWidget {
       ),
     );
   }
+}
+
+Widget _puantajTakvimTheme(BuildContext context, Widget? child) {
+  return Theme(
+    data: ThemeData.dark().copyWith(
+      colorScheme: const ColorScheme.dark(
+        primary: Color(0xFF2563EB),
+        onPrimary: Colors.white,
+        surface: Color(0xFF121826),
+        onSurface: Colors.white,
+      ),
+      dialogTheme: const DialogThemeData(backgroundColor: Color(0xFF0B1220)),
+    ),
+    child: child!,
+  );
 }
 
 class _HaftaSekmeBar extends StatelessWidget {
@@ -1182,75 +1238,6 @@ class _PersonelEkleDialogState extends State<_PersonelEkleDialog> {
   }
 }
 
-class _PuantajTopBar extends StatelessWidget {
-  const _PuantajTopBar({required this.onBack});
-
-  final VoidCallback onBack;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 40,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          Row(
-            children: [
-              InkWell(
-                key: const Key('puantaj-back'),
-                onTap: onBack,
-                borderRadius: BorderRadius.circular(8),
-                child: const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 6),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.chevron_left, color: ProColors.text, size: 22),
-                      Text(
-                        'Saha',
-                        style: TextStyle(fontFamily: 'Inter', fontSize: 14, color: ProColors.text),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const Spacer(),
-              Container(
-                width: 34,
-                height: 34,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: ProColors.border),
-                ),
-                child: const Icon(Icons.calendar_today_outlined, size: 16, color: ProColors.text),
-              ),
-            ],
-          ),
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Image.asset('assets/images/splash_bolt.png', height: 18),
-              const SizedBox(width: 6),
-              Image.asset('assets/images/splash_wordmark.png', height: 14),
-              const SizedBox(width: 4),
-              const Text(
-                'PRO',
-                style: TextStyle(
-                  fontFamily: 'Rajdhani',
-                  fontWeight: FontWeight.w700,
-                  fontSize: 14,
-                  letterSpacing: 1,
-                  color: ProColors.electricBlue,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _PuantajMark extends StatelessWidget {
   const _PuantajMark();
 
@@ -1358,6 +1345,7 @@ class _PuantajWeekStrip extends StatelessWidget {
                 name: dayNames[index],
                 day: weekStart.add(Duration(days: index)),
                 selected: _sameDay(weekStart.add(Duration(days: index)), selected),
+                today: DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day),
                 onTap: () => onSelect(weekStart.add(Duration(days: index))),
               ),
             ),
@@ -1375,15 +1363,36 @@ class _PuantajWeekStrip extends StatelessWidget {
 }
 
 class _WeekDay extends StatelessWidget {
-  const _WeekDay({required this.name, required this.day, required this.selected, required this.onTap});
+  const _WeekDay({
+    required this.name,
+    required this.day,
+    required this.selected,
+    required this.today,
+    required this.onTap,
+  });
 
   final String name;
   final DateTime day;
   final bool selected;
+  final DateTime today;
   final VoidCallback onTap;
+
+  static const _bugunMavi = Color(0xFF2563EB);
+  static const _seciliKirmizi = Color(0xFFDC2626);
+
+  bool get _isToday => _sameDay(day, today);
+
+  bool _sameDay(DateTime a, DateTime b) => a.year == b.year && a.month == b.month && a.day == b.day;
 
   @override
   Widget build(BuildContext context) {
+    final seciliBugun = selected && _isToday;
+    final seciliBaskaGun = selected && !_isToday;
+    final daireDolu = seciliBugun ? _bugunMavi : (seciliBaskaGun ? _seciliKirmizi : Colors.transparent);
+    final daireCerceve = !_isToday || seciliBugun
+        ? null
+        : Border.all(color: _bugunMavi, width: 2);
+
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(20),
@@ -1391,7 +1400,13 @@ class _WeekDay extends StatelessWidget {
         children: [
           Text(
             name,
-            style: TextStyle(fontFamily: 'Inter', fontSize: 11, color: selected ? ProColors.text : ProColors.textMuted),
+            style: TextStyle(
+              fontFamily: 'Inter',
+              fontSize: 11,
+              color: seciliBaskaGun
+                  ? _seciliKirmizi
+                  : (_isToday ? ProColors.text : (selected ? ProColors.text : ProColors.textMuted)),
+            ),
           ),
           const SizedBox(height: 4),
           Container(
@@ -1399,8 +1414,9 @@ class _WeekDay extends StatelessWidget {
             height: 32,
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: selected ? const Color(0xFF2563EB) : Colors.transparent,
+              color: daireDolu,
               shape: BoxShape.circle,
+              border: daireCerceve,
             ),
             child: Text(
               '${day.day}',
@@ -1417,7 +1433,7 @@ class _WeekDay extends StatelessWidget {
             width: 4,
             height: 4,
             decoration: BoxDecoration(
-              color: selected ? const Color(0xFF2563EB) : Colors.transparent,
+              color: _isToday ? _bugunMavi : Colors.transparent,
               shape: BoxShape.circle,
             ),
           ),
@@ -1993,6 +2009,7 @@ class _AylikSayfa extends StatelessWidget {
     required this.kisiler,
     required this.onPrevious,
     required this.onNext,
+    required this.onPickMonth,
     required this.onSekme,
     required this.onEkip,
     required this.onQuery,
@@ -2007,6 +2024,7 @@ class _AylikSayfa extends StatelessWidget {
   final List<_AyKisi> kisiler;
   final VoidCallback onPrevious;
   final VoidCallback onNext;
+  final VoidCallback onPickMonth;
   final ValueChanged<_HaftalikSekme> onSekme;
   final ValueChanged<String> onEkip;
   final ValueChanged<String> onQuery;
@@ -2029,7 +2047,13 @@ class _AylikSayfa extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _HaftaAralikBar(label: monthLabel, onPrevious: onPrevious, onNext: onNext),
+        _HaftaAralikBar(
+          label: monthLabel,
+          onPrevious: onPrevious,
+          onNext: onNext,
+          onLabelTap: onPickMonth,
+          labelKey: const Key('puantaj-ay-sec'),
+        ),
         const SizedBox(height: 10),
         _HaftaSekmeBar(sekme: sekme, onChanged: onSekme),
         const SizedBox(height: 10),
@@ -2187,6 +2211,48 @@ class _AySayi extends StatelessWidget {
   }
 }
 
+/// Aylık personel tablosu: sayılar dar sabit kolon, kalan genişlik isim satırına.
+const _ayPersonelMetrikKolon = 52.0;
+const _ayPersonelToplamKolon = 60.0;
+const _ayPersonelOkGenislik = 12.0;
+const _ayPersonelBaslikYukseklik = 30.0;
+
+const _ayPersonelBaslikStil = TextStyle(
+  fontFamily: 'Inter',
+  fontSize: 10,
+  height: 1.15,
+  color: ProColors.textMuted,
+);
+
+class _AyPersonelBaslikHucre extends StatelessWidget {
+  const _AyPersonelBaslikHucre(this.text, {this.width, this.align = TextAlign.center});
+
+  final String text;
+  final double? width;
+  final TextAlign align;
+
+  @override
+  Widget build(BuildContext context) {
+    final icerik = SizedBox(
+      height: _ayPersonelBaslikYukseklik,
+      child: Align(
+        alignment: align == TextAlign.left ? Alignment.centerLeft : Alignment.center,
+        child: Text(
+          text,
+          textAlign: align,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: _ayPersonelBaslikStil,
+        ),
+      ),
+    );
+    if (width != null) {
+      return SizedBox(width: width, child: icerik);
+    }
+    return icerik;
+  }
+}
+
 class _AyPersonelTablosu extends StatelessWidget {
   const _AyPersonelTablosu({
     required this.people,
@@ -2227,23 +2293,27 @@ class _AyPersonelTablosu extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  Expanded(flex: 4, child: Text('Personel\n(${people.length} kişi)', style: const TextStyle(fontFamily: 'Inter', fontSize: 11, color: ProColors.textMuted))),
-                  const Expanded(flex: 2, child: Text('Sahada\nGün', textAlign: TextAlign.center, style: TextStyle(fontFamily: 'Inter', fontSize: 10, color: ProColors.textMuted))),
-                  const Expanded(flex: 2, child: Text('Yarım\nGün', textAlign: TextAlign.center, style: TextStyle(fontFamily: 'Inter', fontSize: 10, color: ProColors.textMuted))),
-                  const Expanded(flex: 2, child: Text('İzinli\nGün', textAlign: TextAlign.center, style: TextStyle(fontFamily: 'Inter', fontSize: 10, color: ProColors.textMuted))),
-                  const Expanded(flex: 2, child: Text('Yok\nGün', textAlign: TextAlign.center, style: TextStyle(fontFamily: 'Inter', fontSize: 10, color: ProColors.textMuted))),
-                  const _SigdirBaslik('Toplam\nGün', flex: 2),
-                  const SizedBox(width: 14),
+                  Expanded(
+                    child: _AyPersonelBaslikHucre(
+                      'Personel\n(${people.length} kişi)',
+                      align: TextAlign.left,
+                    ),
+                  ),
+                  const _AyPersonelBaslikHucre('Sahada\nGün', width: _ayPersonelMetrikKolon),
+                  const _AyPersonelBaslikHucre('Yarım\nGün', width: _ayPersonelMetrikKolon),
+                  const _AyPersonelBaslikHucre('İzinli\nGün', width: _ayPersonelMetrikKolon),
+                  const _AyPersonelBaslikHucre('Yok\nGün', width: _ayPersonelMetrikKolon),
+                  const _AyPersonelBaslikHucre('Toplam\nGün', width: _ayPersonelToplamKolon),
+                  const SizedBox(width: _ayPersonelOkGenislik),
                 ],
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 8),
               for (final person in people)
                 Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 5),
+                  padding: const EdgeInsets.symmetric(vertical: 6),
                   child: Row(
                     children: [
                       Expanded(
-                        flex: 4,
                         child: Row(
                           children: [
                             Container(
@@ -2258,20 +2328,40 @@ class _AyPersonelTablosu extends StatelessWidget {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(person.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w600, fontSize: 11, color: ProColors.text)),
-                                  Text('${person.team} - ${person.unvan}', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontFamily: 'Inter', fontSize: 9, color: ProColors.textMuted)),
+                                  Text(
+                                    person.name,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w600, fontSize: 12, color: ProColors.text),
+                                  ),
+                                  Text(
+                                    '${person.team} - ${person.unvan}',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(fontFamily: 'Inter', fontSize: 10, color: ProColors.textMuted),
+                                  ),
                                 ],
                               ),
                             ),
                           ],
                         ),
                       ),
-                      Expanded(flex: 2, child: _AySayi(value: person.sahada, color: const Color(0xFF4ADE80))),
-                      Expanded(flex: 2, child: _AySayi(value: person.yarim, color: const Color(0xFFFBBF24))),
-                      Expanded(flex: 2, child: _AySayi(value: person.izinli, color: const Color(0xFF93C5FD))),
-                      Expanded(flex: 2, child: _AySayi(value: person.yok, color: const Color(0xFFFCA5A5))),
-                      Expanded(flex: 2, child: Text('${person.toplam}', textAlign: TextAlign.center, style: const TextStyle(fontFamily: 'Rajdhani', fontWeight: FontWeight.w700, fontSize: 15, color: ProColors.text))),
-                      const Icon(Icons.chevron_right, size: 14, color: ProColors.textMuted),
+                      SizedBox(width: _ayPersonelMetrikKolon, child: _AySayi(value: person.sahada, color: const Color(0xFF4ADE80))),
+                      SizedBox(width: _ayPersonelMetrikKolon, child: _AySayi(value: person.yarim, color: const Color(0xFFFBBF24))),
+                      SizedBox(width: _ayPersonelMetrikKolon, child: _AySayi(value: person.izinli, color: const Color(0xFF93C5FD))),
+                      SizedBox(width: _ayPersonelMetrikKolon, child: _AySayi(value: person.yok, color: const Color(0xFFFCA5A5))),
+                      SizedBox(
+                        width: _ayPersonelToplamKolon,
+                        child: Text(
+                          '${person.toplam}',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(fontFamily: 'Rajdhani', fontWeight: FontWeight.w700, fontSize: 16, color: ProColors.text),
+                        ),
+                      ),
+                      const SizedBox(
+                        width: _ayPersonelOkGenislik,
+                        child: Icon(Icons.chevron_right, size: 16, color: ProColors.textMuted),
+                      ),
                     ],
                   ),
                 ),

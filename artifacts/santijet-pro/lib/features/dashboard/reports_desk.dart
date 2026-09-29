@@ -114,28 +114,16 @@ class _ReportsDeskState extends State<_ReportsDesk> {
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
       children: [
-        const _TopBar(alertCount: 3),
-        const SizedBox(height: 14),
-        const Row(
-          children: [
-            Icon(Icons.bar_chart_rounded, color: ProColors.electricBlue, size: 22),
-            SizedBox(width: 8),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Raporlar',
-                    style: TextStyle(fontFamily: 'Rajdhani', fontWeight: FontWeight.w700, fontSize: 26, color: ProColors.text),
-                  ),
-                  Text(
-                    'Tüm verilerinizi analiz edin, projelerinizi yönetin',
-                    style: TextStyle(fontFamily: 'Inter', fontSize: 12, color: ProColors.textMuted),
-                  ),
-                ],
-              ),
-            ),
-          ],
+        const _ModulDeskUst(
+          title: 'Raporlar',
+          moduleIcon: Icons.bar_chart_outlined,
+          moduleColor: Color(0xFF2563EB),
+          alertCount: 3,
+        ),
+        const SizedBox(height: 8),
+        const Text(
+          'Tüm verilerinizi analiz edin, projelerinizi yönetin',
+          style: TextStyle(fontFamily: 'Inter', fontSize: 12, color: ProColors.textMuted),
         ),
         const SizedBox(height: 12),
         SingleChildScrollView(
@@ -581,7 +569,7 @@ class _ReportKindGrid extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Icon(kind.icon, color: Colors.white, size: 18),
-                    const Spacer(),
+                    const SizedBox(height: 8),
                     Text(
                       kind.title,
                       maxLines: 2,

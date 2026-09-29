@@ -74,8 +74,16 @@ class _SahaTuruDesk extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
       children: [
-        _SahaTuruTopBar(onBack: onBack),
-        const SizedBox(height: 16),
+        _ModulDeskUst(
+          title: 'Saha Turu',
+          moduleIcon: _ModulDeskMark.sahaIcon,
+          moduleColor: _ModulDeskMark.sahaColor,
+          backKey: const Key('saha-turu-back'),
+          onBack: onBack,
+          backLabel: 'Saha',
+          alertCount: 3,
+        ),
+        const SizedBox(height: 8),
         const _SahaTuruBaslik(),
         const SizedBox(height: 14),
         const _SahaTuruFiltre(),
@@ -95,107 +103,6 @@ class _SahaTuruDesk extends StatelessWidget {
   }
 }
 
-class _SahaTuruTopBar extends StatelessWidget {
-  const _SahaTuruTopBar({required this.onBack});
-
-  final VoidCallback onBack;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 40,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          Row(
-            children: [
-              InkWell(
-                key: const Key('saha-turu-back'),
-                onTap: onBack,
-                borderRadius: BorderRadius.circular(8),
-                child: const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 6),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.chevron_left, color: ProColors.text, size: 22),
-                      Text('Saha', style: TextStyle(fontFamily: 'Inter', fontSize: 15, color: ProColors.text)),
-                    ],
-                  ),
-                ),
-              ),
-              const Spacer(),
-              const Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  Icon(Icons.notifications_none, color: ProColors.text, size: 22),
-                  Positioned(
-                    right: -6,
-                    top: -4,
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(color: Color(0xFFEF4444), shape: BoxShape.circle),
-                      child: Padding(
-                        padding: EdgeInsets.all(3),
-                        child: Text(
-                          '3',
-                          style: TextStyle(fontFamily: 'Inter', fontSize: 8, fontWeight: FontWeight.w700, color: Colors.white),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(width: 12),
-              const CircleAvatar(
-                radius: 14,
-                backgroundColor: Color(0xFF1E293B),
-                child: Icon(Icons.person, size: 16, color: ProColors.textMuted),
-              ),
-            ],
-          ),
-          const Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _ProMarka(bolt: 18, wordmark: 14, label: 14),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ProMarka extends StatelessWidget {
-  const _ProMarka({required this.bolt, required this.wordmark, required this.label});
-
-  final double bolt;
-  final double wordmark;
-  final double label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Image.asset('assets/images/splash_bolt.png', height: bolt),
-        const SizedBox(width: 6),
-        Image.asset('assets/images/splash_wordmark.png', height: wordmark),
-        const SizedBox(width: 4),
-        Text(
-          'PRO',
-          style: TextStyle(
-            fontFamily: 'Rajdhani',
-            fontWeight: FontWeight.w700,
-            fontSize: label,
-            letterSpacing: 1,
-            color: ProColors.electricBlue,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
 class _SahaTuruBaslik extends StatelessWidget {
   const _SahaTuruBaslik();
 
@@ -207,19 +114,9 @@ class _SahaTuruBaslik extends StatelessWidget {
         _TurIkonu(),
         SizedBox(width: 12),
         Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Saha Turu',
-                style: TextStyle(fontFamily: 'Rajdhani', fontWeight: FontWeight.w700, fontSize: 28, height: 1, color: ProColors.text),
-              ),
-              SizedBox(height: 4),
-              Text(
-                'Sahadaki durumu gözlemle, tespit et, kaydet.',
-                style: TextStyle(fontFamily: 'Inter', fontSize: 13, height: 1.3, color: ProColors.textMuted),
-              ),
-            ],
+          child: Text(
+            'Sahadaki durumu gözlemle, tespit et, kaydet.',
+            style: TextStyle(fontFamily: 'Inter', fontSize: 13, height: 1.3, color: ProColors.textMuted),
           ),
         ),
       ],

@@ -1,15 +1,61 @@
 part of 'dashboard_screen.dart';
 
-enum _PersonelPane { tum, ekipler, gorevler, belgeler }
+class _PersonelKayit {
+  const _PersonelKayit({
+    required this.name,
+    required this.unvan,
+    required this.ekip,
+    required this.firma,
+    required this.giris,
+    required this.color,
+    required this.calisan,
+    this.cikis,
+    this.telefon,
+    this.iban,
+    this.tc,
+    this.dogum,
+    this.adres,
+    this.notlar,
+  });
 
-extension on _PersonelPane {
-  String get label => switch (this) {
-        _PersonelPane.tum => 'Tüm Personel',
-        _PersonelPane.ekipler => 'Ekipler',
-        _PersonelPane.gorevler => 'Görevler',
-        _PersonelPane.belgeler => 'Belgeler',
-      };
+  final String name;
+  final String unvan;
+  final String ekip;
+  final String firma;
+  final String giris;
+  final String? cikis;
+  final String? telefon;
+  final String? iban;
+  final String? tc;
+  final String? dogum;
+  final String? adres;
+  final String? notlar;
+  final Color color;
+  final bool calisan;
+
+  String get initials {
+    final parts = name.split(' ');
+    if (parts.length >= 2 && parts[0].isNotEmpty && parts[1].isNotEmpty) {
+      return '${parts[0][0]}${parts[1][0]}';
+    }
+    return name.isEmpty ? '' : name.substring(0, 1);
+  }
 }
+
+const _personelKayitlari = <_PersonelKayit>[
+  _PersonelKayit(name: 'Mehmet Arslan', unvan: 'Alçıpan Ustası', ekip: 'Alçıpan Ekibi', firma: 'ABC Yapı Ltd. Şti.', giris: '03.01.2026', color: Color(0xFF2563EB), calisan: true),
+  _PersonelKayit(name: 'Hasan Kaya', unvan: 'Alçıpan Ustası', ekip: 'Alçıpan Ekibi', firma: 'ABC Yapı Ltd. Şti.', giris: '15.02.2026', color: Color(0xFF7C3AED), calisan: true),
+  _PersonelKayit(name: 'Ali Yılmaz', unvan: 'İşçi', ekip: 'Alçı Ekibi', firma: 'Kare İnşaat A.Ş.', giris: '10.11.2025', color: Color(0xFFF97316), calisan: true),
+  _PersonelKayit(name: 'Emre Koç', unvan: 'İşçi', ekip: 'Alçıpan Ekibi', firma: 'Kare İnşaat A.Ş.', giris: '05.03.2026', color: Color(0xFFEF4444), calisan: true),
+  _PersonelKayit(name: 'Burak Demir', unvan: 'İşçi', ekip: 'Boya Ekibi', firma: 'Demir Yapı Ltd. Şti.', giris: '12.01.2026', color: Color(0xFF0EA5E9), calisan: true),
+  _PersonelKayit(name: 'Selim Karaca', unvan: 'Usta', ekip: 'Boya Ekibi', firma: 'Demir Yapı Ltd. Şti.', giris: '20.12.2025', color: Color(0xFF7C3AED), calisan: true),
+  _PersonelKayit(name: 'Tamer Yıldız', unvan: 'İşçi', ekip: 'Boya Ekibi', firma: 'Demir Yapı Ltd. Şti.', giris: '01.02.2026', color: Color(0xFFA855F7), calisan: true),
+  _PersonelKayit(name: 'Deniz Aydın', unvan: 'Usta', ekip: 'Demir Ekibi', firma: 'Demir Yapı Ltd. Şti.', giris: '01.02.2026', color: Color(0xFF22C55E), calisan: true),
+  _PersonelKayit(name: 'Kemal Aydın', unvan: 'Boya Ustası', ekip: 'Boya Ekibi', firma: 'Demir Yapı Ltd. Şti.', giris: '04.02.2025', cikis: '18.08.2025', color: Color(0xFFDB2777), calisan: false),
+  _PersonelKayit(name: 'Serkan Yıldız', unvan: 'İşçi', ekip: 'Boya Ekibi', firma: 'ABC Yapı Ltd. Şti.', giris: '11.09.2024', cikis: '02.06.2025', color: Color(0xFFBE185D), calisan: false),
+  _PersonelKayit(name: 'Okan Demir', unvan: 'Elektrik Ustası', ekip: 'Elektrik Ekibi', firma: 'Kare İnşaat A.Ş.', giris: '20.01.2025', cikis: '14.04.2025', color: Color(0xFFF97316), calisan: false),
+  _PersonelKayit(name: 'Yusuf Aksoy', unvan: 'İşçi', ekip: 'Elektrik Ekibi', firma: 'ABC Yapı Ltd. Şti.', giris: '08.11.2024', cikis: '22.03.2025', color: Color(0xFF2563EB), calisan: false),
+];
 
 class _PersonelDesk extends StatefulWidget {
   const _PersonelDesk({required this.onBack});
@@ -21,201 +67,219 @@ class _PersonelDesk extends StatefulWidget {
 }
 
 class _PersonelDeskState extends State<_PersonelDesk> {
-  _PersonelPane _pane = _PersonelPane.tum;
+  String _filtre = 'Tümü';
+  String _arama = '';
+  _PersonelKayit? _secili;
+  var _ekle = false;
+  final _kayitlar = <_PersonelKayit>[..._personelKayitlari];
+
+  List<_PersonelKayit> get _gorunen {
+    final sorgu = _arama.trim().toLowerCase();
+    return [
+      for (final kayit in _kayitlar)
+        if ((_filtre == 'Tümü' || kayit.ekip.startsWith('$_filtre ')) &&
+            (sorgu.isEmpty ||
+                kayit.name.toLowerCase().contains(sorgu) ||
+                kayit.ekip.toLowerCase().contains(sorgu) ||
+                kayit.firma.toLowerCase().contains(sorgu)))
+          kayit,
+    ];
+  }
+
+  void _ekleAc() => setState(() {
+        _secili = null;
+        _ekle = true;
+      });
+
+  void _kaydet(_PersonelKayit kayit) {
+    setState(() {
+      _kayitlar.insert(0, kayit);
+      _ekle = false;
+      _arama = '';
+      _filtre = 'Tümü';
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+    if (_ekle) {
+      return _PersonelEkleDesk(
+        onBack: () => setState(() => _ekle = false),
+        onSave: _kaydet,
+      );
+    }
+    final secili = _secili;
+    if (secili != null) {
+      return _PersonelBilgiDesk(
+        kayit: secili,
+        onBack: () => setState(() => _secili = null),
+      );
+    }
+    final kayitlar = _gorunen;
+    return Stack(
       children: [
-        const _TopBar(),
-        const SizedBox(height: 8),
-        Row(
+        ListView(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 88),
           children: [
-            IconButton(
-              key: const Key('personel-back'),
-              onPressed: widget.onBack,
-              icon: const Icon(Icons.arrow_back_ios_new, size: 18, color: ProColors.text),
+              _ModulDeskUst(
+                title: 'Personel',
+                moduleIcon: _ModulDeskMark.sahaIcon,
+                moduleColor: _ModulDeskMark.sahaColor,
+                backKey: const Key('personel-back'),
+                onBack: widget.onBack,
+                backLabel: 'Saha',
+              ),
+              const SizedBox(height: 8),
+              const _PersonelBaslik(),
+            const SizedBox(height: 14),
+            _PersonelArama(
+              filtre: _filtre,
+              onQuery: (value) => setState(() => _arama = value),
+              onFiltre: (value) => setState(() => _filtre = value),
             ),
-            const Text(
-              'Saha',
-              style: TextStyle(fontFamily: 'Rajdhani', fontWeight: FontWeight.w700, fontSize: 18, color: ProColors.text),
-            ),
+            const SizedBox(height: 10),
+            if (kayitlar.isEmpty)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 24),
+                child: Text(
+                  'Eşleşen personel yok.',
+                  style: TextStyle(fontFamily: 'Inter', fontSize: 13, color: ProColors.textMuted),
+                ),
+              )
+            else
+              for (final kayit in kayitlar) ...[
+                _PersonelSatir(kayit: kayit, onTap: () => setState(() => _secili = kayit)),
+                const SizedBox(height: 8),
+              ],
           ],
         ),
-        const SizedBox(height: 8),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const CircleAvatar(
-              radius: 22,
-              backgroundColor: Color(0xFFCA8A04),
-              child: Icon(Icons.engineering_outlined, color: Colors.white),
-            ),
-            const SizedBox(width: 10),
-            const Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+        Positioned(
+          right: 16,
+          bottom: 12,
+          child: FloatingActionButton(
+            key: const Key('personel-open-app'),
+            onPressed: _ekleAc,
+            backgroundColor: const Color(0xFF2563EB),
+            foregroundColor: Colors.white,
+            elevation: 2,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            child: const Icon(Icons.add, size: 28),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _PersonelBaslik extends StatelessWidget {
+  const _PersonelBaslik();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Row(
+      children: [
+        _PersonelIsaret(),
+        SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            'Ekip yönetimi ve personel bilgileri.',
+            style: TextStyle(fontFamily: 'Inter', fontSize: 12, color: ProColors.textMuted),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _PersonelIsaret extends StatelessWidget {
+  const _PersonelIsaret();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 46,
+      height: 46,
+      decoration: BoxDecoration(
+        color: const Color(0xFFE8A317),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: const Icon(Icons.manage_accounts, color: Colors.white, size: 26),
+    );
+  }
+}
+
+class _PersonelArama extends StatelessWidget {
+  const _PersonelArama({required this.filtre, required this.onQuery, required this.onFiltre});
+
+  final String filtre;
+  final ValueChanged<String> onQuery;
+  final ValueChanged<String> onFiltre;
+
+  @override
+  Widget build(BuildContext context) {
+    const ekipler = ['Tümü', 'Alçıpan', 'Alçı', 'Boya', 'Demir', 'Elektrik'];
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(
+            child: Container(
+              alignment: Alignment.centerLeft,
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              decoration: BoxDecoration(
+                color: const Color(0xFF0B1220),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: ProColors.border),
+              ),
+              child: Row(
                 children: [
-                  Text(
-                    'Personel',
-                    style: TextStyle(fontFamily: 'Rajdhani', fontWeight: FontWeight.w700, fontSize: 26, color: ProColors.text),
-                  ),
-                  Text(
-                    'Ekipleri ve saha personelini yönetin',
-                    style: TextStyle(fontFamily: 'Inter', fontSize: 12, color: ProColors.textMuted),
+                  const Icon(Icons.search, size: 16, color: ProColors.textMuted),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: TextField(
+                      onChanged: onQuery,
+                      style: const TextStyle(color: ProColors.text, fontFamily: 'Inter', fontSize: 13),
+                      decoration: const InputDecoration(
+                        hintText: 'Personel ara (ad, ekip, firma...)',
+                        hintStyle: TextStyle(color: ProColors.textMuted, fontFamily: 'Inter', fontSize: 13),
+                        border: InputBorder.none,
+                        isCollapsed: true,
+                        contentPadding: EdgeInsets.zero,
+                      ),
+                    ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(width: 8),
-            const _PersonelProjectChip(),
-          ],
-        ),
-        const SizedBox(height: 12),
-        const Row(
-          children: [
-            Expanded(
-              child: _PersonelKpi(
-                title: 'Toplam Personel',
-                color: Color(0xFF1D4ED8),
-                icon: Icons.groups_outlined,
-              ),
-            ),
-            SizedBox(width: 8),
-            Expanded(
-              child: _PersonelKpi(
-                title: 'Mevcut',
-                color: Color(0xFF16A34A),
-                icon: Icons.person_outline,
-              ),
-            ),
-            SizedBox(width: 8),
-            Expanded(
-              child: _PersonelKpi(
-                title: 'İzinli',
-                color: Color(0xFFD97706),
-                icon: Icons.beach_access_outlined,
-              ),
-            ),
-            SizedBox(width: 8),
-            Expanded(
-              child: _PersonelKpi(
-                title: 'Raporlu',
-                color: Color(0xFF1E3A5F),
-                icon: Icons.person_off_outlined,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: [
-            for (final pane in _PersonelPane.values)
-              _FilterPill(
-                label: pane.label,
-                selected: pane == _pane,
-                onTap: () => setState(() => _pane = pane),
-              ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        switch (_pane) {
-          _PersonelPane.tum => const _PersonelTumPane(),
-          _PersonelPane.ekipler => const _PersonelEmptyPane(
-              title: 'Ekipler',
-              body: 'Ekip kartları proje bağlanınca dolacak.',
-            ),
-          _PersonelPane.gorevler => const _PersonelEmptyPane(
-              title: 'Görevler',
-              body: 'Personel görevleri proje bağlanınca dolacak.',
-            ),
-          _PersonelPane.belgeler => const _PersonelEmptyPane(
-              title: 'Belgeler',
-              body: 'SGK, iş güvenliği ve ekip belgeleri proje bağlanınca listelenecek.',
-            ),
-        },
-        const SizedBox(height: 16),
-        Row(
-          children: [
-            Expanded(
-              child: OutlinedButton.icon(
-                onPressed: () => _keepInPro(context),
-                icon: const Icon(Icons.group_add_outlined),
-                label: const Text('Ekip Oluştur'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: ProColors.text,
-                  side: const BorderSide(color: ProColors.border),
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                ),
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: FilledButton.icon(
-                key: const Key('personel-open-app'),
-                onPressed: () => _keepInPro(context),
-                icon: const Icon(Icons.add),
-                label: const Text('Personel Ekle'),
-                style: FilledButton.styleFrom(
-                  backgroundColor: ProColors.electricBlue,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-}
-
-class _PersonelProjectChip extends StatelessWidget {
-  const _PersonelProjectChip();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 132,
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: ProColors.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: ProColors.border),
-      ),
-      child: const Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'AKTİF PROJE',
-            style: TextStyle(
-              fontFamily: 'Rajdhani',
-              fontSize: 9,
-              letterSpacing: 0.8,
-              color: Color(0xFF9EC1FF),
-            ),
           ),
-          SizedBox(height: 2),
-          Text(
-            'Henüz proje yok',
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontFamily: 'Rajdhani',
-              fontWeight: FontWeight.w700,
-              fontSize: 12,
-              color: ProColors.text,
-            ),
-          ),
-          SizedBox(height: 4),
-          Row(
-            children: [
-              Icon(Icons.place_outlined, size: 12, color: ProColors.textMuted),
-              SizedBox(width: 2),
-              Text('—', style: TextStyle(fontFamily: 'Inter', fontSize: 10, color: ProColors.textMuted)),
+          const SizedBox(width: 8),
+          PopupMenuButton<String>(
+            initialValue: filtre,
+            onSelected: onFiltre,
+            color: const Color(0xFF0B1220),
+            itemBuilder: (context) => [
+              for (final name in ekipler)
+                PopupMenuItem(
+                  value: name,
+                  child: Text(name, style: const TextStyle(fontFamily: 'Inter', fontSize: 14, color: ProColors.text)),
+                ),
             ],
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              decoration: BoxDecoration(
+                color: const Color(0xFF0B1220),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: ProColors.border),
+              ),
+              child: const Row(
+                children: [
+                  Icon(Icons.filter_alt_outlined, size: 16, color: ProColors.text),
+                  SizedBox(width: 6),
+                  Text('Filtrele', style: TextStyle(fontFamily: 'Inter', fontSize: 13, color: ProColors.text)),
+                  Icon(Icons.keyboard_arrow_down, size: 18, color: ProColors.textMuted),
+                ],
+              ),
+            ),
           ),
         ],
       ),
@@ -223,207 +287,93 @@ class _PersonelProjectChip extends StatelessWidget {
   }
 }
 
-class _PersonelKpi extends StatelessWidget {
-  const _PersonelKpi({required this.title, required this.color, required this.icon});
+class _PersonelSatir extends StatelessWidget {
+  const _PersonelSatir({required this.kayit, required this.onTap});
 
-  final String title;
-  final Color color;
-  final IconData icon;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(6, 10, 4, 8),
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              Icon(icon, color: Colors.white.withValues(alpha: 0.9), size: 16),
-              const Spacer(),
-              Icon(Icons.chevron_right, color: Colors.white.withValues(alpha: 0.6), size: 16),
-            ],
-          ),
-          const SizedBox(height: 4),
-          const Text(
-            '—',
-            style: TextStyle(fontFamily: 'Rajdhani', fontWeight: FontWeight.w700, fontSize: 20, color: Colors.white),
-          ),
-          Text(
-            title,
-            textAlign: TextAlign.center,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(fontFamily: 'Inter', fontSize: 9, color: Color(0xF2FFFFFF)),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _PersonelTumPane extends StatelessWidget {
-  const _PersonelTumPane();
+  final _PersonelKayit kayit;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
-          decoration: _cardDecoration(),
-          child: const Row(
-            children: [
-              Icon(Icons.search, color: ProColors.textMuted, size: 18),
-              SizedBox(width: 8),
-              Expanded(
-                child: TextField(
-                  enabled: false,
-                  decoration: InputDecoration(
-                    hintText: 'Personel ara...',
-                    hintStyle: TextStyle(color: ProColors.textMuted, fontSize: 14),
-                    border: InputBorder.none,
-                    isDense: true,
-                  ),
-                ),
-              ),
-              Text('Tümü', style: TextStyle(fontFamily: 'Inter', fontSize: 12, color: ProColors.textMuted)),
-              Icon(Icons.keyboard_arrow_down, color: ProColors.textMuted, size: 18),
-              SizedBox(width: 4),
-              Icon(Icons.tune, color: ProColors.textMuted, size: 18),
-            ],
+    return Material(
+      color: const Color(0xFF0B1220),
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        key: Key('personel-row-${kayit.name}'),
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(10, 10, 8, 10),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: ProColors.border),
           ),
-        ),
-        const SizedBox(height: 14),
-        Row(
-          children: [
-            const Expanded(child: _ReportSectionTitle('Ekipler')),
-            TextButton(
-              onPressed: () => _keepInPro(context),
-              child: const Text('Tümü'),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        GridView.count(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          crossAxisCount: 2,
-          mainAxisSpacing: 8,
-          crossAxisSpacing: 8,
-          childAspectRatio: 1.05,
-          children: const [
-            _PersonelTeamPlaceholder(),
-            _PersonelTeamPlaceholder(),
-            _PersonelTeamPlaceholder(),
-            _PersonelTeamPlaceholder(),
-          ],
-        ),
-        const SizedBox(height: 14),
-        Row(
-          children: [
-            const Expanded(child: _ReportSectionTitle('Personel Listesi')),
-            TextButton(
-              onPressed: () => _keepInPro(context),
-              child: const Text('+ Personel Ekle'),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(16),
-          decoration: _cardDecoration(),
-          child: const Text(
-            'Personel listesi proje bağlanınca dolacak.',
-            style: TextStyle(fontFamily: 'Inter', fontSize: 13, color: ProColors.textMuted),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _PersonelTeamPlaceholder extends StatelessWidget {
-  const _PersonelTeamPlaceholder();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: _cardDecoration(),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+          child: Row(
             children: [
               Container(
-                width: 28,
-                height: 28,
-                decoration: BoxDecoration(
-                  color: ProColors.border,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Icon(Icons.groups_outlined, size: 16, color: ProColors.textMuted),
-              ),
-              const SizedBox(width: 8),
-              const Expanded(
+                width: 36,
+                height: 36,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(color: kayit.color, shape: BoxShape.circle),
                 child: Text(
-                  '—',
-                  style: TextStyle(fontFamily: 'Rajdhani', fontWeight: FontWeight.w700, fontSize: 14, color: ProColors.textMuted),
+                  kayit.initials,
+                  style: const TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w700, fontSize: 12, color: Colors.white),
                 ),
               ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      kayit.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w600, fontSize: 14, color: ProColors.text),
+                    ),
+                    Text(
+                      kayit.unvan,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontFamily: 'Inter', fontSize: 12, color: ProColors.textMuted),
+                    ),
+                    const SizedBox(height: 4),
+                    _PersonelSatirBilgi(icon: Icons.groups_outlined, text: kayit.ekip),
+                    const SizedBox(height: 2),
+                    _PersonelSatirBilgi(icon: Icons.apartment_outlined, text: kayit.firma),
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_right, size: 18, color: ProColors.textMuted),
             ],
           ),
-          const Spacer(),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-            decoration: BoxDecoration(
-              color: ProColors.border,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Text('—', style: TextStyle(fontFamily: 'Inter', fontSize: 10, color: ProColors.textMuted)),
-          ),
-          const SizedBox(height: 8),
-          const Text('— kişi', style: TextStyle(fontFamily: 'Inter', fontSize: 11, color: ProColors.textMuted)),
-          const SizedBox(height: 4),
-          const Text('—', style: TextStyle(fontFamily: 'Inter', fontSize: 10, color: ProColors.textFaint)),
-          const SizedBox(height: 8),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(4),
-            child: const LinearProgressIndicator(value: 0, minHeight: 4, backgroundColor: ProColors.border, color: ProColors.textMuted),
-          ),
-        ],
+        ),
       ),
     );
   }
 }
 
-class _PersonelEmptyPane extends StatelessWidget {
-  const _PersonelEmptyPane({required this.title, required this.body});
+class _PersonelSatirBilgi extends StatelessWidget {
+  const _PersonelSatirBilgi({required this.icon, required this.text});
 
-  final String title;
-  final String body;
+  final IconData icon;
+  final String text;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: _cardDecoration(),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(title, style: const TextStyle(fontFamily: 'Rajdhani', fontWeight: FontWeight.w700, fontSize: 16, color: ProColors.text)),
-          const SizedBox(height: 6),
-          Text(body, style: const TextStyle(fontFamily: 'Inter', fontSize: 13, color: ProColors.textMuted)),
-        ],
-      ),
+    return Row(
+      children: [
+        Icon(icon, size: 14, color: ProColors.textMuted),
+        const SizedBox(width: 4),
+        Expanded(
+          child: Text(
+            text,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontFamily: 'Inter', fontSize: 12, color: ProColors.text),
+          ),
+        ),
+      ],
     );
   }
 }

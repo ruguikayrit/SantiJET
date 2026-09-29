@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
+import '../../core/access/home_summary_visibility.dart';
+import '../../core/domain/project_progress.dart';
 import '../../core/theme/pro_theme.dart';
 
 part 'reports_desk.dart';
@@ -9,10 +12,13 @@ part 'yeni_saha_turu_desk.dart';
 part 'gorev_ozet_desk.dart';
 part 'puantaj_desk.dart';
 part 'personel_desk.dart';
+part 'personel_bilgi_desk.dart';
+part 'personel_ekle_desk.dart';
 part 'gorevler_desk.dart';
 part 'imalat_desk.dart';
 part 'makine_desk.dart';
 part 'malzeme_desk.dart';
+part 'modul_kapak_desk.dart';
 
 class _DemoScope extends InheritedWidget {
   const _DemoScope({required this.loaded, required super.child});
@@ -27,20 +33,43 @@ class _DemoScope extends InheritedWidget {
   bool updateShouldNotify(_DemoScope oldWidget) => loaded != oldWidget.loaded;
 }
 
+class _ProjectProgressScope extends InheritedWidget {
+  const _ProjectProgressScope({required this.snapshot, required super.child});
+
+  final ProjectProgressSnapshot? snapshot;
+
+  static ProjectProgressSnapshot? of(BuildContext context) {
+    return context.dependOnInheritedWidgetOfExactType<_ProjectProgressScope>()?.snapshot;
+  }
+
+  @override
+  bool updateShouldNotify(_ProjectProgressScope oldWidget) => snapshot != oldWidget.snapshot;
+}
+
+class _HomeSummaryScope extends InheritedWidget {
+  const _HomeSummaryScope({required this.visibility, required super.child});
+
+  final HomeSummaryVisibility visibility;
+
+  static HomeSummaryVisibility of(BuildContext context) {
+    return context.dependOnInheritedWidgetOfExactType<_HomeSummaryScope>()?.visibility ?? const HomeSummaryVisibility();
+  }
+
+  @override
+  bool updateShouldNotify(_HomeSummaryScope oldWidget) => visibility != oldWidget.visibility;
+}
+
 abstract final class _Demo {
   static const project = 'İstanbul Residence';
   static const place = 'İstanbul';
   static const span = '01 Mar – 30 Ara 2026';
   static const note = 'A Blok · şantiye açık';
-  static const metraj = '%62';
-  static const sure = '212 gün';
-  static const adamGun = '4.180';
   static const verim = ['%71', '%54', '%38'];
   static const butce = '128 M₺';
   static const maliyet = '74 M₺';
   static const kasa = '6,4 M₺';
   static const hakedis = '61 M₺';
-  static const beton = ['4.800 m³', '42 m³', '2.960 m³', '%62'];
+  static const beton = ['4.800 m³', '2.960 m³', '%62'];
   static const demir = ['860 t', '540 t', '%63'];
   static const malzeme = ['6', '18', '14'];
   static const program = ['%58', '1.640', '3'];
@@ -61,11 +90,21 @@ class DashboardScreen extends StatefulWidget {
   State<DashboardScreen> createState() => _DashboardScreenState();
 }
 
-enum _Desk { home, modules, saha, sahaTuru, yeniSahaTuru, puantaj, personel, gorevler, imalat, makine, malzeme, projects, reports, menu }
+enum _Desk { home, modules, saha, sahaTuru, yeniSahaTuru, puantaj, personel, gorevler, imalat, makine, malzeme, modul, projects, reports, menu }
 
 class _DashboardScreenState extends State<DashboardScreen> {
   _Desk _desk = _Desk.home;
-  var _demo = false;
+  var _demo = true;
+  var _modulId = 'beton';
+  String? _bolumBaslik;
+
+  void _openModul(String id) {
+    setState(() {
+      _modulId = id;
+      _bolumBaslik = null;
+      _desk = _Desk.modul;
+    });
+  }
 
   void _loadDemo() {
     setState(() {
@@ -85,9 +124,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
         bottom: false,
         child: _DemoScope(
           loaded: _demo,
-          child: switch (_desk) {
+          child: _ProjectProgressScope(
+            snapshot: _demo ? DemoProjectProgress.snapshot(DateTime.now()) : null,
+            child: _HomeSummaryScope(
+              visibility: HomeSummaryVisibility.forRole(null),
+              child: switch (_desk) {
           _Desk.home => _HomeDesk(onOpenSaha: () => setState(() => _desk = _Desk.saha)),
-          _Desk.modules => _ModulesDesk(onOpenSaha: () => setState(() => _desk = _Desk.saha)),
+          _Desk.modules => _ModulesDesk(
+                onOpenSaha: () => setState(() => _desk = _Desk.saha),
+                onOpenModul: _openModul,
+              ),
           _Desk.saha => _SahaDesk(
                 onOpenPuantaj: () => setState(() => _desk = _Desk.puantaj),
                 onOpenPersonel: () => setState(() => _desk = _Desk.personel),
@@ -108,6 +154,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
           _Desk.imalat => _ImalatDesk(onBack: () => setState(() => _desk = _Desk.saha)),
           _Desk.makine => _MakineDesk(onBack: () => setState(() => _desk = _Desk.saha)),
           _Desk.malzeme => _MalzemeDesk(onBack: () => setState(() => _desk = _Desk.saha)),
+          _Desk.modul => _ModulHost(
+                id: _modulId,
+                bolum: _bolumBaslik,
+                onOpenBolum: (baslik) => setState(() => _bolumBaslik = baslik),
+                onBackToKapak: () => setState(() => _bolumBaslik = null),
+              ),
           _Desk.projects => _PlainDesk(
               title: 'Projeler',
               body: _demo ? 'Aktif proje: İstanbul Residence' : 'Ortak proje kaydı henüz bir uygulamaya bağlanmadı.',
@@ -118,7 +170,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
               onSelect: (desk) => setState(() => _desk = desk),
               onLoadDemo: _loadDemo,
             ),
-        },
+          },
+            ),
+          ),
         ),
       ),
       bottomNavigationBar: _desk == _Desk.yeniSahaTuru
@@ -141,6 +195,7 @@ class _HomeDesk extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ozet = _HomeSummaryScope.of(context);
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
       children: [
@@ -148,33 +203,65 @@ class _HomeDesk extends StatelessWidget {
         const SizedBox(height: 14),
         const _ProjectHero(),
         const SizedBox(height: 12),
+        const _OzetBasligi('Genel proje ilerleme'),
+        const SizedBox(height: 8),
         _SahaProgress(onOpen: onOpenSaha),
         const SizedBox(height: 10),
         _VerimKpi(onOpenSaha: onOpenSaha),
-        const SizedBox(height: 10),
-        const _FinanceRow(),
-        const SizedBox(height: 10),
-        const _SourceKpis(),
+        if (ozet.shows(HomeSummarySection.finansalOzet)) ...[
+          const SizedBox(height: 10),
+          const _OzetBasligi('Finansal özet'),
+          const SizedBox(height: 8),
+          const _FinanceRow(),
+        ],
+        if (ozet.shows(HomeSummarySection.teknikOzet)) ...[
+          const SizedBox(height: 10),
+          const _OzetBasligi('Teknik özet'),
+          const SizedBox(height: 8),
+          const _SourceKpis(),
+        ],
       ],
     );
   }
 }
 
+class _OzetBasligi extends StatelessWidget {
+  const _OzetBasligi(this.baslik);
+
+  final String baslik;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      baslik,
+      style: const TextStyle(
+        fontFamily: 'Rajdhani',
+        fontWeight: FontWeight.w700,
+        fontSize: 16,
+        color: ProColors.text,
+      ),
+    );
+  }
+}
+
 class _ModulesDesk extends StatelessWidget {
-  const _ModulesDesk({required this.onOpenSaha});
+  const _ModulesDesk({required this.onOpenSaha, required this.onOpenModul});
 
   final VoidCallback onOpenSaha;
+  final ValueChanged<String> onOpenModul;
 
   @override
   Widget build(BuildContext context) {
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
       children: [
-        const _TopBar(),
-        const SizedBox(height: 18),
-        const _ModuleHeader(),
+        const _ModulDeskUst(
+          title: 'Modüller',
+          moduleIcon: Icons.grid_view_rounded,
+          moduleColor: ProColors.electricBlue,
+        ),
         const SizedBox(height: 12),
-        _ModuleGrid(onOpenSaha: onOpenSaha),
+        _ModuleGrid(onOpenSaha: onOpenSaha, onOpenModul: onOpenModul),
       ],
     );
   }
@@ -189,21 +276,111 @@ class _TopBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Image.asset('assets/images/splash_bolt.png', height: 26),
-        const SizedBox(width: 8),
-        Image.asset('assets/images/splash_wordmark.png', height: 18),
-        const SizedBox(width: 6),
-        const Text(
-          'PRO',
-          style: TextStyle(
-            fontFamily: 'Rajdhani',
-            fontWeight: FontWeight.w700,
-            fontSize: 18,
-            letterSpacing: 1.1,
-            color: ProColors.electricBlue,
-          ),
-        ),
+        const _ProLockup(),
         const Spacer(),
+        _TopBarTrailing(alertCount: alertCount),
+      ],
+    );
+  }
+}
+
+/// Ana sayfa markası. Şimşek ve wordmark dosyalarındaki boş kenar kırpılır.
+class _ProLockup extends StatelessWidget {
+  const _ProLockup();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Row(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        _CroppedAsset(
+          asset: 'assets/images/splash_bolt.png',
+          sourceWidth: 1254,
+          sourceHeight: 1254,
+          cropLeft: 295,
+          cropTop: 167,
+          cropWidth: 633,
+          cropHeight: 841,
+          height: 30,
+        ),
+        SizedBox(width: 10),
+        _CroppedAsset(
+          asset: 'assets/images/splash_wordmark.png',
+          sourceWidth: 895,
+          sourceHeight: 150,
+          cropLeft: 12,
+          cropTop: 18,
+          cropWidth: 871,
+          cropHeight: 132,
+          height: 18,
+        ),
+      ],
+    );
+  }
+}
+
+class _CroppedAsset extends StatelessWidget {
+  const _CroppedAsset({
+    required this.asset,
+    required this.sourceWidth,
+    required this.sourceHeight,
+    required this.cropLeft,
+    required this.cropTop,
+    required this.cropWidth,
+    required this.cropHeight,
+    required this.height,
+  });
+
+  final String asset;
+  final double sourceWidth;
+  final double sourceHeight;
+  final double cropLeft;
+  final double cropTop;
+  final double cropWidth;
+  final double cropHeight;
+  final double height;
+
+  @override
+  Widget build(BuildContext context) {
+    final scale = height / cropHeight;
+    return ClipRect(
+      child: Align(
+        alignment: Alignment(
+          _align(cropLeft, cropWidth, sourceWidth),
+          _align(cropTop, cropHeight, sourceHeight),
+        ),
+        widthFactor: cropWidth / sourceWidth,
+        heightFactor: cropHeight / sourceHeight,
+        child: Image.asset(
+          asset,
+          width: sourceWidth * scale,
+          height: sourceHeight * scale,
+          fit: BoxFit.fill,
+          filterQuality: FilterQuality.high,
+        ),
+      ),
+    );
+  }
+
+  /// Görünür pencere [crop] bölgesine oturur.
+  static double _align(double cropStart, double cropSize, double source) {
+    final hidden = source - cropSize;
+    if (hidden == 0) return 0;
+    return (cropStart / (hidden / 2)) - 1;
+  }
+}
+
+class _TopBarTrailing extends StatelessWidget {
+  const _TopBarTrailing({this.alertCount = 0});
+
+  final int alertCount;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
         Stack(
           clipBehavior: Clip.none,
           children: [
@@ -230,6 +407,108 @@ class _TopBar extends StatelessWidget {
           child: Icon(Icons.person, size: 16, color: ProColors.textMuted),
         ),
       ],
+    );
+  }
+}
+
+/// Modül ızgarasındaki simge ve renk (masa üst barı ile aynı).
+abstract final class _ModulDeskMark {
+  static const sahaIcon = Icons.groups_outlined;
+  static const sahaColor = Color(0xFF1D4ED8);
+
+  static const betonIcon = Icons.foundation_outlined;
+  static const betonColor = Color(0xFFE11D48);
+
+  static const demirIcon = Icons.view_week_outlined;
+  static const demirColor = Color(0xFF0F766E);
+
+  static const malzemeIcon = Icons.inventory_2_outlined;
+  static const malzemeColor = Color(0xFFEAB308);
+
+  static const isProgramiIcon = Icons.calendar_month_outlined;
+  static const isProgramiColor = Color(0xFF0284C7);
+
+  static const maliyetIcon = Icons.show_chart;
+  static const maliyetColor = Color(0xFFF59E0B);
+
+  static const kasaIcon = Icons.account_balance_wallet_outlined;
+  static const kasaColor = Color(0xFF4338CA);
+}
+
+/// Modül masaları: marka yok; modül simgesi + ad sol üstte.
+class _ModulDeskUst extends StatelessWidget {
+  const _ModulDeskUst({
+    required this.title,
+    required this.moduleIcon,
+    required this.moduleColor,
+    this.backKey,
+    this.onBack,
+    this.backLabel,
+    this.alertCount = 0,
+    this.trailing,
+  });
+
+  final String title;
+  final IconData moduleIcon;
+  final Color moduleColor;
+  final Key? backKey;
+  final VoidCallback? onBack;
+  final String? backLabel;
+  final int alertCount;
+  final Widget? trailing;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 40,
+      child: Row(
+        children: [
+          if (onBack != null)
+            InkWell(
+              key: backKey,
+              onTap: onBack,
+              borderRadius: BorderRadius.circular(8),
+              child: Padding(
+                padding: const EdgeInsets.only(right: 4),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.chevron_left, color: ProColors.text, size: 22),
+                    if (backLabel != null)
+                      Text(
+                        backLabel!,
+                        style: const TextStyle(fontFamily: 'Inter', fontSize: 15, color: ProColors.text),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: moduleColor,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(moduleIcon, color: Colors.white, size: 18),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontFamily: 'Rajdhani',
+                fontWeight: FontWeight.w700,
+                fontSize: 22,
+                color: ProColors.text,
+              ),
+            ),
+          ),
+          if (trailing != null) trailing! else _TopBarTrailing(alertCount: alertCount),
+        ],
+      ),
     );
   }
 }
@@ -338,15 +617,7 @@ class _VerimKpi extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Verim özeti',
-          style: TextStyle(
-            fontFamily: 'Rajdhani',
-            fontWeight: FontWeight.w700,
-            fontSize: 16,
-            color: ProColors.text,
-          ),
-        ),
+        const _OzetBasligi('Verim özeti'),
         const SizedBox(height: 8),
         Row(
           children: [
@@ -379,20 +650,24 @@ class _VerimCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(14),
         onTap: onTap,
         child: Container(
-          padding: const EdgeInsets.fromLTRB(10, 10, 10, 8),
+          alignment: Alignment.center,
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(14),
             border: Border.all(color: color.withValues(alpha: 0.4)),
           ),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
                 value,
+                textAlign: TextAlign.center,
                 style: const TextStyle(fontFamily: 'Rajdhani', fontWeight: FontWeight.w700, fontSize: 26, color: ProColors.text),
               ),
               Text(
                 label,
+                textAlign: TextAlign.center,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(fontFamily: 'Inter', fontSize: 13, color: color),
@@ -424,6 +699,7 @@ class _SahaProgress extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final progress = _ProjectProgressScope.of(context);
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -434,14 +710,32 @@ class _SahaProgress extends StatelessWidget {
           decoration: _cardDecoration(),
           child: Row(
             children: [
-              _Ring(label: 'Metraj', value: _DemoScope.of(context) ? _Demo.metraj : '—'),
+              _Ring(
+                label: 'Metraj',
+                value: progress?.metrajLabel ?? '—',
+                progress: progress?.metrajProgress,
+              ),
               const SizedBox(width: 14),
               Expanded(
                 child: Row(
                   children: [
-                    Expanded(child: _MetricColumn(label: 'Süre', value: _DemoScope.of(context) ? _Demo.sure : '—')),
+                    Expanded(
+                      child: _MetricColumn(
+                        label: 'Süre',
+                        value: progress?.sureLabel ?? '—',
+                        progress: progress?.durationProgress,
+                        fillColor: const Color(0xFF22C55E),
+                      ),
+                    ),
                     const SizedBox(width: 12),
-                    Expanded(child: _MetricColumn(label: 'Adam-gün', value: _DemoScope.of(context) ? _Demo.adamGun : '—')),
+                    Expanded(
+                      child: _MetricColumn(
+                        label: 'Adam-gün',
+                        value: progress?.adamGunLabel ?? '—',
+                        progress: progress?.adamGunProgress,
+                        fillColor: const Color(0xFF3B82F6),
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -454,52 +748,80 @@ class _SahaProgress extends StatelessWidget {
 }
 
 class _Ring extends StatelessWidget {
-  const _Ring({required this.label, required this.value});
+  const _Ring({required this.label, required this.value, this.progress});
 
   final String label;
   final String value;
+  final double? progress;
 
   @override
   Widget build(BuildContext context) {
+    final fraction = progress?.clamp(0.0, 1.0);
     return SizedBox(
       width: 92,
       height: 92,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          border: Border.all(color: ProColors.electricBlue, width: 7),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              value,
-              style: const TextStyle(
-                fontFamily: 'Rajdhani',
-                fontWeight: FontWeight.w700,
-                fontSize: 22,
-                color: ProColors.text,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          if (fraction == null)
+            DecoratedBox(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: ProColors.border, width: 7),
+              ),
+              child: const SizedBox(width: 92, height: 92),
+            )
+          else
+            SizedBox(
+              width: 92,
+              height: 92,
+              child: CircularProgressIndicator(
+                value: fraction,
+                strokeWidth: 7,
+                backgroundColor: ProColors.border,
+                valueColor: const AlwaysStoppedAnimation<Color>(ProColors.electricBlue),
               ),
             ),
-            Text(
-              label,
-              style: const TextStyle(fontFamily: 'Inter', fontSize: 11, color: ProColors.textMuted),
-            ),
-          ],
-        ),
+          Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                value,
+                style: const TextStyle(
+                  fontFamily: 'Rajdhani',
+                  fontWeight: FontWeight.w700,
+                  fontSize: 22,
+                  color: ProColors.text,
+                ),
+              ),
+              Text(
+                label,
+                style: const TextStyle(fontFamily: 'Inter', fontSize: 11, color: ProColors.textMuted),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
 }
 
 class _MetricColumn extends StatelessWidget {
-  const _MetricColumn({required this.label, required this.value});
+  const _MetricColumn({
+    required this.label,
+    required this.value,
+    this.progress,
+    this.fillColor = const Color(0xFF22C55E),
+  });
 
   final String label;
   final String value;
+  final double? progress;
+  final Color fillColor;
 
   @override
   Widget build(BuildContext context) {
+    final fraction = progress?.clamp(0.0, 1.0);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -509,13 +831,22 @@ class _MetricColumn extends StatelessWidget {
           style: const TextStyle(fontFamily: 'Rajdhani', fontWeight: FontWeight.w700, fontSize: 22, color: ProColors.text),
         ),
         const SizedBox(height: 8),
-        const SizedBox(
-          height: 6,
-          width: double.infinity,
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              color: Color(0xFF163322),
-              borderRadius: BorderRadius.all(Radius.circular(6)),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(6),
+          child: SizedBox(
+            height: 6,
+            width: double.infinity,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                const ColoredBox(color: Color(0xFF163322)),
+                if (fraction != null)
+                  FractionallySizedBox(
+                    alignment: Alignment.centerLeft,
+                    widthFactor: fraction,
+                    child: ColoredBox(color: fillColor),
+                  ),
+              ],
             ),
           ),
         ),
@@ -541,7 +872,6 @@ class _FinanceRow extends StatelessWidget {
                 value: demo ? _Demo.butce : empty,
                 icon: Icons.pie_chart_outline,
                 colors: const [Color(0xFF2563EB), Color(0xFF1D4ED8)],
-                foot: 'Planlanan maliyet',
               ),
             ),
             const SizedBox(width: 8),
@@ -551,7 +881,6 @@ class _FinanceRow extends StatelessWidget {
                 value: demo ? _Demo.maliyet : empty,
                 icon: Icons.payments_outlined,
                 colors: const [Color(0xFFF97316), Color(0xFFEA580C)],
-                foot: 'Yaklaşık maliyet',
               ),
             ),
           ],
@@ -565,9 +894,6 @@ class _FinanceRow extends StatelessWidget {
                 value: demo ? _Demo.kasa : empty,
                 icon: Icons.account_balance_wallet_outlined,
                 colors: const [Color(0xFF6366F1), Color(0xFF4F46E5)],
-                foot: 'Güncel kasa',
-                detail: 'Toplam gelir',
-                extra: 'Toplam gider',
               ),
             ),
             const SizedBox(width: 8),
@@ -577,7 +903,6 @@ class _FinanceRow extends StatelessWidget {
                 value: demo ? _Demo.hakedis : empty,
                 icon: Icons.description_outlined,
                 colors: const [Color(0xFFE11D48), Color(0xFFBE123C)],
-                foot: 'İşveren hakedişi',
               ),
             ),
           ],
@@ -593,18 +918,12 @@ class _FinanceTile extends StatelessWidget {
     required this.value,
     required this.icon,
     required this.colors,
-    required this.foot,
-    this.detail,
-    this.extra,
   });
 
   final String title;
   final String value;
   final IconData icon;
   final List<Color> colors;
-  final String foot;
-  final String? detail;
-  final String? extra;
 
   @override
   Widget build(BuildContext context) {
@@ -629,26 +948,6 @@ class _FinanceTile extends StatelessWidget {
             value,
             style: const TextStyle(fontFamily: 'Rajdhani', fontWeight: FontWeight.w700, fontSize: 26, color: Colors.white),
           ),
-          Text(
-            foot,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(fontFamily: 'Inter', fontSize: 11, color: Color(0xF2FFFFFF)),
-          ),
-          if (detail != null)
-            Text(
-              detail!,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontFamily: 'Inter', fontSize: 11, color: Color(0xCCFFFFFF)),
-            ),
-          if (extra != null)
-            Text(
-              extra!,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontFamily: 'Inter', fontSize: 11, color: Color(0xCCFFFFFF)),
-            ),
         ],
       ),
     );
@@ -667,7 +966,7 @@ class _SourceKpis extends StatelessWidget {
       children: [
         Row(
           children: [
-            Expanded(child: _SourceCell(title: 'Beton', lines: const ['Planlanan döküm', 'Bugünkü döküm', 'Gerçekleşen döküm', 'Keşif ilerlemesi'], values: demo ? _Demo.beton : dash)),
+            Expanded(child: _SourceCell(title: 'Beton', lines: const ['Planlanan döküm', 'Gerçekleşen döküm', 'Keşif ilerlemesi'], values: demo ? _Demo.beton : dash)),
             const SizedBox(width: 8),
             Expanded(child: _SourceCell(title: 'Demir', lines: const ['Planlanan tonaj', 'Beklenen kullanım', 'İlerleme'], values: demo ? _Demo.demir : dash)),
           ],
@@ -723,54 +1022,25 @@ class _SourceCell extends StatelessWidget {
 }
 
 
-class _ModuleHeader extends StatelessWidget {
-  const _ModuleHeader();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Row(
-      children: [
-        Icon(Icons.grid_view_rounded, size: 16, color: ProColors.textMuted),
-        SizedBox(width: 6),
-        Text(
-          'MODÜLLER',
-          style: TextStyle(
-            fontFamily: 'Rajdhani',
-            fontWeight: FontWeight.w700,
-            letterSpacing: 1.1,
-            color: ProColors.textMuted,
-          ),
-        ),
-        Spacer(),
-        Text(
-          'Tüm Modüller',
-          style: TextStyle(fontFamily: 'Inter', fontSize: 12, color: ProColors.textMuted),
-        ),
-        Icon(Icons.chevron_right, size: 16, color: ProColors.textMuted),
-      ],
-    );
-  }
-}
-
 class _ModuleGrid extends StatelessWidget {
-  const _ModuleGrid({this.onOpenSaha});
+  const _ModuleGrid({this.onOpenSaha, this.onOpenModul});
 
   final VoidCallback? onOpenSaha;
+  final ValueChanged<String>? onOpenModul;
 
   static const tiles = <_ModuleTile>[
-    _ModuleTile('Saha', 'Puantaj, günlük rapor, imalat', 'saha', Color(0xFF1D4ED8), Icons.groups_outlined),
-    _ModuleTile('Genel İmalatlar', 'Tüm iş kalemleri', null, Color(0xFFEA580C), Icons.construction_outlined),
-    _ModuleTile('Beton', 'Keşif, sipariş, döküm, test', 'beton', Color(0xFFE11D48), Icons.foundation_outlined),
-    _ModuleTile('Demir', 'Sipariş, kesim, montaj', 'demir', Color(0xFF0F766E), Icons.view_week_outlined),
-    _ModuleTile('Çelik', 'Atölye, sevkiyat, montaj', null, Color(0xFF7C3AED), Icons.precision_manufacturing_outlined),
-    _ModuleTile('Malzeme', 'Talep, sipariş, stok, tüketim', 'malzeme', Color(0xFFEAB308), Icons.inventory_2_outlined),
-    _ModuleTile('Satın Alma', 'Tedarikçi, sipariş, irsaliye', null, Color(0xFF16A34A), Icons.shopping_cart_outlined),
-    _ModuleTile('İş Programı', 'Gantt, plan, gerçekleşme', 'is-programi', Color(0xFF0284C7), Icons.calendar_month_outlined),
-    _ModuleTile('Bütçe', 'Planlanan maliyet ve sapma', null, Color(0xFFDB2777), Icons.pie_chart_outline),
-    _ModuleTile('Maliyet', 'Keşif, metraj, yaklaşık maliyet', 'maliyet', Color(0xFFF59E0B), Icons.show_chart),
-    _ModuleTile('Kasa', 'Ödeme, tahsilat, banka', 'kasa', Color(0xFF4338CA), Icons.account_balance_wallet_outlined),
-    _ModuleTile('Hakediş', 'İşveren ve taşeron hakedişi', null, Color(0xFFDC2626), Icons.description_outlined),
-    _ModuleTile('Tahvil', 'Saha, temel, kolon, kiriş, döşeme', 'tahvil', Color(0xFFC2410C), Icons.calculate_outlined),
+    _ModuleTile('Saha', 'Puantaj, günlük rapor, imalat', 'saha', _ModulDeskMark.sahaColor, _ModulDeskMark.sahaIcon),
+    _ModuleTile('Genel İmalatlar', 'İş kalemi, plan, gerçekleşen', 'genel-imalatlar', Color(0xFFEA580C), Icons.construction_outlined),
+    _ModuleTile('Beton', 'Keşif, sipariş, döküm, test', 'beton', _ModulDeskMark.betonColor, _ModulDeskMark.betonIcon),
+    _ModuleTile('Demir', 'Sipariş, gelen demir, saha sayım', 'demir', _ModulDeskMark.demirColor, _ModulDeskMark.demirIcon),
+    _ModuleTile('Çelik', 'Atölye, sevkiyat, montaj', 'celik', Color(0xFF7C3AED), Icons.precision_manufacturing_outlined),
+    _ModuleTile('Malzeme', 'Keşif, talep, teslim, kütüphane', 'malzeme', _ModulDeskMark.malzemeColor, _ModulDeskMark.malzemeIcon),
+    _ModuleTile('Satın Alma', 'Tedarikçi, sipariş, irsaliye', 'satin-alma', Color(0xFF16A34A), Icons.shopping_cart_outlined),
+    _ModuleTile('İş Programı', 'Program, Gantt, özet', 'is-programi', _ModulDeskMark.isProgramiColor, _ModulDeskMark.isProgramiIcon),
+    _ModuleTile('Bütçe', 'Plan, gerçekleşen, sapma', 'butce', Color(0xFFDB2777), Icons.pie_chart_outline),
+    _ModuleTile('Maliyet', 'Analiz, metraj, yaklaşık maliyet', 'maliyet', _ModulDeskMark.maliyetColor, _ModulDeskMark.maliyetIcon),
+    _ModuleTile('Kasa', 'Gelir, gider, güncel kasa', 'kasa', _ModulDeskMark.kasaColor, _ModulDeskMark.kasaIcon),
+    _ModuleTile('Hakediş', 'İşveren ve taşeron', 'hakedis', Color(0xFFDC2626), Icons.description_outlined),
   ];
 
   @override
@@ -785,7 +1055,11 @@ class _ModuleGrid extends StatelessWidget {
         crossAxisSpacing: 10,
         childAspectRatio: 2.15,
       ),
-      itemBuilder: (context, index) => _ModuleCard(tile: tiles[index], onOpenSaha: onOpenSaha),
+      itemBuilder: (context, index) => _ModuleCard(
+        tile: tiles[index],
+        onOpenSaha: onOpenSaha,
+        onOpenModul: onOpenModul,
+      ),
     );
   }
 }
@@ -795,16 +1069,17 @@ class _ModuleTile {
 
   final String title;
   final String subtitle;
-  final String? moduleId;
+  final String moduleId;
   final Color color;
   final IconData icon;
 }
 
 class _ModuleCard extends StatelessWidget {
-  const _ModuleCard({required this.tile, this.onOpenSaha});
+  const _ModuleCard({required this.tile, this.onOpenSaha, this.onOpenModul});
 
   final _ModuleTile tile;
   final VoidCallback? onOpenSaha;
+  final ValueChanged<String>? onOpenModul;
 
   @override
   Widget build(BuildContext context) {
@@ -813,18 +1088,16 @@ class _ModuleCard extends StatelessWidget {
       color: Colors.transparent,
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
-        key: tile.moduleId == null ? null : Key('module-${tile.moduleId}'),
+        key: Key('module-${tile.moduleId}'),
         borderRadius: BorderRadius.circular(16),
         onTap: () {
           final id = tile.moduleId;
-          if (id == null) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('${tile.title} daha sonra eklenecek.')),
-            );
-            return;
-          }
           if (id == 'saha' && onOpenSaha != null) {
             onOpenSaha!();
+            return;
+          }
+          if (onOpenModul != null) {
+            onOpenModul!(id);
             return;
           }
           _keepInPro(context);

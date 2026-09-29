@@ -40,20 +40,13 @@ class _ImalatDeskState extends State<_ImalatDesk> {
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
       children: [
-        const _TopBar(),
-        const SizedBox(height: 8),
-        Row(
-          children: [
-            IconButton(
-              key: const Key('imalat-back'),
-              onPressed: widget.onBack,
-              icon: const Icon(Icons.arrow_back_ios_new, size: 18, color: ProColors.text),
-            ),
-            const Text(
-              'Saha',
-              style: TextStyle(fontFamily: 'Rajdhani', fontWeight: FontWeight.w700, fontSize: 18, color: ProColors.text),
-            ),
-          ],
+        _ModulDeskUst(
+          title: 'İmalat',
+          moduleIcon: _ModulDeskMark.sahaIcon,
+          moduleColor: _ModulDeskMark.sahaColor,
+          backKey: const Key('imalat-back'),
+          onBack: widget.onBack,
+          backLabel: 'Saha',
         ),
         const SizedBox(height: 8),
         Row(
@@ -66,18 +59,9 @@ class _ImalatDeskState extends State<_ImalatDesk> {
             ),
             const SizedBox(width: 10),
             const Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Günlük İmalatlar',
-                    style: TextStyle(fontFamily: 'Rajdhani', fontWeight: FontWeight.w700, fontSize: 24, color: ProColors.text),
-                  ),
-                  Text(
-                    'Saha imalatlarını kaydet, takip et ve raporla',
-                    style: TextStyle(fontFamily: 'Inter', fontSize: 12, color: ProColors.textMuted),
-                  ),
-                ],
+              child: Text(
+                'Saha imalatlarını kaydet, takip et ve raporla',
+                style: TextStyle(fontFamily: 'Inter', fontSize: 12, color: ProColors.textMuted),
               ),
             ),
             const SizedBox(width: 8),
@@ -221,10 +205,10 @@ class _ImalatProjectChip extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: ProColors.border),
       ),
-      child: const Column(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
+          const Text(
             'AKTİF PROJE',
             style: TextStyle(
               fontFamily: 'Rajdhani',
@@ -233,24 +217,31 @@ class _ImalatProjectChip extends StatelessWidget {
               color: Color(0xFF9EC1FF),
             ),
           ),
-          SizedBox(height: 2),
+          const SizedBox(height: 2),
           Text(
-            'Henüz proje yok',
+            _DemoScope.of(context) ? _Demo.project : 'Henüz proje yok',
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: TextStyle(
+            style: const TextStyle(
               fontFamily: 'Rajdhani',
               fontWeight: FontWeight.w700,
               fontSize: 12,
               color: ProColors.text,
             ),
           ),
-          SizedBox(height: 4),
+          const SizedBox(height: 4),
           Row(
             children: [
-              Icon(Icons.keyboard_arrow_down, size: 12, color: ProColors.textMuted),
-              SizedBox(width: 2),
-              Text('—', style: TextStyle(fontFamily: 'Inter', fontSize: 10, color: ProColors.textMuted)),
+              const Icon(Icons.keyboard_arrow_down, size: 12, color: ProColors.textMuted),
+              const SizedBox(width: 2),
+              Flexible(
+                child: Text(
+                  _DemoScope.of(context) ? _Demo.place : '—',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontFamily: 'Inter', fontSize: 10, color: ProColors.textMuted),
+                ),
+              ),
             ],
           ),
         ],

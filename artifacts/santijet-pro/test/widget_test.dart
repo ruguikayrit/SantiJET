@@ -16,7 +16,6 @@ void main() {
       'saha',
       'beton',
       'demir',
-      'tahvil',
       'malzeme',
       'is-programi',
       'maliyet',
@@ -24,6 +23,7 @@ void main() {
     ]);
     expect(ids, isNot(contains('muhendis')));
     expect(ids, isNot(contains('celik')));
+    expect(ids, isNot(contains('tahvil')));
   });
 
   testWidgets('açılış ekranı PRO markasını gösterir', (tester) async {
@@ -53,10 +53,16 @@ void main() {
     expect(find.text('Süre'), findsOneWidget);
     expect(find.text('Adam-gün'), findsOneWidget);
     expect(find.text('Planlanan döküm'), findsOneWidget);
+    expect(find.text('Bugünkü döküm'), findsNothing);
     expect(find.text('Onay bekleyen'), findsOneWidget);
-    expect(find.text('Güncel kasa'), findsOneWidget);
+    expect(find.text('Güncel kasa'), findsNothing);
+    expect(find.text('Planlanan maliyet'), findsNothing);
+    expect(find.text('Toplam gelir'), findsNothing);
     expect(find.text('Ortalama ilerleme'), findsOneWidget);
+    expect(find.text('Genel proje ilerleme'), findsOneWidget);
     expect(find.text('Verim özeti'), findsOneWidget);
+    expect(find.text('Finansal özet'), findsOneWidget);
+    expect(find.text('Teknik özet'), findsOneWidget);
     expect(find.text('İNŞAAT'), findsOneWidget);
     expect(find.text('ELEKTRİK'), findsOneWidget);
     expect(find.text('MEKANİK'), findsOneWidget);
@@ -87,9 +93,9 @@ void main() {
 
     await tester.tap(find.byKey(const Key('quick-add')));
     await tester.pumpAndSettle();
-    expect(find.text('MODÜLLER'), findsOneWidget);
+    expect(find.text('Modüller'), findsNWidgets(2));
     expect(find.text('Saha'), findsOneWidget);
-    expect(find.text('Tahvil'), findsOneWidget);
+    expect(find.text('Tahvil'), findsNothing);
     expect(find.text('Planlanan döküm'), findsNothing);
 
     await tester.tap(find.byKey(const Key('module-saha')));
@@ -118,12 +124,13 @@ void main() {
 
     await tester.tap(find.byKey(const Key('quick-add')));
     await tester.pumpAndSettle();
-    expect(find.text('MODÜLLER'), findsOneWidget);
+    expect(find.text('Modüller'), findsNWidgets(2));
 
     await tester.tap(find.byKey(const Key('quick-add')));
     await tester.pumpAndSettle();
-    expect(find.text('MODÜLLER'), findsNothing);
+    expect(find.text('Modüller'), findsOneWidget);
     expect(find.text('Planlanan döküm'), findsOneWidget);
+    expect(find.text('Bugünkü döküm'), findsNothing);
   });
 
   testWidgets('saha masası puantaj ekranını açar', (tester) async {
@@ -192,6 +199,12 @@ void main() {
     expect(find.text('Pzt'), findsOneWidget);
 
     await tester.tap(find.text('Aylık'));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('puantaj-ay-sec')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('puantaj-ay-sec')));
+    await tester.pumpAndSettle();
+    expect(find.byType(DatePickerDialog), findsOneWidget);
+    await tester.tap(find.text('Cancel'));
     await tester.pumpAndSettle();
     expect(find.text('Ekiplerin aylık puantaj özeti.'), findsOneWidget);
     expect(find.text('Aylık Dağılım'), findsOneWidget);
@@ -327,12 +340,13 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
 
     await _ac(tester);
-    expect(find.text('Henüz proje yok'), findsWidgets);
-    expect(find.text('%62'), findsNothing);
+    expect(find.text('Henüz proje yok'), findsNothing);
+    expect(find.text('İstanbul Residence'), findsWidgets);
+    expect(find.text('%62'), findsWidgets);
 
     await tester.tap(find.text('Menü'));
     await tester.pumpAndSettle();
-    expect(find.text('Demo Yükle'), findsOneWidget);
+    expect(find.text('Demo yüklü'), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('menu-demo-load')));
     await tester.pump();
@@ -349,6 +363,9 @@ void main() {
     expect(find.text('%38'), findsOneWidget);
     expect(find.text('128 M₺'), findsOneWidget);
     expect(find.text('4.800 m³'), findsOneWidget);
+    expect(find.text('2.960 m³'), findsOneWidget);
+    expect(find.text('Bugünkü döküm'), findsNothing);
+    expect(find.text('42 m³'), findsNothing);
     expect(find.text('6'), findsWidgets);
 
     await tester.tap(find.text('Menü'));
@@ -376,7 +393,7 @@ void main() {
   });
 
   testWidgets('saha masası personel ekranını açar', (tester) async {
-    tester.view.physicalSize = const Size(800, 2800);
+    tester.view.physicalSize = const Size(390, 2400);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
@@ -389,23 +406,75 @@ void main() {
     await tester.tap(find.byKey(const Key('saha-open-personel')));
     await tester.pumpAndSettle();
 
-    expect(find.text('Tüm Personel'), findsOneWidget);
-    expect(find.text('Toplam Personel'), findsOneWidget);
-    expect(find.text('Mevcut'), findsWidgets);
-    expect(find.text('Ekipleri ve saha personelini yönetin'), findsOneWidget);
+    expect(find.text('Personel'), findsOneWidget);
+    expect(find.text('Ekip yönetimi ve personel bilgileri.'), findsOneWidget);
+    expect(find.text('Çalışan (8)'), findsNothing);
+    expect(find.text('Ayrılan (4)'), findsNothing);
+    expect(find.text('Personel Ekle'), findsNothing);
+    expect(find.byKey(const Key('personel-open-app')), findsOneWidget);
+    expect(find.byIcon(Icons.more_horiz), findsNothing);
     expect(find.text('İstanbul Residence'), findsNothing);
+    expect(find.text('28 Personel'), findsNothing);
+    expect(find.text('Mehmet Arslan'), findsOneWidget);
+    expect(find.text('Kemal Aydın'), findsOneWidget);
+    expect(find.text('Alçıpan Ekibi'), findsWidgets);
+    expect(find.text('ABC Yapı Ltd. Şti.'), findsWidgets);
+    expect(find.text('03.01.2026'), findsNothing);
     expect(find.text('Ahmet Yılmaz'), findsNothing);
+    expect(find.text('Tüm Personel'), findsNothing);
 
-    await tester.tap(find.text('Görevler'));
+    await tester.tap(find.byKey(const Key('personel-row-Mehmet Arslan')));
     await tester.pumpAndSettle();
-    expect(find.textContaining('Personel görevleri'), findsOneWidget);
+    expect(find.text('Görev'), findsOneWidget);
+    expect(find.text('İşe giriş'), findsOneWidget);
+    expect(find.text('İşten ayrılış'), findsOneWidget);
+    expect(find.text('03.01.2026'), findsOneWidget);
+    expect(find.text('Alçıpan Ekibi'), findsOneWidget);
+    expect(find.text('ABC Yapı Ltd. Şti.'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('personel-bilgi-back')));
+    await tester.pumpAndSettle();
+    expect(find.text('03.01.2026'), findsNothing);
+    expect(find.text('Kemal Aydın'), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('personel-open-app')));
-    await tester.pump();
-    expect(find.text('Kayıt bu uygulamada henüz tutulmuyor.'), findsOneWidget);
-    expect(find.textContaining('github.io'), findsNothing);
     await tester.pumpAndSettle();
-    expect(find.text('Tüm Personel'), findsOneWidget);
+    expect(find.text('Kayıt bu uygulamada henüz tutulmuyor.'), findsNothing);
+    expect(find.text('Yeni personel bilgilerini girin.'), findsOneWidget);
+    expect(find.text('Temel Bilgiler'), findsOneWidget);
+    expect(find.text('Çalışma Bilgileri'), findsOneWidget);
+    expect(find.textContaining('Kimlik Bilgileri'), findsOneWidget);
+    expect(find.text('Vazgeç'), findsOneWidget);
+    expect(find.text('Kayıt çalışan listesine eklenir.'), findsNothing);
+    await tester.tap(find.byKey(const Key('personel-ekle-kaydet')));
+    await tester.pumpAndSettle();
+    expect(find.text('Ad Soyad gerekli.'), findsOneWidget);
+    await tester.enterText(find.byKey(const Key('personel-ekle-ad')), 'Ayşe Demir');
+    await tester.tap(find.byKey(const Key('personel-ekle-meslek')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('İşçi').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('personel-ekle-ekip')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Alçıpan Ekibi').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('personel-ekle-firma')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('ABC Yapı Ltd. Şti.').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('personel-ekle-kaydet')));
+    await tester.pumpAndSettle();
+    expect(find.text('Ayşe Demir'), findsOneWidget);
+    expect(find.text('Mehmet Arslan'), findsOneWidget);
+    expect(find.textContaining('github.io'), findsNothing);
+
+    await tester.tap(find.byKey(const Key('personel-row-Ayşe Demir')));
+    await tester.pumpAndSettle();
+    expect(find.text('Alçıpan Ekibi'), findsOneWidget);
+    expect(find.text('ABC Yapı Ltd. Şti.'), findsOneWidget);
+    expect(find.text('İşe giriş'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('personel-bilgi-back')));
+    await tester.pumpAndSettle();
+    expect(find.text('Ayşe Demir'), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('personel-back')));
     await tester.pumpAndSettle();
@@ -548,7 +617,7 @@ void main() {
     expect(find.text('Stoktaki Toplam'), findsOneWidget);
     expect(find.text('Son Gelen Malzemeler'), findsOneWidget);
     expect(find.text('Çimento'), findsNothing);
-    expect(find.text('İstanbul Residence'), findsNothing);
+    expect(find.text('İstanbul Residence'), findsOneWidget);
 
     await tester.tap(find.text('Stok Durumu'));
     await tester.pumpAndSettle();
@@ -578,12 +647,32 @@ void main() {
     await tester.tap(find.byKey(const Key('quick-add')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('module-demir')));
-    await tester.pump();
+    await tester.pumpAndSettle();
 
-    expect(find.text('Kayıt bu uygulamada henüz tutulmuyor.'), findsOneWidget);
+    expect(find.text('Gelen Demir'), findsOneWidget);
+    expect(find.text('Saha Sayım'), findsOneWidget);
+    expect(find.text('Teslim tonajı gerçekleşen imalat sayılmaz. Tahvil hesabı bu modülde değildir.'), findsOneWidget);
     expect(find.byKey(const Key('pro-return')), findsNothing);
     expect(find.textContaining('github.io'), findsNothing);
+
+    await tester.tap(find.byKey(const Key('modul-bolum-Gelen Demir')));
+    await tester.pumpAndSettle();
+    expect(find.text('Sahaya gelen çap ve tonaj. Teslim, kullanım değildir.'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('modul-kayit')));
+    await tester.pump();
+    expect(find.text('Kayıt bu uygulamada henüz tutulmuyor.'), findsOneWidget);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('modul-bolum-back')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('quick-add')));
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('module-saha')), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('module-beton')));
+    await tester.pumpAndSettle();
+    expect(find.text('Döküm'), findsOneWidget);
+    expect(find.text('Test'), findsOneWidget);
+    expect(find.text('Dökülen hacim saha imalat satırı değildir. Sipariş tutarı kasa hareketi değildir.'), findsOneWidget);
   });
 }

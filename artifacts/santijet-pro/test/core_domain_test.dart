@@ -1,5 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:santijet_pro/core/access/home_summary_visibility.dart';
 import 'package:santijet_pro/core/domain/project.dart';
+import 'package:santijet_pro/core/domain/project_progress.dart';
 import 'package:santijet_pro/core/domain/unit.dart';
 import 'package:santijet_pro/core/domain/work_item.dart';
 
@@ -53,6 +55,24 @@ void main() {
     );
     expect(item.remainingQty, 173);
     expect(item.progress, closeTo(12 / 185, 0.0001));
+  });
+
+  test('genel proje ilerlemesi plan ve kayıtlardan hesaplanır', () {
+    final snapshot = DemoProjectProgress.snapshot(DateTime(2026, 9, 29));
+    expect(snapshot.elapsedDays, 212);
+    expect(snapshot.sureLabel, '212 gün');
+    expect(snapshot.metrajLabel, '%62');
+    expect(snapshot.adamGunLabel, '4.180');
+    expect(snapshot.durationProgress, closeTo(212 / 365, 0.001));
+    expect(snapshot.adamGunProgress, closeTo(4180 / 7200, 0.001));
+    expect(snapshot.metrajProgress, closeTo(0.62, 0.001));
+  });
+
+  test('ana sayfa özet görünürlüğü bölüm kimliği ile seçilir', () {
+    const kapaliFinans = HomeSummaryVisibility(finansalOzet: false);
+    expect(kapaliFinans.shows(HomeSummarySection.finansalOzet), isFalse);
+    expect(kapaliFinans.shows(HomeSummarySection.teknikOzet), isTrue);
+    expect(HomeSummaryVisibility.forRole(null).finansalOzet, isTrue);
   });
 
   test('plan miktarı yoksa oran sıfırdır', () {
