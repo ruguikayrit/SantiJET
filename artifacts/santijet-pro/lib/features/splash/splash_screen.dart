@@ -14,27 +14,29 @@ class SplashScreen extends StatefulWidget {
 class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMixin {
   static const _wordmarkAspect = 895 / 150;
   static const _boltWordmarkGap = 28.0;
+  static const _bootDuration = Duration(milliseconds: 1600);
 
-  late final AnimationController _loading;
+  late final AnimationController _boot;
   late final AnimationController _reveal;
+  late final Animation<double> _bootProgress;
 
   @override
   void initState() {
     super.initState();
-    _loading = AnimationController(vsync: this, duration: const Duration(milliseconds: 1800))..repeat();
+    _boot = AnimationController(vsync: this, duration: _bootDuration);
+    _bootProgress = CurvedAnimation(parent: _boot, curve: Curves.easeInOut);
+    _boot.addStatusListener((status) {
+      if (status == AnimationStatus.completed && mounted) {
+        context.go('/home');
+      }
+    });
     _reveal = AnimationController(vsync: this, duration: const Duration(milliseconds: 700))..forward();
-    _openHome();
-  }
-
-  Future<void> _openHome() async {
-    await Future<void>.delayed(const Duration(milliseconds: 1600));
-    if (!mounted) return;
-    context.go('/home');
+    _boot.forward();
   }
 
   @override
   void dispose() {
-    _loading.dispose();
+    _boot.dispose();
     _reveal.dispose();
     super.dispose();
   }
@@ -42,8 +44,8 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.sizeOf(context).width;
-    final boltSize = (screenWidth * 0.76).clamp(280.0, 440.0);
-    final wordmarkWidth = (screenWidth * 0.78).clamp(260.0, 360.0);
+    final boltSize = (screenWidth * 0.65).clamp(240.0, 380.0);
+    final wordmarkWidth = (screenWidth * 0.74).clamp(260.0, 340.0);
     final wordmarkHeight = wordmarkWidth / _wordmarkAspect;
 
     return Scaffold(
@@ -97,14 +99,11 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                                   'PRO',
                                   style: TextStyle(
                                     fontFamily: 'Rajdhani',
-                                    fontSize: 37,
+                                    fontSize: 34,
                                     fontWeight: FontWeight.w700,
                                     height: 1.1,
                                     color: ProColors.electricBlue,
-                                    letterSpacing: 6,
-                                    shadows: [
-                                      Shadow(color: ProColors.electricBlueGlow, blurRadius: 24),
-                                    ],
+                                    letterSpacing: 4,
                                   ),
                                 ),
                               ),
@@ -115,29 +114,33 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                     ),
                   ),
                   AnimatedBuilder(
-                    animation: _loading,
+                    animation: _bootProgress,
                     builder: (context, child) {
-                      return Container(
-                        width: 130,
-                        height: 4,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(2),
-                          color: ProColors.border,
-                          boxShadow: const [
-                            BoxShadow(color: Color(0x660055FF), blurRadius: 8, spreadRadius: 1),
-                          ],
-                        ),
-                        child: Align(
-                          alignment: Alignment(_loading.value * 2 - 1, 0),
-                          child: Container(
-                            width: 40,
-                            height: 4,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(2),
-                              gradient: const LinearGradient(
-                                colors: [ProColors.electricBlue, ProColors.electricBlueLight],
+                      final fill = _bootProgress.value.clamp(0.0, 1.0);
+                      return ClipRRect(
+                        borderRadius: BorderRadius.circular(2),
+                        child: SizedBox(
+                          width: 130,
+                          height: 4,
+                          child: Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              const ColoredBox(color: ProColors.border),
+                              Align(
+                                alignment: Alignment.centerLeft,
+                                child: FractionallySizedBox(
+                                  widthFactor: fill,
+                                  heightFactor: 1,
+                                  child: const DecoratedBox(
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        colors: [ProColors.electricBlue, ProColors.electricBlueLight],
+                                      ),
+                                    ),
+                                  ),
+                                ),
                               ),
-                            ),
+                            ],
                           ),
                         ),
                       );
@@ -157,17 +160,29 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
 class _BlueprintGridPainter extends CustomPainter {
   const _BlueprintGridPainter();
 
+  static const _spacing = 24.0;
+  static const _majorEvery = 4;
+  static const _minorColor = Color(0x1F4876DC);
+  static const _majorColor = Color(0x384877DC);
+
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = ProColors.blueprintGrid
-      ..strokeWidth = 0.5;
-    const spacing = 24.0;
-    for (var x = 0.0; x < size.width; x += spacing) {
-      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
+    final minor = Paint()
+      ..color = _minorColor
+      ..strokeWidth = 0.65;
+    final major = Paint()
+      ..color = _majorColor
+      ..strokeWidth = 1;
+
+    var index = 0;
+    for (var x = 0.0; x <= size.width; x += _spacing, index++) {
+      final p = index % _majorEvery == 0 ? major : minor;
+      canvas.drawLine(Offset(x, 0), Offset(x, size.height), p);
     }
-    for (var y = 0.0; y < size.height; y += spacing) {
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
+    index = 0;
+    for (var y = 0.0; y <= size.height; y += _spacing, index++) {
+      final p = index % _majorEvery == 0 ? major : minor;
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), p);
     }
   }
 

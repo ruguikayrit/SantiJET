@@ -113,15 +113,13 @@ void main() {
     expect(find.text('Günlük İmalatlar'), findsNothing);
     expect(find.text('Görevler'), findsWidgets);
     expect(find.text('Saha Turu'), findsOneWidget);
+    expect(find.text('Gözlem · tespit · kontrol formu'), findsOneWidget);
     expect(find.text('Fotoğraf'), findsNothing);
     expect(find.text('Malzeme'), findsWidgets);
-    expect(find.text('Günlük Rapor'), findsWidgets);
+    expect(find.text('Günlük Rapor'), findsNothing);
+    expect(find.text('Kontrol Listesi'), findsNothing);
     expect(find.text('İmalat'), findsWidgets);
-    await tester.tap(find.byKey(const Key('saha-open-daily-report')));
-    await tester.pump();
-    expect(find.text('Günlük Rapor daha sonra eklenecek.'), findsOneWidget);
     expect(find.textContaining('github.io'), findsNothing);
-    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('saha-open-imalat')));
     await tester.pumpAndSettle();
     expect(find.text('İmalat Kaydı Ekle'), findsOneWidget);
@@ -252,10 +250,9 @@ void main() {
     await tester.tap(find.byKey(const Key('saha-open-saha-turu')));
     await tester.pumpAndSettle();
 
-    expect(find.text('Sahadaki durumu gözlemle, tespit et, kaydet.'), findsOneWidget);
-    expect(find.text('26 Eylül 2026'), findsOneWidget);
-    expect(find.text('Cuma'), findsOneWidget);
-    expect(find.text('Tur Geçmişi'), findsOneWidget);
+    expect(find.text('Sahadaki durumu gözlemle, tespit et, kontrol formu doldur.'), findsOneWidget);
+    expect(find.textContaining('26 Eylül 2026'), findsOneWidget);
+    expect(find.text('Tur Geçmişi'), findsNothing);
     expect(find.text('12'), findsOneWidget);
     expect(find.text('Toplam Tespit'), findsOneWidget);
     expect(find.text('Açık'), findsOneWidget);
@@ -267,6 +264,8 @@ void main() {
     expect(find.text('B Blok İç Mekan Turu'), findsOneWidget);
     expect(find.text('Şantiye Geneli Güvenlik Turu'), findsOneWidget);
     expect(find.text('A Blok - 3. Kat Mekanik Kontrol'), findsOneWidget);
+    expect(find.text('Günlük İSG Açılış Kontrolü'), findsOneWidget);
+    expect(find.text('Kontrol formu · 6 madde · 1 uygunsuz'), findsOneWidget);
     expect(find.text('8 tespit'), findsOneWidget);
     expect(find.textContaining('github.io'), findsNothing);
 
@@ -274,6 +273,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Gözlem'), findsOneWidget);
     expect(find.text('Tespit'), findsOneWidget);
+    expect(find.text('Kontrol'), findsOneWidget);
     expect(find.text('İstanbul Residence'), findsOneWidget);
     expect(find.text('A Blok > 3. Kat > Daire 12'), findsOneWidget);
     expect(find.text('Alçıpan'), findsOneWidget);
@@ -307,6 +307,29 @@ void main() {
     await tester.tap(find.byKey(const Key('gorev-ozet-geri')));
     await tester.pumpAndSettle();
     expect(find.text('Tespiti Kaydet'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('saha-turu-kontrol')));
+    await tester.pumpAndSettle();
+    expect(find.text('Kontrol Maddeleri'), findsOneWidget);
+    expect(find.text('Günlük İSG Açılış'), findsOneWidget);
+    expect(find.text('Elektrik panosu ve kablo düzeni'), findsOneWidget);
+    expect(find.text('5/6'), findsOneWidget);
+    expect(find.text('Uygun 4'), findsOneWidget);
+    expect(find.text('Uygun Değil 1'), findsOneWidget);
+    expect(find.text('Kontrolü Kaydet'), findsOneWidget);
+    expect(find.text('Alçıpan'), findsNothing);
+    expect(find.text('Göreve Dönüştür'), findsOneWidget);
+
+    // Tek uygunsuz madde uygun işaretlenince göreve dönüştürme kaybolur.
+    await tester.tap(find.text('Uygun').at(2));
+    await tester.pumpAndSettle();
+    expect(find.text('Uygun 5'), findsOneWidget);
+    expect(find.text('Uygun Değil 0'), findsOneWidget);
+    expect(find.text('Göreve Dönüştür'), findsNothing);
+
+    await tester.tap(find.byKey(const Key('saha-turu-gozlem')));
+    await tester.pumpAndSettle();
+    expect(find.text('Gözlemi Kaydet'), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('yeni-saha-turu-back')));
     await tester.pumpAndSettle();
@@ -391,7 +414,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('module-saha')));
     await tester.pumpAndSettle();
-    expect(find.text('İstanbul Residence'), findsWidgets);
+    expect(find.text('Saha operasyonlarını kolayca yönetin'), findsOneWidget);
     await tester.tap(find.byKey(const Key('saha-open-saha-turu')));
     await tester.pumpAndSettle();
     expect(find.text('12'), findsOneWidget);
@@ -495,7 +518,7 @@ void main() {
   });
 
   testWidgets('saha masası görevler ekranını açar', (tester) async {
-    tester.view.physicalSize = const Size(800, 2800);
+    tester.view.physicalSize = const Size(390, 2400);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
@@ -510,13 +533,27 @@ void main() {
 
     expect(find.text('Görev Listesi'), findsOneWidget);
     expect(find.text('Toplam Görev'), findsOneWidget);
-    expect(find.text('Devam ediyor'), findsOneWidget);
-    expect(find.textContaining('Yapılacak → Başladı'), findsOneWidget);
+    expect(find.text('Devam ediyor'), findsWidgets);
+    expect(find.text('Saha turu tespiti, kontrol uygunsuzluğu ve manuel görev burada birleşir.'), findsOneWidget);
+    expect(find.text('Tespit → Göreve dönüştür'), findsOneWidget);
+    expect(find.text('Uygunsuzluk → Göreve dönüştür'), findsOneWidget);
+    expect(find.text('Görev oluştur'), findsOneWidget);
+    expect(find.text('Alçıpan derz eksiklerini tamamla'), findsOneWidget);
+    expect(find.text('Elektrik panosu düzenini düzelt'), findsOneWidget);
+    expect(find.text('Merdiven korkuluğu montajı'), findsOneWidget);
     expect(find.text('Beton Dökümü'), findsNothing);
+    expect(find.text('İş Programı'), findsNothing);
 
-    await tester.tap(find.text('Kanban'));
+    await tester.tap(find.byKey(const Key('gorev-kaynak-kontrol')));
     await tester.pumpAndSettle();
-    expect(find.textContaining('Yapılacak, Başladı'), findsOneWidget);
+    expect(find.text('Elektrik panosu düzenini düzelt'), findsOneWidget);
+    expect(find.text('Alçıpan derz eksiklerini tamamla'), findsNothing);
+    expect(find.text('Merdiven korkuluğu montajı'), findsNothing);
+
+    await tester.tap(find.byKey(const Key('gorev-kaynak-manuel')));
+    await tester.pumpAndSettle();
+    expect(find.text('Merdiven korkuluğu montajı'), findsOneWidget);
+    expect(find.text('Elektrik panosu düzenini düzelt'), findsNothing);
 
     await tester.tap(find.byKey(const Key('gorevler-open-app')));
     await tester.pump();
@@ -551,9 +588,6 @@ void main() {
     expect(find.text('Devam Ediyor'), findsWidgets);
     expect(find.text('Geçmiş Kayıtlar'), findsOneWidget);
 
-    await tester.tap(find.text('Bu hafta'));
-    await tester.pumpAndSettle();
-
     await tester.tap(find.text('Demir'));
     await tester.pumpAndSettle();
     expect(find.text('Bu kategoride kayıt yok.'), findsOneWidget);
@@ -561,10 +595,19 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.tap(find.byKey(const Key('imalat-open-app')));
+    await tester.pumpAndSettle();
+    expect(find.text('Sahada yapılan imalatı hızlıca kaydedin.'), findsOneWidget);
+    expect(find.text('Kalıp İmalatı'), findsOneWidget);
+    expect(find.text('Planlanan'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('imalat-kaydet')));
     await tester.pump();
     expect(find.text('Kayıt bu uygulamada henüz tutulmuyor.'), findsOneWidget);
-    expect(find.textContaining('github.io'), findsNothing);
     await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('imalat-kayit-back')));
+    await tester.pumpAndSettle();
+    expect(find.text('İmalat Kaydı Ekle'), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('imalat-back')));
     await tester.pumpAndSettle();

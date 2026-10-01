@@ -617,7 +617,7 @@ class _PersonelHataYazi extends StatelessWidget {
   }
 }
 
-class _PersonelSecim extends StatelessWidget {
+class _PersonelSecim extends StatefulWidget {
   const _PersonelSecim({
     required this.fieldKey,
     required this.icon,
@@ -635,33 +635,64 @@ class _PersonelSecim extends StatelessWidget {
   final ValueChanged<String> onSelected;
 
   @override
+  State<_PersonelSecim> createState() => _PersonelSecimState();
+}
+
+class _PersonelSecimState extends State<_PersonelSecim> {
+  final _focus = FocusNode();
+  var _menuAcik = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _focus.addListener(() => setState(() {}));
+  }
+
+  @override
+  void dispose() {
+    _focus.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return PopupMenuButton<String>(
-      key: fieldKey,
-      initialValue: value,
-      onSelected: onSelected,
+      key: widget.fieldKey,
+      initialValue: widget.value,
+      onOpened: () => setState(() {
+        _menuAcik = true;
+        _focus.requestFocus();
+      }),
+      onCanceled: () => setState(() => _menuAcik = false),
+      onSelected: (value) {
+        setState(() => _menuAcik = false);
+        widget.onSelected(value);
+      },
       color: const Color(0xFF121826),
       itemBuilder: (context) => [
-        for (final option in options)
+        for (final option in widget.options)
           PopupMenuItem(
             value: option,
             child: Text(option, style: _personelAlanYazi),
           ),
       ],
-      child: Container(
+      child: _GirisHucreOdak(
+        focusNode: _focus,
+        vurgulu: _focus.hasFocus || _menuAcik,
+        inkWell: false,
         height: 48,
         padding: const EdgeInsets.symmetric(horizontal: 12),
-        decoration: _personelKutu(),
+        fillColor: const Color(0xFF121826),
         child: Row(
           children: [
-            Icon(icon, size: 18, color: ProColors.textMuted),
+            Icon(widget.icon, size: 18, color: ProColors.textMuted),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
-                value ?? placeholder,
+                widget.value ?? widget.placeholder,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: value == null ? _personelIpucu : _personelAlanYazi,
+                style: widget.value == null ? _personelIpucu : _personelAlanYazi,
               ),
             ),
             const Icon(Icons.expand_more, size: 20, color: ProColors.textMuted),
@@ -672,7 +703,7 @@ class _PersonelSecim extends StatelessWidget {
   }
 }
 
-class _PersonelTarih extends StatelessWidget {
+class _PersonelTarih extends StatefulWidget {
   const _PersonelTarih({
     required this.value,
     required this.placeholder,
@@ -686,74 +717,70 @@ class _PersonelTarih extends StatelessWidget {
   final VoidCallback onClear;
 
   @override
+  State<_PersonelTarih> createState() => _PersonelTarihState();
+}
+
+class _PersonelTarihState extends State<_PersonelTarih> {
+  final _focus = FocusNode();
+
+  @override
+  void initState() {
+    super.initState();
+    _focus.addListener(() => setState(() {}));
+  }
+
+  @override
+  void dispose() {
+    _focus.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onPick,
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          height: 48,
-          padding: const EdgeInsets.only(left: 12),
-          decoration: _personelKutu(),
-          child: Row(
-            children: [
-              const Icon(Icons.calendar_today_outlined, size: 16, color: ProColors.textMuted),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  value ?? placeholder,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: value == null ? _personelIpucu : _personelAlanYazi,
-                ),
-              ),
-              GestureDetector(
-                onTap: onClear,
-                behavior: HitTestBehavior.opaque,
-                child: const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 10, vertical: 14),
-                  child: Icon(Icons.close, size: 16, color: ProColors.textMuted),
-                ),
-              ),
-            ],
+    return _GirisHucreOdak(
+      focusNode: _focus,
+      height: 48,
+      padding: const EdgeInsets.only(left: 12),
+      fillColor: const Color(0xFF121826),
+      onTap: widget.onPick,
+      child: Row(
+        children: [
+          const Icon(Icons.calendar_today_outlined, size: 16, color: ProColors.textMuted),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              widget.value ?? widget.placeholder,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: widget.value == null ? _personelIpucu : _personelAlanYazi,
+            ),
           ),
-        ),
+          GestureDetector(
+            onTap: widget.onClear,
+            behavior: HitTestBehavior.opaque,
+            child: const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 10, vertical: 14),
+              child: Icon(Icons.close, size: 16, color: ProColors.textMuted),
+            ),
+          ),
+        ],
       ),
     );
   }
 }
 
 InputDecoration _personelAlanDekor({required String hint, required IconData icon}) {
-  return InputDecoration(
-    hintText: hint,
-    hintStyle: _personelIpucu,
-    prefixIcon: Icon(icon, size: 18, color: ProColors.textMuted),
-    prefixIconConstraints: const BoxConstraints(minWidth: 40, minHeight: 48),
-    isDense: true,
-    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-    filled: true,
-    fillColor: const Color(0xFF121826),
-    enabledBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
-      borderSide: const BorderSide(color: Color(0xFF243044)),
+  return _girisMetinDekor(
+    base: InputDecoration(
+      hintText: hint,
+      hintStyle: _personelIpucu,
+      prefixIcon: Icon(icon, size: 18, color: ProColors.textMuted),
+      prefixIconConstraints: const BoxConstraints(minWidth: 40, minHeight: 48),
+      isDense: true,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+      filled: true,
+      fillColor: const Color(0xFF121826),
     ),
-    focusedBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
-      borderSide: const BorderSide(color: Color(0xFF3B82F6)),
-    ),
-    border: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
-      borderSide: const BorderSide(color: Color(0xFF243044)),
-    ),
-  );
-}
-
-BoxDecoration _personelKutu() {
-  return BoxDecoration(
-    color: const Color(0xFF121826),
-    borderRadius: BorderRadius.circular(12),
-    border: Border.all(color: const Color(0xFF243044)),
   );
 }
 

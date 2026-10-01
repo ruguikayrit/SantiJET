@@ -122,7 +122,7 @@ class _ReportsDeskState extends State<_ReportsDesk> {
           moduleColor: Color(0xFF2563EB),
           alertCount: 3,
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 6),
         const Text(
           'Tüm verilerinizi analiz edin, projelerinizi yönetin',
           style: TextStyle(fontFamily: 'Inter', fontSize: 12, color: ProColors.textMuted),
@@ -138,7 +138,7 @@ class _ReportsDeskState extends State<_ReportsDesk> {
                   selected: filter == _filter,
                   onTap: () => setState(() => _filter = filter),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 6),
               ],
             ],
           ),
@@ -154,7 +154,7 @@ class _ReportsDeskState extends State<_ReportsDesk> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(child: _ProjectStatusCard()),
-            SizedBox(width: 10),
+            SizedBox(width: 8),
             Expanded(child: _ScheduleProgressCard()),
           ],
         ),
@@ -183,12 +183,12 @@ class _FilterPill extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
           child: Text(
             label,
             style: TextStyle(
               fontFamily: 'Inter',
-              fontSize: 13,
+              fontSize: 12,
               fontWeight: FontWeight.w600,
               color: selected ? Colors.white : ProColors.textMuted,
             ),
@@ -217,7 +217,7 @@ class _ReportKpiGrid extends StatelessWidget {
                 colors: [Color(0xFF2563EB), Color(0xFF1D4ED8)],
               ),
             ),
-            SizedBox(width: 10),
+            SizedBox(width: 6),
             Expanded(
               child: _ReportKpi(
                 title: 'Toplam Maliyet',
@@ -229,7 +229,7 @@ class _ReportKpiGrid extends StatelessWidget {
             ),
           ],
         ),
-        SizedBox(height: 10),
+        SizedBox(height: 6),
         Row(
           children: [
             Expanded(
@@ -241,7 +241,7 @@ class _ReportKpiGrid extends StatelessWidget {
                 colors: [Color(0xFFF97316), Color(0xFFEA580C)],
               ),
             ),
-            SizedBox(width: 10),
+            SizedBox(width: 6),
             Expanded(
               child: _ReportKpi(
                 title: 'Toplam Süre',
@@ -276,19 +276,20 @@ class _ReportKpi extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.fromLTRB(10, 10, 10, 9),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
         gradient: LinearGradient(colors: colors),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: Colors.white, size: 18),
-          const SizedBox(height: 8),
-          Text(title, style: const TextStyle(fontFamily: 'Inter', fontSize: 12, color: Color(0xF2FFFFFF))),
-          Text(value, style: const TextStyle(fontFamily: 'Rajdhani', fontWeight: FontWeight.w700, fontSize: 26, color: Colors.white)),
-          Text(foot, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontFamily: 'Inter', fontSize: 11, color: Color(0xCCFFFFFF))),
+          Icon(icon, color: Colors.white, size: 16),
+          const SizedBox(height: 6),
+          Text(title, style: const TextStyle(fontFamily: 'Inter', fontSize: 11, color: Color(0xF2FFFFFF))),
+          Text(value, style: const TextStyle(fontFamily: 'Rajdhani', fontWeight: FontWeight.w700, fontSize: 20, height: 1, color: Colors.white)),
+          const SizedBox(height: 2),
+          Text(foot, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontFamily: 'Inter', fontSize: 10, color: Color(0xCCFFFFFF))),
         ],
       ),
     );
@@ -458,7 +459,7 @@ class _ProjectStatusCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Proje Durumu', style: TextStyle(fontFamily: 'Rajdhani', fontWeight: FontWeight.w700, fontSize: 15, color: ProColors.text)),
+          const Text('Proje Durumu', style: TextStyle(fontFamily: 'Rajdhani', fontWeight: FontWeight.w700, fontSize: 16, color: ProColors.text)),
           const SizedBox(height: 8),
           for (final row in rows)
             Padding(
@@ -489,9 +490,9 @@ class _ScheduleProgressCard extends StatelessWidget {
       child: const Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('İş Programı İlerlemesi', style: TextStyle(fontFamily: 'Rajdhani', fontWeight: FontWeight.w700, fontSize: 15, color: ProColors.text)),
+          Text('İş Programı İlerlemesi', style: TextStyle(fontFamily: 'Rajdhani', fontWeight: FontWeight.w700, fontSize: 16, color: ProColors.text)),
           SizedBox(height: 6),
-          Text('—', style: TextStyle(fontFamily: 'Rajdhani', fontWeight: FontWeight.w700, fontSize: 28, color: ProColors.text)),
+          Text('—', style: TextStyle(fontFamily: 'Rajdhani', fontWeight: FontWeight.w700, fontSize: 22, height: 1, color: ProColors.text)),
           SizedBox(height: 8),
           _MiniStat('Planlanan Süre'),
           _MiniStat('Geçen Süre'),
@@ -551,16 +552,16 @@ class _ReportKindGrid extends StatelessWidget {
         crossAxisCount: 3,
         mainAxisSpacing: 8,
         crossAxisSpacing: 8,
-        mainAxisExtent: 112,
+        mainAxisExtent: 108,
       ),
       itemBuilder: (context, index) {
         final kind = kinds[index];
         return Material(
           color: Colors.transparent,
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(12),
           child: InkWell(
             key: kind.title == 'Günlük Rapor' ? const Key('report-open-gunluk') : null,
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(12),
             onTap: () {
               if (kind.title == 'Günlük Rapor' && onOpenGunlukRapor != null) {
                 onOpenGunlukRapor!();
@@ -570,7 +571,7 @@ class _ReportKindGrid extends StatelessWidget {
             },
             child: Ink(
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: BorderRadius.circular(12),
                 gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: kind.colors),
               ),
               child: Padding(
@@ -578,19 +579,19 @@ class _ReportKindGrid extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(kind.icon, color: Colors.white, size: 18),
-                    const SizedBox(height: 8),
+                    Icon(kind.icon, color: Colors.white, size: 20),
+                    const SizedBox(height: 6),
                     Text(
                       kind.title,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontFamily: 'Rajdhani', fontWeight: FontWeight.w700, fontSize: 13, height: 1.05, color: Colors.white),
+                      style: const TextStyle(fontFamily: 'Rajdhani', fontWeight: FontWeight.w700, fontSize: 14, height: 1.05, color: Colors.white),
                     ),
                     Text(
                       kind.subtitle,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontFamily: 'Inter', fontSize: 10, height: 1.15, color: Color(0xF2FFFFFF)),
+                      style: const TextStyle(fontFamily: 'Inter', fontSize: 11, height: 1.15, color: Color(0xF2FFFFFF)),
                     ),
                   ],
                 ),

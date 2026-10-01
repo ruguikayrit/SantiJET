@@ -1,15 +1,136 @@
 part of 'dashboard_screen.dart';
 
-enum _GorevlerPane { liste, takvim, kanban, benim }
+/// Görevin hangi kapıdan geldiği. İş Programı ve İmalat bu akışa girmez.
+enum _GorevKaynak { sahaTuru, kontrol, manuel }
 
-extension on _GorevlerPane {
-  String get label => switch (this) {
-        _GorevlerPane.liste => 'Görev Listesi',
-        _GorevlerPane.takvim => 'Takvim',
-        _GorevlerPane.kanban => 'Kanban',
-        _GorevlerPane.benim => 'Benim Görevlerim',
+enum _GorevDurum { yapilacak, devam, tamam, geciken }
+
+extension on _GorevKaynak {
+  String get ad => switch (this) {
+        _GorevKaynak.sahaTuru => 'Saha Turu',
+        _GorevKaynak.kontrol => 'Kontrol',
+        _GorevKaynak.manuel => 'Manuel',
+      };
+
+  String get akis => switch (this) {
+        _GorevKaynak.sahaTuru => 'Tespit → Göreve dönüştür',
+        _GorevKaynak.kontrol => 'Uygunsuzluk → Göreve dönüştür',
+        _GorevKaynak.manuel => 'Görev oluştur',
+      };
+
+  IconData get icon => switch (this) {
+        _GorevKaynak.sahaTuru => Icons.place_outlined,
+        _GorevKaynak.kontrol => Icons.checklist_outlined,
+        _GorevKaynak.manuel => Icons.edit_outlined,
+      };
+
+  Color get renk => switch (this) {
+        _GorevKaynak.sahaTuru => const Color(0xFFDC2626),
+        _GorevKaynak.kontrol => const Color(0xFF16A34A),
+        _GorevKaynak.manuel => const Color(0xFF2563EB),
       };
 }
+
+extension on _GorevDurum {
+  String get ad => switch (this) {
+        _GorevDurum.yapilacak => 'Yapılacak',
+        _GorevDurum.devam => 'Devam ediyor',
+        _GorevDurum.tamam => 'Tamamlandı',
+        _GorevDurum.geciken => 'Gecikti',
+      };
+
+  Color get renk => switch (this) {
+        _GorevDurum.yapilacak => const Color(0xFF64748B),
+        _GorevDurum.devam => const Color(0xFFD97706),
+        _GorevDurum.tamam => const Color(0xFF16A34A),
+        _GorevDurum.geciken => const Color(0xFFDC2626),
+      };
+}
+
+class _GorevKaydi {
+  const _GorevKaydi({
+    required this.baslik,
+    required this.konum,
+    required this.kaynak,
+    required this.kaynakNot,
+    required this.durum,
+    required this.sorumlu,
+    required this.termin,
+    required this.oncelik,
+  });
+
+  final String baslik;
+  final String konum;
+  final _GorevKaynak kaynak;
+  final String kaynakNot;
+  final _GorevDurum durum;
+  final String sorumlu;
+  final String termin;
+  final String oncelik;
+}
+
+const _gorevKayitlari = <_GorevKaydi>[
+  _GorevKaydi(
+    baslik: 'Alçıpan derz eksiklerini tamamla',
+    konum: 'A Blok · 3. Kat · Daire 12',
+    kaynak: _GorevKaynak.sahaTuru,
+    kaynakNot: 'Tespit · Göreve dönüştü',
+    durum: _GorevDurum.yapilacak,
+    sorumlu: 'Alçıpan Ekibi',
+    termin: '28 Eyl',
+    oncelik: 'Yüksek',
+  ),
+  _GorevKaydi(
+    baslik: 'Kenar koruma eksiklerini kapat',
+    konum: 'A Blok · Genel saha',
+    kaynak: _GorevKaynak.sahaTuru,
+    kaynakNot: 'Tespit · A Blok turu',
+    durum: _GorevDurum.geciken,
+    sorumlu: 'İSG Ekibi',
+    termin: '25 Eyl',
+    oncelik: 'Yüksek',
+  ),
+  _GorevKaydi(
+    baslik: 'Elektrik panosu düzenini düzelt',
+    konum: 'Şantiye geneli',
+    kaynak: _GorevKaynak.kontrol,
+    kaynakNot: 'İSG açılış · Uygun değil',
+    durum: _GorevDurum.devam,
+    sorumlu: 'Elektrik Ekibi',
+    termin: '27 Eyl',
+    oncelik: 'Yüksek',
+  ),
+  _GorevKaydi(
+    baslik: 'Paspayı ve sehpa yerleşimini tamamla',
+    konum: 'A Blok · 2. Kat',
+    kaynak: _GorevKaynak.kontrol,
+    kaynakNot: 'Kalıp-donatı · Uygun değil',
+    durum: _GorevDurum.yapilacak,
+    sorumlu: 'Demir Ekibi',
+    termin: '29 Eyl',
+    oncelik: 'Orta',
+  ),
+  _GorevKaydi(
+    baslik: 'Hasarlı malzeme tutanağını kapat',
+    konum: 'Malzeme sahası',
+    kaynak: _GorevKaynak.kontrol,
+    kaynakNot: 'Mal kabul · Uygun değil',
+    durum: _GorevDurum.tamam,
+    sorumlu: 'Depo',
+    termin: '24 Eyl',
+    oncelik: 'Orta',
+  ),
+  _GorevKaydi(
+    baslik: 'Merdiven korkuluğu montajı',
+    konum: 'B Blok · 1. Kat',
+    kaynak: _GorevKaynak.manuel,
+    kaynakNot: 'Manuel görev',
+    durum: _GorevDurum.devam,
+    sorumlu: 'İnce İşler',
+    termin: '30 Eyl',
+    oncelik: 'Normal',
+  ),
+];
 
 class _GorevlerDesk extends StatefulWidget {
   const _GorevlerDesk({required this.onBack});
@@ -21,7 +142,18 @@ class _GorevlerDesk extends StatefulWidget {
 }
 
 class _GorevlerDeskState extends State<_GorevlerDesk> {
-  _GorevlerPane _pane = _GorevlerPane.liste;
+  _GorevKaynak? _kaynak;
+
+  List<_GorevKaydi> get _gorunen => [
+        for (final gorev in _gorevKayitlari)
+          if (_kaynak == null || gorev.kaynak == _kaynak) gorev,
+      ];
+
+  int _durumAdet(_GorevDurum durum) => _gorevKayitlari.where((g) => g.durum == durum).length;
+
+  void _kaynakSec(_GorevKaynak kaynak) {
+    setState(() => _kaynak = _kaynak == kaynak ? null : kaynak);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -37,101 +169,90 @@ class _GorevlerDeskState extends State<_GorevlerDesk> {
           backLabel: 'Saha',
         ),
         const SizedBox(height: 8),
+        const Text(
+          'Saha turu tespiti, kontrol uygunsuzluğu ve manuel görev burada birleşir.',
+          style: TextStyle(fontFamily: 'Inter', fontSize: 12, height: 1.35, color: ProColors.textMuted),
+        ),
+        const SizedBox(height: 12),
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const CircleAvatar(
-              radius: 22,
-              backgroundColor: Color(0xFF7C3AED),
-              child: Icon(Icons.task_alt_outlined, color: Colors.white),
-            ),
-            const SizedBox(width: 10),
-            const Expanded(
-              child: Text(
-                'Saha görevlerini oluştur, ata ve takip et',
-                style: TextStyle(fontFamily: 'Inter', fontSize: 12, color: ProColors.textMuted),
+            for (final kaynak in _GorevKaynak.values) ...[
+              if (kaynak != _GorevKaynak.sahaTuru) const SizedBox(width: 8),
+              Expanded(
+                child: _GorevKaynakKarti(
+                  kaynak: kaynak,
+                  adet: _gorevKayitlari.where((g) => g.kaynak == kaynak).length,
+                  secili: _kaynak == kaynak,
+                  onTap: () => _kaynakSec(kaynak),
+                ),
               ),
-            ),
-            const SizedBox(width: 8),
-            const _GorevlerProjectChip(),
+            ],
           ],
         ),
         const SizedBox(height: 12),
-        const Row(
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
               child: _GorevlerKpi(
                 title: 'Toplam Görev',
-                color: Color(0xFF1D4ED8),
+                value: '${_gorevKayitlari.length}',
+                color: const Color(0xFF1D4ED8),
                 icon: Icons.checklist_outlined,
               ),
             ),
-            SizedBox(width: 8),
+            const SizedBox(width: 8),
             Expanded(
               child: _GorevlerKpi(
                 title: 'Tamamlanan',
-                color: Color(0xFF16A34A),
+                value: '${_durumAdet(_GorevDurum.tamam)}',
+                color: const Color(0xFF16A34A),
                 icon: Icons.check_circle_outline,
               ),
             ),
-            SizedBox(width: 8),
+            const SizedBox(width: 8),
             Expanded(
               child: _GorevlerKpi(
                 title: 'Devam ediyor',
-                color: Color(0xFFD97706),
+                value: '${_durumAdet(_GorevDurum.devam)}',
+                color: const Color(0xFFD97706),
                 icon: Icons.timelapse_outlined,
               ),
             ),
-            SizedBox(width: 8),
+            const SizedBox(width: 8),
             Expanded(
               child: _GorevlerKpi(
                 title: 'Geciken',
-                color: Color(0xFFDC2626),
+                value: '${_durumAdet(_GorevDurum.geciken)}',
+                color: const Color(0xFFDC2626),
                 icon: Icons.warning_amber_outlined,
               ),
             ),
           ],
         ),
-        const SizedBox(height: 12),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: [
-            for (final pane in _GorevlerPane.values)
-              _FilterPill(
-                label: pane.label,
-                selected: pane == _pane,
-                onTap: () => setState(() => _pane = pane),
-              ),
-          ],
+        const SizedBox(height: 14),
+        const Text(
+          'Görev Listesi',
+          style: TextStyle(fontFamily: 'Rajdhani', fontWeight: FontWeight.w700, fontSize: 16, color: ProColors.text),
         ),
-        const SizedBox(height: 12),
-        switch (_pane) {
-          _GorevlerPane.liste => const _GorevlerListePane(),
-          _GorevlerPane.takvim => const _GorevlerEmptyPane(
-              title: 'Takvim',
-              body: 'Görev takvimi proje bağlanınca dolacak.',
-            ),
-          _GorevlerPane.kanban => const _GorevlerEmptyPane(
-              title: 'Kanban',
-              body: 'Yapılacak, Başladı, Devam ediyor ve Tamamlandı sütunları proje bağlanınca görünür.',
-            ),
-          _GorevlerPane.benim => const _GorevlerEmptyPane(
-              title: 'Benim Görevlerim',
-              body: 'Size atanan görevler oturum ve proje bağlandığında listelenecek.',
-            ),
-        },
-        const SizedBox(height: 16),
+        const SizedBox(height: 8),
+        for (final gorev in _gorunen) ...[
+          _GorevKarti(gorev: gorev),
+          const SizedBox(height: 8),
+        ],
+        const SizedBox(height: 8),
         SizedBox(
           width: double.infinity,
           child: FilledButton.icon(
             key: const Key('gorevler-open-app'),
             onPressed: () => _keepInPro(context),
             icon: const Icon(Icons.add),
-            label: const Text('Yeni Görev Oluştur'),
+            label: const Text('Görev Oluştur', style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w600, fontSize: 15)),
             style: FilledButton.styleFrom(
               backgroundColor: ProColors.electricBlue,
               padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
           ),
         ),
@@ -140,100 +261,123 @@ class _GorevlerDeskState extends State<_GorevlerDesk> {
   }
 }
 
-class _GorevlerProjectChip extends StatelessWidget {
-  const _GorevlerProjectChip();
+class _GorevKaynakKarti extends StatelessWidget {
+  const _GorevKaynakKarti({
+    required this.kaynak,
+    required this.adet,
+    required this.secili,
+    required this.onTap,
+  });
+
+  final _GorevKaynak kaynak;
+  final int adet;
+  final bool secili;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 132,
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: ProColors.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: ProColors.border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'AKTİF PROJE',
-            style: TextStyle(
-              fontFamily: 'Rajdhani',
-              fontSize: 9,
-              letterSpacing: 0.8,
-              color: Color(0xFF9EC1FF),
-            ),
+    return Material(
+      color: kaynak.renk.withValues(alpha: secili ? 0.22 : 0.12),
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        key: Key('gorev-kaynak-${kaynak.name}'),
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: Container(
+          height: 108,
+          padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: secili ? kaynak.renk : kaynak.renk.withValues(alpha: 0.28)),
           ),
-          const SizedBox(height: 2),
-          Text(
-            _DemoScope.of(context) ? _Demo.project : 'Henüz proje yok',
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              fontFamily: 'Rajdhani',
-              fontWeight: FontWeight.w700,
-              fontSize: 12,
-              color: ProColors.text,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisAlignment: MainAxisAlignment.start,
             children: [
-              const Icon(Icons.keyboard_arrow_down, size: 12, color: ProColors.textMuted),
-              const SizedBox(width: 2),
-              Flexible(
-                child: Text(
-                  _DemoScope.of(context) ? _Demo.place : '—',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontFamily: 'Inter', fontSize: 10, color: ProColors.textMuted),
-                ),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(kaynak.icon, size: 16, color: kaynak.renk),
+                  const Spacer(),
+                  Text(
+                    '$adet',
+                    style: TextStyle(
+                      fontFamily: 'Rajdhani',
+                      fontWeight: FontWeight.w700,
+                      fontSize: 24,
+                      height: 1.5,
+                      color: kaynak.renk,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              Text(
+                kaynak.ad,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontFamily: 'Rajdhani', fontWeight: FontWeight.w700, fontSize: 14, height: 1.2, color: ProColors.text),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                kaynak.akis,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontFamily: 'Inter', fontSize: 10, height: 1.25, color: ProColors.textMuted),
               ),
             ],
           ),
-        ],
+        ),
       ),
     );
   }
 }
 
 class _GorevlerKpi extends StatelessWidget {
-  const _GorevlerKpi({required this.title, required this.color, required this.icon});
+  const _GorevlerKpi({required this.title, required this.value, required this.color, required this.icon});
 
   final String title;
+  final String value;
   final Color color;
   final IconData icon;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(6, 10, 4, 8),
+      height: _kImalatMetrikKartYukseklik,
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
       decoration: BoxDecoration(
         color: color,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(14),
       ),
-      child: Column(
+      child: Stack(
+        fit: StackFit.expand,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              Icon(icon, color: Colors.white.withValues(alpha: 0.9), size: 16),
-              const Spacer(),
-              Icon(Icons.chevron_right, color: Colors.white.withValues(alpha: 0.6), size: 16),
-            ],
+          Positioned(
+            top: 0,
+            right: 0,
+            child: Icon(icon, color: Colors.white.withValues(alpha: 0.85), size: 16),
           ),
-          const SizedBox(height: 4),
-          const Text(
-            '—',
-            style: TextStyle(fontFamily: 'Rajdhani', fontWeight: FontWeight.w700, fontSize: 20, color: Colors.white),
-          ),
-          Text(
-            title,
-            textAlign: TextAlign.center,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(fontFamily: 'Inter', fontSize: 9, color: Color(0xF2FFFFFF)),
+          Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  value,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontFamily: 'Rajdhani', fontWeight: FontWeight.w700, fontSize: 24, height: 1.05, color: Colors.white),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  title,
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontFamily: 'Inter', fontSize: 11, height: 1.2, fontWeight: FontWeight.w600, color: Color(0xF2FFFFFF)),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -241,187 +385,110 @@ class _GorevlerKpi extends StatelessWidget {
   }
 }
 
-class _GorevlerListePane extends StatelessWidget {
-  const _GorevlerListePane();
+class _GorevKarti extends StatelessWidget {
+  const _GorevKarti({required this.gorev});
 
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
-          decoration: _cardDecoration(),
-          child: const Row(
-            children: [
-              Icon(Icons.search, color: ProColors.textMuted, size: 18),
-              SizedBox(width: 8),
-              Expanded(
-                child: TextField(
-                  enabled: false,
-                  decoration: InputDecoration(
-                    hintText: 'Görev ara...',
-                    hintStyle: TextStyle(color: ProColors.textMuted, fontSize: 14),
-                    border: InputBorder.none,
-                    isDense: true,
-                  ),
-                ),
-              ),
-              Text('Tümü', style: TextStyle(fontFamily: 'Inter', fontSize: 12, color: ProColors.textMuted)),
-              Icon(Icons.keyboard_arrow_down, color: ProColors.textMuted, size: 18),
-              SizedBox(width: 4),
-              Icon(Icons.tune, color: ProColors.textMuted, size: 18),
-            ],
-          ),
-        ),
-        const SizedBox(height: 10),
-        const Text(
-          'Durum sırası: Yapılacak → Başladı → Devam ediyor → Tamamlandı',
-          style: TextStyle(fontFamily: 'Inter', fontSize: 11, color: ProColors.textFaint),
-        ),
-        const SizedBox(height: 12),
-        for (var i = 0; i < 3; i++) ...[
-          if (i > 0) const SizedBox(height: 8),
-          const _GorevlerTaskPlaceholder(),
-        ],
-        const SizedBox(height: 12),
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(14),
-          decoration: _cardDecoration(),
-          child: const Text(
-            'Görev listesi proje bağlanınca dolacak.',
-            style: TextStyle(fontFamily: 'Inter', fontSize: 13, color: ProColors.textMuted),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _GorevlerTaskPlaceholder extends StatelessWidget {
-  const _GorevlerTaskPlaceholder();
+  final _GorevKaydi gorev;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: _cardDecoration(),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: ProColors.border,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: const Icon(Icons.task_outlined, size: 20, color: ProColors.textMuted),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  '—',
-                  style: TextStyle(fontFamily: 'Rajdhani', fontWeight: FontWeight.w700, fontSize: 15, color: ProColors.textMuted),
-                ),
-                const SizedBox(height: 4),
-                const Row(
-                  children: [
-                    Icon(Icons.place_outlined, size: 12, color: ProColors.textFaint),
-                    SizedBox(width: 4),
-                    Text('—', style: TextStyle(fontFamily: 'Inter', fontSize: 11, color: ProColors.textFaint)),
-                  ],
-                ),
-                const SizedBox(height: 6),
-                Wrap(
-                  spacing: 6,
-                  runSpacing: 4,
-                  children: [
-                    _GorevlerTagChip(label: '—'),
-                    _GorevlerTagChip(label: '—'),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(4),
-                  child: const LinearProgressIndicator(
-                    value: 0,
-                    minHeight: 4,
-                    backgroundColor: ProColors.border,
-                    color: ProColors.textMuted,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                const Row(
-                  children: [
-                    Text('—%', style: TextStyle(fontFamily: 'Inter', fontSize: 10, color: ProColors.textFaint)),
-                    Spacer(),
-                    Icon(Icons.calendar_today_outlined, size: 12, color: ProColors.textFaint),
-                    SizedBox(width: 4),
-                    Text('—', style: TextStyle(fontFamily: 'Inter', fontSize: 10, color: ProColors.textFaint)),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 6),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: ProColors.border,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Text('—', style: TextStyle(fontFamily: 'Inter', fontSize: 10, color: ProColors.textMuted)),
-          ),
-          const Icon(Icons.more_vert, size: 18, color: ProColors.textFaint),
-        ],
-      ),
-    );
-  }
-}
-
-class _GorevlerTagChip extends StatelessWidget {
-  const _GorevlerTagChip({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-      decoration: BoxDecoration(
-        color: ProColors.surface,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: ProColors.border),
-      ),
-      child: Text(label, style: const TextStyle(fontFamily: 'Inter', fontSize: 10, color: ProColors.textMuted)),
-    );
-  }
-}
-
-class _GorevlerEmptyPane extends StatelessWidget {
-  const _GorevlerEmptyPane({required this.title, required this.body});
-
-  final String title;
-  final String body;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: _cardDecoration(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: const TextStyle(fontFamily: 'Rajdhani', fontWeight: FontWeight.w700, fontSize: 16, color: ProColors.text)),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Text(
+                  gorev.baslik,
+                  style: const TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w700, fontSize: 14, height: 1.25, color: ProColors.text),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: gorev.durum.renk.withValues(alpha: 0.16),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  gorev.durum.ad,
+                  style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w600, fontSize: 10, color: gorev.durum.renk),
+                ),
+              ),
+            ],
+          ),
           const SizedBox(height: 6),
-          Text(body, style: const TextStyle(fontFamily: 'Inter', fontSize: 13, color: ProColors.textMuted)),
+          Row(
+            children: [
+              const Icon(Icons.place_outlined, size: 13, color: ProColors.textMuted),
+              const SizedBox(width: 4),
+              Expanded(
+                child: Text(
+                  gorev.konum,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontFamily: 'Inter', fontSize: 12, color: ProColors.textMuted),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: [
+              _GorevEtiket(label: gorev.kaynak.ad, renk: gorev.kaynak.renk),
+              _GorevEtiket(label: gorev.kaynakNot),
+              _GorevEtiket(label: gorev.oncelik),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              const Icon(Icons.engineering_outlined, size: 13, color: ProColors.textMuted),
+              const SizedBox(width: 4),
+              Expanded(
+                child: Text(
+                  gorev.sorumlu,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontFamily: 'Inter', fontSize: 12, color: ProColors.textMuted),
+                ),
+              ),
+              const Icon(Icons.calendar_today_outlined, size: 12, color: ProColors.textMuted),
+              const SizedBox(width: 4),
+              Text(gorev.termin, style: const TextStyle(fontFamily: 'Inter', fontSize: 12, color: ProColors.textMuted)),
+            ],
+          ),
         ],
+      ),
+    );
+  }
+}
+
+class _GorevEtiket extends StatelessWidget {
+  const _GorevEtiket({required this.label, this.renk});
+
+  final String label;
+  final Color? renk;
+
+  @override
+  Widget build(BuildContext context) {
+    final vurgu = renk ?? ProColors.textMuted;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: vurgu.withValues(alpha: renk == null ? 0.08 : 0.14),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: vurgu.withValues(alpha: 0.35)),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(fontFamily: 'Inter', fontSize: 10, fontWeight: FontWeight.w600, color: vurgu),
       ),
     );
   }

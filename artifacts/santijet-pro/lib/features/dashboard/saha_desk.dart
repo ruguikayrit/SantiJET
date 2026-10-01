@@ -35,8 +35,6 @@ class _SahaDesk extends StatelessWidget {
           style: TextStyle(fontFamily: 'Inter', fontSize: 12, color: ProColors.textMuted),
         ),
         const SizedBox(height: 12),
-        const _ProjectHero(),
-        const SizedBox(height: 10),
         const _SahaProgress(),
         const SizedBox(height: 14),
         _SahaGenelBody(
@@ -54,13 +52,13 @@ class _SahaDesk extends StatelessWidget {
 }
 
 class _SahaAction {
-  const _SahaAction(this.title, this.subtitle, this.icon, this.color, {this.later});
+  const _SahaAction(this.id, this.title, this.subtitle, this.icon, this.color);
 
+  final String id;
   final String title;
   final String subtitle;
   final IconData icon;
   final Color color;
-  final String? later;
 }
 
 class _SahaGenelBody extends StatelessWidget {
@@ -82,20 +80,26 @@ class _SahaGenelBody extends StatelessWidget {
   final VoidCallback onOpenMalzeme;
   final VoidCallback onOpenSahaTuru;
 
+  /// 3 sütunlu ızgarada yatay/dikey komşular birbirine yakın tonda olmasın diye renkler yerleştirildi.
   static const actions = <_SahaAction>[
-    _SahaAction('Günlük Rapor', 'Saha raporu', Icons.description_outlined, Color(0xFF1D4ED8), later: 'Günlük Rapor'),
-    _SahaAction('Puantaj', 'Giriş / Çıkış', Icons.groups_outlined, Color(0xFF2563EB)),
-    _SahaAction('İmalat', 'Günlük kayıt', Icons.bar_chart_rounded, Color(0xFF0F766E)),
-    _SahaAction('Görevler', 'Ata / takip et', Icons.task_alt_outlined, Color(0xFF7C3AED)),
-    _SahaAction('Personel', 'Ekip yönetimi', Icons.engineering_outlined, Color(0xFFCA8A04)),
-    _SahaAction('İş Makineleri', 'Kullanım / yakıt', Icons.agriculture_outlined, Color(0xFF0891B2)),
-    _SahaAction('Malzeme', 'Giriş / tüketim', Icons.inventory_2_outlined, Color(0xFFEAB308)),
-    _SahaAction('Kontrol Listesi', 'Saha kontrolleri', Icons.checklist_outlined, Color(0xFFF97316), later: 'Kontrol Listesi'),
-    _SahaAction('Saha Turu', 'Denetim planı', Icons.place_outlined, Color(0xFFEF4444), later: 'Saha Turu'),
+    _SahaAction('puantaj', 'Puantaj', 'Giriş / Çıkış', Icons.groups_outlined, Color(0xFF9333EA)),
+    _SahaAction('imalat', 'İmalat', 'Günlük kayıt', Icons.bar_chart_rounded, Color(0xFF0D9488)),
+    _SahaAction('gorevler', 'Görevler', 'Ata / takip et', Icons.task_alt_outlined, Color(0xFF0891B2)),
+    _SahaAction('personel', 'Personel', 'Ekip yönetimi', Icons.engineering_outlined, Color(0xFFCA8A04)),
+    _SahaAction('makine', 'İş Makineleri', 'Kullanım / yakıt', Icons.agriculture_outlined, Color(0xFFA855F7)),
+    _SahaAction('malzeme', 'Malzeme', 'Giriş / tüketim', Icons.inventory_2_outlined, Color(0xFF16A34A)),
   ];
 
   @override
   Widget build(BuildContext context) {
+    final handlers = <String, VoidCallback>{
+      'puantaj': onOpenPuantaj,
+      'imalat': onOpenImalat,
+      'gorevler': onOpenGorevler,
+      'personel': onOpenPersonel,
+      'makine': onOpenMakine,
+      'malzeme': onOpenMalzeme,
+    };
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -111,40 +115,71 @@ class _SahaGenelBody extends StatelessWidget {
           ),
           itemBuilder: (context, index) => _SahaActionTile(
             action: actions[index],
-            onOpenPuantaj: onOpenPuantaj,
-            onOpenPersonel: onOpenPersonel,
-            onOpenGorevler: onOpenGorevler,
-            onOpenMakine: onOpenMakine,
-            onOpenImalat: onOpenImalat,
-            onOpenMalzeme: onOpenMalzeme,
-            onOpenSahaTuru: onOpenSahaTuru,
+            onTap: handlers[actions[index].id]!,
           ),
         ),
+        const SizedBox(height: 8),
+        _SahaTuruKarti(onTap: onOpenSahaTuru),
       ],
     );
   }
 }
 
+/// Saha turu gözlem, tespit ve kontrol formunu tek akışta topladığı için
+/// ızgaradaki karolardan ayrı, tam genişlikte duruyor.
+class _SahaTuruKarti extends StatelessWidget {
+  const _SahaTuruKarti({required this.onTap});
+
+  static const _renk = Color(0xFFDC2626);
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: _renk.withValues(alpha: 0.16),
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        key: const Key('saha-open-saha-turu'),
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          child: Row(
+            children: [
+              const Icon(Icons.place_outlined, color: _renk, size: 26),
+              const SizedBox(width: 10),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Saha Turu',
+                      style: TextStyle(fontFamily: 'Rajdhani', fontWeight: FontWeight.w700, fontSize: 15, color: ProColors.text),
+                    ),
+                    Text(
+                      'Gözlem · tespit · kontrol formu',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(fontFamily: 'Inter', fontSize: 11, color: ProColors.textMuted),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_right, color: ProColors.textMuted, size: 20),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _SahaActionTile extends StatelessWidget {
-  const _SahaActionTile({
-    required this.action,
-    this.onOpenPuantaj,
-    this.onOpenPersonel,
-    this.onOpenGorevler,
-    this.onOpenMakine,
-    this.onOpenImalat,
-    this.onOpenMalzeme,
-    this.onOpenSahaTuru,
-  });
+  const _SahaActionTile({required this.action, required this.onTap});
 
   final _SahaAction action;
-  final VoidCallback? onOpenPuantaj;
-  final VoidCallback? onOpenPersonel;
-  final VoidCallback? onOpenGorevler;
-  final VoidCallback? onOpenMakine;
-  final VoidCallback? onOpenImalat;
-  final VoidCallback? onOpenMalzeme;
-  final VoidCallback? onOpenSahaTuru;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -152,51 +187,9 @@ class _SahaActionTile extends StatelessWidget {
       color: action.color.withValues(alpha: 0.16),
       borderRadius: BorderRadius.circular(14),
       child: InkWell(
-        key: switch (action.title) {
-          'Puantaj' => const Key('saha-open-puantaj'),
-          'Personel' => const Key('saha-open-personel'),
-          'Görevler' => const Key('saha-open-gorevler'),
-          'İş Makineleri' => const Key('saha-open-makine'),
-          'İmalat' => const Key('saha-open-imalat'),
-          'Günlük Rapor' => const Key('saha-open-daily-report'),
-          'Malzeme' => const Key('saha-open-malzeme'),
-          'Saha Turu' => const Key('saha-open-saha-turu'),
-          _ => null,
-        },
+        key: Key('saha-open-${action.id}'),
         borderRadius: BorderRadius.circular(14),
-        onTap: () {
-          if (action.title == 'Puantaj' && onOpenPuantaj != null) {
-            onOpenPuantaj!();
-            return;
-          }
-          if (action.title == 'Personel' && onOpenPersonel != null) {
-            onOpenPersonel!();
-            return;
-          }
-          if (action.title == 'Görevler' && onOpenGorevler != null) {
-            onOpenGorevler!();
-            return;
-          }
-          if (action.title == 'İş Makineleri' && onOpenMakine != null) {
-            onOpenMakine!();
-            return;
-          }
-          if (action.title == 'İmalat' && onOpenImalat != null) {
-            onOpenImalat!();
-            return;
-          }
-          if (action.title == 'Malzeme' && onOpenMalzeme != null) {
-            onOpenMalzeme!();
-            return;
-          }
-          if (action.title == 'Saha Turu' && onOpenSahaTuru != null) {
-            onOpenSahaTuru!();
-            return;
-          }
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('${action.later} daha sonra eklenecek.')),
-          );
-        },
+        onTap: onTap,
         child: Padding(
           padding: const EdgeInsets.all(6),
           child: Column(

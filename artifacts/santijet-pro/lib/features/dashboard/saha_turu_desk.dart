@@ -13,6 +13,7 @@ class _SahaTuru {
     required this.time,
     required this.tespit,
     required this.sahne,
+    this.ozet,
   });
 
   final String title;
@@ -22,6 +23,11 @@ class _SahaTuru {
   final String time;
   final int tespit;
   final _TurSahne sahne;
+
+  /// Kontrol formu turlarında tespit sayısı yerine madde özeti gösterilir.
+  final String? ozet;
+
+  String get ozetMetni => ozet ?? '$tespit tespit';
 }
 
 const _sonTurlar = <_SahaTuru>[
@@ -33,6 +39,16 @@ const _sonTurlar = <_SahaTuru>[
     time: '10:30',
     tespit: 8,
     sahne: _TurSahne.blok,
+  ),
+  _SahaTuru(
+    title: 'Günlük İSG Açılış Kontrolü',
+    badge: '1 Uygunsuz',
+    durum: _TurDurum.devam,
+    date: '26 Eyl 2026',
+    time: '07:45',
+    tespit: 1,
+    sahne: _TurSahne.guvenlik,
+    ozet: 'Kontrol formu · 6 madde · 1 uygunsuz',
   ),
   _SahaTuru(
     title: 'B Blok İç Mekan Turu',
@@ -63,11 +79,23 @@ const _sonTurlar = <_SahaTuru>[
   ),
 ];
 
-class _SahaTuruDesk extends StatelessWidget {
+class _SahaTuruDesk extends StatefulWidget {
   const _SahaTuruDesk({required this.onBack, required this.onYeniTur});
 
   final VoidCallback onBack;
   final VoidCallback onYeniTur;
+
+  @override
+  State<_SahaTuruDesk> createState() => _SahaTuruDeskState();
+}
+
+class _SahaTuruDeskState extends State<_SahaTuruDesk> {
+  static final _haftaMerkezi = DateTime(2026, 9, 26);
+  static const _haftaGunAdlari = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
+
+  late DateTime _gun = _haftaMerkezi;
+
+  DateTime get _haftaBasi => _gun.subtract(Duration(days: _gun.weekday - 1));
 
   @override
   Widget build(BuildContext context) {
@@ -76,21 +104,33 @@ class _SahaTuruDesk extends StatelessWidget {
       children: [
         _ModulDeskUst(
           title: 'Saha Turu',
-          moduleIcon: _ModulDeskMark.sahaIcon,
-          moduleColor: _ModulDeskMark.sahaColor,
+          moduleIcon: Icons.place_outlined,
+          moduleColor: const Color(0xFFDC2626),
           backKey: const Key('saha-turu-back'),
-          onBack: onBack,
+          onBack: widget.onBack,
           backLabel: 'Saha',
           alertCount: 3,
         ),
-        const SizedBox(height: 8),
-        const _SahaTuruBaslik(),
-        const SizedBox(height: 14),
-        const _SahaTuruFiltre(),
+        const SizedBox(height: 6),
+        const Text(
+          'Sahadaki durumu gözlemle, tespit et, kontrol formu doldur.',
+          style: TextStyle(fontFamily: 'Inter', fontSize: 12, color: ProColors.textMuted),
+        ),
+        const SizedBox(height: 12),
+        _ImalatTarihKart(gun: _gun, onTap: () => _keepInPro(context)),
+        const SizedBox(height: 10),
+        _PuantajWeekStrip(
+          weekStart: _haftaBasi,
+          selected: _gun,
+          dayNames: _haftaGunAdlari,
+          onSelect: (g) => setState(() => _gun = g),
+          onPrevious: () => setState(() => _gun = _gun.subtract(const Duration(days: 7))),
+          onNext: () => setState(() => _gun = _gun.add(const Duration(days: 7))),
+        ),
         const SizedBox(height: 12),
         const _TespitSatiri(),
         const SizedBox(height: 12),
-        _YeniTurButton(onTap: onYeniTur),
+        _YeniTurButton(onTap: widget.onYeniTur),
         const SizedBox(height: 16),
         const _SonTurlarBaslik(),
         const SizedBox(height: 10),
@@ -103,208 +143,56 @@ class _SahaTuruDesk extends StatelessWidget {
   }
 }
 
-class _SahaTuruBaslik extends StatelessWidget {
-  const _SahaTuruBaslik();
+class _TespitSatiri extends StatelessWidget {
+  const _TespitSatiri();
+
+  static const _kartYukseklik = _kImalatMetrikKartYukseklik;
 
   @override
   Widget build(BuildContext context) {
     return const Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _TurIkonu(),
-        SizedBox(width: 12),
         Expanded(
-          child: Text(
-            'Sahadaki durumu gözlemle, tespit et, kaydet.',
-            style: TextStyle(fontFamily: 'Inter', fontSize: 13, height: 1.3, color: ProColors.textMuted),
+          child: _TespitKart(
+            value: '12',
+            label: 'Toplam Tespit',
+            icon: Icons.description_outlined,
+            colors: [Color(0xFF1A2744), Color(0xFF121C30)],
+            iconColor: Color(0xFF64748B),
+          ),
+        ),
+        SizedBox(width: 6),
+        Expanded(
+          child: _TespitKart(
+            value: '7',
+            label: 'Açık',
+            icon: Icons.error_outline,
+            colors: [Color(0xFF5C1A22), Color(0xFF2C1014)],
+            iconColor: Color(0xFFEF4444),
+          ),
+        ),
+        SizedBox(width: 6),
+        Expanded(
+          child: _TespitKart(
+            value: '3',
+            label: 'Devam Ediyor',
+            icon: Icons.schedule,
+            colors: [Color(0xFF5A3A12), Color(0xFF2A1C0A)],
+            iconColor: Color(0xFFFBBF24),
+          ),
+        ),
+        SizedBox(width: 6),
+        Expanded(
+          child: _TespitKart(
+            value: '2',
+            label: 'Tamamlandı',
+            icon: Icons.check_circle_outline,
+            colors: [Color(0xFF14532D), Color(0xFF0B2E18)],
+            iconColor: Color(0xFF22C55E),
           ),
         ),
       ],
-    );
-  }
-}
-
-class _TurIkonu extends StatelessWidget {
-  const _TurIkonu();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 54,
-      height: 54,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(14),
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF34D399), Color(0xFF059669)],
-        ),
-      ),
-      child: const Stack(
-        alignment: Alignment.center,
-        children: [
-          Icon(Icons.article_outlined, color: Colors.white, size: 28),
-          Positioned(right: 7, bottom: 7, child: Icon(Icons.location_on, color: Colors.white, size: 14)),
-        ],
-      ),
-    );
-  }
-}
-
-class _SahaTuruFiltre extends StatelessWidget {
-  const _SahaTuruFiltre();
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          flex: 3,
-          child: _FiltreKart(
-            onTap: () => _keepInPro(context),
-            child: const Row(
-              children: [
-                _FiltreIkon(icon: Icons.calendar_month_outlined),
-                SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '26 Eylül 2026',
-                        style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w700, fontSize: 14, color: ProColors.text),
-                      ),
-                      Text('Cuma', style: TextStyle(fontFamily: 'Inter', fontSize: 12, color: ProColors.textMuted)),
-                    ],
-                  ),
-                ),
-                Icon(Icons.expand_more, color: ProColors.textMuted, size: 20),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          flex: 2,
-          child: _FiltreKart(
-            onTap: () => _keepInPro(context),
-            child: const Row(
-              children: [
-                _FiltreIkon(icon: Icons.history),
-                SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'Tur Geçmişi',
-                    style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w600, fontSize: 13, color: ProColors.text),
-                  ),
-                ),
-                Icon(Icons.chevron_right, color: ProColors.textMuted, size: 18),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _FiltreIkon extends StatelessWidget {
-  const _FiltreIkon({required this.icon});
-
-  final IconData icon;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 34,
-      height: 34,
-      decoration: BoxDecoration(
-        color: const Color(0xFF1E3A5F),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Icon(icon, color: const Color(0xFF60A5FA), size: 18),
-    );
-  }
-}
-
-class _FiltreKart extends StatelessWidget {
-  const _FiltreKart({required this.child, required this.onTap});
-
-  final Widget child;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: const Color(0xFF121826),
-      borderRadius: BorderRadius.circular(14),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
-        child: Container(
-          height: 64,
-          padding: const EdgeInsets.symmetric(horizontal: 10),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: const Color(0xFF243044)),
-          ),
-          child: child,
-        ),
-      ),
-    );
-  }
-}
-
-class _TespitSatiri extends StatelessWidget {
-  const _TespitSatiri();
-
-  @override
-  Widget build(BuildContext context) {
-    return const SizedBox(
-      height: 112,
-      child: Row(
-        children: [
-          Expanded(
-            child: _TespitKart(
-              value: '12',
-              label: 'Toplam Tespit',
-              icon: Icons.description_outlined,
-              colors: [Color(0xFF1A2744), Color(0xFF121C30)],
-              iconColor: Color(0xFF64748B),
-            ),
-          ),
-          SizedBox(width: 6),
-          Expanded(
-            child: _TespitKart(
-              value: '7',
-              label: 'Açık',
-              icon: Icons.error_outline,
-              colors: [Color(0xFF5C1A22), Color(0xFF2C1014)],
-              iconColor: Color(0xFFEF4444),
-            ),
-          ),
-          SizedBox(width: 6),
-          Expanded(
-            child: _TespitKart(
-              value: '3',
-              label: 'Devam Ediyor',
-              icon: Icons.schedule,
-              colors: [Color(0xFF5A3A12), Color(0xFF2A1C0A)],
-              iconColor: Color(0xFFFBBF24),
-            ),
-          ),
-          SizedBox(width: 6),
-          Expanded(
-            child: _TespitKart(
-              value: '2',
-              label: 'Tamamlandı',
-              icon: Icons.check_circle_outline,
-              colors: [Color(0xFF14532D), Color(0xFF0B2E18)],
-              iconColor: Color(0xFF22C55E),
-            ),
-          ),
-        ],
-      ),
     );
   }
 }
@@ -326,28 +214,45 @@ class _TespitKart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(14),
-        gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: colors),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(8, 10, 8, 8),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+    return SizedBox(
+      height: _TespitSatiri._kartYukseklik,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(10),
+          gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: colors),
+        ),
+        child: Stack(
           children: [
-            Text(
-              value,
-              style: const TextStyle(fontFamily: 'Rajdhani', fontWeight: FontWeight.w700, fontSize: 28, height: 1, color: ProColors.text),
+            Padding(
+              padding: _kImalatMetrikKartPadding,
+              child: Center(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        value,
+                        textAlign: TextAlign.center,
+                        style: _kImalatMetrikDegerStili,
+                      ),
+                      const SizedBox(height: 3),
+                      SizedBox(
+                        height: 22,
+                        child: Text(
+                          label,
+                          textAlign: TextAlign.center,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontFamily: 'Inter', fontSize: 10, height: 1.1, color: ProColors.textMuted),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ),
-            const SizedBox(height: 2),
-            Text(
-              label,
-              maxLines: 2,
-              style: const TextStyle(fontFamily: 'Inter', fontSize: 11, height: 1.15, color: ProColors.textMuted),
-            ),
-            const Spacer(),
-            Align(alignment: Alignment.bottomRight, child: Icon(icon, color: iconColor, size: 18)),
+            Positioned(right: 6, bottom: 6, child: Icon(icon, color: iconColor, size: 15)),
           ],
         ),
       ),
@@ -494,7 +399,9 @@ class _TurKarti extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      '${tur.tespit} tespit',
+                      tur.ozetMetni,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(fontFamily: 'Inter', fontSize: 12, color: ProColors.textMuted),
                     ),
                   ],

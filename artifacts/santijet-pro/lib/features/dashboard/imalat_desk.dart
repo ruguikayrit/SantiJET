@@ -1,14 +1,41 @@
 part of 'dashboard_screen.dart';
 
-enum _ImalatAralik { bugun, son7, buHafta, buAy }
+/// Üst özet KPI ile alttaki kategori kartları aynı yükseklikte.
+const _kImalatMetrikKartYukseklik = 82.0;
+const _kImalatMetrikKartPadding = EdgeInsets.symmetric(horizontal: 6, vertical: 6);
 
-extension on _ImalatAralik {
-  String get label => switch (this) {
-        _ImalatAralik.bugun => 'Bugün',
-        _ImalatAralik.son7 => 'Son 7 gün',
-        _ImalatAralik.buHafta => 'Bu hafta',
-        _ImalatAralik.buAy => 'Bu ay',
-      };
+const _kImalatMetrikDegerStili = TextStyle(
+  fontFamily: 'Rajdhani',
+  fontWeight: FontWeight.w700,
+  fontSize: 20,
+  height: 1,
+  color: ProColors.text,
+);
+
+Widget _imalatMetrikKartMerkez({
+  required IconData icon,
+  required Color iconRenk,
+  required String deger,
+  required String baslik,
+  required TextStyle baslikStili,
+}) {
+  return Column(
+    mainAxisSize: MainAxisSize.min,
+    crossAxisAlignment: CrossAxisAlignment.center,
+    children: [
+      Icon(icon, size: 15, color: iconRenk),
+      const SizedBox(height: 4),
+      Text(deger, textAlign: TextAlign.center, style: _kImalatMetrikDegerStili),
+      const SizedBox(height: 2),
+      Text(
+        baslik,
+        textAlign: TextAlign.center,
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
+        style: baslikStili,
+      ),
+    ],
+  );
 }
 
 enum _ImalatKategori { tum, genel, beton, demir, celik }
@@ -66,9 +93,10 @@ class _ImalatKayit {
 }
 
 class _ImalatDesk extends StatefulWidget {
-  const _ImalatDesk({required this.onBack});
+  const _ImalatDesk({required this.onBack, required this.onOpenKayitEkle});
 
   final VoidCallback onBack;
+  final VoidCallback onOpenKayitEkle;
 
   @override
   State<_ImalatDesk> createState() => _ImalatDeskState();
@@ -76,10 +104,12 @@ class _ImalatDesk extends StatefulWidget {
 
 class _ImalatDeskState extends State<_ImalatDesk> {
   static final _seciliGun = DateTime(2026, 9, 25);
+  static const _haftaGunAdlari = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
 
-  _ImalatAralik _aralik = _ImalatAralik.bugun;
   _ImalatKategori _kategori = _ImalatKategori.tum;
   late DateTime _gun = _seciliGun;
+
+  DateTime get _haftaBasi => _gun.subtract(Duration(days: _gun.weekday - 1));
 
   static const _kayitlar = <_ImalatKayit>[
     _ImalatKayit(
@@ -137,9 +167,10 @@ class _ImalatDeskState extends State<_ImalatDesk> {
   Widget build(BuildContext context) {
     final liste = _filtreli;
     final gunEtiket = '${_gun.day} Eylül İmalatları';
+    final alt = MediaQuery.viewPaddingOf(context).bottom;
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+      padding: EdgeInsets.fromLTRB(16, 8, 16, 12 + alt),
       children: [
         _ModulDeskUst(
           title: 'İmalat',
@@ -161,26 +192,13 @@ class _ImalatDeskState extends State<_ImalatDesk> {
         const SizedBox(height: 12),
         _ImalatTarihKart(gun: _gun, onTap: () => _keepInPro(context)),
         const SizedBox(height: 10),
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
-            children: [
-              for (final a in _ImalatAralik.values) ...[
-                _FilterPill(
-                  label: a.label,
-                  selected: a == _aralik,
-                  onTap: () => setState(() => _aralik = a),
-                ),
-                const SizedBox(width: 6),
-              ],
-            ],
-          ),
-        ),
-        const SizedBox(height: 10),
-        _ImalatHaftaSerit(
-          merkez: _seciliGun,
-          secili: _gun,
-          onSec: (g) => setState(() => _gun = g),
+        _PuantajWeekStrip(
+          weekStart: _haftaBasi,
+          selected: _gun,
+          dayNames: _haftaGunAdlari,
+          onSelect: (g) => setState(() => _gun = g),
+          onPrevious: () => setState(() => _gun = _gun.subtract(const Duration(days: 7))),
+          onNext: () => setState(() => _gun = _gun.add(const Duration(days: 7))),
         ),
         const SizedBox(height: 14),
         _ImalatBolumBaslik(
@@ -189,6 +207,7 @@ class _ImalatDeskState extends State<_ImalatDesk> {
         ),
         const SizedBox(height: 10),
         const Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(child: _ImalatOzetKpi(baslik: 'İmalat kaydı', deger: '3', icon: Icons.description_outlined, renk: Color(0xFF2563EB))),
             SizedBox(width: 6),
@@ -210,16 +229,16 @@ class _ImalatDeskState extends State<_ImalatDesk> {
               padding: const EdgeInsets.symmetric(vertical: 14),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
-            onPressed: () => _keepInPro(context),
+            onPressed: widget.onOpenKayitEkle,
             icon: const Icon(Icons.add, size: 20),
-            label: const Text('İmalat Kaydı Ekle', style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w600, fontSize: 14)),
+            label: const Text('İmalat Kaydı Ekle', style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w600, fontSize: 15)),
           ),
         ),
         const SizedBox(height: 12),
-        SizedBox(
-          height: 88,
-          child: ListView(
-            scrollDirection: Axis.horizontal,
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               for (final k in _ImalatKategori.values) ...[
                 _ImalatKategoriKutu(
@@ -228,7 +247,7 @@ class _ImalatDeskState extends State<_ImalatDesk> {
                   selected: k == _kategori,
                   onTap: () => setState(() => _kategori = k),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 6),
               ],
             ],
           ),
@@ -238,10 +257,10 @@ class _ImalatDeskState extends State<_ImalatDesk> {
           children: [
             const Icon(Icons.format_list_bulleted, size: 18, color: ProColors.electricBlue),
             const SizedBox(width: 6),
-            Expanded(
+            const Expanded(
               child: Text(
-                gunEtiket,
-                style: const TextStyle(fontFamily: 'Rajdhani', fontWeight: FontWeight.w700, fontSize: 16, color: ProColors.text),
+                'Kayıt listesi',
+                style: TextStyle(fontFamily: 'Rajdhani', fontWeight: FontWeight.w700, fontSize: 16, color: ProColors.text),
               ),
             ),
             Text('${liste.length} kayıt', style: const TextStyle(fontFamily: 'Inter', fontSize: 11, color: ProColors.textMuted)),
@@ -348,109 +367,10 @@ class _ImalatTarihKart extends StatelessWidget {
               Expanded(
                 child: Text(
                   '${gun.day} Eylül ${gun.year} ${_gunAd[gun.weekday - 1]}',
-                  style: const TextStyle(fontFamily: 'Rajdhani', fontWeight: FontWeight.w700, fontSize: 15, color: ProColors.text),
+                  style: const TextStyle(fontFamily: 'Rajdhani', fontWeight: FontWeight.w700, fontSize: 16, color: ProColors.text),
                 ),
               ),
               const Icon(Icons.keyboard_arrow_down, color: ProColors.textMuted),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _ImalatHaftaSerit extends StatelessWidget {
-  const _ImalatHaftaSerit({required this.merkez, required this.secili, required this.onSec});
-
-  final DateTime merkez;
-  final DateTime secili;
-  final ValueChanged<DateTime> onSec;
-
-  static const _kisalt = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
-
-  @override
-  Widget build(BuildContext context) {
-    final bas = merkez.subtract(Duration(days: merkez.weekday - 1));
-    return Row(
-      children: [
-        IconButton(
-          onPressed: () => _keepInPro(context),
-          icon: const Icon(Icons.chevron_left, color: ProColors.textMuted),
-          padding: EdgeInsets.zero,
-          constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
-        ),
-        Expanded(
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                for (var i = 0; i < 7; i++) ...[
-                  _ImalatGunHucre(
-                    gun: bas.add(Duration(days: i)),
-                    kisalt: _kisalt[i],
-                    secili: _ayniGun(bas.add(Duration(days: i)), secili),
-                    haftaSonu: i >= 5,
-                    onTap: () => onSec(bas.add(Duration(days: i))),
-                  ),
-                  if (i < 6) const SizedBox(width: 4),
-                ],
-              ],
-            ),
-          ),
-        ),
-        IconButton(
-          onPressed: () => _keepInPro(context),
-          icon: const Icon(Icons.chevron_right, color: ProColors.textMuted),
-          padding: EdgeInsets.zero,
-          constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
-        ),
-      ],
-    );
-  }
-
-  static bool _ayniGun(DateTime a, DateTime b) => a.year == b.year && a.month == b.month && a.day == b.day;
-}
-
-class _ImalatGunHucre extends StatelessWidget {
-  const _ImalatGunHucre({
-    required this.gun,
-    required this.kisalt,
-    required this.secili,
-    required this.haftaSonu,
-    required this.onTap,
-  });
-
-  final DateTime gun;
-  final String kisalt;
-  final bool secili;
-  final bool haftaSonu;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final etiketRenk = haftaSonu && !secili ? const Color(0xFFEF4444) : (secili ? Colors.white : ProColors.textMuted);
-    return Material(
-      color: secili ? ProColors.electricBlue : const Color(0xFF121826),
-      borderRadius: BorderRadius.circular(10),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(10),
-        child: Container(
-          width: 40,
-          padding: const EdgeInsets.symmetric(vertical: 6),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(10),
-            border: secili ? null : Border.all(color: const Color(0xFF243044)),
-          ),
-          child: Column(
-            children: [
-              Text('${gun.day}', style: TextStyle(fontFamily: 'Rajdhani', fontWeight: FontWeight.w700, fontSize: 14, color: secili ? Colors.white : ProColors.text)),
-              Text(kisalt, style: TextStyle(fontFamily: 'Inter', fontSize: 9, color: etiketRenk)),
-              if (secili) ...[
-                const SizedBox(height: 2),
-                Container(width: 4, height: 4, decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle)),
-              ],
             ],
           ),
         ),
@@ -497,32 +417,38 @@ class _ImalatOzetKpi extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(6, 8, 4, 6),
-      decoration: BoxDecoration(
-        color: const Color(0xFF121826),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: const Color(0xFF243044)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(icon, size: 14, color: renk),
-              const Spacer(),
-              if (info) const Icon(Icons.info_outline, size: 12, color: ProColors.textMuted),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Text(deger, style: const TextStyle(fontFamily: 'Rajdhani', fontWeight: FontWeight.w700, fontSize: 18, color: ProColors.text)),
-          Text(
-            baslik,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(fontFamily: 'Inter', fontSize: 8, color: ProColors.textMuted),
-          ),
-        ],
+    return SizedBox(
+      height: _kImalatMetrikKartYukseklik,
+      child: Container(
+        padding: _kImalatMetrikKartPadding,
+        decoration: BoxDecoration(
+          color: const Color(0xFF121826),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: const Color(0xFF243044)),
+        ),
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            Center(
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: _imalatMetrikKartMerkez(
+                  icon: icon,
+                  iconRenk: renk,
+                  deger: deger,
+                  baslik: baslik,
+                  baslikStili: const TextStyle(fontFamily: 'Inter', fontSize: 10, height: 1.1, color: ProColors.textMuted),
+                ),
+              ),
+            ),
+            if (info)
+              const Positioned(
+                top: 0,
+                right: 0,
+                child: Icon(Icons.info_outline, size: 13, color: ProColors.textMuted),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -539,39 +465,37 @@ class _ImalatKategoriKutu extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: 88,
-      height: 88,
+      width: 84,
+      height: _kImalatMetrikKartYukseklik,
       child: Material(
         color: const Color(0xFF121826),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(10),
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(10),
           child: Container(
-            padding: const EdgeInsets.all(8),
+            padding: _kImalatMetrikKartPadding,
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(10),
               border: Border.all(color: selected ? kategori.color : const Color(0xFF243044), width: selected ? 1.5 : 1),
-              boxShadow: selected ? [BoxShadow(color: kategori.color.withValues(alpha: 0.25), blurRadius: 8)] : null,
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(kategori.icon, size: 20, color: kategori.color),
-                const Spacer(),
-                Text(
-                  kategori.label,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
+            child: Center(
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: _imalatMetrikKartMerkez(
+                  icon: kategori.icon,
+                  iconRenk: kategori.color,
+                  deger: '$adet',
+                  baslik: kategori.label,
+                  baslikStili: TextStyle(
                     fontFamily: 'Inter',
                     fontSize: 10,
+                    height: 1.1,
                     fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
                     color: selected ? ProColors.text : ProColors.textMuted,
                   ),
                 ),
-                Text('$adet kayıt', style: const TextStyle(fontFamily: 'Inter', fontSize: 9, color: ProColors.textMuted)),
-              ],
+              ),
             ),
           ),
         ),
@@ -598,15 +522,15 @@ class _ImalatKayitKart extends StatelessWidget {
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: const Color(0xFF243044)),
           ),
-          padding: const EdgeInsets.all(10),
+          padding: const EdgeInsets.all(12),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               ClipRRect(
                 borderRadius: BorderRadius.circular(8),
                 child: SizedBox(
-                  width: 64,
-                  height: 64,
+                  width: 72,
+                  height: 72,
                   child: DecoratedBox(
                     decoration: BoxDecoration(gradient: LinearGradient(colors: kayit.thumb)),
                     child: const Icon(Icons.photo_outlined, color: Colors.white54, size: 22),
@@ -630,22 +554,22 @@ class _ImalatKayitKart extends StatelessWidget {
                         _ImalatDurumRozet(kayit: kayit),
                       ],
                     ),
-                    const SizedBox(height: 2),
-                    Text(kayit.alt, style: const TextStyle(fontFamily: 'Inter', fontSize: 10, color: ProColors.textMuted)),
+                    const SizedBox(height: 4),
+                    Text(kayit.alt, style: const TextStyle(fontFamily: 'Inter', fontSize: 11, color: ProColors.textMuted)),
                     const SizedBox(height: 6),
                     Row(
                       children: [
-                        const Icon(Icons.straighten, size: 12, color: ProColors.textMuted),
+                        const Icon(Icons.straighten, size: 13, color: ProColors.textMuted),
                         const SizedBox(width: 3),
-                        Text(kayit.metraj, style: const TextStyle(fontFamily: 'Inter', fontSize: 10, color: ProColors.textMuted)),
+                        Text(kayit.metraj, style: const TextStyle(fontFamily: 'Inter', fontSize: 11, color: ProColors.textMuted)),
                         const SizedBox(width: 8),
-                        const Icon(Icons.groups_outlined, size: 12, color: ProColors.textMuted),
+                        const Icon(Icons.groups_outlined, size: 13, color: ProColors.textMuted),
                         const SizedBox(width: 3),
-                        Flexible(child: Text(kayit.kisi, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontFamily: 'Inter', fontSize: 10, color: ProColors.textMuted))),
+                        Flexible(child: Text(kayit.kisi, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontFamily: 'Inter', fontSize: 11, color: ProColors.textMuted))),
                         const SizedBox(width: 8),
-                        const Icon(Icons.schedule, size: 12, color: ProColors.textMuted),
+                        const Icon(Icons.schedule, size: 13, color: ProColors.textMuted),
                         const SizedBox(width: 3),
-                        Text(kayit.saat, style: const TextStyle(fontFamily: 'Inter', fontSize: 10, color: ProColors.textMuted)),
+                        Text(kayit.saat, style: const TextStyle(fontFamily: 'Inter', fontSize: 11, color: ProColors.textMuted)),
                       ],
                     ),
                   ],
@@ -689,7 +613,7 @@ class _ImalatDurumRozet extends StatelessWidget {
         children: [
           Icon(kayit.durumIcon, size: 10, color: kayit.durumRenk),
           const SizedBox(width: 2),
-          Text(kayit.durum, style: TextStyle(fontFamily: 'Inter', fontSize: 9, fontWeight: FontWeight.w600, color: kayit.durumRenk)),
+          Text(kayit.durum, style: TextStyle(fontFamily: 'Inter', fontSize: 10, fontWeight: FontWeight.w600, color: kayit.durumRenk)),
         ],
       ),
     );

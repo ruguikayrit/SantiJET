@@ -67,15 +67,31 @@ class _GunlukRaporDeskState extends State<_GunlukRaporDesk> {
         const SizedBox(height: 10),
         const _GrHavaKart(),
         const SizedBox(height: 10),
-        const IntrinsicHeight(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Expanded(child: _GrSayiKart(icon: Icons.groups_outlined, baslik: 'Saha Personeli', sol: '28', sag: '34', alt: 'Aktif / Toplam')),
-              SizedBox(width: 8),
-              Expanded(child: _GrSayiKart(icon: Icons.agriculture_outlined, baslik: 'Ekipman', sol: '6', sag: '8', alt: 'Aktif / Toplam')),
-            ],
-          ),
+        const Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: _GrSayiKart(
+                icon: Icons.groups_outlined,
+                iconRenk: Color(0xFF22C55E),
+                baslik: 'Saha Personeli',
+                sol: '28',
+                sag: '34',
+                alt: 'Aktif / Toplam',
+              ),
+            ),
+            SizedBox(width: 6),
+            Expanded(
+              child: _GrSayiKart(
+                icon: Icons.agriculture_outlined,
+                iconRenk: Color(0xFFF59E0B),
+                baslik: 'Ekipman',
+                sol: '6',
+                sag: '8',
+                alt: 'Aktif / Toplam',
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 14),
         const _GrIlerlemeBaslik(),
@@ -105,7 +121,7 @@ class _GunlukRaporDeskState extends State<_GunlukRaporDesk> {
             ),
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 10),
         const _GrImalatSatir(
           icon: Icons.check_circle,
           iconColor: Color(0xFF22C55E),
@@ -134,21 +150,21 @@ class _GunlukRaporDeskState extends State<_GunlukRaporDesk> {
           baslik: 'Saha Fotoğrafları',
           sag: const Text('4 fotoğraf  ›', style: TextStyle(fontFamily: 'Inter', fontSize: 12, color: ProColors.textMuted)),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 10),
         const _GrFotoSerit(),
         const SizedBox(height: 14),
         _GrBolumBaslik(
           baslik: 'Malzeme / Teslimatlar',
           sag: const Text('Bugün 3 kalem  ›', style: TextStyle(fontFamily: 'Inter', fontSize: 12, color: ProColors.textMuted)),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 10),
         const _GrMalzemeSerit(),
         const SizedBox(height: 14),
         _GrBolumBaslik(
           baslik: 'Kontrol / Denetim',
           sag: const Text('Bugün 2 kontrol  ›', style: TextStyle(fontFamily: 'Inter', fontSize: 12, color: ProColors.textMuted)),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 10),
         const Row(
           children: [
             Expanded(
@@ -175,7 +191,7 @@ class _GunlukRaporDeskState extends State<_GunlukRaporDesk> {
           baslik: 'İSG Durumu',
           sag: const Icon(Icons.chevron_right, size: 18, color: ProColors.textMuted),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 10),
         const _GrIsgGrid(),
         const SizedBox(height: 14),
         Row(
@@ -201,7 +217,7 @@ class _GunlukRaporDeskState extends State<_GunlukRaporDesk> {
           style: FilledButton.styleFrom(
             backgroundColor: ProColors.electricBlue,
             foregroundColor: Colors.white,
-            minimumSize: const Size.fromHeight(48),
+            padding: const EdgeInsets.symmetric(vertical: 14),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           ),
           onPressed: () => _keepInPro(context),
@@ -224,9 +240,9 @@ class _GrKart extends StatelessWidget {
     return Container(
       padding: padding,
       decoration: BoxDecoration(
-        color: const Color(0xFF121826),
+        color: ProColors.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFF243044)),
+        border: Border.all(color: ProColors.border),
       ),
       child: child,
     );
@@ -248,16 +264,17 @@ class _GrProjeKart extends StatelessWidget {
         child: Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFF243044)),
+            border: Border.all(color: ProColors.border),
+            color: ProColors.surface,
           ),
-          padding: const EdgeInsets.all(8),
+          padding: const EdgeInsets.all(10),
           child: Row(
             children: [
               ClipRRect(
                 borderRadius: BorderRadius.circular(8),
                 child: const SizedBox(
-                  width: 52,
-                  height: 52,
+                  width: 48,
+                  height: 48,
                   child: DecoratedBox(
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
@@ -277,7 +294,7 @@ class _GrProjeKart extends StatelessWidget {
                       demo ? _Demo.project : 'Proje seçin',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontFamily: 'Rajdhani', fontWeight: FontWeight.w700, fontSize: 15, color: ProColors.text),
+                      style: const TextStyle(fontFamily: 'Rajdhani', fontWeight: FontWeight.w700, fontSize: 16, color: ProColors.text),
                     ),
                     const SizedBox(height: 2),
                     Row(
@@ -411,9 +428,17 @@ class _GrHavaHucre extends StatelessWidget {
 }
 
 class _GrSayiKart extends StatelessWidget {
-  const _GrSayiKart({required this.icon, required this.baslik, required this.sol, required this.sag, required this.alt});
+  const _GrSayiKart({
+    required this.icon,
+    required this.iconRenk,
+    required this.baslik,
+    required this.sol,
+    required this.sag,
+    required this.alt,
+  });
 
   final IconData icon;
+  final Color iconRenk;
   final String baslik;
   final String sol;
   final String sag;
@@ -421,37 +446,47 @@ class _GrSayiKart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return _GrKart(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(icon, size: 16, color: ProColors.textMuted),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(
+    return SizedBox(
+      height: _kImalatMetrikKartYukseklik,
+      child: Container(
+        padding: _kImalatMetrikKartPadding,
+        decoration: BoxDecoration(
+          color: const Color(0xFF121826),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: const Color(0xFF243044)),
+        ),
+        child: Center(
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(icon, size: 15, color: iconRenk),
+                const SizedBox(height: 4),
+                Text(
+                  '$sol / $sag',
+                  textAlign: TextAlign.center,
+                  style: _kImalatMetrikDegerStili,
+                ),
+                const SizedBox(height: 2),
+                Text(
                   baslik,
+                  textAlign: TextAlign.center,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontFamily: 'Inter', fontSize: 11, color: ProColors.textMuted),
+                  style: const TextStyle(fontFamily: 'Inter', fontSize: 10, height: 1.1, color: ProColors.textMuted),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          RichText(
-            text: TextSpan(
-              style: const TextStyle(fontFamily: 'Rajdhani', fontWeight: FontWeight.w700, fontSize: 22, color: ProColors.text),
-              children: [
-                TextSpan(text: sol),
-                const TextSpan(text: ' / ', style: TextStyle(color: ProColors.textMuted, fontSize: 18)),
-                TextSpan(text: sag, style: const TextStyle(color: ProColors.textMuted, fontSize: 18)),
+                Text(
+                  alt,
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontFamily: 'Inter', fontSize: 10, height: 1.1, color: ProColors.textFaint),
+                ),
               ],
             ),
           ),
-          Text(alt, style: const TextStyle(fontFamily: 'Inter', fontSize: 10, color: ProColors.textMuted)),
-        ],
+        ),
       ),
     );
   }
@@ -474,7 +509,7 @@ class _GrIlerlemeBaslik extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             textAlign: TextAlign.right,
-            style: TextStyle(fontFamily: 'Inter', fontSize: 10, color: ProColors.textMuted),
+            style: TextStyle(fontFamily: 'Inter', fontSize: 11, color: ProColors.textMuted),
           ),
         ),
       ],
@@ -492,17 +527,17 @@ class _GrIlerlemeGovde extends StatelessWidget {
       child: Row(
         children: [
           const SizedBox(
-            width: 96,
-            height: 96,
+            width: 88,
+            height: 88,
             child: Stack(
               alignment: Alignment.center,
               children: [
                 SizedBox(
-                  width: 96,
-                  height: 96,
+                  width: 88,
+                  height: 88,
                   child: CircularProgressIndicator(
                     value: 0.68,
-                    strokeWidth: 8,
+                    strokeWidth: 6,
                     backgroundColor: Color(0xFF243044),
                     color: Color(0xFF2563EB),
                   ),
@@ -511,7 +546,7 @@ class _GrIlerlemeGovde extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text('%68', style: TextStyle(fontFamily: 'Rajdhani', fontWeight: FontWeight.w700, fontSize: 20, color: ProColors.text)),
-                    Text('Günlük plan\ngerçekleşme', textAlign: TextAlign.center, style: TextStyle(fontFamily: 'Inter', fontSize: 8, color: ProColors.textMuted)),
+                    Text('Günlük plan\ngerçekleşme', textAlign: TextAlign.center, style: TextStyle(fontFamily: 'Inter', fontSize: 9, color: ProColors.textMuted)),
                   ],
                 ),
               ],
@@ -627,7 +662,7 @@ class _GrImalatSatir extends StatelessWidget {
               ],
             ),
           ),
-          Text(miktar, style: const TextStyle(fontFamily: 'Inter', fontSize: 11, fontWeight: FontWeight.w600, color: ProColors.text)),
+          Text(miktar, style: const TextStyle(fontFamily: 'Rajdhani', fontWeight: FontWeight.w700, fontSize: 16, color: ProColors.text)),
           const SizedBox(width: 4),
           const Icon(Icons.chevron_right, size: 16, color: ProColors.textMuted),
         ],
