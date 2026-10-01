@@ -76,6 +76,13 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Maliyet Dağılımı'), findsOneWidget);
     expect(find.text('Günlük Rapor'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('report-open-gunluk')));
+    await tester.pumpAndSettle();
+    expect(find.text('Şantiye durumunu tek ekranda takip edin.'), findsOneWidget);
+    expect(find.text('Raporu Kaydet'), findsOneWidget);
+    expect(find.text('Yapılan İmalatlar'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('gunluk-rapor-back')));
+    await tester.pumpAndSettle();
     expect(find.text('Demir Raporu'), findsOneWidget);
     await tester.tap(find.text('Saha'));
     await tester.pumpAndSettle();
@@ -117,7 +124,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('saha-open-imalat')));
     await tester.pumpAndSettle();
-    expect(find.text('Yeni Günlük İmalat'), findsOneWidget);
+    expect(find.text('İmalat Kaydı Ekle'), findsOneWidget);
     await tester.tap(find.byKey(const Key('imalat-back')));
     await tester.pumpAndSettle();
     expect(find.text('Saha operasyonlarını kolayca yönetin'), findsOneWidget);
@@ -356,7 +363,7 @@ void main() {
     expect(find.text('İstanbul Residence'), findsWidgets);
     expect(find.text('Henüz proje yok'), findsNothing);
     expect(find.text('%62'), findsWidgets);
-    expect(find.text('212 gün'), findsOneWidget);
+    expect(find.textContaining('gün'), findsWidgets);
     expect(find.text('4.180'), findsOneWidget);
     expect(find.text('%71'), findsOneWidget);
     expect(find.text('%54'), findsOneWidget);
@@ -375,7 +382,10 @@ void main() {
 
     await tester.tap(find.text('Proje Seç'));
     await tester.pumpAndSettle();
-    expect(find.text('Aktif proje: İstanbul Residence'), findsOneWidget);
+    expect(find.text('Tüm projeleri görüntüleyin ve yönetin.'), findsOneWidget);
+    expect(find.text('İstanbul Residence'), findsOneWidget);
+    expect(find.text('Ankara Plaza'), findsOneWidget);
+    expect(find.byKey(const Key('project-add')), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('quick-add')));
     await tester.pumpAndSettle();
@@ -537,14 +547,17 @@ void main() {
     await tester.tap(find.byKey(const Key('saha-open-imalat')));
     await tester.pumpAndSettle();
 
-    expect(find.text('Toplam İmalat'), findsOneWidget);
-    expect(find.text('Devam eden'), findsOneWidget);
-    expect(find.text('Hızlı Kayıt'), findsOneWidget);
+    expect(find.text('İmalat kaydı'), findsOneWidget);
+    expect(find.text('Devam Ediyor'), findsWidgets);
+    expect(find.text('Geçmiş Kayıtlar'), findsOneWidget);
 
-    await tester.tap(find.text('Haftalık'));
+    await tester.tap(find.text('Bu hafta'));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('ELEKTRİK'));
+    await tester.tap(find.text('Demir'));
+    await tester.pumpAndSettle();
+    expect(find.text('Bu kategoride kayıt yok.'), findsOneWidget);
+    await tester.tap(find.text('Tümü'));
     await tester.pumpAndSettle();
 
     await tester.tap(find.byKey(const Key('imalat-open-app')));

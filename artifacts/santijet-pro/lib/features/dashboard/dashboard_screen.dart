@@ -19,6 +19,8 @@ part 'imalat_desk.dart';
 part 'makine_desk.dart';
 part 'malzeme_desk.dart';
 part 'modul_kapak_desk.dart';
+part 'projects_desk.dart';
+part 'gunluk_rapor_desk.dart';
 
 class _DemoScope extends InheritedWidget {
   const _DemoScope({required this.loaded, required super.child});
@@ -90,7 +92,7 @@ class DashboardScreen extends StatefulWidget {
   State<DashboardScreen> createState() => _DashboardScreenState();
 }
 
-enum _Desk { home, modules, saha, sahaTuru, yeniSahaTuru, puantaj, personel, gorevler, imalat, makine, malzeme, modul, projects, reports, menu }
+enum _Desk { home, modules, saha, sahaTuru, yeniSahaTuru, puantaj, personel, gorevler, imalat, makine, malzeme, modul, projects, reports, gunlukRapor, menu }
 
 class _DashboardScreenState extends State<DashboardScreen> {
   _Desk _desk = _Desk.home;
@@ -160,11 +162,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 onOpenBolum: (baslik) => setState(() => _bolumBaslik = baslik),
                 onBackToKapak: () => setState(() => _bolumBaslik = null),
               ),
-          _Desk.projects => _PlainDesk(
-              title: 'Projeler',
-              body: _demo ? 'Aktif proje: İstanbul Residence' : 'Ortak proje kaydı henüz bir uygulamaya bağlanmadı.',
-            ),
-          _Desk.reports => const _ReportsDesk(),
+          _Desk.projects => const _ProjectsDesk(),
+          _Desk.reports => _ReportsDesk(onOpenGunlukRapor: () => setState(() => _desk = _Desk.gunlukRapor)),
+          _Desk.gunlukRapor => _GunlukRaporDesk(onBack: () => setState(() => _desk = _Desk.reports)),
           _Desk.menu => _MenuDesk(
               demoLoaded: _demo,
               onSelect: (desk) => setState(() => _desk = desk),
@@ -1202,7 +1202,12 @@ class _BottomBar extends StatelessWidget {
                   ),
                 ),
               ),
-              _NavItem(icon: Icons.bar_chart_outlined, label: 'Raporlar', selected: desk == _Desk.reports, onTap: () => onSelect(_Desk.reports)),
+              _NavItem(
+                icon: Icons.bar_chart_outlined,
+                label: 'Raporlar',
+                selected: desk == _Desk.reports || desk == _Desk.gunlukRapor,
+                onTap: () => onSelect(_Desk.reports),
+              ),
               _NavItem(icon: Icons.menu, label: 'Menü', selected: desk == _Desk.menu, onTap: () => onSelect(_Desk.menu)),
             ],
           ),

@@ -99,7 +99,9 @@ const _reportKinds = <_ReportKind>[
 ];
 
 class _ReportsDesk extends StatefulWidget {
-  const _ReportsDesk();
+  const _ReportsDesk({this.onOpenGunlukRapor});
+
+  final VoidCallback? onOpenGunlukRapor;
 
   @override
   State<_ReportsDesk> createState() => _ReportsDeskState();
@@ -159,7 +161,7 @@ class _ReportsDeskState extends State<_ReportsDesk> {
         const SizedBox(height: 16),
         const _ReportSectionTitle('Rapor Türleri'),
         const SizedBox(height: 10),
-        _ReportKindGrid(kinds: kinds),
+        _ReportKindGrid(kinds: kinds, onOpenGunlukRapor: widget.onOpenGunlukRapor),
       ],
     );
   }
@@ -534,9 +536,10 @@ class _ReportSectionTitle extends StatelessWidget {
 }
 
 class _ReportKindGrid extends StatelessWidget {
-  const _ReportKindGrid({required this.kinds});
+  const _ReportKindGrid({required this.kinds, this.onOpenGunlukRapor});
 
   final List<_ReportKind> kinds;
+  final VoidCallback? onOpenGunlukRapor;
 
   @override
   Widget build(BuildContext context) {
@@ -556,8 +559,15 @@ class _ReportKindGrid extends StatelessWidget {
           color: Colors.transparent,
           borderRadius: BorderRadius.circular(14),
           child: InkWell(
+            key: kind.title == 'Günlük Rapor' ? const Key('report-open-gunluk') : null,
             borderRadius: BorderRadius.circular(14),
-            onTap: () => _keepInPro(context),
+            onTap: () {
+              if (kind.title == 'Günlük Rapor' && onOpenGunlukRapor != null) {
+                onOpenGunlukRapor!();
+                return;
+              }
+              _keepInPro(context);
+            },
             child: Ink(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(14),
