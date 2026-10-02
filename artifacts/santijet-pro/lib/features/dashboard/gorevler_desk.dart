@@ -167,6 +167,23 @@ class _GorevlerDeskState extends State<_GorevlerDesk> {
           backKey: const Key('gorevler-back'),
           onBack: widget.onBack,
           backLabel: 'Saha',
+          trailing: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              key: const Key('gorevler-open-app'),
+              onTap: () => _keepInPro(context),
+              borderRadius: BorderRadius.circular(8),
+              child: Ink(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: ProColors.electricBlue,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(Icons.add, size: 20, color: Colors.white),
+              ),
+            ),
+          ),
         ),
         const SizedBox(height: 8),
         const Text(
@@ -241,21 +258,6 @@ class _GorevlerDeskState extends State<_GorevlerDesk> {
           _GorevKarti(gorev: gorev),
           const SizedBox(height: 8),
         ],
-        const SizedBox(height: 8),
-        SizedBox(
-          width: double.infinity,
-          child: FilledButton.icon(
-            key: const Key('gorevler-open-app'),
-            onPressed: () => _keepInPro(context),
-            icon: const Icon(Icons.add),
-            label: const Text('Görev Oluştur', style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w600, fontSize: 15)),
-            style: FilledButton.styleFrom(
-              backgroundColor: ProColors.electricBlue,
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-          ),
-        ),
       ],
     );
   }

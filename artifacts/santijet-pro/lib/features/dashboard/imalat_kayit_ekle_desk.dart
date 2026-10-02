@@ -1,41 +1,38 @@
 part of 'dashboard_screen.dart';
 
-enum _ImalatKayitTuru { genel, beton, demir, celik }
-
-extension on _ImalatKayitTuru {
-  String get label => switch (this) {
-        _ImalatKayitTuru.genel => 'Genel İmalat',
-        _ImalatKayitTuru.beton => 'Beton',
-        _ImalatKayitTuru.demir => 'Demir',
-        _ImalatKayitTuru.celik => 'Çelik',
-      };
-
-  IconData get icon => switch (this) {
-        _ImalatKayitTuru.genel => Icons.construction_outlined,
-        _ImalatKayitTuru.beton => Icons.circle,
-        _ImalatKayitTuru.demir => Icons.view_week_outlined,
-        _ImalatKayitTuru.celik => Icons.precision_manufacturing_outlined,
-      };
-
-  Color get color => switch (this) {
-        _ImalatKayitTuru.genel => const Color(0xFFEAB308),
-        _ImalatKayitTuru.beton => const Color(0xFFEF4444),
-        _ImalatKayitTuru.demir => const Color(0xFF22C55E),
-        _ImalatKayitTuru.celik => const Color(0xFF7C3AED),
-      };
-}
-
 class _ImalatKayitEkleDesk extends StatefulWidget {
-  const _ImalatKayitEkleDesk({required this.onBack});
+  const _ImalatKayitEkleDesk({
+    required this.ozelTipler,
+    this.seciliAltTurId,
+    required this.onBack,
+    required this.onOpenYeniTip,
+    required this.onKaydet,
+  });
 
+  final List<_ImalatAltTurTanim> ozelTipler;
+  final String? seciliAltTurId;
   final VoidCallback onBack;
+  final void Function(_ImalatAnaTur ana, String bolum) onOpenYeniTip;
+  final ValueChanged<_ImalatKayitTaslak> onKaydet;
 
   @override
   State<_ImalatKayitEkleDesk> createState() => _ImalatKayitEkleDeskState();
 }
 
 class _ImalatKayitEkleDeskState extends State<_ImalatKayitEkleDesk> {
-  _ImalatKayitTuru _tur = _ImalatKayitTuru.genel;
+  _ImalatAnaTur _anaTur = _ImalatAnaTur.insaat;
+  late String _altTurId = widget.seciliAltTurId ?? _imalatVarsayilanTip(_ImalatAnaTur.insaat, widget.ozelTipler);
+
+  @override
+  void didUpdateWidget(covariant _ImalatKayitEkleDesk oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final yeniSecim = widget.seciliAltTurId;
+    if (yeniSecim != null && yeniSecim != oldWidget.seciliAltTurId) {
+      _altTurId = yeniSecim;
+      final ana = _imalatAltTurBul(yeniSecim, widget.ozelTipler)?.ana;
+      if (ana != null) _anaTur = ana;
+    }
+  }
   final _miktar = TextEditingController(text: '120');
   final _not = TextEditingController();
   final _notFocus = FocusNode();
@@ -64,6 +61,7 @@ class _ImalatKayitEkleDeskState extends State<_ImalatKayitEkleDesk> {
           backKey: const Key('imalat-kayit-back'),
           onBack: widget.onBack,
           backLabel: 'İmalat',
+          trailing: const SizedBox.shrink(),
         ),
         const SizedBox(height: 6),
         const Text(
@@ -71,23 +69,49 @@ class _ImalatKayitEkleDeskState extends State<_ImalatKayitEkleDesk> {
           style: TextStyle(fontFamily: 'Inter', fontSize: 12, color: ProColors.textMuted),
         ),
         const SizedBox(height: 12),
-        const _IkBolumBaslik(icon: Icons.category_outlined, renk: Color(0xFF0D9488), baslik: 'İmalat Türü'),
+        const _IkBolumBaslik(icon: Icons.category_outlined, renk: Color(0xFF0D9488), baslik: 'İmalat Grubu'),
         const SizedBox(height: 10),
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              for (final t in _ImalatKayitTuru.values) ...[
+              for (final ana in _ImalatAnaTur.values) ...[
                 _IkTurKart(
-                  tur: t,
-                  secili: t == _tur,
-                  onTap: () => setState(() => _tur = t),
+                  key: Key('imalat-ekle-ana-${ana.deskKey}'),
+                  baslik: ana.label,
+                  icon: ana.icon,
+                  renk: ana.color,
+                  secili: ana == _anaTur,
+                  onTap: () {
+                    setState(() {
+                      _anaTur = ana;
+                      _altTurId = _imalatVarsayilanTip(ana, widget.ozelTipler);
+                    });
+                  },
                 ),
                 const SizedBox(width: 6),
               ],
             ],
           ),
+        ),
+        const SizedBox(height: 14),
+        const _IkBolumBaslik(
+          icon: Icons.subdirectory_arrow_right,
+          renk: Color(0xFF0D9488),
+          baslik: 'İmalat Tipi',
+        ),
+        const SizedBox(height: 8),
+        _ImalatTipAccordiyon(
+          anaTur: _anaTur,
+          ozelTipler: widget.ozelTipler,
+          seciliTipId: _altTurId,
+          onTipSec: (id) => setState(() => _altTurId = id),
+          onYeniTip: () {
+            final bolum = _imalatAltTurBul(_altTurId, widget.ozelTipler)?.bolum;
+            final adlar = _imalatBolumAdlari(_anaTur, widget.ozelTipler);
+            widget.onOpenYeniTip(_anaTur, bolum != null && adlar.contains(bolum) ? bolum : adlar.first);
+          },
         ),
         const SizedBox(height: 14),
         const _IkBolumBaslik(icon: Icons.format_list_bulleted, baslik: 'İş Kalemi'),
@@ -228,7 +252,13 @@ class _ImalatKayitEkleDeskState extends State<_ImalatKayitEkleDesk> {
               padding: const EdgeInsets.symmetric(vertical: 14),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
-            onPressed: () => _keepInPro(context),
+            onPressed: () => widget.onKaydet(
+                  _ImalatKayitTaslak(
+                    anaTur: _anaTur,
+                    altTurId: _altTurId,
+                    isKalemi: '${_imalatAltTurBul(_altTurId, widget.ozelTipler)?.label ?? 'İmalat'} imalatı',
+                  ),
+                ),
             icon: const Icon(Icons.check, size: 20),
             label: const Text('Kaydet', style: TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w600, fontSize: 15)),
           ),
@@ -276,9 +306,18 @@ const _kIkTurKartGenislik = 100.0;
 const _kIkTurKartYukseklik = 88.0;
 
 class _IkTurKart extends StatelessWidget {
-  const _IkTurKart({required this.tur, required this.secili, required this.onTap});
+  const _IkTurKart({
+    super.key,
+    required this.baslik,
+    required this.icon,
+    required this.renk,
+    required this.secili,
+    required this.onTap,
+  });
 
-  final _ImalatKayitTuru tur;
+  final String baslik;
+  final IconData icon;
+  final Color renk;
   final bool secili;
   final VoidCallback onTap;
 
@@ -297,15 +336,15 @@ class _IkTurKart extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: secili ? tur.color : const Color(0xFF243044), width: secili ? 1.5 : 1),
+              border: Border.all(color: secili ? renk : const Color(0xFF243044), width: secili ? 1.5 : 1),
             ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(tur.icon, size: 22, color: tur.color),
+                Icon(icon, size: 22, color: renk),
                 const SizedBox(height: 6),
                 Text(
-                  tur.label,
+                  baslik,
                   textAlign: TextAlign.center,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
@@ -368,6 +407,9 @@ class _IkAlan extends StatelessWidget {
 
 /// Referans mockup: başlık + mavi çerçeve, alt satırda miktar ve birim.
 const _kIkMiktarSatirYukseklik = 100.0;
+const _kIkGerceklesmeHalkaBoyut = 48.0 * 1.2;
+const _kIkGerceklesmeHalkaStroke = 4.0 * 1.2;
+const _kIkGerceklesmeYuzdeFont = 11.0;
 
 class _IkMiktarAlani extends StatefulWidget {
   const _IkMiktarAlani({required this.controller});
@@ -530,20 +572,26 @@ class _IkGerceklesmeKpi extends StatelessWidget {
               const Text('Gerçekleşme', style: TextStyle(fontFamily: 'Inter', fontSize: 10, height: 1.1, color: ProColors.textMuted)),
               const SizedBox(height: 4),
               SizedBox(
-                width: 48,
-                height: 48,
+                width: _kIkGerceklesmeHalkaBoyut,
+                height: _kIkGerceklesmeHalkaBoyut,
                 child: Stack(
                   alignment: Alignment.center,
                   children: [
                     CircularProgressIndicator(
                       value: 1,
-                      strokeWidth: 4,
+                      strokeWidth: _kIkGerceklesmeHalkaStroke,
                       backgroundColor: const Color(0xFF243044),
                       color: const Color(0xFF22C55E),
                     ),
                     const Text(
                       '%100',
-                      style: TextStyle(fontFamily: 'Inter', fontSize: 11, fontWeight: FontWeight.w700, height: 1, color: ProColors.text),
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: _kIkGerceklesmeYuzdeFont,
+                        fontWeight: FontWeight.w700,
+                        height: 1,
+                        color: ProColors.text,
+                      ),
                     ),
                   ],
                 ),
@@ -657,6 +705,262 @@ class _IkFotoThumb extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Tüm tip listesi tek blokta açılır-kapanır; bölümler birbirinden bağımsız genişler.
+class _ImalatTipAccordiyon extends StatefulWidget {
+  const _ImalatTipAccordiyon({
+    required this.anaTur,
+    required this.ozelTipler,
+    required this.seciliTipId,
+    required this.onTipSec,
+    required this.onYeniTip,
+  });
+
+  final _ImalatAnaTur anaTur;
+  final List<_ImalatAltTurTanim> ozelTipler;
+  final String seciliTipId;
+  final ValueChanged<String> onTipSec;
+  final VoidCallback onYeniTip;
+
+  @override
+  State<_ImalatTipAccordiyon> createState() => _ImalatTipAccordiyonState();
+}
+
+class _ImalatTipAccordiyonState extends State<_ImalatTipAccordiyon> {
+  var _listeAcik = false;
+  late final Set<String> _acikBolumler = () {
+    final bolum = _imalatAltTurBul(widget.seciliTipId, widget.ozelTipler)?.bolum;
+    return bolum == null ? <String>{} : {bolum};
+  }();
+
+  Map<String, List<_ImalatAltTurTanim>> get _bolumler => _imalatTipBolumleri(widget.anaTur, widget.ozelTipler);
+
+  @override
+  void didUpdateWidget(covariant _ImalatTipAccordiyon oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.anaTur != widget.anaTur || oldWidget.ozelTipler.length != widget.ozelTipler.length) {
+      final bolum = _imalatAltTurBul(widget.seciliTipId, widget.ozelTipler)?.bolum;
+      _acikBolumler
+        ..clear()
+        ..addAll(bolum == null ? const [] : [bolum]);
+      if (oldWidget.ozelTipler.length != widget.ozelTipler.length) _listeAcik = true;
+    }
+  }
+
+  void _bolumAc(String bolum) {
+    setState(() {
+      if (_acikBolumler.contains(bolum)) {
+        _acikBolumler.remove(bolum);
+      } else {
+        _acikBolumler.add(bolum);
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final secili = _imalatAltTurBul(widget.seciliTipId, widget.ozelTipler);
+    final bolumler = _bolumler;
+    final bolumAdlari = bolumler.keys.toList();
+    final tipAdet = _imalatAltTurlerAna(widget.anaTur, widget.ozelTipler).length;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFF121826),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFF243044)),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Material(
+            color: _listeAcik ? const Color(0xFF1A2332) : Colors.transparent,
+            child: InkWell(
+              key: const Key('imalat-tip-liste-ac'),
+              onTap: () => setState(() => _listeAcik = !_listeAcik),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        secili != null ? 'Seçili: ${secili.label}' : 'İmalat tipi seçin',
+                        style: const TextStyle(fontFamily: 'Inter', fontSize: 13, fontWeight: FontWeight.w600, color: ProColors.text),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    Text('$tipAdet tip', style: const TextStyle(fontFamily: 'Inter', fontSize: 11, color: ProColors.textFaint)),
+                    const SizedBox(width: 4),
+                    Icon(_listeAcik ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down, size: 22, color: ProColors.textMuted),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          if (_listeAcik) ...[
+            const Divider(height: 1, thickness: 1, color: Color(0xFF243044)),
+            for (var i = 0; i < bolumAdlari.length; i++) ...[
+              if (i > 0) const Divider(height: 1, thickness: 1, color: Color(0xFF243044)),
+              _ImalatTipBolumSatiri(
+                bolum: bolumAdlari[i],
+                tipler: bolumler[bolumAdlari[i]]!,
+                acik: _acikBolumler.contains(bolumAdlari[i]),
+                seciliTipId: widget.seciliTipId,
+                onBaslikTap: () => _bolumAc(bolumAdlari[i]),
+                onTipSec: (id) {
+                  widget.onTipSec(id);
+                  final yeniBolum = _imalatAltTurBul(id, widget.ozelTipler)?.bolum;
+                  if (yeniBolum != null) {
+                    setState(() => _acikBolumler.add(yeniBolum));
+                  }
+                },
+              ),
+            ],
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                key: const Key('imalat-yeni-tip'),
+                onTap: widget.onYeniTip,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.add, size: 18, color: widget.anaTur.color),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Yeni imalat tipi',
+                        style: TextStyle(fontFamily: 'Inter', fontSize: 13, fontWeight: FontWeight.w600, color: widget.anaTur.color),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _ImalatTipBolumSatiri extends StatelessWidget {
+  const _ImalatTipBolumSatiri({
+    required this.bolum,
+    required this.tipler,
+    required this.acik,
+    required this.seciliTipId,
+    required this.onBaslikTap,
+    required this.onTipSec,
+  });
+
+  final String bolum;
+  final List<_ImalatAltTurTanim> tipler;
+  final bool acik;
+  final String seciliTipId;
+  final VoidCallback onBaslikTap;
+  final ValueChanged<String> onTipSec;
+
+  @override
+  Widget build(BuildContext context) {
+    final bolumdeSecili = tipler.any((t) => t.id == seciliTipId);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Material(
+          color: acik ? const Color(0xFF1A2332) : Colors.transparent,
+          child: InkWell(
+            onTap: onBaslikTap,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      bolum,
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: acik || bolumdeSecili ? ProColors.text : ProColors.textMuted,
+                      ),
+                    ),
+                  ),
+                  Text(
+                    '${tipler.length}',
+                    style: const TextStyle(fontFamily: 'Inter', fontSize: 11, color: ProColors.textFaint),
+                  ),
+                  const SizedBox(width: 6),
+                  Icon(
+                    acik ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                    size: 20,
+                    color: ProColors.textMuted,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        if (acik)
+          for (final tip in tipler)
+            _ImalatTipSecenekSatiri(
+              key: Key('imalat-ekle-alt-${tip.id}'),
+              label: tip.label,
+              secili: tip.id == seciliTipId,
+              onTap: () => onTipSec(tip.id),
+            ),
+      ],
+    );
+  }
+}
+
+class _ImalatTipSecenekSatiri extends StatelessWidget {
+  const _ImalatTipSecenekSatiri({super.key, required this.label, required this.secili, required this.onTap});
+
+  final String label;
+  final bool secili;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: secili ? const Color(0xFF2563EB).withValues(alpha: 0.12) : Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(12, 0, 12, 0),
+          child: SizedBox(
+            height: 40,
+            child: Row(
+              children: [
+                const SizedBox(width: 8),
+                Icon(
+                  secili ? Icons.radio_button_checked : Icons.radio_button_off,
+                  size: 18,
+                  color: secili ? const Color(0xFF2563EB) : ProColors.textFaint,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    label,
+                    style: TextStyle(
+                      fontFamily: 'Inter',
+                      fontSize: 13,
+                      fontWeight: secili ? FontWeight.w600 : FontWeight.w500,
+                      color: secili ? ProColors.text : ProColors.textMuted,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

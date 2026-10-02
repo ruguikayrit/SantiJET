@@ -3,6 +3,10 @@ part of 'dashboard_screen.dart';
 /// Üst özet KPI ile alttaki kategori kartları aynı yükseklikte.
 const _kImalatMetrikKartYukseklik = 82.0;
 const _kImalatMetrikKartPadding = EdgeInsets.symmetric(horizontal: 6, vertical: 6);
+const _kImalatListeKpiOlcek = 1.25;
+const _kImalatListeKpiKartYukseklik = _kImalatMetrikKartYukseklik * _kImalatListeKpiOlcek;
+const _kImalatListeKpiIkonBoyut = 15.0 * _kImalatListeKpiOlcek;
+const _kImalatListeKpiDegerFont = 20.0 * _kImalatListeKpiOlcek;
 
 const _kImalatMetrikDegerStili = TextStyle(
   fontFamily: 'Rajdhani',
@@ -18,14 +22,16 @@ Widget _imalatMetrikKartMerkez({
   required String deger,
   required String baslik,
   required TextStyle baslikStili,
+  double iconBoyut = 15,
+  TextStyle? degerStili,
 }) {
   return Column(
     mainAxisSize: MainAxisSize.min,
     crossAxisAlignment: CrossAxisAlignment.center,
     children: [
-      Icon(icon, size: 15, color: iconRenk),
+      Icon(icon, size: iconBoyut, color: iconRenk),
       const SizedBox(height: 4),
-      Text(deger, textAlign: TextAlign.center, style: _kImalatMetrikDegerStili),
+      Text(deger, textAlign: TextAlign.center, style: degerStili ?? _kImalatMetrikDegerStili),
       const SizedBox(height: 2),
       Text(
         baslik,
@@ -38,39 +44,48 @@ Widget _imalatMetrikKartMerkez({
   );
 }
 
-enum _ImalatKategori { tum, genel, beton, demir, celik }
+enum _ImalatAnaTur { insaat, elektrik, mekanik }
 
-extension on _ImalatKategori {
+extension on _ImalatAnaTur {
   String get label => switch (this) {
-        _ImalatKategori.tum => 'Tümü',
-        _ImalatKategori.genel => 'Genel İmalat',
-        _ImalatKategori.beton => 'Beton',
-        _ImalatKategori.demir => 'Demir',
-        _ImalatKategori.celik => 'Çelik',
+        _ImalatAnaTur.insaat => 'İnşaat',
+        _ImalatAnaTur.elektrik => 'Elektrik',
+        _ImalatAnaTur.mekanik => 'Mekanik',
       };
 
   IconData get icon => switch (this) {
-        _ImalatKategori.tum => Icons.description_outlined,
-        _ImalatKategori.genel => Icons.construction_outlined,
-        _ImalatKategori.beton => Icons.circle,
-        _ImalatKategori.demir => Icons.view_week_outlined,
-        _ImalatKategori.celik => Icons.precision_manufacturing_outlined,
+        _ImalatAnaTur.insaat => Icons.apartment_outlined,
+        _ImalatAnaTur.elektrik => Icons.bolt_outlined,
+        _ImalatAnaTur.mekanik => Icons.hvac_outlined,
       };
 
   Color get color => switch (this) {
-        _ImalatKategori.tum => ProColors.electricBlue,
-        _ImalatKategori.genel => const Color(0xFFEAB308),
-        _ImalatKategori.beton => const Color(0xFFEF4444),
-        _ImalatKategori.demir => const Color(0xFF22C55E),
-        _ImalatKategori.celik => const Color(0xFF7C3AED),
+        _ImalatAnaTur.insaat => const Color(0xFFEAB308),
+        _ImalatAnaTur.elektrik => const Color(0xFF2563EB),
+        _ImalatAnaTur.mekanik => const Color(0xFF22C55E),
       };
+
+  String get deskKey => switch (this) {
+        _ImalatAnaTur.insaat => 'insaat',
+        _ImalatAnaTur.elektrik => 'elektrik',
+        _ImalatAnaTur.mekanik => 'mekanik',
+      };
+}
+
+class _ImalatKayitTaslak {
+  const _ImalatKayitTaslak({required this.anaTur, required this.altTurId, required this.isKalemi});
+
+  final _ImalatAnaTur anaTur;
+  final String altTurId;
+  final String isKalemi;
 }
 
 class _ImalatKayit {
   const _ImalatKayit({
     required this.baslik,
     required this.alt,
-    required this.kategori,
+    required this.anaTur,
+    required this.altTurId,
     required this.durum,
     required this.durumRenk,
     required this.durumIcon,
@@ -82,7 +97,8 @@ class _ImalatKayit {
 
   final String baslik;
   final String alt;
-  final _ImalatKategori kategori;
+  final _ImalatAnaTur anaTur;
+  final String altTurId;
   final String durum;
   final Color durumRenk;
   final IconData durumIcon;
@@ -90,77 +106,133 @@ class _ImalatKayit {
   final String kisi;
   final String saat;
   final List<Color> thumb;
+
+  factory _ImalatKayit.taslaktan(_ImalatKayitTaslak taslak, [List<_ImalatAltTurTanim> ozel = const []]) {
+    final alt = _imalatAltTurBul(taslak.altTurId, ozel);
+    final altEtiket = alt?.label ?? taslak.altTurId;
+    return _ImalatKayit(
+      baslik: taslak.isKalemi,
+      alt: '${taslak.anaTur.label} · $altEtiket · A Blok · 2. Kat',
+      anaTur: taslak.anaTur,
+      altTurId: taslak.altTurId,
+      durum: 'Devam Ediyor',
+      durumRenk: const Color(0xFF2563EB),
+      durumIcon: Icons.play_arrow,
+      metraj: '120 m²',
+      kisi: '6 kişi',
+      saat: '09:00',
+      thumb: const [Color(0xFF64748B), Color(0xFF334155)],
+    );
+  }
 }
 
 class _ImalatDesk extends StatefulWidget {
-  const _ImalatDesk({required this.onBack, required this.onOpenKayitEkle});
+  const _ImalatDesk({
+    required this.kayitlar,
+    required this.ozelTipler,
+    required this.onBack,
+    required this.onOpenKayitEkle,
+  });
 
+  final List<_ImalatKayit> kayitlar;
+  final List<_ImalatAltTurTanim> ozelTipler;
   final VoidCallback onBack;
   final VoidCallback onOpenKayitEkle;
 
   @override
   State<_ImalatDesk> createState() => _ImalatDeskState();
+
+  static List<_ImalatKayit> demoKayitlar() => [
+        const _ImalatKayit(
+          baslik: 'A Blok 2. Kat Kalıp imalatı',
+          alt: 'İnşaat · Kalıp · A Blok · 2. Kat',
+          anaTur: _ImalatAnaTur.insaat,
+          altTurId: 'kalip',
+          durum: 'Tamamlandı',
+          durumRenk: Color(0xFF22C55E),
+          durumIcon: Icons.check,
+          metraj: '120 m²',
+          kisi: '6 kişi',
+          saat: '09:15',
+          thumb: [Color(0xFF64748B), Color(0xFF334155)],
+        ),
+        const _ImalatKayit(
+          baslik: 'A Blok 2. Kat duvar imalatı',
+          alt: 'İnşaat · Duvar · A Blok · 2. Kat',
+          anaTur: _ImalatAnaTur.insaat,
+          altTurId: 'duvar',
+          durum: 'Devam Ediyor',
+          durumRenk: Color(0xFF2563EB),
+          durumIcon: Icons.play_arrow,
+          metraj: '95 m²',
+          kisi: '4 kişi',
+          saat: '11:40',
+          thumb: [Color(0xFF78716C), Color(0xFF44403C)],
+        ),
+        const _ImalatKayit(
+          baslik: 'Zayıf akım kablo çekimi',
+          alt: 'Elektrik · Kablo · B Blok · 1. Kat',
+          anaTur: _ImalatAnaTur.elektrik,
+          altTurId: 'kablo',
+          durum: 'Devam Ediyor',
+          durumRenk: Color(0xFFF97316),
+          durumIcon: Icons.schedule,
+          metraj: '420 mt',
+          kisi: '3 kişi',
+          saat: '14:05',
+          thumb: [Color(0xFF0EA5E9), Color(0xFF0369A1)],
+        ),
+      ];
 }
 
 class _ImalatDeskState extends State<_ImalatDesk> {
   static final _seciliGun = DateTime(2026, 9, 25);
   static const _haftaGunAdlari = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
 
-  _ImalatKategori _kategori = _ImalatKategori.tum;
+  _ImalatAnaTur? _anaFiltre;
+  String? _altFiltre;
   late DateTime _gun = _seciliGun;
 
   DateTime get _haftaBasi => _gun.subtract(Duration(days: _gun.weekday - 1));
 
-  static const _kayitlar = <_ImalatKayit>[
-    _ImalatKayit(
-      baslik: 'A Blok 2. Kat Kalıp imalatı',
-      alt: 'Genel İmalat · A Blok · 2. Kat',
-      kategori: _ImalatKategori.genel,
-      durum: 'Tamamlandı',
-      durumRenk: Color(0xFF22C55E),
-      durumIcon: Icons.check,
-      metraj: '120 m²',
-      kisi: '6 kişi',
-      saat: '09:15',
-      thumb: [Color(0xFF64748B), Color(0xFF334155)],
-    ),
-    _ImalatKayit(
-      baslik: 'Temel perde beton dökümü',
-      alt: 'Beton · Temel',
-      kategori: _ImalatKategori.beton,
-      durum: 'Devam Ediyor',
-      durumRenk: Color(0xFF2563EB),
-      durumIcon: Icons.play_arrow,
-      metraj: '80 m³',
-      kisi: '4 kişi',
-      saat: '11:40',
-      thumb: [Color(0xFF78716C), Color(0xFF44403C)],
-    ),
-    _ImalatKayit(
-      baslik: 'Çelik karkas montajı',
-      alt: 'Çelik · B Blok · 1. Kat',
-      kategori: _ImalatKategori.celik,
-      durum: 'Devam Ediyor',
-      durumRenk: Color(0xFFF97316),
-      durumIcon: Icons.schedule,
-      metraj: '35 mt',
-      kisi: '3 kişi',
-      saat: '14:05',
-      thumb: [Color(0xFF0EA5E9), Color(0xFF0369A1)],
-    ),
-  ];
+  List<_ImalatKayit> get _kayitlar => widget.kayitlar;
 
-  static int _kategoriAdet(_ImalatKategori k) => switch (k) {
-        _ImalatKategori.tum => 3,
-        _ImalatKategori.genel => 1,
-        _ImalatKategori.beton => 1,
-        _ImalatKategori.demir => 0,
-        _ImalatKategori.celik => 1,
-      };
+  int _anaAdet(_ImalatAnaTur? ana) {
+    if (ana == null) return _kayitlar.length;
+    return _kayitlar.where((k) => k.anaTur == ana).length;
+  }
+
+  int _altAdet(_ImalatAnaTur ana, String altTurId) =>
+      _kayitlar.where((k) => k.anaTur == ana && k.altTurId == altTurId).length;
 
   List<_ImalatKayit> get _filtreli {
-    if (_kategori == _ImalatKategori.tum) return _kayitlar;
-    return _kayitlar.where((k) => k.kategori == _kategori).toList();
+    var liste = _kayitlar;
+    if (_anaFiltre != null) {
+      liste = liste.where((k) => k.anaTur == _anaFiltre).toList();
+      if (_altFiltre != null) {
+        liste = liste.where((k) => k.altTurId == _altFiltre).toList();
+      }
+    }
+    return liste;
+  }
+
+  void _anaSec(_ImalatAnaTur? ana) {
+    setState(() {
+      _anaFiltre = ana;
+      _altFiltre = null;
+    });
+  }
+
+  void _altSec(String? altTurId) => setState(() => _altFiltre = altTurId);
+
+  Future<void> _gunSec() async {
+    final now = DateTime.now();
+    final bugun = DateTime(now.year, now.month, now.day);
+    var baslangic = _gun;
+    if (baslangic.isAfter(bugun)) baslangic = bugun;
+    final picked = await _puantajGunTakvimGoster(context, baslangic: baslangic, sonGun: bugun);
+    if (!mounted || picked == null) return;
+    setState(() => _gun = DateTime(picked.year, picked.month, picked.day));
   }
 
   @override
@@ -179,9 +251,22 @@ class _ImalatDeskState extends State<_ImalatDesk> {
           backKey: const Key('imalat-back'),
           onBack: widget.onBack,
           backLabel: 'Saha',
-          trailing: IconButton(
-            onPressed: () => _keepInPro(context),
-            icon: const Icon(Icons.more_horiz, color: ProColors.text),
+          trailing: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              key: const Key('imalat-takvim'),
+              onTap: _gunSec,
+              borderRadius: BorderRadius.circular(8),
+              child: Ink(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: ProColors.border),
+                ),
+                child: const Icon(Icons.calendar_today_outlined, size: 18, color: ProColors.text),
+              ),
+            ),
           ),
         ),
         const SizedBox(height: 6),
@@ -190,8 +275,6 @@ class _ImalatDeskState extends State<_ImalatDesk> {
           style: TextStyle(fontFamily: 'Inter', fontSize: 12, color: ProColors.textMuted),
         ),
         const SizedBox(height: 12),
-        _ImalatTarihKart(gun: _gun, onTap: () => _keepInPro(context)),
-        const SizedBox(height: 10),
         _PuantajWeekStrip(
           weekStart: _haftaBasi,
           selected: _gun,
@@ -206,10 +289,10 @@ class _ImalatDeskState extends State<_ImalatDesk> {
           alt: 'Seçilen tarihte kaydedilen imalat verisi',
         ),
         const SizedBox(height: 10),
-        const Row(
+        Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(child: _ImalatOzetKpi(baslik: 'İmalat kaydı', deger: '3', icon: Icons.description_outlined, renk: Color(0xFF2563EB))),
+            Expanded(child: _ImalatOzetKpi(baslik: 'İmalat kaydı', deger: '${_kayitlar.length}', icon: Icons.description_outlined, renk: Color(0xFF2563EB))),
             SizedBox(width: 6),
             Expanded(child: _ImalatOzetKpi(baslik: 'İş kalemi', deger: '8', icon: Icons.view_in_ar_outlined, renk: Color(0xFF7C3AED))),
             SizedBox(width: 6),
@@ -240,18 +323,59 @@ class _ImalatDeskState extends State<_ImalatDesk> {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              for (final k in _ImalatKategori.values) ...[
-                _ImalatKategoriKutu(
-                  kategori: k,
-                  adet: _kategoriAdet(k),
-                  selected: k == _kategori,
-                  onTap: () => setState(() => _kategori = k),
+              _ImalatAnaTurKutu(
+                key: const Key('imalat-ana-tumu'),
+                baslik: 'Tümü',
+                icon: Icons.description_outlined,
+                renk: ProColors.electricBlue,
+                adet: _anaAdet(null),
+                selected: _anaFiltre == null,
+                onTap: () => _anaSec(null),
+              ),
+              const SizedBox(width: 6),
+              for (final ana in _ImalatAnaTur.values) ...[
+                _ImalatAnaTurKutu(
+                  key: Key('imalat-ana-${ana.deskKey}'),
+                  baslik: ana.label,
+                  icon: ana.icon,
+                  renk: ana.color,
+                  adet: _anaAdet(ana),
+                  selected: _anaFiltre == ana,
+                  onTap: () => _anaSec(ana),
                 ),
                 const SizedBox(width: 6),
               ],
             ],
           ),
         ),
+        if (_anaFiltre != null) ...[
+          const SizedBox(height: 10),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: [
+                _ImalatAltTurChip(
+                  key: const Key('imalat-alt-tumu'),
+                  label: 'Tümü',
+                  adet: _anaAdet(_anaFiltre),
+                  selected: _altFiltre == null,
+                  onTap: () => _altSec(null),
+                ),
+                const SizedBox(width: 6),
+                for (final alt in _imalatAcikAltTurler(_kayitlar, _anaFiltre!, widget.ozelTipler)) ...[
+                  _ImalatAltTurChip(
+                    key: Key('imalat-alt-${alt.id}'),
+                    label: alt.label,
+                    adet: _altAdet(_anaFiltre!, alt.id),
+                    selected: _altFiltre == alt.id,
+                    onTap: () => _altSec(alt.id),
+                  ),
+                  const SizedBox(width: 6),
+                ],
+              ],
+            ),
+          ),
+        ],
         const SizedBox(height: 14),
         Row(
           children: [
@@ -279,7 +403,7 @@ class _ImalatDeskState extends State<_ImalatDesk> {
             padding: const EdgeInsets.all(16),
             decoration: _cardDecoration(),
             child: const Text(
-              'Bu kategoride kayıt yok.',
+              'Bu türde kayıt yok.',
               textAlign: TextAlign.center,
               style: TextStyle(fontFamily: 'Inter', fontSize: 13, color: ProColors.textMuted),
             ),
@@ -415,10 +539,12 @@ class _ImalatOzetKpi extends StatelessWidget {
   final Color renk;
   final bool info;
 
+  static final _listeKpiDegerStili = _kImalatMetrikDegerStili.copyWith(fontSize: _kImalatListeKpiDegerFont);
+
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: _kImalatMetrikKartYukseklik,
+      height: _kImalatListeKpiKartYukseklik,
       child: Container(
         padding: _kImalatMetrikKartPadding,
         decoration: BoxDecoration(
@@ -437,6 +563,8 @@ class _ImalatOzetKpi extends StatelessWidget {
                   iconRenk: renk,
                   deger: deger,
                   baslik: baslik,
+                  iconBoyut: _kImalatListeKpiIkonBoyut,
+                  degerStili: _listeKpiDegerStili,
                   baslikStili: const TextStyle(fontFamily: 'Inter', fontSize: 10, height: 1.1, color: ProColors.textMuted),
                 ),
               ),
@@ -454,19 +582,31 @@ class _ImalatOzetKpi extends StatelessWidget {
   }
 }
 
-class _ImalatKategoriKutu extends StatelessWidget {
-  const _ImalatKategoriKutu({required this.kategori, required this.adet, required this.selected, required this.onTap});
+class _ImalatAnaTurKutu extends StatelessWidget {
+  const _ImalatAnaTurKutu({
+    super.key,
+    required this.baslik,
+    required this.icon,
+    required this.renk,
+    required this.adet,
+    required this.selected,
+    required this.onTap,
+  });
 
-  final _ImalatKategori kategori;
+  final String baslik;
+  final IconData icon;
+  final Color renk;
   final int adet;
   final bool selected;
   final VoidCallback onTap;
+
+  static final _listeKpiDegerStili = _kImalatMetrikDegerStili.copyWith(fontSize: _kImalatListeKpiDegerFont);
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
       width: 84,
-      height: _kImalatMetrikKartYukseklik,
+      height: _kImalatListeKpiKartYukseklik,
       child: Material(
         color: const Color(0xFF121826),
         borderRadius: BorderRadius.circular(10),
@@ -477,16 +617,18 @@ class _ImalatKategoriKutu extends StatelessWidget {
             padding: _kImalatMetrikKartPadding,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: selected ? kategori.color : const Color(0xFF243044), width: selected ? 1.5 : 1),
+              border: Border.all(color: selected ? renk : const Color(0xFF243044), width: selected ? 1.5 : 1),
             ),
             child: Center(
               child: FittedBox(
                 fit: BoxFit.scaleDown,
                 child: _imalatMetrikKartMerkez(
-                  icon: kategori.icon,
-                  iconRenk: kategori.color,
+                  icon: icon,
+                  iconRenk: renk,
                   deger: '$adet',
-                  baslik: kategori.label,
+                  iconBoyut: _kImalatListeKpiIkonBoyut,
+                  degerStili: _listeKpiDegerStili,
+                  baslik: baslik,
                   baslikStili: TextStyle(
                     fontFamily: 'Inter',
                     fontSize: 10,
@@ -496,6 +638,49 @@ class _ImalatKategoriKutu extends StatelessWidget {
                   ),
                 ),
               ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ImalatAltTurChip extends StatelessWidget {
+  const _ImalatAltTurChip({
+    super.key,
+    required this.label,
+    required this.adet,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final int adet;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: selected ? const Color(0xFF2563EB) : const Color(0xFF121826),
+      borderRadius: BorderRadius.circular(20),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: selected ? const Color(0xFF2563EB) : const Color(0xFF243044)),
+          ),
+          child: Text(
+            adet > 0 ? '$label ($adet)' : label,
+            style: TextStyle(
+              fontFamily: 'Inter',
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: selected ? Colors.white : ProColors.textMuted,
             ),
           ),
         ),

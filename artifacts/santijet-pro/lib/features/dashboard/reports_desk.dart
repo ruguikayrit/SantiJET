@@ -120,7 +120,6 @@ class _ReportsDeskState extends State<_ReportsDesk> {
           title: 'Raporlar',
           moduleIcon: Icons.bar_chart_outlined,
           moduleColor: Color(0xFF2563EB),
-          alertCount: 3,
         ),
         const SizedBox(height: 6),
         const Text(

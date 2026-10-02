@@ -24,10 +24,11 @@ class _SahaDesk extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
       children: [
-        const _ModulDeskUst(
+        _ModulDeskUst(
           title: 'Saha',
           moduleIcon: _ModulDeskMark.sahaIcon,
           moduleColor: _ModulDeskMark.sahaColor,
+          trailing: const SizedBox.shrink(),
         ),
         const SizedBox(height: 8),
         const Text(

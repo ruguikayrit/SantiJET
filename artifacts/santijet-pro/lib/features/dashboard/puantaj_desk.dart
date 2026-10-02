@@ -298,17 +298,32 @@ class _PuantajDeskState extends State<_PuantajDesk> {
   DateTime get _weekStart => _selectedDay.subtract(Duration(days: _selectedDay.weekday - 1));
 
   Future<void> _aySec() async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: _selectedDay,
-      firstDate: DateTime(2020, 1, 1),
-      lastDate: DateTime(2035, 12, 31),
-      helpText: 'Ay seçin',
-      initialDatePickerMode: DatePickerMode.year,
-      builder: _puantajTakvimTheme,
-    );
+    final now = DateTime.now();
+    final bugun = DateTime(now.year, now.month, now.day);
+    final picked = await _puantajAySec(context, _selectedDay, sonGun: bugun);
     if (!mounted || picked == null) return;
-    setState(() => _selectedDay = DateTime(picked.year, picked.month, 1));
+    setState(() => _selectedDay = picked);
+  }
+
+  /// Sağ üst takvim: günlük → gün, haftalık → hafta, aylık → ay.
+  Future<void> _takvimAc() async {
+    final now = DateTime.now();
+    final bugun = DateTime(now.year, now.month, now.day);
+    if (_range == _PuantajRange.aylik) {
+      await _aySec();
+      return;
+    }
+    if (_range == _PuantajRange.haftalik) {
+      final picked = await _puantajHaftaSec(context, haftaBaslangic: _weekStart, sonGun: bugun);
+      if (!mounted || picked == null) return;
+      setState(() => _selectedDay = picked);
+      return;
+    }
+    var baslangic = _selectedDay;
+    if (baslangic.isAfter(bugun)) baslangic = bugun;
+    final picked = await _puantajGunTakvimGoster(context, baslangic: baslangic, sonGun: bugun);
+    if (!mounted || picked == null) return;
+    setState(() => _selectedDay = DateTime(picked.year, picked.month, picked.day));
   }
 
   Future<void> _addPerson() async {
@@ -354,14 +369,22 @@ class _PuantajDeskState extends State<_PuantajDesk> {
           backKey: const Key('puantaj-back'),
           onBack: widget.onBack,
           backLabel: 'Saha',
-          trailing: Container(
-            width: 34,
-            height: 34,
-            decoration: BoxDecoration(
+          trailing: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              key: const Key('puantaj-takvim'),
+              onTap: _takvimAc,
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: ProColors.border),
+              child: Ink(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: ProColors.border),
+                ),
+                child: const Icon(Icons.calendar_today_outlined, size: 18, color: ProColors.text),
+              ),
             ),
-            child: const Icon(Icons.calendar_today_outlined, size: 16, color: ProColors.text),
           ),
         ),
         const SizedBox(height: 8),
@@ -385,7 +408,6 @@ class _PuantajDeskState extends State<_PuantajDesk> {
             kisiler: _ayListesi(_selectedDay),
             onPrevious: () => setState(() => _selectedDay = _shiftMonth(-1)),
             onNext: () => setState(() => _selectedDay = _shiftMonth(1)),
-            onPickMonth: _aySec,
             onSekme: (sekme) => setState(() => _aylikSekme = sekme),
             onEkip: (ekip) => setState(() => _haftaEkip = ekip),
             onQuery: (_) => setState(() {}),
@@ -736,6 +758,31 @@ class _HaftaAralikBar extends StatelessWidget {
   }
 }
 
+const _puantajTakvimLocale = Locale('tr', 'TR');
+
+Future<DateTime?> _puantajGunTakvimGoster(
+  BuildContext context, {
+  required DateTime baslangic,
+  required DateTime sonGun,
+}) {
+  return showDatePicker(
+    context: context,
+    locale: _puantajTakvimLocale,
+    initialDate: baslangic,
+    firstDate: DateTime(2020, 1, 1),
+    lastDate: sonGun,
+    helpText: 'Gün seçin',
+    cancelText: 'İptal',
+    confirmText: 'Seç',
+    errorFormatText: 'Geçersiz tarih biçimi',
+    errorInvalidText: 'Geçersiz tarih',
+    fieldHintText: 'GG.AA.YYYY',
+    fieldLabelText: 'Tarih',
+    initialDatePickerMode: DatePickerMode.day,
+    builder: _puantajTakvimTheme,
+  );
+}
+
 Widget _puantajTakvimTheme(BuildContext context, Widget? child) {
   return Theme(
     data: ThemeData.dark().copyWith(
@@ -747,8 +794,584 @@ Widget _puantajTakvimTheme(BuildContext context, Widget? child) {
       ),
       dialogTheme: const DialogThemeData(backgroundColor: Color(0xFF0B1220)),
     ),
-    child: child!,
+    child: Localizations.override(
+      context: context,
+      locale: _puantajTakvimLocale,
+      child: child!,
+    ),
   );
+}
+
+DateTime _puantajGunNorm(DateTime gun) => DateTime(gun.year, gun.month, gun.day);
+
+DateTime _puantajHaftaBaslangic(DateTime gun) {
+  final n = _puantajGunNorm(gun);
+  return n.subtract(Duration(days: n.weekday - 1));
+}
+
+Future<DateTime?> _puantajAySec(
+  BuildContext context,
+  DateTime secili, {
+  required DateTime sonGun,
+}) {
+  return showModalBottomSheet<DateTime>(
+    context: context,
+    backgroundColor: const Color(0xFF0B1220),
+    isScrollControlled: true,
+    builder: (context) => _PuantajAySecPanel(secili: secili, sonGun: _puantajGunNorm(sonGun)),
+  );
+}
+
+Future<DateTime?> _puantajHaftaSec(
+  BuildContext context, {
+  required DateTime haftaBaslangic,
+  required DateTime sonGun,
+}) {
+  return showModalBottomSheet<DateTime>(
+    context: context,
+    backgroundColor: const Color(0xFF0B1220),
+    isScrollControlled: true,
+    builder: (context) => _PuantajHaftaSecPanel(
+      seciliHafta: _puantajHaftaBaslangic(haftaBaslangic),
+      sonGun: _puantajGunNorm(sonGun),
+    ),
+  );
+}
+
+enum _AySecAsama { yil, ay }
+
+class _PuantajAySecPanel extends StatefulWidget {
+  const _PuantajAySecPanel({required this.secili, required this.sonGun});
+
+  final DateTime secili;
+  final DateTime sonGun;
+
+  @override
+  State<_PuantajAySecPanel> createState() => _PuantajAySecPanelState();
+}
+
+class _PuantajAySecPanelState extends State<_PuantajAySecPanel> {
+  static const _ayKisa = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'];
+
+  _AySecAsama _asama = _AySecAsama.yil;
+  late int _yil = widget.secili.year;
+
+  List<int> get _yillar => [for (var y = widget.sonGun.year; y >= 2020; y--) y];
+
+  bool _aySecilebilir(int ay) {
+    if (_yil > widget.sonGun.year) return false;
+    if (_yil == widget.sonGun.year && ay > widget.sonGun.month) return false;
+    return true;
+  }
+
+  String get _baslik => switch (_asama) {
+        _AySecAsama.yil => 'Yıl Seç',
+        _AySecAsama.ay => 'Ay Seç',
+      };
+
+  String get _altMetin => switch (_asama) {
+        _AySecAsama.yil => 'Önce yılı seçin.',
+        _AySecAsama.ay => '$_yil yılı için ay seçin.',
+      };
+
+  @override
+  Widget build(BuildContext context) {
+    final alt = MediaQuery.viewPaddingOf(context).bottom;
+    return SafeArea(
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(16, 12, 16, 12 + alt),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                if (_asama != _AySecAsama.yil)
+                  IconButton(
+                    key: const Key('puantaj-ay-geri'),
+                    onPressed: () => setState(() => _asama = _AySecAsama.yil),
+                    icon: const Icon(Icons.arrow_back, color: ProColors.text),
+                  ),
+                Expanded(
+                  child: Text(
+                    _baslik,
+                    style: const TextStyle(fontFamily: 'Rajdhani', fontWeight: FontWeight.w700, fontSize: 20, color: ProColors.text),
+                  ),
+                ),
+                IconButton(
+                  onPressed: () => Navigator.pop(context),
+                  icon: const Icon(Icons.close, color: ProColors.textMuted),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            _AySecYol(asama: _asama, yil: _yil),
+            const SizedBox(height: 8),
+            Text(
+              _altMetin,
+              style: const TextStyle(fontFamily: 'Inter', fontSize: 12, color: ProColors.textMuted),
+            ),
+            const SizedBox(height: 12),
+            ConstrainedBox(
+              constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height * 0.45),
+              child: switch (_asama) {
+                _AySecAsama.yil => _yilGrid(),
+                _AySecAsama.ay => _ayGrid(),
+              },
+            ),
+            const SizedBox(height: 8),
+            TextButton(
+              key: const Key('puantaj-ay-iptal'),
+              onPressed: () => Navigator.pop(context),
+              child: const Text('İptal', style: TextStyle(fontFamily: 'Inter', fontSize: 15, color: ProColors.textMuted)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _yilGrid() {
+    return GridView.builder(
+      shrinkWrap: true,
+      itemCount: _yillar.length,
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
+        mainAxisSpacing: 8,
+        crossAxisSpacing: 8,
+        childAspectRatio: 2.4,
+      ),
+      itemBuilder: (context, index) {
+        final yil = _yillar[index];
+        final secili = yil == widget.secili.year;
+        return Material(
+          color: secili ? const Color(0xFF2563EB) : const Color(0xFF121826),
+          borderRadius: BorderRadius.circular(10),
+          child: InkWell(
+            key: Key('puantaj-ay-yil-$yil'),
+            onTap: () => setState(() {
+              _yil = yil;
+              _asama = _AySecAsama.ay;
+            }),
+            borderRadius: BorderRadius.circular(10),
+            child: Container(
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: secili ? const Color(0xFF2563EB) : ProColors.border),
+              ),
+              child: Text(
+                '$yil',
+                style: TextStyle(
+                  fontFamily: 'Rajdhani',
+                  fontWeight: FontWeight.w700,
+                  fontSize: 18,
+                  color: secili ? Colors.white : ProColors.text,
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _ayGrid() {
+    return GridView.builder(
+      shrinkWrap: true,
+      itemCount: 12,
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
+        mainAxisSpacing: 8,
+        crossAxisSpacing: 8,
+        childAspectRatio: 2.2,
+      ),
+      itemBuilder: (context, index) {
+        final ay = index + 1;
+        final secilebilir = _aySecilebilir(ay);
+        final secili = widget.secili.year == _yil && widget.secili.month == ay;
+        return Material(
+          color: secili ? const Color(0xFF2563EB) : (secilebilir ? const Color(0xFF121826) : const Color(0xFF0B1220)),
+          borderRadius: BorderRadius.circular(10),
+          child: InkWell(
+            key: Key('puantaj-ay-$ay'),
+            onTap: secilebilir ? () => Navigator.pop(context, DateTime(_yil, ay, 1)) : null,
+            borderRadius: BorderRadius.circular(10),
+            child: Container(
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: secili ? const Color(0xFF2563EB) : ProColors.border),
+              ),
+              child: Text(
+                _ayKisa[index],
+                style: TextStyle(
+                  fontFamily: 'Inter',
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                  color: secilebilir ? (secili ? Colors.white : ProColors.text) : ProColors.textFaint,
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _AySecYol extends StatelessWidget {
+  const _AySecYol({required this.asama, required this.yil});
+
+  final _AySecAsama asama;
+  final int yil;
+
+  @override
+  Widget build(BuildContext context) {
+    Widget adim(String etiket, bool aktif, bool tamam) {
+      return Text(
+        etiket,
+        style: TextStyle(
+          fontFamily: 'Inter',
+          fontSize: 11,
+          fontWeight: aktif ? FontWeight.w700 : FontWeight.w500,
+          color: aktif ? const Color(0xFF60A5FA) : (tamam ? ProColors.text : ProColors.textFaint),
+        ),
+      );
+    }
+
+    return Row(
+      children: [
+        adim('$yil', asama == _AySecAsama.yil, asama == _AySecAsama.ay),
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 6),
+          child: Icon(Icons.chevron_right, size: 14, color: ProColors.textFaint),
+        ),
+        adim('Ay', asama == _AySecAsama.ay, false),
+      ],
+    );
+  }
+}
+
+enum _HaftaSecAsama { yil, ay, hafta }
+
+class _PuantajHaftaSecPanel extends StatefulWidget {
+  const _PuantajHaftaSecPanel({required this.seciliHafta, required this.sonGun});
+
+  final DateTime seciliHafta;
+  final DateTime sonGun;
+
+  @override
+  State<_PuantajHaftaSecPanel> createState() => _PuantajHaftaSecPanelState();
+}
+
+class _PuantajHaftaSecPanelState extends State<_PuantajHaftaSecPanel> {
+  static const _ayAdlari = ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran', 'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık'];
+  static const _ayKisa = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'];
+
+  _HaftaSecAsama _asama = _HaftaSecAsama.yil;
+  late int _yil = widget.seciliHafta.year;
+  int? _ay;
+
+  DateTime get _buHaftaBas => _puantajHaftaBaslangic(widget.sonGun);
+
+  List<int> get _yillar => [for (var y = widget.sonGun.year; y >= 2020; y--) y];
+
+  List<DateTime> _haftalar(int yil, int ay) {
+    final aySon = DateTime(yil, ay + 1, 0);
+    var pzt = DateTime(yil, ay, 1).subtract(Duration(days: DateTime(yil, ay, 1).weekday - 1));
+    final liste = <DateTime>[];
+    while (pzt.isBefore(aySon.add(const Duration(days: 1)))) {
+      final paz = pzt.add(const Duration(days: 6));
+      if (pzt.month == ay || paz.month == ay) liste.add(pzt);
+      pzt = pzt.add(const Duration(days: 7));
+    }
+    return liste;
+  }
+
+  bool _aySecilebilir(int ay) {
+    if (_yil > widget.sonGun.year) return false;
+    if (_yil == widget.sonGun.year && ay > widget.sonGun.month) return false;
+    return true;
+  }
+
+  bool _haftaSecilebilir(DateTime pzt) => !pzt.isAfter(_buHaftaBas);
+
+  String _haftaEtiketi(DateTime pzt) {
+    final paz = pzt.add(const Duration(days: 6));
+    if (pzt.month == paz.month) {
+      return '${pzt.day} – ${paz.day} ${_ayAdlari[pzt.month - 1]} ${pzt.year}';
+    }
+    return '${pzt.day} ${_ayAdlari[pzt.month - 1]} – ${paz.day} ${_ayAdlari[paz.month - 1]} ${paz.year}';
+  }
+
+  void _geri() {
+    setState(() {
+      switch (_asama) {
+        case _HaftaSecAsama.hafta:
+          _asama = _HaftaSecAsama.ay;
+        case _HaftaSecAsama.ay:
+          _asama = _HaftaSecAsama.yil;
+          _ay = null;
+        case _HaftaSecAsama.yil:
+          break;
+      }
+    });
+  }
+
+  String get _baslik => switch (_asama) {
+        _HaftaSecAsama.yil => 'Yıl Seç',
+        _HaftaSecAsama.ay => 'Ay Seç',
+        _HaftaSecAsama.hafta => 'Hafta Seç',
+      };
+
+  String get _altMetin => switch (_asama) {
+        _HaftaSecAsama.yil => 'Önce yılı seçin.',
+        _HaftaSecAsama.ay => '$_yil yılı için ay seçin.',
+        _HaftaSecAsama.hafta => '${_ayAdlari[_ay! - 1]} $_yil — Pazartesi başlangıçlı hafta.',
+      };
+
+  @override
+  Widget build(BuildContext context) {
+    final alt = MediaQuery.viewPaddingOf(context).bottom;
+    return SafeArea(
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(16, 12, 16, 12 + alt),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                if (_asama != _HaftaSecAsama.yil)
+                  IconButton(
+                    key: const Key('puantaj-hafta-geri'),
+                    onPressed: _geri,
+                    icon: const Icon(Icons.arrow_back, color: ProColors.text),
+                  ),
+                Expanded(
+                  child: Text(
+                    _baslik,
+                    style: const TextStyle(fontFamily: 'Rajdhani', fontWeight: FontWeight.w700, fontSize: 20, color: ProColors.text),
+                  ),
+                ),
+                IconButton(
+                  onPressed: () => Navigator.pop(context),
+                  icon: const Icon(Icons.close, color: ProColors.textMuted),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            _HaftaSecYol(asama: _asama, yil: _yil, ay: _ay),
+            const SizedBox(height: 8),
+            Text(
+              _altMetin,
+              style: const TextStyle(fontFamily: 'Inter', fontSize: 12, color: ProColors.textMuted),
+            ),
+            const SizedBox(height: 12),
+            ConstrainedBox(
+              constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height * 0.45),
+              child: switch (_asama) {
+                _HaftaSecAsama.yil => _yilGrid(),
+                _HaftaSecAsama.ay => _ayGrid(),
+                _HaftaSecAsama.hafta => _haftaListe(),
+              },
+            ),
+            const SizedBox(height: 8),
+            TextButton(
+              key: const Key('puantaj-hafta-iptal'),
+              onPressed: () => Navigator.pop(context),
+              child: const Text('İptal', style: TextStyle(fontFamily: 'Inter', fontSize: 15, color: ProColors.textMuted)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _yilGrid() {
+    return GridView.builder(
+      shrinkWrap: true,
+      itemCount: _yillar.length,
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
+        mainAxisSpacing: 8,
+        crossAxisSpacing: 8,
+        childAspectRatio: 2.4,
+      ),
+      itemBuilder: (context, index) {
+        final yil = _yillar[index];
+        final secili = yil == widget.seciliHafta.year && _asama == _HaftaSecAsama.yil;
+        return Material(
+          color: secili ? const Color(0xFF2563EB) : const Color(0xFF121826),
+          borderRadius: BorderRadius.circular(10),
+          child: InkWell(
+            key: Key('puantaj-hafta-yil-$yil'),
+            onTap: () => setState(() {
+              _yil = yil;
+              _ay = null;
+              _asama = _HaftaSecAsama.ay;
+            }),
+            borderRadius: BorderRadius.circular(10),
+            child: Container(
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: secili ? const Color(0xFF2563EB) : ProColors.border),
+              ),
+              child: Text(
+                '$yil',
+                style: TextStyle(
+                  fontFamily: 'Rajdhani',
+                  fontWeight: FontWeight.w700,
+                  fontSize: 18,
+                  color: secili ? Colors.white : ProColors.text,
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _ayGrid() {
+    return GridView.builder(
+      shrinkWrap: true,
+      itemCount: 12,
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
+        mainAxisSpacing: 8,
+        crossAxisSpacing: 8,
+        childAspectRatio: 2.2,
+      ),
+      itemBuilder: (context, index) {
+        final ay = index + 1;
+        final secilebilir = _aySecilebilir(ay);
+        final secili = ay == widget.seciliHafta.month && _yil == widget.seciliHafta.year;
+        return Material(
+          color: secili ? const Color(0xFF2563EB) : (secilebilir ? const Color(0xFF121826) : const Color(0xFF0B1220)),
+          borderRadius: BorderRadius.circular(10),
+          child: InkWell(
+            key: Key('puantaj-hafta-ay-$ay'),
+            onTap: secilebilir
+                ? () => setState(() {
+                      _ay = ay;
+                      _asama = _HaftaSecAsama.hafta;
+                    })
+                : null,
+            borderRadius: BorderRadius.circular(10),
+            child: Container(
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: secili ? const Color(0xFF2563EB) : ProColors.border),
+              ),
+              child: Text(
+                _ayKisa[index],
+                style: TextStyle(
+                  fontFamily: 'Inter',
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                  color: secilebilir ? (secili ? Colors.white : ProColors.text) : ProColors.textFaint,
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _haftaListe() {
+    final haftalar = _haftalar(_yil, _ay!);
+    return ListView.separated(
+      shrinkWrap: true,
+      itemCount: haftalar.length,
+      separatorBuilder: (_, __) => const SizedBox(height: 6),
+      itemBuilder: (context, index) {
+        final pzt = haftalar[index];
+        final secilebilir = _haftaSecilebilir(pzt);
+        final secili = _puantajHaftaBaslangic(pzt) == _puantajHaftaBaslangic(widget.seciliHafta);
+        return Material(
+          color: secili ? const Color(0xFF2563EB).withValues(alpha: 0.2) : const Color(0xFF121826),
+          borderRadius: BorderRadius.circular(12),
+          child: InkWell(
+            key: Key('puantaj-hafta-$index'),
+            onTap: secilebilir ? () => Navigator.pop(context, pzt) : null,
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: secili ? const Color(0xFF2563EB) : ProColors.border),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.date_range_outlined, size: 18, color: secilebilir ? const Color(0xFF60A5FA) : ProColors.textFaint),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      _haftaEtiketi(pzt),
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontWeight: secili ? FontWeight.w700 : FontWeight.w500,
+                        fontSize: 14,
+                        color: secilebilir ? ProColors.text : ProColors.textFaint,
+                      ),
+                    ),
+                  ),
+                  if (secili) const Icon(Icons.check_circle, size: 18, color: Color(0xFF2563EB)),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _HaftaSecYol extends StatelessWidget {
+  const _HaftaSecYol({required this.asama, required this.yil, this.ay});
+
+  final _HaftaSecAsama asama;
+  final int yil;
+  final int? ay;
+
+  static const _ayKisa = ['Oca', 'Şub', 'Mar', 'Nis', 'May', 'Haz', 'Tem', 'Ağu', 'Eyl', 'Eki', 'Kas', 'Ara'];
+
+  @override
+  Widget build(BuildContext context) {
+    Widget adim(String etiket, bool aktif, bool tamam) {
+      return Text(
+        etiket,
+        style: TextStyle(
+          fontFamily: 'Inter',
+          fontSize: 11,
+          fontWeight: aktif ? FontWeight.w700 : FontWeight.w500,
+          color: aktif ? const Color(0xFF60A5FA) : (tamam ? ProColors.text : ProColors.textFaint),
+        ),
+      );
+    }
+
+    final ayEtiket = ay == null ? 'Ay' : _ayKisa[ay! - 1];
+    return Row(
+      children: [
+        adim('$yil', asama == _HaftaSecAsama.yil, asama != _HaftaSecAsama.yil),
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 6),
+          child: Icon(Icons.chevron_right, size: 14, color: ProColors.textFaint),
+        ),
+        adim(ayEtiket, asama == _HaftaSecAsama.ay, asama == _HaftaSecAsama.hafta),
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 6),
+          child: Icon(Icons.chevron_right, size: 14, color: ProColors.textFaint),
+        ),
+        adim('Hafta', asama == _HaftaSecAsama.hafta, false),
+      ],
+    );
+  }
 }
 
 class _HaftaSekmeBar extends StatelessWidget {
@@ -2009,7 +2632,6 @@ class _AylikSayfa extends StatelessWidget {
     required this.kisiler,
     required this.onPrevious,
     required this.onNext,
-    required this.onPickMonth,
     required this.onSekme,
     required this.onEkip,
     required this.onQuery,
@@ -2024,7 +2646,6 @@ class _AylikSayfa extends StatelessWidget {
   final List<_AyKisi> kisiler;
   final VoidCallback onPrevious;
   final VoidCallback onNext;
-  final VoidCallback onPickMonth;
   final ValueChanged<_HaftalikSekme> onSekme;
   final ValueChanged<String> onEkip;
   final ValueChanged<String> onQuery;
@@ -2051,8 +2672,6 @@ class _AylikSayfa extends StatelessWidget {
           label: monthLabel,
           onPrevious: onPrevious,
           onNext: onNext,
-          onLabelTap: onPickMonth,
-          labelKey: const Key('puantaj-ay-sec'),
         ),
         const SizedBox(height: 10),
         _HaftaSekmeBar(sekme: sekme, onChanged: onSekme),

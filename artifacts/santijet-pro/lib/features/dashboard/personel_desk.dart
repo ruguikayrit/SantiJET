@@ -116,56 +116,56 @@ class _PersonelDeskState extends State<_PersonelDesk> {
       );
     }
     final kayitlar = _gorunen;
-    return Stack(
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
       children: [
-        ListView(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 88),
-          children: [
-              _ModulDeskUst(
-                title: 'Personel',
-                moduleIcon: _ModulDeskMark.sahaIcon,
-                moduleColor: _ModulDeskMark.sahaColor,
-                backKey: const Key('personel-back'),
-                onBack: widget.onBack,
-                backLabel: 'Saha',
-              ),
-              const SizedBox(height: 8),
-              const _PersonelBaslik(),
-            const SizedBox(height: 14),
-            _PersonelArama(
-              filtre: _filtre,
-              onQuery: (value) => setState(() => _arama = value),
-              onFiltre: (value) => setState(() => _filtre = value),
-            ),
-            const SizedBox(height: 10),
-            if (kayitlar.isEmpty)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 24),
-                child: Text(
-                  'Eşleşen personel yok.',
-                  style: TextStyle(fontFamily: 'Inter', fontSize: 13, color: ProColors.textMuted),
+        _ModulDeskUst(
+          title: 'Personel',
+          moduleIcon: _ModulDeskMark.sahaIcon,
+          moduleColor: _ModulDeskMark.sahaColor,
+          backKey: const Key('personel-back'),
+          onBack: widget.onBack,
+          backLabel: 'Saha',
+          trailing: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              key: const Key('personel-open-app'),
+              onTap: _ekleAc,
+              borderRadius: BorderRadius.circular(8),
+              child: Ink(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: ProColors.electricBlue,
+                  borderRadius: BorderRadius.circular(8),
                 ),
-              )
-            else
-              for (final kayit in kayitlar) ...[
-                _PersonelSatir(kayit: kayit, onTap: () => setState(() => _secili = kayit)),
-                const SizedBox(height: 8),
-              ],
-          ],
-        ),
-        Positioned(
-          right: 16,
-          bottom: 12,
-          child: FloatingActionButton(
-            key: const Key('personel-open-app'),
-            onPressed: _ekleAc,
-            backgroundColor: const Color(0xFF2563EB),
-            foregroundColor: Colors.white,
-            elevation: 2,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            child: const Icon(Icons.add, size: 28),
+                child: const Icon(Icons.add, size: 20, color: Colors.white),
+              ),
+            ),
           ),
         ),
+        const SizedBox(height: 8),
+        const _PersonelBaslik(),
+        const SizedBox(height: 14),
+        _PersonelArama(
+          filtre: _filtre,
+          onQuery: (value) => setState(() => _arama = value),
+          onFiltre: (value) => setState(() => _filtre = value),
+        ),
+        const SizedBox(height: 10),
+        if (kayitlar.isEmpty)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 24),
+            child: Text(
+              'Eşleşen personel yok.',
+              style: TextStyle(fontFamily: 'Inter', fontSize: 13, color: ProColors.textMuted),
+            ),
+          )
+        else
+          for (final kayit in kayitlar) ...[
+            _PersonelSatir(kayit: kayit, onTap: () => setState(() => _secili = kayit)),
+            const SizedBox(height: 8),
+          ],
       ],
     );
   }

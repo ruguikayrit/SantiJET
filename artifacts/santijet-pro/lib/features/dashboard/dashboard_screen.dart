@@ -17,6 +17,8 @@ part 'personel_ekle_desk.dart';
 part 'gorevler_desk.dart';
 part 'imalat_desk.dart';
 part 'imalat_kayit_ekle_desk.dart';
+part 'imalat_tip_katalog.dart';
+part 'yeni_imalat_tip_desk.dart';
 part 'makine_desk.dart';
 part 'malzeme_desk.dart';
 part 'modul_kapak_desk.dart';
@@ -92,13 +94,37 @@ class DashboardScreen extends StatefulWidget {
   State<DashboardScreen> createState() => _DashboardScreenState();
 }
 
-enum _Desk { home, modules, saha, sahaTuru, yeniSahaTuru, puantaj, personel, gorevler, imalat, imalatKayitEkle, makine, malzeme, modul, projects, reports, gunlukRapor, menu }
+enum _Desk {
+  home,
+  modules,
+  saha,
+  sahaTuru,
+  yeniSahaTuru,
+  puantaj,
+  personel,
+  gorevler,
+  imalat,
+  imalatKayitEkle,
+  yeniImalatTipi,
+  makine,
+  malzeme,
+  modul,
+  projects,
+  reports,
+  gunlukRapor,
+  menu,
+}
 
 class _DashboardScreenState extends State<DashboardScreen> {
   _Desk _desk = _Desk.home;
   var _demo = true;
   var _modulId = 'beton';
   String? _bolumBaslik;
+  late List<_ImalatKayit> _imalatKayitlari = _ImalatDesk.demoKayitlar();
+  var _imalatOzelTipler = <_ImalatAltTurTanim>[];
+  _ImalatAnaTur _yeniImalatTipBaslangicAna = _ImalatAnaTur.insaat;
+  String? _yeniImalatTipBaslangicBolum;
+  String? _imalatKayitEkleSeciliTipId;
 
   void _openModul(String id) {
     setState(() {
@@ -154,10 +180,48 @@ class _DashboardScreenState extends State<DashboardScreen> {
           _Desk.personel => _PersonelDesk(onBack: () => setState(() => _desk = _Desk.saha)),
           _Desk.gorevler => _GorevlerDesk(onBack: () => setState(() => _desk = _Desk.saha)),
           _Desk.imalat => _ImalatDesk(
+                kayitlar: _imalatKayitlari,
+                ozelTipler: _imalatOzelTipler,
                 onBack: () => setState(() => _desk = _Desk.saha),
                 onOpenKayitEkle: () => setState(() => _desk = _Desk.imalatKayitEkle),
               ),
-          _Desk.imalatKayitEkle => _ImalatKayitEkleDesk(onBack: () => setState(() => _desk = _Desk.imalat)),
+          _Desk.imalatKayitEkle => _ImalatKayitEkleDesk(
+                ozelTipler: _imalatOzelTipler,
+                seciliAltTurId: _imalatKayitEkleSeciliTipId,
+                onBack: () => setState(() => _desk = _Desk.imalat),
+                onOpenYeniTip: (ana, bolum) => setState(() {
+                  _yeniImalatTipBaslangicAna = ana;
+                  _yeniImalatTipBaslangicBolum = bolum;
+                  _imalatKayitEkleSeciliTipId = null;
+                  _desk = _Desk.yeniImalatTipi;
+                }),
+                onKaydet: (taslak) {
+                  setState(() {
+                    _imalatKayitlari = [..._imalatKayitlari, _ImalatKayit.taslaktan(taslak, _imalatOzelTipler)];
+                    _imalatKayitEkleSeciliTipId = null;
+                    _desk = _Desk.imalat;
+                  });
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('İmalat kaydı listeye eklendi.')),
+                  );
+                },
+              ),
+          _Desk.yeniImalatTipi => _YeniImalatTipiDesk(
+                baslangicAnaTur: _yeniImalatTipBaslangicAna,
+                baslangicBolum: _yeniImalatTipBaslangicBolum,
+                ozelTipler: _imalatOzelTipler,
+                onBack: () => setState(() => _desk = _Desk.imalatKayitEkle),
+                onOlustur: (tip) {
+                  setState(() {
+                    _imalatOzelTipler = [..._imalatOzelTipler, tip];
+                    _imalatKayitEkleSeciliTipId = tip.id;
+                    _desk = _Desk.imalatKayitEkle;
+                  });
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('${tip.label}, ${tip.bolum} listesine eklendi.')),
+                  );
+                },
+              ),
           _Desk.makine => _MakineDesk(onBack: () => setState(() => _desk = _Desk.saha)),
           _Desk.malzeme => _MalzemeDesk(onBack: () => setState(() => _desk = _Desk.saha)),
           _Desk.modul => _ModulHost(
@@ -272,17 +336,20 @@ class _ModulesDesk extends StatelessWidget {
 }
 
 class _TopBar extends StatelessWidget {
-  const _TopBar({this.alertCount = 0});
+  const _TopBar({this.alertCount = 0, this.actions = true});
 
   final int alertCount;
+  final bool actions;
 
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
         const _ProLockup(),
-        const Spacer(),
-        _TopBarTrailing(alertCount: alertCount),
+        if (actions) ...[
+          const Spacer(),
+          _TopBarTrailing(alertCount: alertCount),
+        ],
       ],
     );
   }
@@ -448,7 +515,6 @@ class _ModulDeskUst extends StatelessWidget {
     this.backKey,
     this.onBack,
     this.backLabel,
-    this.alertCount = 0,
     this.trailing,
   });
 
@@ -458,7 +524,6 @@ class _ModulDeskUst extends StatelessWidget {
   final Key? backKey;
   final VoidCallback? onBack;
   final String? backLabel;
-  final int alertCount;
   final Widget? trailing;
 
   @override
@@ -466,6 +531,7 @@ class _ModulDeskUst extends StatelessWidget {
     return SizedBox(
       height: 40,
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           if (onBack != null)
             InkWell(
@@ -510,7 +576,7 @@ class _ModulDeskUst extends StatelessWidget {
               ),
             ),
           ),
-          if (trailing != null) trailing! else _TopBarTrailing(alertCount: alertCount),
+          if (trailing != null) trailing!,
         ],
       ),
     );
@@ -1350,49 +1416,34 @@ class _MenuDesk extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
       children: [
-        const _TopBar(alertCount: 3),
+        const _TopBar(actions: false),
         const SizedBox(height: 14),
         const _AccountCard(),
         const SizedBox(height: 10),
         const _AccountMetaRow(),
         const SizedBox(height: 18),
-        const _MenuSectionTitle(icon: Icons.grid_view_rounded, title: 'Proje Yönetimi'),
-        const SizedBox(height: 10),
-        _MenuGrid(
-          tiles: [
-            _MenuAction('Proje Seç', 'Aktif projeyi değiştir', Icons.apartment_outlined, const [Color(0xFF2563EB), Color(0xFF1D4ED8)], () => onSelect(_Desk.projects)),
-            _MenuAction('Ekip Yönetimi', 'Ekip üyelerini yönet', Icons.groups_outlined, const [Color(0xFF7C3AED), Color(0xFF6D28D9)], () => _later(context, 'Ekip Yönetimi')),
-            _MenuAction('Firma ve Şantiyeler', 'Firma, şantiye ve ayarlar', Icons.domain_outlined, const [Color(0xFFF97316), Color(0xFFEA580C)], () => _later(context, 'Firma ve Şantiyeler')),
-          ],
-        ),
-        const SizedBox(height: 18),
-        const _MenuSectionTitle(icon: Icons.bar_chart_rounded, title: 'Veri ve Raporlar'),
-        const SizedBox(height: 10),
-        _MenuGrid(
-          tiles: [
-            _MenuAction('Veri Senkronizasyonu', 'Bulut ile senkronize et', Icons.cloud_upload_outlined, const [Color(0xFF10B981), Color(0xFF059669)], () => _later(context, 'Veri Senkronizasyonu')),
-            _MenuAction('Raporlar', 'Tüm raporları görüntüle', Icons.description_outlined, const [Color(0xFF2563EB), Color(0xFF1E40AF)], () => onSelect(_Desk.reports)),
-            _MenuAction('İş Programı', 'Plan, takip, gerçekleşme', Icons.calendar_month_outlined, const [Color(0xFF0891B2), Color(0xFF0E7490)], () => _keepInPro(context)),
-          ],
-        ),
-        const SizedBox(height: 18),
-        const _MenuSectionTitle(icon: Icons.settings_outlined, title: 'Ayarlar ve Güvenlik'),
-        const SizedBox(height: 10),
-        _MenuGrid(
-          tiles: [
-            _MenuAction('Bildirimler', 'Bildirim ayarlarını düzenle', Icons.notifications_none, const [Color(0xFFEF4444), Color(0xFFDC2626)], () => _later(context, 'Bildirimler'), badge: '3'),
-            _MenuAction('Güvenlik ve Gizlilik', 'Şifre, biyometrik giriş, veri güvenliği', Icons.verified_user_outlined, const [Color(0xFFF97316), Color(0xFFEA580C)], () => _later(context, 'Güvenlik ve Gizlilik')),
-            _MenuAction('Görünüm', 'Tema, dil ve ekran ayarları', Icons.palette_outlined, const [Color(0xFF7C3AED), Color(0xFF6D28D9)], () => _later(context, 'Görünüm')),
-          ],
-        ),
-        const SizedBox(height: 18),
-        const _MenuSectionTitle(icon: Icons.help_outline, title: 'Destek ve Bilgilendirme'),
-        const SizedBox(height: 10),
-        _MenuGrid(
-          tiles: [
-            _MenuAction('Yardım & Destek', 'Sık sorulan sorular, destek talebi', Icons.chat_bubble_outline, const [Color(0xFF06B6D4), Color(0xFF0891B2)], () => _later(context, 'Yardım & Destek')),
-            _MenuAction('Kullanım Kılavuzu', 'Video eğitimler ve rehberler', Icons.school_outlined, const [Color(0xFFEF4444), Color(0xFFB91C1C)], () => _later(context, 'Kullanım Kılavuzu')),
-            _MenuAction('Uygulama Hakkında', 'Sürüm 0.1.0 (PRO)', Icons.info_outline, const [Color(0xFF14B8A6), Color(0xFF0F766E)], () => _later(context, 'Uygulama Hakkında')),
+        _MenuKutulari(
+          bolumler: [
+            _MenuBolum(Icons.grid_view_rounded, 'Proje Yönetimi', [
+              _MenuAction('Proje Seç', 'Aktif projeyi değiştir', Icons.apartment_outlined, const [Color(0xFF2563EB), Color(0xFF1D4ED8)], () => onSelect(_Desk.projects)),
+              _MenuAction('Ekip Yönetimi', 'Ekip üyelerini yönet', Icons.groups_outlined, const [Color(0xFF7C3AED), Color(0xFF6D28D9)], () => _later(context, 'Ekip Yönetimi')),
+              _MenuAction('Firma ve Şantiyeler', 'Firma, şantiye ve ayarlar', Icons.domain_outlined, const [Color(0xFFF97316), Color(0xFFEA580C)], () => _later(context, 'Firma ve Şantiyeler')),
+            ]),
+            _MenuBolum(Icons.bar_chart_rounded, 'Veri ve Raporlar', [
+              _MenuAction('Veri Senkronizasyonu', 'Bulut ile senkronize et', Icons.cloud_upload_outlined, const [Color(0xFF10B981), Color(0xFF059669)], () => _later(context, 'Veri Senkronizasyonu')),
+              _MenuAction('Raporlar', 'Tüm raporları görüntüle', Icons.description_outlined, const [Color(0xFF2563EB), Color(0xFF1E40AF)], () => onSelect(_Desk.reports)),
+              _MenuAction('İş Programı', 'Plan, takip, gerçekleşme', Icons.calendar_month_outlined, const [Color(0xFF0891B2), Color(0xFF0E7490)], () => _keepInPro(context)),
+            ]),
+            _MenuBolum(Icons.settings_outlined, 'Ayarlar ve Güvenlik', [
+              _MenuAction('Bildirimler', 'Bildirim ayarlarını düzenle', Icons.notifications_none, const [Color(0xFFEF4444), Color(0xFFDC2626)], () => _later(context, 'Bildirimler'), badge: '3'),
+              _MenuAction('Güvenlik ve Gizlilik', 'Şifre, biyometrik giriş, veri güvenliği', Icons.verified_user_outlined, const [Color(0xFFF97316), Color(0xFFEA580C)], () => _later(context, 'Güvenlik ve Gizlilik')),
+              _MenuAction('Görünüm', 'Tema, dil ve ekran ayarları', Icons.palette_outlined, const [Color(0xFF7C3AED), Color(0xFF6D28D9)], () => _later(context, 'Görünüm')),
+            ]),
+            _MenuBolum(Icons.help_outline, 'Destek ve Bilgilendirme', [
+              _MenuAction('Yardım & Destek', 'Sık sorulan sorular, destek talebi', Icons.chat_bubble_outline, const [Color(0xFF06B6D4), Color(0xFF0891B2)], () => _later(context, 'Yardım & Destek')),
+              _MenuAction('Kullanım Kılavuzu', 'Video eğitimler ve rehberler', Icons.school_outlined, const [Color(0xFFEF4444), Color(0xFFB91C1C)], () => _later(context, 'Kullanım Kılavuzu')),
+              _MenuAction('Uygulama Hakkında', 'Sürüm 0.1.0 (PRO)', Icons.info_outline, const [Color(0xFF14B8A6), Color(0xFF0F766E)], () => _later(context, 'Uygulama Hakkında')),
+            ]),
           ],
         ),
         const SizedBox(height: 16),
@@ -1555,24 +1606,107 @@ class _MenuAction {
   final String? badge;
 }
 
-class _MenuGrid extends StatelessWidget {
-  const _MenuGrid({required this.tiles});
+class _MenuBolum {
+  const _MenuBolum(this.icon, this.title, this.tiles);
 
+  final IconData icon;
+  final String title;
   final List<_MenuAction> tiles;
+}
+
+const _menuBaslikStili = TextStyle(
+  fontFamily: 'Rajdhani',
+  fontWeight: FontWeight.w700,
+  fontSize: 13,
+  height: 1.05,
+  color: Colors.white,
+);
+
+const _menuAltStili = TextStyle(
+  fontFamily: 'Inter',
+  fontSize: 10,
+  height: 1.15,
+  color: Color(0xF2FFFFFF),
+);
+
+double _menuMetinYuksekligi(String metin, TextStyle stil, double genislik, int satir, TextScaler olcek) {
+  final painter = TextPainter(
+    text: TextSpan(text: metin, style: stil),
+    textDirection: TextDirection.ltr,
+    maxLines: satir,
+    textScaler: olcek,
+    ellipsis: '…',
+  )..layout(maxWidth: genislik);
+  return painter.height;
+}
+
+/// Tüm menü kutuları, en uzun başlık + alt yazıya göre aynı yükseklik.
+double _menuKutuYuksekligi(List<_MenuAction> tiles, double kutuGenisligi, TextScaler olcek) {
+  const ust = 6.0;
+  const alt = 6.0;
+  const ikon = 20.0;
+  const ikonAralik = 6.0;
+  const satirAralik = 2.0;
+  final metinGenisligi = kutuGenisligi - 14;
+  var enUzun = ust + ikon + ikonAralik + satirAralik + alt;
+  for (final action in tiles) {
+    final baslik = _menuMetinYuksekligi(action.title, _menuBaslikStili, metinGenisligi, 2, olcek);
+    final altYazi = _menuMetinYuksekligi(action.subtitle, _menuAltStili, metinGenisligi, 3, olcek);
+    final toplam = ust + ikon + ikonAralik + baslik + satirAralik + altYazi + alt;
+    if (toplam > enUzun) enUzun = toplam;
+  }
+  return enUzun.ceilToDouble() + 12;
+}
+
+class _MenuKutulari extends StatelessWidget {
+  const _MenuKutulari({required this.bolumler});
+
+  final List<_MenuBolum> bolumler;
 
   @override
   Widget build(BuildContext context) {
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      itemCount: tiles.length,
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        mainAxisSpacing: 8,
-        crossAxisSpacing: 8,
-        mainAxisExtent: 124,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final genislik = (constraints.maxWidth - 16) / 3;
+        final yukseklik = _menuKutuYuksekligi(
+          [for (final bolum in bolumler) ...bolum.tiles],
+          genislik,
+          MediaQuery.textScalerOf(context),
+        );
+        return Column(
+          children: [
+            for (var i = 0; i < bolumler.length; i++) ...[
+              if (i > 0) const SizedBox(height: 18),
+              _MenuSectionTitle(icon: bolumler[i].icon, title: bolumler[i].title),
+              const SizedBox(height: 10),
+              _MenuGrid(tiles: bolumler[i].tiles, yukseklik: yukseklik),
+            ],
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _MenuGrid extends StatelessWidget {
+  const _MenuGrid({required this.tiles, required this.yukseklik});
+
+  final List<_MenuAction> tiles;
+  final double yukseklik;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: yukseklik,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          for (var i = 0; i < tiles.length; i++) ...[
+            if (i > 0) const SizedBox(width: 8),
+            Expanded(child: _MenuTile(action: tiles[i])),
+          ],
+        ],
       ),
-      itemBuilder: (context, index) => _MenuTile(action: tiles[index]),
     );
   }
 }
@@ -1596,8 +1730,9 @@ class _MenuTile extends StatelessWidget {
             gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: action.colors),
           ),
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(8, 8, 6, 8),
+            padding: const EdgeInsets.fromLTRB(8, 6, 6, 6),
             child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
@@ -1617,19 +1752,19 @@ class _MenuTile extends StatelessWidget {
                       const Icon(Icons.chevron_right, color: Colors.white, size: 16),
                   ],
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
                 Text(
                   action.title,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontFamily: 'Rajdhani', fontWeight: FontWeight.w700, fontSize: 13, height: 1.05, color: Colors.white),
+                  style: _menuBaslikStili,
                 ),
                 const SizedBox(height: 2),
                 Text(
                   action.subtitle,
                   maxLines: 3,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontFamily: 'Inter', fontSize: 10, height: 1.15, color: Color(0xF2FFFFFF)),
+                  style: _menuAltStili,
                 ),
               ],
             ),
@@ -1743,6 +1878,7 @@ BoxDecoration _girisHucreKenar({required bool odakta, double radius = 12, Color?
 
 class _GirisHucreOdak extends StatefulWidget {
   const _GirisHucreOdak({
+    super.key,
     required this.child,
     this.focusNode,
     this.height,

@@ -109,7 +109,6 @@ class _SahaTuruDeskState extends State<_SahaTuruDesk> {
           backKey: const Key('saha-turu-back'),
           onBack: widget.onBack,
           backLabel: 'Saha',
-          alertCount: 3,
         ),
         const SizedBox(height: 6),
         const Text(

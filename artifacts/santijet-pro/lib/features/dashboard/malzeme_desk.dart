@@ -1,20 +1,133 @@
 part of 'dashboard_screen.dart';
 
-enum _MalzemePane { gelen, tuketim, stok }
+/// Diğer masalarla aynı taban ölçü. Dar ekranda hafif küçülür, geniş ekranda şişmez.
+double _malzemeOlcek(double genislik) => (genislik / 390).clamp(0.9, 1.0);
 
-extension on _MalzemePane {
+const _kMalzemeSerit = 40.0;
+const _kMalzemeKpi = 72.0;
+
+class _MalzemeOlcek extends InheritedWidget {
+  const _MalzemeOlcek({required this.s, required super.child});
+
+  final double s;
+
+  static double of(BuildContext context) => context.dependOnInheritedWidgetOfExactType<_MalzemeOlcek>()!.s;
+
+  @override
+  bool updateShouldNotify(_MalzemeOlcek oldWidget) => oldWidget.s != s;
+}
+
+double _mz(BuildContext context, double v) => _MalzemeOlcek.of(context) * v;
+
+enum _MalzemeSekme { genel, giris, tuketim, stok, transfer, iade }
+
+enum _MalzemeIslemTur { giris, tuketim, transfer }
+
+extension on _MalzemeSekme {
   String get label => switch (this) {
-        _MalzemePane.gelen => 'Gelen Malzeme',
-        _MalzemePane.tuketim => 'Tüketim',
-        _MalzemePane.stok => 'Stok Durumu',
-      };
-
-  IconData get icon => switch (this) {
-        _MalzemePane.gelen => Icons.local_shipping_outlined,
-        _MalzemePane.tuketim => Icons.north_east,
-        _MalzemePane.stok => Icons.inventory_2_outlined,
+        _MalzemeSekme.genel => 'Genel Bakış',
+        _MalzemeSekme.giris => 'Giriş (25)',
+        _MalzemeSekme.tuketim => 'Tüketim (18)',
+        _MalzemeSekme.stok => 'Stok (312)',
+        _MalzemeSekme.transfer => 'Transfer',
+        _MalzemeSekme.iade => 'İadeler',
       };
 }
+
+class _DusukStokKalem {
+  const _DusukStokKalem({
+    required this.ad,
+    required this.grup,
+    required this.miktar,
+    required this.min,
+    required this.renk,
+    required this.icon,
+  });
+
+  final String ad;
+  final String grup;
+  final String miktar;
+  final String min;
+  final Color renk;
+  final IconData icon;
+}
+
+class _MalzemeIslem {
+  const _MalzemeIslem({
+    required this.tur,
+    required this.tarih,
+    required this.ad,
+    required this.miktar,
+    required this.yer,
+    required this.taraf,
+    required this.belge,
+  });
+
+  final _MalzemeIslemTur tur;
+  final String tarih;
+  final String ad;
+  final String miktar;
+  final String yer;
+  final String taraf;
+  final String belge;
+}
+
+const _kDusukStok = <_DusukStokKalem>[
+  _DusukStokKalem(
+    ad: 'Nervürlü Demir Ø12',
+    grup: 'Çelik · Donatı',
+    miktar: '80 kg',
+    min: 'Min: 500 kg',
+    renk: Color(0xFF64748B),
+    icon: Icons.linear_scale,
+  ),
+  _DusukStokKalem(
+    ad: 'CEM I 42.5 R Çimento',
+    grup: 'Yapı Kimyasalı',
+    miktar: '12 torba',
+    min: 'Min: 50 torba',
+    renk: Color(0xFFD6C4A8),
+    icon: Icons.inventory_2_outlined,
+  ),
+  _DusukStokKalem(
+    ad: 'PVC Pis Su Borusu Ø100',
+    grup: 'Mekanik · Tesisat',
+    miktar: '20 m',
+    min: 'Min: 100 m',
+    renk: Color(0xFFE07A3D),
+    icon: Icons.circle_outlined,
+  ),
+];
+
+const _kMalzemeIslemler = <_MalzemeIslem>[
+  _MalzemeIslem(
+    tur: _MalzemeIslemTur.giris,
+    tarih: '2 Eki 2026 15:10',
+    ad: 'Beton C35/40',
+    miktar: '120 m³',
+    yer: 'A Blok · 2. Kat',
+    taraf: 'Beton A.Ş.',
+    belge: 'Fiş: F-1023',
+  ),
+  _MalzemeIslem(
+    tur: _MalzemeIslemTur.tuketim,
+    tarih: '2 Eki 2026 13:20',
+    ad: 'Kalıp Plywood 18 mm',
+    miktar: '120 m²',
+    yer: 'A Blok · 2. Kat',
+    taraf: 'Kalıp Ekibi',
+    belge: 'İmalat: Kalıp',
+  ),
+  _MalzemeIslem(
+    tur: _MalzemeIslemTur.transfer,
+    tarih: '1 Eki 2026 10:45',
+    ad: 'Nervürlü Demir Ø16',
+    miktar: '1.200 kg',
+    yer: 'A Blok → B Blok',
+    taraf: 'Depo Sorumlusu',
+    belge: 'Transfer: T-045',
+  ),
+];
 
 class _MalzemeDesk extends StatefulWidget {
   const _MalzemeDesk({required this.onBack});
@@ -26,168 +139,235 @@ class _MalzemeDesk extends StatefulWidget {
 }
 
 class _MalzemeDeskState extends State<_MalzemeDesk> {
-  _MalzemePane _pane = _MalzemePane.gelen;
+  static const _haftaGunAdlari = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
+
+  _MalzemeSekme _sekme = _MalzemeSekme.genel;
+  _MalzemeIslemTur? _islemFiltre;
+  final _arama = TextEditingController();
+  late DateTime _gun = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
+
+  DateTime get _haftaBasi => _gun.subtract(Duration(days: _gun.weekday - 1));
+
+  @override
+  void dispose() {
+    _arama.dispose();
+    super.dispose();
+  }
+
+  List<_DusukStokKalem> get _dusuk {
+    final q = _arama.text.trim().toLowerCase();
+    if (q.isEmpty) return _kDusukStok;
+    return _kDusukStok.where((k) => k.ad.toLowerCase().contains(q) || k.grup.toLowerCase().contains(q)).toList();
+  }
+
+  List<_MalzemeIslem> get _islemler {
+    final q = _arama.text.trim().toLowerCase();
+    return [
+      for (final islem in _kMalzemeIslemler)
+        if ((_islemFiltre == null || islem.tur == _islemFiltre) && (q.isEmpty || islem.ad.toLowerCase().contains(q))) islem,
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-      children: [
-        _ModulDeskUst(
-          title: 'Malzeme',
-          moduleIcon: _ModulDeskMark.sahaIcon,
-          moduleColor: _ModulDeskMark.sahaColor,
-          backKey: const Key('malzeme-back'),
-          onBack: widget.onBack,
-          backLabel: 'Saha',
-        ),
-        const SizedBox(height: 8),
-        const Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _MalzemeMark(),
-            SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                'Sahaya gelen malzemeleri kaydet, tüketimi takip et',
-                style: TextStyle(fontFamily: 'Inter', fontSize: 12, color: ProColors.textMuted),
-              ),
-            ),
-            SizedBox(width: 8),
-            _MalzemeProjectChip(),
-          ],
-        ),
-        const SizedBox(height: 12),
-        const Row(
-          children: [
-            Expanded(
-              child: _MalzemeKpi(
-                title: 'Gelen Malzeme',
-                foot: 'Bu ay',
-                color: Color(0xFF1D4ED8),
-                icon: Icons.local_shipping_outlined,
-              ),
-            ),
-            SizedBox(width: 8),
-            Expanded(
-              child: _MalzemeKpi(
-                title: 'Tüketim Kaydı',
-                foot: 'Bu ay',
-                color: Color(0xFF16A34A),
-                icon: Icons.north_east,
-              ),
-            ),
-            SizedBox(width: 8),
-            Expanded(
-              child: _MalzemeKpi(
-                title: 'Stoktaki Toplam',
-                foot: 'Sahada mevcut',
-                color: Color(0xFFEA580C),
-                icon: Icons.widgets_outlined,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final s = _malzemeOlcek(constraints.maxWidth);
+        double z(double v) => v * s;
+        return _MalzemeOlcek(
+          s: s,
+          child: ListView(
+            padding: EdgeInsets.fromLTRB(z(16), z(8), z(16), z(24)),
             children: [
-              for (final pane in _MalzemePane.values) ...[
-                _MalzemeTab(
-                  label: pane.label,
-                  icon: pane.icon,
-                  selected: pane == _pane,
-                  onTap: () => setState(() => _pane = pane),
-                ),
-                const SizedBox(width: 8),
-              ],
+              _ModulDeskUst(
+                title: 'Malzeme',
+                moduleIcon: Icons.local_shipping_outlined,
+                moduleColor: const Color(0xFF2563EB),
+                backKey: const Key('malzeme-back'),
+                onBack: widget.onBack,
+                backLabel: 'Saha',
+                trailing: const SizedBox.shrink(),
+              ),
+              SizedBox(height: z(12)),
+              _PuantajWeekStrip(
+                weekStart: _haftaBasi,
+                selected: _gun,
+                dayNames: _haftaGunAdlari,
+                onSelect: (gun) => setState(() => _gun = DateTime(gun.year, gun.month, gun.day)),
+                onPrevious: () => setState(() => _gun = _gun.subtract(const Duration(days: 7))),
+                onNext: () => setState(() => _gun = _gun.add(const Duration(days: 7))),
+              ),
+              SizedBox(height: z(12)),
+              _MalzemeSekmeler(
+                secili: _sekme,
+                onSec: (sekme) => setState(() => _sekme = sekme),
+              ),
+              SizedBox(height: z(10)),
+              const _MalzemeKpiSatiri(),
+              SizedBox(height: z(10)),
+              const _MalzemeAksiyonlar(),
+              SizedBox(height: z(10)),
+              _MalzemeArama(
+                controller: _arama,
+                onChanged: (_) => setState(() {}),
+              ),
+              SizedBox(height: z(12)),
+              ..._govde(z),
             ],
           ),
-        ),
-        const SizedBox(height: 12),
-        switch (_pane) {
-          _MalzemePane.gelen => const _MalzemeGelenPane(),
-          _MalzemePane.tuketim => const _MalzemeEmptyPane(
-              title: 'Tüketim',
-              body: 'Tüketim kayıtları proje bağlanınca dolacak.',
-            ),
-          _MalzemePane.stok => const _MalzemeEmptyPane(
-              title: 'Stok Durumu',
-              body: 'Saha stok özeti proje bağlanınca görünür. Onay bekleyen, onaylandı ve teslim edildi durumları burada listelenir.',
-            ),
+        );
+      },
+    );
+  }
+
+  List<Widget> _govde(double Function(double) z) {
+    final bosluk = SizedBox(height: z(12));
+    return switch (_sekme) {
+      _MalzemeSekme.genel => [
+          _DusukStokKart(kalemler: _dusuk),
+          bosluk,
+          _SonIslemler(
+            islemler: _islemler,
+            filtre: _islemFiltre,
+            onTemizle: () => setState(() => _islemFiltre = null),
+            onFiltre: (tur) => setState(() => _islemFiltre = _islemFiltre == tur ? null : tur),
+          ),
+          bosluk,
+          const _MalzemeRaporlar(),
+        ],
+      _MalzemeSekme.giris => [
+          _IslemListesi(baslik: 'Giriş Kayıtları', islemler: _kMalzemeIslemler.where((i) => i.tur == _MalzemeIslemTur.giris).toList()),
+        ],
+      _MalzemeSekme.tuketim => [
+          _IslemListesi(baslik: 'Tüketim Kayıtları', islemler: _kMalzemeIslemler.where((i) => i.tur == _MalzemeIslemTur.tuketim).toList()),
+        ],
+      _MalzemeSekme.stok => [
+          _DusukStokKart(kalemler: _dusuk),
+          bosluk,
+          const _MalzemeRaporlar(),
+        ],
+      _MalzemeSekme.transfer => [
+          _IslemListesi(baslik: 'Transfer Kayıtları', islemler: _kMalzemeIslemler.where((i) => i.tur == _MalzemeIslemTur.transfer).toList()),
+        ],
+      _MalzemeSekme.iade => const [
+          _MalzemeBos('İade kaydı yok.', 'İade hareketleri oluşunca bu listede görünür.'),
+        ],
+    };
+  }
+}
+
+class _MalzemeSekmeler extends StatelessWidget {
+  const _MalzemeSekmeler({required this.secili, required this.onSec});
+
+  final _MalzemeSekme secili;
+  final ValueChanged<_MalzemeSekme> onSec;
+
+  @override
+  Widget build(BuildContext context) {
+    final yukseklik = _mz(context, _kMalzemeSerit);
+    return SizedBox(
+      height: yukseklik,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: _MalzemeSekme.values.length,
+        separatorBuilder: (_, __) => SizedBox(width: _mz(context, 8)),
+        itemBuilder: (context, index) {
+          final sekme = _MalzemeSekme.values[index];
+          return _MalzemeSekmeCip(
+            key: Key('malzeme-sekme-${sekme.name}'),
+            label: sekme.label,
+            secili: sekme == secili,
+            onTap: () => onSec(sekme),
+          );
         },
-      ],
+      ),
     );
   }
 }
 
-class _MalzemeMark extends StatelessWidget {
-  const _MalzemeMark();
+class _MalzemeSekmeCip extends StatelessWidget {
+  const _MalzemeSekmeCip({super.key, required this.label, required this.secili, required this.onTap});
+
+  final String label;
+  final bool secili;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 44,
-      height: 44,
-      decoration: BoxDecoration(
-        color: const Color(0xFF0284C7),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: const Icon(Icons.local_shipping_outlined, color: Colors.white, size: 24),
-    );
-  }
-}
-
-class _MalzemeProjectChip extends StatelessWidget {
-  const _MalzemeProjectChip();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 148,
-      padding: const EdgeInsets.fromLTRB(10, 8, 8, 8),
-      decoration: BoxDecoration(
-        color: const Color(0xFF10243F),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFF1E3A5F)),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Aktif Proje',
-                  style: TextStyle(fontFamily: 'Inter', fontSize: 9, color: Color(0xFF9EC1FF)),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  _DemoScope.of(context) ? _Demo.project : 'Henüz proje yok',
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontFamily: 'Rajdhani', fontWeight: FontWeight.w700, fontSize: 12, color: ProColors.text),
-                ),
-                const SizedBox(height: 2),
-                Row(
-                  children: [
-                    const Icon(Icons.apartment_outlined, size: 11, color: ProColors.textMuted),
-                    const SizedBox(width: 3),
-                    Expanded(
-                      child: Text(
-                        _DemoScope.of(context) ? _Demo.place : '—',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontFamily: 'Inter', fontSize: 10, color: ProColors.textMuted),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+    return Material(
+      color: secili ? const Color(0xFF16A34A) : const Color(0xFF121826),
+      borderRadius: BorderRadius.circular(_mz(context, 16)),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(_mz(context, 16)),
+        child: Container(
+          height: _mz(context, _kMalzemeSerit),
+          alignment: Alignment.center,
+          padding: EdgeInsets.symmetric(horizontal: _mz(context, 14)),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(_mz(context, 12)),
+            border: Border.all(color: secili ? const Color(0xFF16A34A) : const Color(0xFF243044)),
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              fontFamily: 'Inter',
+              fontSize: _mz(context, 13),
+              fontWeight: FontWeight.w600,
+              color: secili ? Colors.white : ProColors.textMuted,
             ),
           ),
-          const Icon(Icons.keyboard_arrow_down, size: 16, color: ProColors.textMuted),
+        ),
+      ),
+    );
+  }
+}
+
+class _MalzemeKpiSatiri extends StatelessWidget {
+  const _MalzemeKpiSatiri();
+
+  @override
+  Widget build(BuildContext context) {
+    final aralik = _mz(context, 6);
+    return SizedBox(
+      height: _mz(context, _kMalzemeKpi),
+      child: Row(
+        children: [
+          const Expanded(
+            child: _MalzemeKpi(
+              renk: Color(0xFF15803D),
+              icon: Icons.local_shipping_outlined,
+              deger: '25',
+              baslik: 'Gelen Malzeme',
+            ),
+          ),
+          SizedBox(width: aralik),
+          const Expanded(
+            child: _MalzemeKpi(
+              renk: Color(0xFF1D4ED8),
+              icon: Icons.trending_up,
+              deger: '18',
+              baslik: 'Tüketim Kaydı',
+            ),
+          ),
+          SizedBox(width: aralik),
+          const Expanded(
+            child: _MalzemeKpi(
+              renk: Color(0xFFC2410C),
+              icon: Icons.inventory_2_outlined,
+              deger: '312',
+              baslik: 'Stoktaki Malzeme',
+            ),
+          ),
+          SizedBox(width: aralik),
+          const Expanded(
+            child: _MalzemeKpi(
+              renk: Color(0xFF9F1239),
+              icon: Icons.warning_amber_rounded,
+              deger: '3',
+              baslik: 'Düşük Stok',
+            ),
+          ),
         ],
       ),
     );
@@ -195,443 +375,571 @@ class _MalzemeProjectChip extends StatelessWidget {
 }
 
 class _MalzemeKpi extends StatelessWidget {
-  const _MalzemeKpi({required this.title, required this.foot, required this.color, required this.icon});
+  const _MalzemeKpi({
+    required this.renk,
+    required this.icon,
+    required this.deger,
+    required this.baslik,
+  });
 
-  final String title;
-  final String foot;
-  final Color color;
+  final Color renk;
   final IconData icon;
+  final String deger;
+  final String baslik;
 
   @override
   Widget build(BuildContext context) {
+    final yazi = _mz(context, 11);
     return Container(
-      height: 108,
-      padding: const EdgeInsets.fromLTRB(10, 10, 8, 8),
-      decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(16)),
+      padding: EdgeInsets.fromLTRB(_mz(context, 8), _mz(context, 8), _mz(context, 6), _mz(context, 8)),
+      decoration: BoxDecoration(color: renk, borderRadius: BorderRadius.circular(_mz(context, 12))),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: Colors.white, size: 20),
-          const Spacer(),
-          const Text(
-            '—',
-            style: TextStyle(fontFamily: 'Rajdhani', fontWeight: FontWeight.w700, fontSize: 24, height: 1, color: Colors.white),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            title,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(fontFamily: 'Inter', fontSize: 11, fontWeight: FontWeight.w600, color: Colors.white),
-          ),
-          Text(foot, style: TextStyle(fontFamily: 'Inter', fontSize: 10, color: Colors.white.withValues(alpha: 0.78))),
-        ],
-      ),
-    );
-  }
-}
-
-class _MalzemeTab extends StatelessWidget {
-  const _MalzemeTab({required this.label, required this.icon, required this.selected, required this.onTap});
-
-  final String label;
-  final IconData icon;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final color = selected ? Colors.white : ProColors.textMuted;
-    return Material(
-      color: selected ? ProColors.electricBlue : ProColors.surface,
-      borderRadius: BorderRadius.circular(22),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(22),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, size: 16, color: color),
-              const SizedBox(width: 6),
-              Text(
-                label,
-                style: TextStyle(fontFamily: 'Inter', fontSize: 13, fontWeight: FontWeight.w600, color: color),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _MalzemeGelenPane extends StatelessWidget {
-  const _MalzemeGelenPane();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _MalzemeFilterRow(),
-        SizedBox(height: 10),
-        _MalzemeActions(),
-        SizedBox(height: 14),
-        _MalzemeSectionTitle(),
-        SizedBox(height: 8),
-        _MalzemeGelenPlaceholder(),
-        SizedBox(height: 8),
-        _MalzemeGelenPlaceholder(),
-        SizedBox(height: 8),
-        _MalzemeGelenPlaceholder(),
-        SizedBox(height: 12),
-        _MalzemeNote(
-          'Gelen malzeme listesi proje bağlanınca dolacak.',
-        ),
-      ],
-    );
-  }
-}
-
-class _MalzemeFilterRow extends StatelessWidget {
-  const _MalzemeFilterRow();
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        _MalzemeDateChip(date: DateTime.now()),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Container(
-            height: 42,
-            padding: const EdgeInsets.symmetric(horizontal: 10),
-            decoration: _cardDecoration(),
-            child: const Row(
+          SizedBox(
+            height: _mz(context, 20),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Icon(Icons.search, color: ProColors.textMuted, size: 18),
-                SizedBox(width: 6),
+                Icon(icon, color: Colors.white, size: _mz(context, 16)),
+                SizedBox(width: _mz(context, 4)),
                 Expanded(
-                  child: TextField(
-                    enabled: false,
-                    decoration: InputDecoration(
-                      hintText: 'Malzeme ara...',
-                      hintStyle: TextStyle(color: ProColors.textMuted, fontSize: 13),
-                      border: InputBorder.none,
-                      isDense: true,
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerRight,
+                    child: Text(
+                      deger,
+                      style: TextStyle(fontFamily: 'Rajdhani', fontWeight: FontWeight.w700, fontSize: _mz(context, 20), height: 1, color: Colors.white),
                     ),
                   ),
                 ),
               ],
             ),
           ),
-        ),
-        const SizedBox(width: 8),
-        OutlinedButton.icon(
-          onPressed: () => _keepInPro(context),
-          icon: const Icon(Icons.tune, size: 16),
-          label: const Text('Filtrele'),
-          style: OutlinedButton.styleFrom(
-            foregroundColor: ProColors.text,
-            side: const BorderSide(color: ProColors.border),
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
-            visualDensity: VisualDensity.compact,
+          SizedBox(height: _mz(context, 4)),
+          Text(
+            baslik,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(fontFamily: 'Inter', fontSize: yazi, height: 1.15, fontWeight: FontWeight.w600, color: Colors.white),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
 
-class _MalzemeDateChip extends StatelessWidget {
-  const _MalzemeDateChip({required this.date});
+class _MalzemeAksiyonlar extends StatelessWidget {
+  const _MalzemeAksiyonlar();
 
-  final DateTime date;
+  @override
+  Widget build(BuildContext context) {
+    const aksiyonlar = <(Key?, String)>[
+      (Key('malzeme-open-gelen'), 'Malzeme Girişi'),
+      (Key('malzeme-open-tuketim'), 'Tüketim Kaydı'),
+      (null, 'Transfer'),
+      (null, 'Stok Sayımı'),
+    ];
+    return SizedBox(
+      height: _mz(context, _kMalzemeSerit),
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: aksiyonlar.length,
+        separatorBuilder: (_, __) => SizedBox(width: _mz(context, 8)),
+        itemBuilder: (context, index) {
+          final (anahtar, etiket) = aksiyonlar[index];
+          return _MalzemeSekmeCip(
+            key: anahtar,
+            label: etiket,
+            secili: false,
+            onTap: () => _keepInPro(context),
+          );
+        },
+      ),
+    );
+  }
+}
 
-  static const _months = [
-    'Ocak',
-    'Şubat',
-    'Mart',
-    'Nisan',
-    'Mayıs',
-    'Haziran',
-    'Temmuz',
-    'Ağustos',
-    'Eylül',
-    'Ekim',
-    'Kasım',
-    'Aralık',
-  ];
+class _MalzemeArama extends StatelessWidget {
+  const _MalzemeArama({required this.controller, required this.onChanged});
 
-  static const _weekdays = ['Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi', 'Pazar'];
+  final TextEditingController controller;
+  final ValueChanged<String> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final h = _mz(context, _kMalzemeSerit);
+    return SizedBox(
+      height: h,
+      child: Row(
+        children: [
+          Expanded(
+            child: Container(
+              padding: EdgeInsets.symmetric(horizontal: _mz(context, 10)),
+              decoration: BoxDecoration(
+                color: const Color(0xFF121826),
+                borderRadius: BorderRadius.circular(_mz(context, 12)),
+                border: Border.all(color: const Color(0xFF243044)),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.search, color: ProColors.textMuted, size: _mz(context, 18)),
+                  SizedBox(width: _mz(context, 6)),
+                  Expanded(
+                    child: TextField(
+                      controller: controller,
+                      onChanged: onChanged,
+                      style: TextStyle(fontFamily: 'Inter', fontSize: _mz(context, 13), color: ProColors.text),
+                      decoration: InputDecoration(
+                        isDense: true,
+                        border: InputBorder.none,
+                        hintText: 'Malzeme ara...',
+                        hintStyle: TextStyle(fontFamily: 'Inter', fontSize: _mz(context, 13), color: ProColors.textMuted),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          SizedBox(width: _mz(context, 6)),
+          _KareAksiyon(icon: Icons.qr_code_scanner, onTap: () => _keepInPro(context)),
+          SizedBox(width: _mz(context, 6)),
+          _KareAksiyon(icon: Icons.tune, etiket: 'Filtrele', onTap: () => _keepInPro(context)),
+        ],
+      ),
+    );
+  }
+}
+
+class _KareAksiyon extends StatelessWidget {
+  const _KareAksiyon({required this.icon, required this.onTap, this.etiket});
+
+  final IconData icon;
+  final VoidCallback onTap;
+  final String? etiket;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: const Color(0xFF121826),
+      borderRadius: BorderRadius.circular(_mz(context, 10)),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(_mz(context, 10)),
+        child: Container(
+          height: _mz(context, _kMalzemeSerit),
+          padding: EdgeInsets.symmetric(horizontal: _mz(context, etiket == null ? 12 : 10)),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(_mz(context, 10)),
+            border: Border.all(color: const Color(0xFF243044)),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: _mz(context, 18), color: ProColors.text),
+              if (etiket != null) ...[
+                SizedBox(width: _mz(context, 4)),
+                Text(etiket!, style: TextStyle(fontFamily: 'Inter', fontSize: _mz(context, 13), fontWeight: FontWeight.w600, color: ProColors.text)),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DusukStokKart extends StatelessWidget {
+  const _DusukStokKart({required this.kalemler});
+
+  final List<_DusukStokKalem> kalemler;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 42,
-      padding: const EdgeInsets.symmetric(horizontal: 10),
-      decoration: _cardDecoration(),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
+      padding: EdgeInsets.all(_mz(context, 10)),
+      decoration: BoxDecoration(
+        color: const Color(0xFF121826),
+        borderRadius: BorderRadius.circular(_mz(context, 14)),
+        border: Border.all(color: const Color(0xFF243044)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.calendar_today_outlined, size: 15, color: ProColors.textMuted),
-          const SizedBox(width: 6),
-          Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.start,
+          Row(
             children: [
+              Icon(Icons.warning_amber_rounded, color: const Color(0xFFF87171), size: _mz(context, 16)),
+              SizedBox(width: _mz(context, 6)),
               Text(
-                '${date.day} ${_months[date.month - 1]} ${date.year}',
-                style: const TextStyle(fontFamily: 'Rajdhani', fontWeight: FontWeight.w700, fontSize: 12, color: ProColors.text),
+                'Düşük Stok (${kalemler.length})',
+                style: TextStyle(fontFamily: 'Rajdhani', fontWeight: FontWeight.w700, fontSize: _mz(context, 15), color: ProColors.text),
               ),
-              Text(
-                _weekdays[date.weekday - 1],
-                style: const TextStyle(fontFamily: 'Inter', fontSize: 10, color: ProColors.textMuted),
+              const Spacer(),
+              Flexible(
+                child: Text(
+                  'Min. seviyenin altındaki malzemeler',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.right,
+                  style: TextStyle(fontFamily: 'Inter', fontSize: _mz(context, 9), color: ProColors.textMuted),
+                ),
               ),
             ],
           ),
-          const Icon(Icons.keyboard_arrow_down, size: 16, color: ProColors.textMuted),
+          SizedBox(height: _mz(context, 8)),
+          if (kalemler.isEmpty)
+            Text('Eşleşen malzeme yok.', style: TextStyle(fontFamily: 'Inter', fontSize: _mz(context, 12), color: ProColors.textMuted))
+          else
+            for (var i = 0; i < kalemler.length; i++) ...[
+              if (i > 0) SizedBox(height: _mz(context, 8)),
+              _DusukStokSatir(kalem: kalemler[i]),
+            ],
         ],
       ),
     );
   }
 }
 
-class _MalzemeActions extends StatelessWidget {
-  const _MalzemeActions();
+class _DusukStokSatir extends StatelessWidget {
+  const _DusukStokSatir({required this.kalem});
+
+  final _DusukStokKalem kalem;
 
   @override
   Widget build(BuildContext context) {
+    final g = _mz(context, 36);
     return Row(
       children: [
+        Container(
+          width: g,
+          height: g,
+          decoration: BoxDecoration(color: kalem.renk.withValues(alpha: 0.35), borderRadius: BorderRadius.circular(_mz(context, 8))),
+          child: Icon(kalem.icon, color: Colors.white, size: _mz(context, 16)),
+        ),
+        SizedBox(width: _mz(context, 8)),
         Expanded(
-          flex: 3,
-          child: FilledButton.icon(
-            key: const Key('malzeme-open-gelen'),
-            onPressed: () => _keepInPro(context),
-            icon: const Icon(Icons.add, size: 18),
-            label: const Text('Yeni Gelen Malzeme Kaydı', maxLines: 1, overflow: TextOverflow.ellipsis),
-            style: FilledButton.styleFrom(
-              backgroundColor: ProColors.electricBlue,
-              padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
-            ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                kalem.ad,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(fontFamily: 'Inter', fontSize: _mz(context, 12), fontWeight: FontWeight.w600, color: ProColors.text),
+              ),
+              Text(
+                kalem.grup,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(fontFamily: 'Inter', fontSize: _mz(context, 10), color: ProColors.textMuted),
+              ),
+            ],
           ),
         ),
-        const SizedBox(width: 8),
-        Expanded(
-          flex: 2,
-          child: OutlinedButton.icon(
-            key: const Key('malzeme-open-tuketim'),
-            onPressed: () => _keepInPro(context),
-            icon: const Icon(Icons.north_east, size: 16),
-            label: const Text('Yeni Tüketim Kaydı', maxLines: 1, overflow: TextOverflow.ellipsis),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: ProColors.text,
-              side: const BorderSide(color: ProColors.border),
-              padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _MalzemeSectionTitle extends StatelessWidget {
-  const _MalzemeSectionTitle();
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        const Expanded(child: _ReportSectionTitle('Son Gelen Malzemeler')),
-        TextButton.icon(
-          onPressed: () => _keepInPro(context),
-          iconAlignment: IconAlignment.end,
-          icon: const Icon(Icons.chevron_right, size: 18),
-          label: const Text('Tümü'),
-        ),
-      ],
-    );
-  }
-}
-
-class _MalzemeGelenPlaceholder extends StatelessWidget {
-  const _MalzemeGelenPlaceholder();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(10),
-      decoration: _cardDecoration(),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 72,
-            height: 72,
-            decoration: BoxDecoration(color: ProColors.border, borderRadius: BorderRadius.circular(12)),
-            child: const Icon(Icons.image_outlined, color: ProColors.textFaint, size: 26),
-          ),
-          const SizedBox(width: 10),
-          const Expanded(child: _MalzemeCardBody()),
-          const SizedBox(width: 8),
-          const _MalzemeCardMeta(),
-        ],
-      ),
-    );
-  }
-}
-
-class _MalzemeCardBody extends StatelessWidget {
-  const _MalzemeCardBody();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Wrap(
-          spacing: 6,
-          runSpacing: 4,
-          crossAxisAlignment: WrapCrossAlignment.center,
+        SizedBox(width: _mz(context, 6)),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            Text('—', style: TextStyle(fontFamily: 'Rajdhani', fontWeight: FontWeight.w700, fontSize: 15, color: ProColors.text)),
-            _MalzemeUnitChip(),
+            Text(kalem.miktar, style: TextStyle(fontFamily: 'Inter', fontSize: _mz(context, 12), fontWeight: FontWeight.w700, color: ProColors.text)),
+            Text(kalem.min, style: TextStyle(fontFamily: 'Inter', fontSize: _mz(context, 9), color: ProColors.textMuted)),
           ],
         ),
-        SizedBox(height: 6),
-        _MalzemeMetaLine(icon: Icons.storefront_outlined, text: 'Tedarikçi —'),
-        _MalzemeMetaLine(icon: Icons.local_shipping_outlined, text: 'Araç —'),
-        _MalzemeMetaLine(icon: Icons.receipt_long_outlined, text: 'Fiş / Fatura No —'),
-      ],
-    );
-  }
-}
-
-class _MalzemeUnitChip extends StatelessWidget {
-  const _MalzemeUnitChip();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1E293B),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: const Text('Birim —', style: TextStyle(fontFamily: 'Inter', fontSize: 10, color: ProColors.textMuted)),
-    );
-  }
-}
-
-class _MalzemeMetaLine extends StatelessWidget {
-  const _MalzemeMetaLine({required this.icon, required this.text});
-
-  final IconData icon;
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 2),
-      child: Row(
-        children: [
-          Icon(icon, size: 12, color: ProColors.textFaint),
-          const SizedBox(width: 4),
-          Expanded(
-            child: Text(text, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontFamily: 'Inter', fontSize: 11, color: ProColors.textMuted)),
+        SizedBox(width: _mz(context, 6)),
+        Container(
+          padding: EdgeInsets.symmetric(horizontal: _mz(context, 6), vertical: _mz(context, 3)),
+          decoration: BoxDecoration(
+            color: const Color(0xFF3F1218),
+            borderRadius: BorderRadius.circular(_mz(context, 8)),
+            border: Border.all(color: const Color(0xFFEF4444)),
           ),
-        ],
-      ),
-    );
-  }
-}
-
-class _MalzemeCardMeta extends StatelessWidget {
-  const _MalzemeCardMeta();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Column(
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: [
-        Text('—', style: TextStyle(fontFamily: 'Inter', fontSize: 11, color: ProColors.textMuted)),
-        SizedBox(height: 2),
-        Text('—', style: TextStyle(fontFamily: 'Inter', fontSize: 11, color: ProColors.textFaint)),
-        SizedBox(height: 8),
-        Text('—', style: TextStyle(fontFamily: 'Rajdhani', fontWeight: FontWeight.w700, fontSize: 16, color: ProColors.text)),
-        SizedBox(height: 8),
-        _MalzemeStatusChip(),
+          child: Text(
+            'Düşük Stok',
+            style: TextStyle(fontFamily: 'Inter', fontSize: _mz(context, 8), fontWeight: FontWeight.w700, color: const Color(0xFFFCA5A5)),
+          ),
+        ),
+        Icon(Icons.chevron_right, size: _mz(context, 16), color: ProColors.textFaint),
       ],
     );
   }
 }
 
-class _MalzemeStatusChip extends StatelessWidget {
-  const _MalzemeStatusChip();
+class _SonIslemler extends StatelessWidget {
+  const _SonIslemler({required this.islemler, required this.filtre, required this.onTemizle, required this.onFiltre});
 
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: const Color(0xFF14532D),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: const Text(
-        'Teslim —',
-        style: TextStyle(fontFamily: 'Inter', fontSize: 10, fontWeight: FontWeight.w600, color: Color(0xFF86EFAC)),
-      ),
-    );
-  }
-}
-
-class _MalzemeNote extends StatelessWidget {
-  const _MalzemeNote(this.text);
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(14),
-      decoration: _cardDecoration(),
-      child: Text(text, style: const TextStyle(fontFamily: 'Inter', fontSize: 13, color: ProColors.textMuted)),
-    );
-  }
-}
-
-class _MalzemeEmptyPane extends StatelessWidget {
-  const _MalzemeEmptyPane({required this.title, required this.body});
-
-  final String title;
-  final String body;
+  final List<_MalzemeIslem> islemler;
+  final _MalzemeIslemTur? filtre;
+  final VoidCallback onTemizle;
+  final ValueChanged<_MalzemeIslemTur> onFiltre;
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(16),
-          decoration: _cardDecoration(),
+        Row(
+          children: [
+            Text(
+              'Son İşlemler',
+              style: TextStyle(fontFamily: 'Rajdhani', fontWeight: FontWeight.w700, fontSize: _mz(context, 16), color: ProColors.text),
+            ),
+            SizedBox(width: _mz(context, 8)),
+            Expanded(
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                reverse: true,
+                child: Row(
+                  children: [
+                    _IslemCip(etiket: 'Tümü', secili: filtre == null, onTap: onTemizle),
+                    SizedBox(width: _mz(context, 4)),
+                    for (final tur in _MalzemeIslemTur.values) ...[
+                      _IslemCip(etiket: _islemAd(tur), secili: filtre == tur, onTap: () => onFiltre(tur)),
+                      SizedBox(width: _mz(context, 4)),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+        SizedBox(height: _mz(context, 8)),
+        if (islemler.isEmpty)
+          const _MalzemeBos('Eşleşen işlem yok.', 'Aramayı veya filtreyi değiştirin.')
+        else
+          for (var i = 0; i < islemler.length; i++) ...[
+            if (i > 0) SizedBox(height: _mz(context, 8)),
+            _IslemKarti(islem: islemler[i]),
+          ],
+      ],
+    );
+  }
+}
+
+class _IslemCip extends StatelessWidget {
+  const _IslemCip({required this.etiket, required this.secili, required this.onTap});
+
+  final String etiket;
+  final bool secili;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: secili ? const Color(0xFF2563EB) : const Color(0xFF121826),
+      borderRadius: BorderRadius.circular(_mz(context, 12)),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(_mz(context, 12)),
+        child: Container(
+          padding: EdgeInsets.symmetric(horizontal: _mz(context, 8), vertical: _mz(context, 4)),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(_mz(context, 12)),
+            border: Border.all(color: secili ? const Color(0xFF2563EB) : const Color(0xFF243044)),
+          ),
+          child: Text(
+            etiket,
+            style: TextStyle(fontFamily: 'Inter', fontSize: _mz(context, 10), fontWeight: FontWeight.w600, color: secili ? Colors.white : ProColors.textMuted),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+String _islemAd(_MalzemeIslemTur tur) => switch (tur) {
+      _MalzemeIslemTur.giris => 'Giriş',
+      _MalzemeIslemTur.tuketim => 'Tüketim',
+      _MalzemeIslemTur.transfer => 'Transfer',
+    };
+
+(Color, IconData) _islemGorsel(_MalzemeIslemTur tur) => switch (tur) {
+      _MalzemeIslemTur.giris => (const Color(0xFF16A34A), Icons.login),
+      _MalzemeIslemTur.tuketim => (const Color(0xFF2563EB), Icons.north_east),
+      _MalzemeIslemTur.transfer => (const Color(0xFF7C3AED), Icons.swap_horiz),
+    };
+
+class _IslemKarti extends StatelessWidget {
+  const _IslemKarti({required this.islem});
+
+  final _MalzemeIslem islem;
+
+  @override
+  Widget build(BuildContext context) {
+    final (renk, icon) = _islemGorsel(islem.tur);
+    final g = _mz(context, 28);
+    return Container(
+      padding: EdgeInsets.all(_mz(context, 10)),
+      decoration: BoxDecoration(
+        color: const Color(0xFF121826),
+        borderRadius: BorderRadius.circular(_mz(context, 12)),
+        border: Border.all(color: const Color(0xFF243044)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: g,
+            height: g,
+            decoration: BoxDecoration(color: renk.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(_mz(context, 8))),
+            child: Icon(icon, size: _mz(context, 14), color: renk),
+          ),
+          SizedBox(width: _mz(context, 8)),
+          Expanded(
+            flex: 4,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(_islemAd(islem.tur), style: TextStyle(fontFamily: 'Inter', fontSize: _mz(context, 12), fontWeight: FontWeight.w700, color: ProColors.text)),
+                Text(islem.tarih, style: TextStyle(fontFamily: 'Inter', fontSize: _mz(context, 9), color: ProColors.textMuted)),
+              ],
+            ),
+          ),
+          Expanded(
+            flex: 5,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(islem.ad, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontFamily: 'Inter', fontSize: _mz(context, 12), fontWeight: FontWeight.w600, color: ProColors.text)),
+                Text(islem.miktar, style: TextStyle(fontFamily: 'Inter', fontSize: _mz(context, 11), color: ProColors.text)),
+                Text(islem.yer, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontFamily: 'Inter', fontSize: _mz(context, 10), color: ProColors.textMuted)),
+              ],
+            ),
+          ),
+          Expanded(
+            flex: 4,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(islem.taraf, maxLines: 1, overflow: TextOverflow.ellipsis, textAlign: TextAlign.right, style: TextStyle(fontFamily: 'Inter', fontSize: _mz(context, 11), color: ProColors.text)),
+                Text(islem.belge, maxLines: 1, overflow: TextOverflow.ellipsis, textAlign: TextAlign.right, style: TextStyle(fontFamily: 'Inter', fontSize: _mz(context, 10), color: ProColors.textMuted)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _IslemListesi extends StatelessWidget {
+  const _IslemListesi({required this.baslik, required this.islemler});
+
+  final String baslik;
+  final List<_MalzemeIslem> islemler;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(baslik, style: TextStyle(fontFamily: 'Rajdhani', fontWeight: FontWeight.w700, fontSize: _mz(context, 16), color: ProColors.text)),
+        SizedBox(height: _mz(context, 8)),
+        if (islemler.isEmpty)
+          const _MalzemeBos('Kayıt yok.', 'Bu türde hareket bulunmuyor.')
+        else
+          for (var i = 0; i < islemler.length; i++) ...[
+            if (i > 0) SizedBox(height: _mz(context, 8)),
+            _IslemKarti(islem: islemler[i]),
+          ],
+      ],
+    );
+  }
+}
+
+class _MalzemeRaporlar extends StatelessWidget {
+  const _MalzemeRaporlar();
+
+  @override
+  Widget build(BuildContext context) {
+    final ara = _mz(context, 6);
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Expanded(child: _RaporKutu(icon: Icons.bar_chart_rounded, renk: Color(0xFF2563EB), baslik: 'Stok Raporu', alt: 'Güncel stok durumu')),
+        SizedBox(width: ara),
+        const Expanded(child: _RaporKutu(icon: Icons.pie_chart_outline, renk: Color(0xFF2563EB), baslik: 'Tüketim Analizi', alt: 'İmalat bazlı tüketim')),
+        SizedBox(width: ara),
+        const Expanded(child: _RaporKutu(icon: Icons.description_outlined, renk: Color(0xFF64748B), baslik: 'Malzeme Listesi', alt: 'Tüm malzemeler')),
+        SizedBox(width: ara),
+        const Expanded(child: _RaporKutu(icon: Icons.file_download_outlined, renk: Color(0xFF16A34A), baslik: 'Excel / PDF', alt: 'Rapor indir')),
+      ],
+    );
+  }
+}
+
+class _RaporKutu extends StatelessWidget {
+  const _RaporKutu({required this.icon, required this.renk, required this.baslik, required this.alt});
+
+  final IconData icon;
+  final Color renk;
+  final String baslik;
+  final String alt;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: const Color(0xFF121826),
+      borderRadius: BorderRadius.circular(_mz(context, 12)),
+      child: InkWell(
+        onTap: () => _keepInPro(context),
+        borderRadius: BorderRadius.circular(_mz(context, 12)),
+        child: Container(
+          padding: EdgeInsets.symmetric(horizontal: _mz(context, 4), vertical: _mz(context, 10)),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(_mz(context, 12)),
+            border: Border.all(color: const Color(0xFF243044)),
+          ),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(title, style: const TextStyle(fontFamily: 'Rajdhani', fontWeight: FontWeight.w700, fontSize: 16, color: ProColors.text)),
-              const SizedBox(height: 6),
-              Text(body, style: const TextStyle(fontFamily: 'Inter', fontSize: 13, color: ProColors.textMuted)),
+              Icon(icon, color: renk, size: _mz(context, 18)),
+              SizedBox(height: _mz(context, 6)),
+              Text(
+                baslik,
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(fontFamily: 'Inter', fontSize: _mz(context, 10), fontWeight: FontWeight.w700, height: 1.15, color: ProColors.text),
+              ),
+              SizedBox(height: _mz(context, 2)),
+              Text(
+                alt,
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(fontFamily: 'Inter', fontSize: _mz(context, 8), height: 1.15, color: ProColors.textMuted),
+              ),
             ],
           ),
         ),
-        const SizedBox(height: 12),
-        const _MalzemeActions(),
-      ],
+      ),
+    );
+  }
+}
+
+class _MalzemeBos extends StatelessWidget {
+  const _MalzemeBos(this.baslik, this.govde);
+
+  final String baslik;
+  final String govde;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(_mz(context, 14)),
+      decoration: BoxDecoration(
+        color: const Color(0xFF121826),
+        borderRadius: BorderRadius.circular(_mz(context, 12)),
+        border: Border.all(color: const Color(0xFF243044)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(baslik, style: TextStyle(fontFamily: 'Inter', fontSize: _mz(context, 13), fontWeight: FontWeight.w600, color: ProColors.text)),
+          SizedBox(height: _mz(context, 4)),
+          Text(govde, style: TextStyle(fontFamily: 'Inter', fontSize: _mz(context, 12), color: ProColors.textMuted)),
+        ],
+      ),
     );
   }
 }

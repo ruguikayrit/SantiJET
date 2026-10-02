@@ -149,7 +149,7 @@ class _ProjectsDeskState extends State<_ProjectsDesk> {
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
       children: [
-        const _TopBar(alertCount: 3),
+        const _TopBar(actions: false),
         const SizedBox(height: 14),
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
