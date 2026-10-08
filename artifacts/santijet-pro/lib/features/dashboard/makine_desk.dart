@@ -243,7 +243,7 @@ class _MakineProjectChip extends StatelessWidget {
               Flexible(
                 child: Text(
                   _DemoScope.of(context) ? _Demo.place : '—',
-                  maxLines: 1,
+                  maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(fontFamily: 'Inter', fontSize: 10, color: ProColors.textMuted),
                 ),

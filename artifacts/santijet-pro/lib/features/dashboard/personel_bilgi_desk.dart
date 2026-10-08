@@ -109,7 +109,7 @@ class _PersonelBilgiBaslik extends StatelessWidget {
             children: [
               Text(
                 kayit.name,
-                maxLines: 1,
+                maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(fontFamily: 'Rajdhani', fontWeight: FontWeight.w700, fontSize: 26, color: ProColors.text),
               ),

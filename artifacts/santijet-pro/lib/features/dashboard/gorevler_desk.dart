@@ -191,21 +191,23 @@ class _GorevlerDeskState extends State<_GorevlerDesk> {
           style: TextStyle(fontFamily: 'Inter', fontSize: 12, height: 1.35, color: ProColors.textMuted),
         ),
         const SizedBox(height: 12),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            for (final kaynak in _GorevKaynak.values) ...[
-              if (kaynak != _GorevKaynak.sahaTuru) const SizedBox(width: 8),
-              Expanded(
-                child: _GorevKaynakKarti(
-                  kaynak: kaynak,
-                  adet: _gorevKayitlari.where((g) => g.kaynak == kaynak).length,
-                  secili: _kaynak == kaynak,
-                  onTap: () => _kaynakSec(kaynak),
+        IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              for (final kaynak in _GorevKaynak.values) ...[
+                if (kaynak != _GorevKaynak.sahaTuru) const SizedBox(width: 8),
+                Expanded(
+                  child: _GorevKaynakKarti(
+                    kaynak: kaynak,
+                    adet: _gorevKayitlari.where((g) => g.kaynak == kaynak).length,
+                    secili: _kaynak == kaynak,
+                    onTap: () => _kaynakSec(kaynak),
+                  ),
                 ),
-              ),
+              ],
             ],
-          ],
+          ),
         ),
         const SizedBox(height: 12),
         Row(
@@ -286,7 +288,6 @@ class _GorevKaynakKarti extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(14),
         child: Container(
-          height: 108,
           padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(14),
@@ -316,7 +317,7 @@ class _GorevKaynakKarti extends StatelessWidget {
               const SizedBox(height: 6),
               Text(
                 kaynak.ad,
-                maxLines: 1,
+                maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(fontFamily: 'Rajdhani', fontWeight: FontWeight.w700, fontSize: 14, height: 1.2, color: ProColors.text),
               ),
@@ -431,7 +432,7 @@ class _GorevKarti extends StatelessWidget {
               Expanded(
                 child: Text(
                   gorev.konum,
-                  maxLines: 1,
+                  maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(fontFamily: 'Inter', fontSize: 12, color: ProColors.textMuted),
                 ),
@@ -456,7 +457,7 @@ class _GorevKarti extends StatelessWidget {
               Expanded(
                 child: Text(
                   gorev.sorumlu,
-                  maxLines: 1,
+                  maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(fontFamily: 'Inter', fontSize: 12, color: ProColors.textMuted),
                 ),

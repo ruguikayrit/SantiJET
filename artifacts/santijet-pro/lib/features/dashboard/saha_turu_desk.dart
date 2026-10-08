@@ -399,7 +399,7 @@ class _TurKarti extends StatelessWidget {
                     const SizedBox(height: 2),
                     Text(
                       tur.ozetMetni,
-                      maxLines: 1,
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(fontFamily: 'Inter', fontSize: 12, color: ProColors.textMuted),
                     ),

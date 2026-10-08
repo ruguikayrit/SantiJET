@@ -606,7 +606,7 @@ class _SecimSatiri extends StatelessWidget {
                   Expanded(
                     child: Text(
                       value,
-                      maxLines: 1,
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(fontFamily: 'Inter', fontSize: 14, color: ProColors.text),
                     ),

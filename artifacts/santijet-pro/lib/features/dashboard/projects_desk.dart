@@ -149,8 +149,6 @@ class _ProjectsDeskState extends State<_ProjectsDesk> {
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
       children: [
-        const _TopBar(actions: false),
-        const SizedBox(height: 14),
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -163,7 +161,7 @@ class _ProjectsDeskState extends State<_ProjectsDesk> {
                     style: TextStyle(
                       fontFamily: 'Rajdhani',
                       fontWeight: FontWeight.w700,
-                      fontSize: 26,
+                      fontSize: 22,
                       height: 1.05,
                       color: ProColors.text,
                     ),
@@ -364,7 +362,7 @@ class _ProjeSekmeChip extends StatelessWidget {
             child: Text(
               label,
               textAlign: TextAlign.center,
-              maxLines: 1,
+              maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 fontFamily: 'Inter',
@@ -426,7 +424,7 @@ class _ProjeKart extends StatelessWidget {
                         Expanded(
                           child: Text(
                             proje.ad,
-                            maxLines: 1,
+                            maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
                               fontFamily: 'Rajdhani',
@@ -517,7 +515,7 @@ class _ProjeMetaSatir extends StatelessWidget {
         Expanded(
           child: Text(
             metin,
-            maxLines: 1,
+            maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(fontFamily: 'Inter', fontSize: 11, color: ProColors.textMuted),
           ),
@@ -545,7 +543,7 @@ class _ProjeAltIkon extends StatelessWidget {
           Expanded(
             child: Text(
               metin,
-              maxLines: 1,
+              maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(fontFamily: 'Inter', fontSize: 11, color: ProColors.textMuted),
             ),

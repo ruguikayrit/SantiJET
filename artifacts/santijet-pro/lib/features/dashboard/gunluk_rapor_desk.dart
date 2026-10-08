@@ -292,7 +292,7 @@ class _GrProjeKart extends StatelessWidget {
                   children: [
                     Text(
                       demo ? _Demo.project : 'Proje seçin',
-                      maxLines: 1,
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(fontFamily: 'Rajdhani', fontWeight: FontWeight.w700, fontSize: 16, color: ProColors.text),
                     ),
@@ -304,7 +304,7 @@ class _GrProjeKart extends StatelessWidget {
                         Expanded(
                           child: Text(
                             demo ? 'İstanbul / Kadıköy' : '—',
-                            maxLines: 1,
+                            maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(fontFamily: 'Inter', fontSize: 10, color: ProColors.textMuted),
                           ),
@@ -318,7 +318,7 @@ class _GrProjeKart extends StatelessWidget {
                         Expanded(
                           child: Text(
                             demo ? 'ABC Yapı A.Ş.' : '—',
-                            maxLines: 1,
+                            maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(fontFamily: 'Inter', fontSize: 10, color: ProColors.textMuted),
                           ),
@@ -472,14 +472,14 @@ class _GrSayiKart extends StatelessWidget {
                 Text(
                   baslik,
                   textAlign: TextAlign.center,
-                  maxLines: 1,
+                  maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(fontFamily: 'Inter', fontSize: 10, height: 1.1, color: ProColors.textMuted),
                 ),
                 Text(
                   alt,
                   textAlign: TextAlign.center,
-                  maxLines: 1,
+                  maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(fontFamily: 'Inter', fontSize: 10, height: 1.1, color: ProColors.textFaint),
                 ),
@@ -506,7 +506,7 @@ class _GrIlerlemeBaslik extends StatelessWidget {
         Flexible(
           child: Text(
             'Toplam Planlanan: 8 iş kalemi',
-            maxLines: 1,
+            maxLines: 2,
             overflow: TextOverflow.ellipsis,
             textAlign: TextAlign.right,
             style: TextStyle(fontFamily: 'Inter', fontSize: 11, color: ProColors.textMuted),
@@ -772,14 +772,14 @@ class _GrMalzemeKart extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Icon(icon, size: 18, color: ProColors.textMuted),
-            Text(baslik, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontFamily: 'Inter', fontSize: 10, fontWeight: FontWeight.w600, color: ProColors.text)),
+            Text(baslik, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontFamily: 'Inter', fontSize: 10, fontWeight: FontWeight.w600, color: ProColors.text)),
             Text(miktar, style: const TextStyle(fontFamily: 'Rajdhani', fontWeight: FontWeight.w700, fontSize: 14, color: ProColors.text)),
             Row(
               children: [
                 Container(width: 6, height: 6, decoration: const BoxDecoration(color: Color(0xFF22C55E), shape: BoxShape.circle)),
                 const SizedBox(width: 4),
                 Expanded(
-                  child: Text(durum, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontFamily: 'Inter', fontSize: 9, color: ProColors.textMuted)),
+                  child: Text(durum, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontFamily: 'Inter', fontSize: 9, color: ProColors.textMuted)),
                 ),
               ],
             ),

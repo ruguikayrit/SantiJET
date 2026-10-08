@@ -750,7 +750,7 @@ class _ImalatKayitKart extends StatelessWidget {
                         const SizedBox(width: 8),
                         const Icon(Icons.groups_outlined, size: 13, color: ProColors.textMuted),
                         const SizedBox(width: 3),
-                        Flexible(child: Text(kayit.kisi, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontFamily: 'Inter', fontSize: 11, color: ProColors.textMuted))),
+                        Flexible(child: Text(kayit.kisi, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontFamily: 'Inter', fontSize: 11, color: ProColors.textMuted))),
                         const SizedBox(width: 8),
                         const Icon(Icons.schedule, size: 13, color: ProColors.textMuted),
                         const SizedBox(width: 3),

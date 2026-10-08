@@ -330,7 +330,7 @@ class _ModulKpi extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             value,
-            maxLines: 1,
+            maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(fontFamily: 'Rajdhani', fontWeight: FontWeight.w700, fontSize: 18, color: ProColors.text),
           ),
@@ -365,13 +365,13 @@ class _ModulBolumTile extends StatelessWidget {
               const Spacer(),
               Text(
                 bolum.title,
-                maxLines: 1,
+                maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(fontFamily: 'Rajdhani', fontWeight: FontWeight.w700, fontSize: 15, color: ProColors.text),
               ),
               Text(
                 bolum.alt,
-                maxLines: 1,
+                maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(fontFamily: 'Inter', fontSize: 11, color: ProColors.textMuted),
               ),

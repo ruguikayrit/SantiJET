@@ -579,7 +579,7 @@ class _DusukStokKart extends StatelessWidget {
               Flexible(
                 child: Text(
                   'Min. seviyenin altındaki malzemeler',
-                  maxLines: 1,
+                  maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   textAlign: TextAlign.right,
                   style: TextStyle(fontFamily: 'Inter', fontSize: _mz(context, 9), color: ProColors.textMuted),
@@ -624,13 +624,13 @@ class _DusukStokSatir extends StatelessWidget {
             children: [
               Text(
                 kalem.ad,
-                maxLines: 1,
+                maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(fontFamily: 'Inter', fontSize: _mz(context, 12), fontWeight: FontWeight.w600, color: ProColors.text),
               ),
               Text(
                 kalem.grup,
-                maxLines: 1,
+                maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(fontFamily: 'Inter', fontSize: _mz(context, 10), color: ProColors.textMuted),
               ),
@@ -799,9 +799,9 @@ class _IslemKarti extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(islem.ad, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontFamily: 'Inter', fontSize: _mz(context, 12), fontWeight: FontWeight.w600, color: ProColors.text)),
+                Text(islem.ad, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(fontFamily: 'Inter', fontSize: _mz(context, 12), fontWeight: FontWeight.w600, color: ProColors.text)),
                 Text(islem.miktar, style: TextStyle(fontFamily: 'Inter', fontSize: _mz(context, 11), color: ProColors.text)),
-                Text(islem.yer, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontFamily: 'Inter', fontSize: _mz(context, 10), color: ProColors.textMuted)),
+                Text(islem.yer, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(fontFamily: 'Inter', fontSize: _mz(context, 10), color: ProColors.textMuted)),
               ],
             ),
           ),
@@ -810,8 +810,8 @@ class _IslemKarti extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Text(islem.taraf, maxLines: 1, overflow: TextOverflow.ellipsis, textAlign: TextAlign.right, style: TextStyle(fontFamily: 'Inter', fontSize: _mz(context, 11), color: ProColors.text)),
-                Text(islem.belge, maxLines: 1, overflow: TextOverflow.ellipsis, textAlign: TextAlign.right, style: TextStyle(fontFamily: 'Inter', fontSize: _mz(context, 10), color: ProColors.textMuted)),
+                Text(islem.taraf, maxLines: 2, overflow: TextOverflow.ellipsis, textAlign: TextAlign.right, style: TextStyle(fontFamily: 'Inter', fontSize: _mz(context, 11), color: ProColors.text)),
+                Text(islem.belge, maxLines: 2, overflow: TextOverflow.ellipsis, textAlign: TextAlign.right, style: TextStyle(fontFamily: 'Inter', fontSize: _mz(context, 10), color: ProColors.textMuted)),
               ],
             ),
           ),

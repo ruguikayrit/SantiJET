@@ -327,13 +327,13 @@ class _PersonelSatir extends StatelessWidget {
                   children: [
                     Text(
                       kayit.name,
-                      maxLines: 1,
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w600, fontSize: 14, color: ProColors.text),
                     ),
                     Text(
                       kayit.unvan,
-                      maxLines: 1,
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(fontFamily: 'Inter', fontSize: 12, color: ProColors.textMuted),
                     ),
@@ -368,7 +368,7 @@ class _PersonelSatirBilgi extends StatelessWidget {
         Expanded(
           child: Text(
             text,
-            maxLines: 1,
+            maxLines: 2,
             overflow: TextOverflow.ellipsis,
             style: const TextStyle(fontFamily: 'Inter', fontSize: 12, color: ProColors.text),
           ),

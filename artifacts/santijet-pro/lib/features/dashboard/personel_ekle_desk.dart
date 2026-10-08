@@ -690,7 +690,7 @@ class _PersonelSecimState extends State<_PersonelSecim> {
             Expanded(
               child: Text(
                 widget.value ?? widget.placeholder,
-                maxLines: 1,
+                maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: widget.value == null ? _personelIpucu : _personelAlanYazi,
               ),
@@ -750,7 +750,7 @@ class _PersonelTarihState extends State<_PersonelTarih> {
           Expanded(
             child: Text(
               widget.value ?? widget.placeholder,
-              maxLines: 1,
+              maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: widget.value == null ? _personelIpucu : _personelAlanYazi,
             ),

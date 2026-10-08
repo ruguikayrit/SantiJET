@@ -388,7 +388,7 @@ class _IkAlan extends StatelessWidget {
           Expanded(
             child: Text(
               deger,
-              maxLines: 1,
+              maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 fontFamily: 'Inter',
@@ -628,7 +628,7 @@ class _IkSayiKutusu extends StatelessWidget {
           Flexible(
             child: Text(
               deger,
-              maxLines: 1,
+              maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(fontFamily: 'Inter', fontSize: 11, fontWeight: FontWeight.w600, color: ProColors.text),
             ),
@@ -791,7 +791,7 @@ class _ImalatTipAccordiyonState extends State<_ImalatTipAccordiyon> {
                       child: Text(
                         secili != null ? 'Seçili: ${secili.label}' : 'İmalat tipi seçin',
                         style: const TextStyle(fontFamily: 'Inter', fontSize: 13, fontWeight: FontWeight.w600, color: ProColors.text),
-                        maxLines: 1,
+                        maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),

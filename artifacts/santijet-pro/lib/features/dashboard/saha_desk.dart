@@ -160,7 +160,7 @@ class _SahaTuruKarti extends StatelessWidget {
                     ),
                     Text(
                       'Gözlem · tespit · kontrol formu',
-                      maxLines: 1,
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(fontFamily: 'Inter', fontSize: 11, color: ProColors.textMuted),
                     ),

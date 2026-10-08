@@ -1488,7 +1488,7 @@ class _HaftaEkipSatiri extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(row.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w600, fontSize: 12, color: ProColors.text)),
+                      Text(row.name, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w600, fontSize: 12, color: ProColors.text)),
                       Text(row.people, style: const TextStyle(fontFamily: 'Inter', fontSize: 10, color: ProColors.textMuted)),
                     ],
                   ),
@@ -1663,20 +1663,23 @@ class _HaftaPersonelTablosu extends StatelessWidget {
               Row(
                 children: [
                   Expanded(
-                    flex: 5,
                     child: Text('Personel\n(${people.length} kişi)', style: const TextStyle(fontFamily: 'Inter', fontSize: 11, color: ProColors.textMuted)),
                   ),
                   for (var index = 0; index < 7; index++)
-                    Expanded(
+                    SizedBox(
+                      width: _haftaGunKolon,
                       child: Column(
                         children: [
-                          Text(dayNames[index], style: const TextStyle(fontFamily: 'Inter', fontSize: 10, color: ProColors.textMuted)),
-                          Text('${weekStart.add(Duration(days: index)).day}', style: const TextStyle(fontFamily: 'Inter', fontSize: 10, color: ProColors.textFaint)),
+                          Text(dayNames[index], textAlign: TextAlign.center, style: const TextStyle(fontFamily: 'Inter', fontSize: 10, color: ProColors.textMuted)),
+                          Text('${weekStart.add(Duration(days: index)).day}', textAlign: TextAlign.center, style: const TextStyle(fontFamily: 'Inter', fontSize: 10, color: ProColors.textFaint)),
                         ],
                       ),
                     ),
-                  const _SigdirBaslik('Toplam\n(Gün)', flex: 2),
-                  const SizedBox(width: 14),
+                  const SizedBox(
+                    width: _haftaToplamKolon,
+                    child: Text('Toplam\n(Gün)', textAlign: TextAlign.center, style: TextStyle(fontFamily: 'Inter', fontSize: 10, height: 1.15, color: ProColors.textMuted)),
+                  ),
+                  const SizedBox(width: _haftaOkGenislik),
                 ],
               ),
               const SizedBox(height: 6),
@@ -1701,7 +1704,6 @@ class _HaftaKisiSatiri extends StatelessWidget {
       child: Row(
         children: [
           Expanded(
-            flex: 5,
             child: Row(
               children: [
                 Container(
@@ -1716,8 +1718,8 @@ class _HaftaKisiSatiri extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(person.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w600, fontSize: 11, color: ProColors.text)),
-                      Text('${person.team} - ${person.unvan}', maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontFamily: 'Inter', fontSize: 9, color: ProColors.textMuted)),
+                      Text(person.name, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w600, fontSize: 11, color: ProColors.text)),
+                      Text('${person.team} - ${person.unvan}', maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontFamily: 'Inter', fontSize: 9, color: ProColors.textMuted)),
                     ],
                   ),
                 ),
@@ -1725,16 +1727,19 @@ class _HaftaKisiSatiri extends StatelessWidget {
             ),
           ),
           for (final mark in person.days.split(''))
-            Expanded(child: Center(child: _HaftaDurumIkonu(mark: mark))),
-          Expanded(
-            flex: 2,
+            SizedBox(width: _haftaGunKolon, child: Center(child: _HaftaDurumIkonu(mark: mark))),
+          SizedBox(
+            width: _haftaToplamKolon,
             child: Text(
               '${person.toplam}',
               textAlign: TextAlign.center,
               style: const TextStyle(fontFamily: 'Rajdhani', fontWeight: FontWeight.w700, fontSize: 14, color: ProColors.text),
             ),
           ),
-          const Icon(Icons.chevron_right, size: 14, color: ProColors.textMuted),
+          const SizedBox(
+            width: _haftaOkGenislik,
+            child: Icon(Icons.chevron_right, size: 14, color: ProColors.textMuted),
+          ),
         ],
       ),
     );
@@ -2232,7 +2237,7 @@ class _PersonelSatiri extends StatelessWidget {
                 Expanded(
                   child: Text(
                     person.name,
-                    maxLines: 1,
+                    maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w600, fontSize: 13, color: ProColors.text),
                   ),
@@ -2405,7 +2410,7 @@ class _PuantajRow extends StatelessWidget {
                     children: [
                       Text(
                         row.name,
-                        maxLines: 1,
+                        maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w600, fontSize: 13, color: ProColors.text),
                       ),
@@ -2594,7 +2599,7 @@ class _PuantajTotal extends StatelessWidget {
           for (final line in label.split('\n'))
             Text(
               line,
-              maxLines: 1,
+              maxLines: 2,
               softWrap: false,
               overflow: TextOverflow.fade,
               textAlign: TextAlign.center,
@@ -2742,13 +2747,13 @@ class _AyEkipTablosu extends StatelessWidget {
         children: [
           const Row(
             children: [
-              Expanded(flex: 4, child: Text('Ekip', style: TextStyle(fontFamily: 'Inter', fontSize: 11, color: ProColors.textMuted))),
-              Expanded(flex: 2, child: Text('Sahada\nKişi-gün', textAlign: TextAlign.center, style: TextStyle(fontFamily: 'Inter', fontSize: 10, color: ProColors.textMuted))),
-              Expanded(flex: 2, child: Text('Yarım\nKişi-gün', textAlign: TextAlign.center, style: TextStyle(fontFamily: 'Inter', fontSize: 10, color: ProColors.textMuted))),
-              Expanded(flex: 2, child: Text('İzinli\nKişi-gün', textAlign: TextAlign.center, style: TextStyle(fontFamily: 'Inter', fontSize: 10, color: ProColors.textMuted))),
-              Expanded(flex: 2, child: Text('Yok\nKişi-gün', textAlign: TextAlign.center, style: TextStyle(fontFamily: 'Inter', fontSize: 10, color: ProColors.textMuted))),
-              const _SigdirBaslik('Toplam\nKişi-gün', flex: 2),
-              SizedBox(width: 14),
+              Expanded(child: Text('Ekip', style: TextStyle(fontFamily: 'Inter', fontSize: 11, color: ProColors.textMuted))),
+              _AyPersonelBaslikHucre('Sahada\nKişi-gün', width: _ayEkipMetrikKolon),
+              _AyPersonelBaslikHucre('Yarım\nKişi-gün', width: _ayEkipMetrikKolon),
+              _AyPersonelBaslikHucre('İzinli\nKişi-gün', width: _ayEkipMetrikKolon),
+              _AyPersonelBaslikHucre('Yok\nKişi-gün', width: _ayEkipMetrikKolon),
+              _AyPersonelBaslikHucre('Toplam\nKişi-gün', width: _ayEkipMetrikKolon),
+              SizedBox(width: _ayPersonelOkGenislik),
             ],
           ),
           const SizedBox(height: 8),
@@ -2781,7 +2786,6 @@ class _AyEkipSatiri extends StatelessWidget {
       child: Row(
         children: [
           Expanded(
-            flex: 4,
             child: Row(
               children: [
                 Container(
@@ -2795,7 +2799,7 @@ class _AyEkipSatiri extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(team.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w600, fontSize: 12, color: ProColors.text)),
+                      Text(team.name, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontFamily: 'Inter', fontWeight: FontWeight.w600, fontSize: 12, color: ProColors.text)),
                       Text('${people.length} kişi', style: const TextStyle(fontFamily: 'Inter', fontSize: 10, color: ProColors.textMuted)),
                     ],
                   ),
@@ -2803,15 +2807,18 @@ class _AyEkipSatiri extends StatelessWidget {
               ],
             ),
           ),
-          Expanded(flex: 2, child: _AySayi(value: sahada, color: const Color(0xFF4ADE80))),
-          Expanded(flex: 2, child: _AySayi(value: yarim, color: const Color(0xFFFBBF24))),
-          Expanded(flex: 2, child: _AySayi(value: izinli, color: const Color(0xFF93C5FD))),
-          Expanded(flex: 2, child: _AySayi(value: yok, color: const Color(0xFFFCA5A5))),
-          Expanded(
-            flex: 2,
+          SizedBox(width: _ayEkipMetrikKolon, child: _AySayi(value: sahada, color: const Color(0xFF4ADE80))),
+          SizedBox(width: _ayEkipMetrikKolon, child: _AySayi(value: yarim, color: const Color(0xFFFBBF24))),
+          SizedBox(width: _ayEkipMetrikKolon, child: _AySayi(value: izinli, color: const Color(0xFF93C5FD))),
+          SizedBox(width: _ayEkipMetrikKolon, child: _AySayi(value: yok, color: const Color(0xFFFCA5A5))),
+          SizedBox(
+            width: _ayEkipMetrikKolon,
             child: Text('$toplam', textAlign: TextAlign.center, style: const TextStyle(fontFamily: 'Rajdhani', fontWeight: FontWeight.w700, fontSize: 16, color: ProColors.text)),
           ),
-          const Icon(Icons.chevron_right, size: 16, color: ProColors.textMuted),
+          const SizedBox(
+            width: _ayPersonelOkGenislik,
+            child: Icon(Icons.chevron_right, size: 16, color: ProColors.textMuted),
+          ),
         ],
       ),
     );
@@ -2830,11 +2837,19 @@ class _AySayi extends StatelessWidget {
   }
 }
 
-/// Aylık personel tablosu: sayılar dar sabit kolon, kalan genişlik isim satırına.
-const _ayPersonelMetrikKolon = 52.0;
-const _ayPersonelToplamKolon = 60.0;
-const _ayPersonelOkGenislik = 12.0;
+/// Aylık personel: sayı kolonları başlık kadar, kalan genişlik isimde.
+const _ayPersonelMetrikKolon = 44.0;
+const _ayPersonelToplamKolon = 46.0;
+const _ayPersonelOkGenislik = 14.0;
 const _ayPersonelBaslikYukseklik = 30.0;
+
+/// Haftalık personel: gün kolonları başlık kadar, kalan genişlik isimde.
+const _haftaGunKolon = 26.0;
+const _haftaToplamKolon = 42.0;
+const _haftaOkGenislik = 14.0;
+
+/// Aylık ekip: kişi-gün başlıkları kadar, kalan genişlik ekip adında.
+const _ayEkipMetrikKolon = 48.0;
 
 const _ayPersonelBaslikStil = TextStyle(
   fontFamily: 'Inter',
@@ -2955,7 +2970,7 @@ class _AyPersonelTablosu extends StatelessWidget {
                                   ),
                                   Text(
                                     '${person.team} - ${person.unvan}',
-                                    maxLines: 1,
+                                    maxLines: 2,
                                     overflow: TextOverflow.ellipsis,
                                     style: const TextStyle(fontFamily: 'Inter', fontSize: 10, color: ProColors.textMuted),
                                   ),
