@@ -2251,8 +2251,6 @@ class _MenuDesk extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
       children: [
-        const _TopBar(actions: false),
-        const SizedBox(height: 14),
         const _AccountCard(),
         const SizedBox(height: 10),
         const _AccountMetaRow(),
