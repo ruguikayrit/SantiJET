@@ -163,9 +163,9 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: stable
-          flutter-version: '3.27.4'
+          flutter-version: '3.47.3'
           cache: true
-          cache-key: flutter-demir-3.27.4
+          cache-key: flutter-demir-3.47.3
 
       - name: Setup Node (DEMİR DWG)
         if: steps.plan-demir.outputs.build == 'true'
