@@ -1,3 +1,4 @@
+import 'package:santijet_demir/core/format/app_format.dart';
 import 'package:santijet_demir/core/routing/app_routes.dart';
 import 'package:santijet_demir/domain/entities/prediction_models.dart';
 
@@ -18,12 +19,12 @@ abstract final class PredictionNarrator {
     final planned = snapshot.plannedDailyConsumption;
     if (actual != null && actual > 0) {
       lines.add(
-        'Mevcut gerçek ortalama tüketim ${actual.toStringAsFixed(1)} t/gün.',
+        'Mevcut gerçek ortalama tüketim ${AppFormat.tonnage(actual)} t/gün.',
       );
     }
     if (planned != null && planned > 0) {
       lines.add(
-        'İş programına göre planlı tüketim ${planned.toStringAsFixed(1)} t/gün.',
+        'İş programına göre planlı tüketim ${AppFormat.tonnage(planned)} t/gün.',
       );
     }
 
@@ -42,8 +43,8 @@ abstract final class PredictionNarrator {
       lines.add(
         'Ø${d.diameter} stokunun ${d.daysRemaining!.toStringAsFixed(1)} gün '
         'içinde kritik seviyeye düşmesi bekleniyor '
-        '(stok ${d.currentStock.toStringAsFixed(1)} t, '
-        'tüketim ${d.actualDailyConsumption > 0 ? d.actualDailyConsumption.toStringAsFixed(1) : d.plannedDailyConsumption.toStringAsFixed(1)} t/gün).',
+        '(stok ${AppFormat.tonnage(d.currentStock)} t, '
+        'tüketim ${AppFormat.tonnage(d.actualDailyConsumption > 0 ? d.actualDailyConsumption : d.plannedDailyConsumption)} t/gün).',
       );
     }
 
@@ -51,7 +52,7 @@ abstract final class PredictionNarrator {
     if (purchase != null && purchase.totalRequired > 0) {
       lines.add(
         'Önerilen toplam sipariş miktarı '
-        '${purchase.totalRequired.toStringAsFixed(1)} t. '
+        '${AppFormat.tonnage(purchase.totalRequired)} t. '
         'Tedarikçi teslimat süresi ${purchase.supplierLeadDays} gün.',
       );
       if (purchase.requiredPurchaseDate != null) {
@@ -66,7 +67,7 @@ abstract final class PredictionNarrator {
     if (snapshot.tonsPerWorkerDay != null && snapshot.tonsPerWorkerDay! > 0) {
       lines.add(
         'Puantaj verilerine göre yaklaşık '
-        '${snapshot.tonsPerWorkerDay!.toStringAsFixed(2)} t/adam-gün verimlilik.',
+        '${AppFormat.tonnage(snapshot.tonsPerWorkerDay!)} t/adam-gün verimlilik.',
       );
     }
 

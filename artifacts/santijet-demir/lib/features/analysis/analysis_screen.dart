@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:santijet_demir/core/widgets/app_toast.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
-import 'package:santijet_demir/core/animations/app_animations.dart';
-import 'package:santijet_demir/core/routing/app_routes.dart';
 import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_radii.dart';
 import 'package:santijet_demir/core/theme/app_spacing.dart';
@@ -28,27 +25,19 @@ class AnalysisScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
-      body: CustomScrollView(
+      body: SafeArea(
+        bottom: false,
+        child: CustomScrollView(
           slivers: [
             const SliverToBoxAdapter(
-              child: SantijetHeader(subtitle: 'Hesap / Analiz / Rapor'),
+              child: SantijetHeader(
+                subtitle: 'Analiz',
+                showBack: true,
+              ),
             ),
             if (!hasActiveProject)
               const ActiveProjectSliverGate()
             else ...[
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                    AppSpacing.md,
-                    AppSpacing.sm,
-                    AppSpacing.md,
-                    AppSpacing.sm,
-                  ),
-                  child: _ReportsQuickAccessBar(
-                    onTap: () => context.push(AppRoutes.reports),
-                  ),
-                ),
-              ),
               SliverPadding(
                 padding: const EdgeInsets.fromLTRB(AppSpacing.md, 0, AppSpacing.md, 0),
                 sliver: SliverToBoxAdapter(
@@ -102,6 +91,7 @@ class AnalysisScreen extends ConsumerWidget {
             ],
           ],
         ),
+      ),
     );
   }
 
@@ -236,38 +226,3 @@ class _AnalysisSelectedBatchArea extends ConsumerWidget {
   }
 }
 
-class _ReportsQuickAccessBar extends StatelessWidget {
-  const _ReportsQuickAccessBar({required this.onTap});
-
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return TapScale(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        decoration: BoxDecoration(
-          color: AppColors.surfaceElevated,
-          borderRadius: AppRadii.md,
-          border: Border.all(color: AppColors.border),
-        ),
-        child: Row(
-          children: [
-            Icon(Icons.description, color: AppColors.partial, size: 22),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                'Raporlar · 16 rapor hazır',
-                style: AppTypography.titleMedium,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            Icon(Icons.chevron_right, color: AppColors.textMuted, size: 20),
-          ],
-        ),
-      ),
-    );
-  }
-}

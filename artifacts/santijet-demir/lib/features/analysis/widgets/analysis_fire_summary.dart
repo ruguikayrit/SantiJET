@@ -154,7 +154,7 @@ class _AnalysisFireSummaryPanelState
                                 active: _expandedDetail ==
                                     FireSummaryDetailKind.rawMaterial,
                                 child: KpiCard(
-                                  label: 'Ham Tonaj',
+                                  label: 'Ham',
                                   value: AppFormat.tonnage(
                                     summary.rawMaterialTonnage,
                                   ),

@@ -30,6 +30,7 @@ class DeliveryItem {
     required this.status,
     required this.diameterLines,
     this.plateNo = '',
+    this.irsaliyePhotoPath = '',
   });
 
   final String id;
@@ -43,6 +44,7 @@ class DeliveryItem {
   final DeliveryStatus status;
   final List<DeliveryDiameterLine> diameterLines;
   final String plateNo;
+  final String irsaliyePhotoPath;
 
   DeliveryItem copyWith({
     String? id,
@@ -56,6 +58,7 @@ class DeliveryItem {
     DeliveryStatus? status,
     List<DeliveryDiameterLine>? diameterLines,
     String? plateNo,
+    String? irsaliyePhotoPath,
   }) {
     return DeliveryItem(
       id: id ?? this.id,
@@ -69,6 +72,7 @@ class DeliveryItem {
       status: status ?? this.status,
       diameterLines: diameterLines ?? this.diameterLines,
       plateNo: plateNo ?? this.plateNo,
+      irsaliyePhotoPath: irsaliyePhotoPath ?? this.irsaliyePhotoPath,
     );
   }
 
@@ -83,6 +87,7 @@ class DeliveryItem {
         'fulfillmentPercent': fulfillmentPercent,
         'status': status.name,
         'plateNo': plateNo,
+        'irsaliyePhotoPath': irsaliyePhotoPath,
         'diameterLines': diameterLines
             .map(
               (line) => {
@@ -113,6 +118,7 @@ class DeliveryItem {
         _ => DeliveryStatus.received,
       },
       plateNo: json['plateNo'] as String? ?? '',
+      irsaliyePhotoPath: json['irsaliyePhotoPath'] as String? ?? '',
       diameterLines: rawLines
           .whereType<Map>()
           .map(
@@ -156,6 +162,7 @@ class NewDeliveryDraft {
     this.date,
     this.irsaliyeNo = '',
     this.plateNo = '',
+    this.irsaliyePhotoPath = '',
     this.diameterEntries = const {},
     this.orderedDiameters = const {},
   });
@@ -166,6 +173,7 @@ class NewDeliveryDraft {
   final DateTime? date;
   final String irsaliyeNo;
   final String plateNo;
+  final String irsaliyePhotoPath;
   final Map<int, double> diameterEntries;
   final Map<int, double> orderedDiameters;
 
@@ -182,6 +190,7 @@ class NewDeliveryDraft {
     DateTime? date,
     String? irsaliyeNo,
     String? plateNo,
+    String? irsaliyePhotoPath,
     Map<int, double>? diameterEntries,
     Map<int, double>? orderedDiameters,
     bool clearOrder = false,
@@ -193,6 +202,7 @@ class NewDeliveryDraft {
       date: date ?? this.date,
       irsaliyeNo: irsaliyeNo ?? this.irsaliyeNo,
       plateNo: plateNo ?? this.plateNo,
+      irsaliyePhotoPath: irsaliyePhotoPath ?? this.irsaliyePhotoPath,
       diameterEntries: diameterEntries ?? this.diameterEntries,
       orderedDiameters: orderedDiameters ?? this.orderedDiameters,
     );

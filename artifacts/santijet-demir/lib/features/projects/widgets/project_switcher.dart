@@ -7,9 +7,8 @@ import 'package:santijet_demir/core/theme/app_typography.dart';
 import 'package:santijet_demir/domain/entities/project.dart';
 import 'package:santijet_demir/features/projects/providers/project_provider.dart';
 import 'package:santijet_demir/features/projects/widgets/project_company_logo.dart';
-import 'package:santijet_demir/features/settings/providers/settings_provider.dart';
 
-/// Aktif proje kartı — Saha ile aynı: firma / iş adı / iş kodu + alt sayfa seçici.
+/// Aktif proje kartı — logo + iş adı + iş kodu.
 class ProjectSwitcher extends ConsumerWidget {
   const ProjectSwitcher({super.key});
 
@@ -17,8 +16,6 @@ class ProjectSwitcher extends ConsumerWidget {
     final projects = ref.read(userProjectsProvider);
     final activeId = ref.read(activeProjectIdProvider) ??
         ref.read(activeProjectProvider)?.id;
-    final company =
-        ref.read(appSettingsProvider.select((s) => s.companyName)).trim();
     final sheetSurface = AppColors.surfaceElevated;
 
     await showModalBottomSheet<void>(
@@ -38,7 +35,6 @@ class ProjectSwitcher extends ConsumerWidget {
           ctx: ctx,
           projects: projects,
           activeId: activeId,
-          company: company,
           onSelect: (id) async {
             await ref.read(projectsControllerProvider).switchProject(id);
             if (ctx.mounted) Navigator.pop(ctx);
@@ -52,7 +48,6 @@ class ProjectSwitcher extends ConsumerWidget {
     required BuildContext ctx,
     required List<Project> projects,
     required String? activeId,
-    required String company,
     required ValueChanged<String> onSelect,
   }) {
     if (projects.isEmpty) {
@@ -114,7 +109,6 @@ class ProjectSwitcher extends ConsumerWidget {
                   final p = projects[index];
                   return _ProjectOptionTile(
                     project: p,
-                    company: company,
                     selected: p.id == activeId,
                     onTap: () => onSelect(p.id),
                   );
@@ -130,8 +124,6 @@ class ProjectSwitcher extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final project = ref.watch(activeProjectProvider);
-    final company =
-        ref.watch(appSettingsProvider.select((s) => s.companyName)).trim();
 
     final name = project?.name.trim() ?? '';
     final code = project?.code.trim() ?? '';
@@ -170,20 +162,10 @@ class ProjectSwitcher extends ConsumerWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                company.isEmpty ? 'Firma adı yok' : company,
+                                name.isEmpty ? 'İşin adı yok' : name,
                                 style: AppTypography.titleMedium.copyWith(
                                   color: AppColors.textPrimary,
                                   fontWeight: FontWeight.w700,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                name.isEmpty ? 'İşin adı yok' : name,
-                                style: AppTypography.bodyMedium.copyWith(
-                                  color: AppColors.textSecondary,
-                                  fontWeight: FontWeight.w600,
                                 ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -215,13 +197,11 @@ class ProjectSwitcher extends ConsumerWidget {
 class _ProjectOptionTile extends StatelessWidget {
   const _ProjectOptionTile({
     required this.project,
-    required this.company,
     required this.selected,
     required this.onTap,
   });
 
   final Project project;
-  final String company;
   final bool selected;
   final VoidCallback onTap;
 
@@ -252,19 +232,10 @@ class _ProjectOptionTile extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      company.isEmpty ? 'Firma adı yok' : company,
-                      style: AppTypography.labelLarge.copyWith(
+                      name.isEmpty ? 'İşin adı yok' : name,
+                      style: AppTypography.titleMedium.copyWith(
                         color: AppColors.textPrimary,
                         fontWeight: FontWeight.w700,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      name.isEmpty ? 'İşin adı yok' : name,
-                      style: AppTypography.bodyMedium.copyWith(
-                        color: AppColors.textSecondary,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,

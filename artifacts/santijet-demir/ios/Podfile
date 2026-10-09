@@ -1,0 +1,63 @@
+# Uncomment this line to define a global platform for your project
+# platform :ios, '15.0'
+
+# CocoaPods analytics sends network stats synchronously affecting flutter build latency.
+ENV['COCOAPODS_DISABLE_STATS'] = 'true'
+
+project 'Runner', {
+  'Debug' => :debug,
+  'Profile' => :release,
+  'Release' => :release,
+}
+
+def flutter_root
+  generated_xcode_build_settings_path = File.expand_path(File.join('..', 'Flutter', 'Generated.xcconfig'), __FILE__)
+  unless File.exist?(generated_xcode_build_settings_path)
+    raise "#{generated_xcode_build_settings_path} must exist. If you're running pod install manually, make sure flutter pub get is executed first"
+  end
+
+  File.foreach(generated_xcode_build_settings_path) do |line|
+    matches = line.match(/FLUTTER_ROOT\=(.*)/)
+    return matches[1].strip if matches
+  end
+  raise "FLUTTER_ROOT not found in #{generated_xcode_build_settings_path}. Try deleting Generated.xcconfig, then run flutter pub get"
+end
+
+require File.expand_path(File.join('packages', 'flutter_tools', 'bin', 'podhelper'), flutter_root)
+
+flutter_ios_podfile_setup
+
+target 'Runner' do
+  use_frameworks!
+
+  flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
+  target 'RunnerTests' do
+    inherit! :search_paths
+  end
+end
+
+post_install do |installer|
+  installer.pods_project.targets.each do |target|
+    flutter_additional_ios_build_settings(target)
+  end
+
+  # Runner çıktısı build/ios/iphoneos iken pod çerçeveleri Debug-iphoneos'ta kalır.
+  script = File.join(__dir__, 'Pods', 'Target Support Files', 'Pods-Runner', 'Pods-Runner-frameworks.sh')
+  next unless File.exist?(script)
+
+  contents = File.read(script)
+  next if contents.include?('relocated')
+
+  needle = "  if [ -L \"${source}\" ]; then"
+  patch = <<~'SH'
+    if [ -z "${source:-}" ]; then
+      local relocated="${1/#${BUILT_PRODUCTS_DIR}/${PODS_CONFIGURATION_BUILD_DIR}}"
+      if [ -r "${relocated}" ]; then
+        local source="${relocated}"
+      fi
+    fi
+
+  SH
+  contents.sub!(needle, patch + needle)
+  File.write(script, contents)
+end

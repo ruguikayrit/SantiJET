@@ -64,9 +64,14 @@ class _OrdersScreenState extends ConsumerState<OrdersScreen> {
             const SantijetHeader(subtitle: 'Sipariş'),
             if (hasActiveProject) ...[
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.md,
+                  20,
+                  AppSpacing.md,
+                  0,
+                ),
                 child: AppSearchBar(
-                  hint: 'Sipariş no, firma, imalat ara...',
+                  hint: 'Sipariş no, imalat ara...',
                   onChanged: (v) => setState(() => _searchQuery = v),
                 ),
               ),
@@ -106,7 +111,7 @@ class _OrdersScreenState extends ConsumerState<OrdersScreen> {
       floatingActionButton: hasActiveProject &&
               ref.watch(canCreateOrderProvider)
           ? AppFab(
-              label: 'Yeni Sipariş',
+              heroTag: 'new-order',
               onPressed: () => context.push(AppRoutes.newOrder),
             )
           : null,

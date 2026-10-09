@@ -143,18 +143,18 @@ class AppBottomNavBar extends ConsumerWidget {
 
   static const _icons = [
     Icons.dashboard_outlined,
+    Icons.architecture_outlined,
     Icons.receipt_long_outlined,
     Icons.local_shipping_outlined,
     Icons.inventory_2_outlined,
-    Icons.analytics_outlined,
   ];
 
   static const _activeIcons = [
     Icons.dashboard,
+    Icons.architecture,
     Icons.receipt_long,
     Icons.local_shipping,
     Icons.inventory_2,
-    Icons.analytics,
   ];
 
   static double totalHeightOf(BuildContext context) =>

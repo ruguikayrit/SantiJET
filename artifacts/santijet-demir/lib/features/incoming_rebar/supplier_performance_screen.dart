@@ -1,3 +1,4 @@
+import 'package:santijet_demir/core/format/app_format.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:santijet_demir/core/theme/app_colors.dart';
@@ -44,8 +45,8 @@ class SupplierPerformanceScreen extends ConsumerWidget {
             ),
             child: Row(
               children: [
-                _OverallMetric(label: 'Sipariş', value: '${totalOrdered.toStringAsFixed(0)}t'),
-                _OverallMetric(label: 'Teslim', value: '${totalDelivered.toStringAsFixed(0)}t'),
+                _OverallMetric(label: 'Sipariş', value: '${AppFormat.tonnage(totalOrdered)}t'),
+                _OverallMetric(label: 'Teslim', value: '${AppFormat.tonnage(totalDelivered)}t'),
                 _OverallMetric(
                   label: 'Performans',
                   value: '%${overallPerf.toStringAsFixed(1)}',
@@ -166,10 +167,10 @@ class _SupplierScoreCard extends StatelessWidget {
           const SizedBox(height: 12),
           Row(
             children: [
-              _Metric(label: 'Sipariş', value: '${supplier.totalOrdered.toStringAsFixed(0)}t'),
-              _Metric(label: 'Teslim', value: '${supplier.totalDelivered.toStringAsFixed(0)}t'),
-              _Metric(label: 'Eksik', value: '${supplier.missing.toStringAsFixed(0)}t'),
-              _Metric(label: 'Fark', value: '${supplier.difference.toStringAsFixed(0)}t'),
+              _Metric(label: 'Sipariş', value: '${AppFormat.tonnage(supplier.totalOrdered)}t'),
+              _Metric(label: 'Teslim', value: '${AppFormat.tonnage(supplier.totalDelivered)}t'),
+              _Metric(label: 'Eksik', value: '${AppFormat.tonnage(supplier.missing)}t'),
+              _Metric(label: 'Fark', value: '${AppFormat.tonnage(supplier.difference)}t'),
             ],
           ),
         ],

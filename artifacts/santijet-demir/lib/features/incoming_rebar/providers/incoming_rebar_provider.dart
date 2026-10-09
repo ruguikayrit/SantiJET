@@ -28,7 +28,7 @@ final deliveriesProvider =
 final inTransitOrdersProvider = Provider<List<OrderItem>>((ref) {
   return ref
       .watch(ordersProvider)
-      .where((order) => order.status == OrderStatus.inTransit)
+      .where((order) => order.status.canDeliver)
       .toList();
 });
 
@@ -120,16 +120,18 @@ class DeliveredDiameterRow {
   final double delivered;
 }
 
-final deliveredDiameterRowsProvider = Provider<List<DeliveredDiameterRow>>((ref) {
-  final deliveries = ref.watch(deliveriesProvider);
-  final surveyDiameters = surveyDiametersFromImalats(
-    ref.watch(surveyProjectProvider).imalats,
-  );
+List<DeliveredDiameterRow> buildDeliveredDiameterRows(
+  List<DeliveryItem> deliveries, {
+  Set<int> surveyDiameters = const {},
+}) {
   final totals = <int, ({double ordered, double delivered})>{};
 
   for (final delivery in deliveries) {
     for (final line in delivery.diameterLines) {
-      if (!surveyDiameters.contains(line.diameter)) continue;
+      if (surveyDiameters.isNotEmpty &&
+          !surveyDiameters.contains(line.diameter)) {
+        continue;
+      }
       final current = totals[line.diameter];
       totals[line.diameter] = (
         ordered: (current?.ordered ?? 0) + line.ordered,
@@ -149,7 +151,39 @@ final deliveredDiameterRowsProvider = Provider<List<DeliveredDiameterRow>>((ref)
       )
       .toList()
     ..sort((a, b) => a.diameter.compareTo(b.diameter));
+}
+
+final deliveredDiameterRowsProvider = Provider<List<DeliveredDiameterRow>>((ref) {
+  final deliveries = ref.watch(deliveriesProvider);
+  final surveyDiameters = surveyDiametersFromImalats(
+    ref.watch(surveyProjectProvider).imalats,
+  );
+  return buildDeliveredDiameterRows(
+    deliveries,
+    surveyDiameters: surveyDiameters,
+  );
 });
+
+enum IncomingRebarPeriod { all, month, year }
+
+final incomingRebarPeriodProvider =
+    StateProvider<IncomingRebarPeriod>((ref) => IncomingRebarPeriod.all);
+
+List<DeliveryItem> filterDeliveriesByPeriod(
+  List<DeliveryItem> deliveries,
+  IncomingRebarPeriod period, {
+  DateTime? now,
+}) {
+  if (period == IncomingRebarPeriod.all) return deliveries;
+  final today = now ?? DateTime.now();
+  return deliveries.where((delivery) {
+    if (period == IncomingRebarPeriod.year) {
+      return delivery.date.year == today.year;
+    }
+    return delivery.date.year == today.year &&
+        delivery.date.month == today.month;
+  }).toList();
+}
 
 final deliveryFilterProvider = StateProvider<int>((ref) => 0);
 
@@ -221,7 +255,7 @@ class DeliveriesNotifier extends StateNotifier<List<DeliveryItem>> {
           orElse: () => null,
         );
     if (order == null) return DeliverySaveResult.orderNotFound;
-    if (order.status != OrderStatus.inTransit) {
+    if (!order.status.canDeliver) {
       return DeliverySaveResult.invalidOrderStatus;
     }
 
@@ -263,6 +297,7 @@ class DeliveriesNotifier extends StateNotifier<List<DeliveryItem>> {
       status: status,
       diameterLines: diameterLines,
       plateNo: draft.plateNo.trim(),
+      irsaliyePhotoPath: draft.irsaliyePhotoPath,
     );
 
     state = [delivery, ...state];
@@ -332,6 +367,10 @@ class NewDeliveryDraftNotifier extends StateNotifier<NewDeliveryDraft> {
 
   void setPlateNo(String value) {
     state = state.copyWith(plateNo: value);
+  }
+
+  void setIrsaliyePhoto(String value) {
+    state = state.copyWith(irsaliyePhotoPath: value);
   }
 
   void setDiameterEntry(int diameter, double value) {

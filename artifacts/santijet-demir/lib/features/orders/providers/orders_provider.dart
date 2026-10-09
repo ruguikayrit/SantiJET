@@ -28,35 +28,9 @@ final ordersProvider =
 final orderFilterProvider = StateProvider<int>((ref) => 0);
 
 const orderFilterLabels = [
-  'Tümü',
-  'Onay Bekleyen',
-  'Verildi',
-  'Yolda',
-  'Tamamlandı',
+  'Bekleyen',
+  'Tamamlanan',
   'İptal',
-];
-
-const _filterStatuses = [
-  OrderStatus.pendingApproval,
-  OrderStatus.submitted,
-  OrderStatus.inTransit,
-  OrderStatus.completed,
-  OrderStatus.cancelled,
-];
-
-const _individualOrderFilterLabels = [
-  'Tümü',
-  'Verildi',
-  'Yolda',
-  'Tamamlandı',
-  'İptal',
-];
-
-const _individualFilterStatuses = [
-  OrderStatus.submitted,
-  OrderStatus.inTransit,
-  OrderStatus.completed,
-  OrderStatus.cancelled,
 ];
 
 bool _isIndividualMembership(Ref ref) {
@@ -65,27 +39,24 @@ bool _isIndividualMembership(Ref ref) {
 }
 
 final orderFilterLabelsProvider = Provider<List<String>>((ref) {
-  final membership =
-      ref.watch(authProvider).user?.membershipType ?? MembershipType.individual;
-  return membership == MembershipType.individual
-      ? _individualOrderFilterLabels
-      : orderFilterLabels;
+  return orderFilterLabels;
 });
 
 final filteredOrdersProvider = Provider<List<OrderItem>>((ref) {
   final orders = ref.watch(ordersProvider);
   final filterIndex = ref.watch(orderFilterProvider);
-  final membership =
-      ref.watch(authProvider).user?.membershipType ?? MembershipType.individual;
-  final statuses = membership == MembershipType.individual
-      ? _individualFilterStatuses
-      : _filterStatuses;
 
-  if (filterIndex == 0) return orders;
-  if (filterIndex < 1 || filterIndex > statuses.length) return orders;
+  bool matches(OrderItem order) {
+    return switch (filterIndex) {
+      0 => order.status != OrderStatus.completed &&
+          order.status != OrderStatus.cancelled,
+      1 => order.status == OrderStatus.completed,
+      2 => order.status == OrderStatus.cancelled,
+      _ => true,
+    };
+  }
 
-  final status = statuses[filterIndex - 1];
-  return orders.where((order) => order.status == status).toList();
+  return orders.where(matches).toList();
 });
 
 class OrdersDashboardSummary {
@@ -208,8 +179,8 @@ class OrdersNotifier extends StateNotifier<List<OrderItem>> {
 
   Future<OrderItem?> createOrder(NewOrderDraft draft) async {
     final projectId = _loadedProjectId;
-    final supplier = draft.selectedSupplier;
-    if (projectId == null || supplier == null) return null;
+    if (projectId == null) return null;
+    final supplierName = draft.selectedSupplier?.name ?? '';
 
     final imalatTonnages = {
       for (final name in draft.selectedImalats.keys)
@@ -224,8 +195,12 @@ class OrdersNotifier extends StateNotifier<List<OrderItem>> {
       imalatTypes: draft.selectedImalats.keys.toList(),
       tonnage: draft.finalOrderTonnage,
       status: skipApproval ? OrderStatus.submitted : OrderStatus.pendingApproval,
-      supplier: supplier.name,
+      supplier: supplierName,
       imalatTonnages: imalatTonnages,
+      diameterAmounts: {
+        for (final line in draft.diameterLines)
+          if (line.orderAmount > 0) line.diameter: line.orderAmount,
+      },
     );
 
     state = [order, ...state];
@@ -287,6 +262,32 @@ class OrdersNotifier extends StateNotifier<List<OrderItem>> {
     );
   }
 
+  Future<void> updateDiameterAmount({
+    required String orderId,
+    required int diameter,
+    required double amount,
+    required Map<int, double> baseAmounts,
+  }) async {
+    if (amount < 0) return;
+    final index = state.indexWhere((order) => order.id == orderId);
+    if (index < 0) return;
+
+    final next = Map<int, double>.from(baseAmounts);
+    if (amount == 0) {
+      next.remove(diameter);
+    } else {
+      next[diameter] = amount;
+    }
+    final tonnage = next.values.fold(0.0, (sum, value) => sum + value);
+    final updated = List<OrderItem>.from(state);
+    updated[index] = state[index].copyWith(
+      diameterAmounts: next,
+      tonnage: tonnage,
+    );
+    state = updated;
+    await _persist();
+  }
+
   Future<void> advanceStatus(String orderId) async {
     final index = state.indexWhere((order) => order.id == orderId);
     if (index < 0) return;
@@ -306,7 +307,7 @@ class OrdersNotifier extends StateNotifier<List<OrderItem>> {
     if (index < 0) return;
 
     final order = state[index];
-    if (order.status != OrderStatus.inTransit) return;
+    if (!order.status.canDeliver) return;
 
     final updated = List<OrderItem>.from(state);
     updated[index] = order.copyWith(status: OrderStatus.completed);

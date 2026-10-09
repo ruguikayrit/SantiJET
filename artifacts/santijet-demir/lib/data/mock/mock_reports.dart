@@ -17,7 +17,7 @@ const reportCategories = [
   ReportCategory(
     id: 'kesif_icmal',
     title: 'Keşif Metraj İcmali',
-    subtitle: 'İmalat × çap × ton',
+    subtitle: 'İmalat × çap',
     iconName: 'architecture',
     colorValue: 0xFF3B82F6,
     format: 'PDF',
@@ -41,7 +41,7 @@ const reportCategories = [
   ReportCategory(
     id: 'siparis_ozet',
     title: 'Sipariş Özet Raporu',
-    subtitle: 'No, firma, durum, tonaj',
+    subtitle: 'No, firma, durum',
     iconName: 'receipt_long',
     colorValue: 0xFF06B6D4,
     format: 'PDF',
@@ -129,7 +129,7 @@ const reportCategories = [
   ReportCategory(
     id: 'aylik_ozet',
     title: 'Aylık Proje Özeti',
-    subtitle: 'Dönemsel aktivite ve tonaj',
+    subtitle: 'Dönemsel aktivite',
     iconName: 'calendar_month',
     colorValue: 0xFF06B6D4,
     format: 'PDF',

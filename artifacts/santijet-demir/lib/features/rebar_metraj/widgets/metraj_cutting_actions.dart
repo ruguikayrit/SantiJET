@@ -1,3 +1,4 @@
+import 'package:santijet_demir/core/format/app_format.dart';
 import 'package:flutter/material.dart';
 import 'package:santijet_demir/core/widgets/app_toast.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -75,7 +76,7 @@ Future<void> showImalatAnalysisImportSheet(
         ),
       ),
     );
-    context.push(AppRoutes.surveyMetraj);
+    context.push(AppRoutes.metraj);
     return;
   }
 
@@ -348,7 +349,7 @@ class _ImalatImportPageState extends State<_ImalatImportPage> {
                                 const SizedBox(height: 4),
                                 Text(
                                   '${option.linkedRecords.length} CAD kayıt · '
-                                  '${option.linkedTonnage.toStringAsFixed(2)} t',
+                                  '${AppFormat.tonnage(option.linkedTonnage)} t',
                                   style: AppTypography.bodySmall.copyWith(
                                     color: AppColors.textMuted,
                                   ),

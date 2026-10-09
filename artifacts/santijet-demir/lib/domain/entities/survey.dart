@@ -54,6 +54,102 @@ class DiameterLine {
   }
 }
 
+class ImalatSubWork {
+  const ImalatSubWork({
+    required this.id,
+    required this.name,
+    this.note = '',
+    this.lines = const [],
+  });
+
+  final String id;
+  final String name;
+  final String note;
+  final List<DiameterLine> lines;
+
+  double get planned => lines.fold(0, (sum, line) => sum + line.planned);
+
+  ImalatSubWork copyWith({
+    String? id,
+    String? name,
+    String? note,
+    List<DiameterLine>? lines,
+  }) {
+    return ImalatSubWork(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      note: note ?? this.note,
+      lines: lines ?? this.lines,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'name': name,
+        'note': note,
+        'lines': lines.map((line) => line.toJson()).toList(),
+      };
+
+  factory ImalatSubWork.fromJson(Map<dynamic, dynamic> json) {
+    return ImalatSubWork(
+      id: json['id'] as String? ?? '',
+      name: json['name'] as String? ?? '',
+      note: json['note'] as String? ?? '',
+      lines: (json['lines'] as List<dynamic>? ?? const [])
+          .map((line) => DiameterLine.fromJson(line as Map<dynamic, dynamic>))
+          .toList(),
+    );
+  }
+}
+
+class ImalatBlock {
+  const ImalatBlock({
+    required this.id,
+    required this.code,
+    required this.name,
+    this.items = const [],
+  });
+
+  final String id;
+  final String code;
+  final String name;
+  final List<ImalatSubWork> items;
+
+  double get planned => items.fold(0, (sum, item) => sum + item.planned);
+
+  ImalatBlock copyWith({
+    String? id,
+    String? code,
+    String? name,
+    List<ImalatSubWork>? items,
+  }) {
+    return ImalatBlock(
+      id: id ?? this.id,
+      code: code ?? this.code,
+      name: name ?? this.name,
+      items: items ?? this.items,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'code': code,
+        'name': name,
+        'items': items.map((item) => item.toJson()).toList(),
+      };
+
+  factory ImalatBlock.fromJson(Map<dynamic, dynamic> json) {
+    return ImalatBlock(
+      id: json['id'] as String? ?? '',
+      code: json['code'] as String? ?? '',
+      name: json['name'] as String? ?? '',
+      items: (json['items'] as List<dynamic>? ?? const [])
+          .map((item) => ImalatSubWork.fromJson(item as Map<dynamic, dynamic>))
+          .toList(),
+    );
+  }
+}
+
 class SurveyImalat {
   const SurveyImalat({
     required this.id,
@@ -66,6 +162,7 @@ class SurveyImalat {
     required this.ordered,
     required this.delivered,
     required this.pending,
+    this.blocks = const [],
   });
 
   final String id;
@@ -78,6 +175,7 @@ class SurveyImalat {
   final double ordered;
   final double delivered;
   final double pending;
+  final List<ImalatBlock> blocks;
 
   double get orderProgress => planned > 0 ? ordered / planned * 100 : 0;
   double get deliveryProgress => ordered > 0 ? delivered / ordered * 100 : 0;
@@ -93,6 +191,7 @@ class SurveyImalat {
     double? ordered,
     double? delivered,
     double? pending,
+    List<ImalatBlock>? blocks,
   }) {
     return SurveyImalat(
       id: id ?? this.id,
@@ -105,6 +204,7 @@ class SurveyImalat {
       ordered: ordered ?? this.ordered,
       delivered: delivered ?? this.delivered,
       pending: pending ?? this.pending,
+      blocks: blocks ?? this.blocks,
     );
   }
 
@@ -119,6 +219,7 @@ class SurveyImalat {
         'ordered': ordered,
         'delivered': delivered,
         'pending': pending,
+        'blocks': blocks.map((block) => block.toJson()).toList(),
       };
 
   factory SurveyImalat.fromJson(Map<dynamic, dynamic> json) {
@@ -138,6 +239,9 @@ class SurveyImalat {
       ordered: (json['ordered'] as num).toDouble(),
       delivered: (json['delivered'] as num).toDouble(),
       pending: (json['pending'] as num).toDouble(),
+      blocks: (json['blocks'] as List<dynamic>? ?? const [])
+          .map((block) => ImalatBlock.fromJson(block as Map<dynamic, dynamic>))
+          .toList(),
     );
   }
 }

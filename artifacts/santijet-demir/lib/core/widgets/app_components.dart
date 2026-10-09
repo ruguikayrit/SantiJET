@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:santijet_demir/core/animations/app_animations.dart';
+import 'package:santijet_demir/core/format/app_format.dart';
 import 'package:santijet_demir/core/haptics/app_haptics.dart';
 import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_radii.dart';
@@ -60,7 +61,13 @@ class SapmaTag extends StatelessWidget {
                 : AppColors.warning;
 
     final prefix = isZero ? '✓' : isPositive ? '+' : '';
-    final text = isZero ? '✓' : '$prefix${value.toStringAsFixed(1)}$unit';
+    final normalizedUnit = unit.trim().toLowerCase();
+    final showsUnit =
+        normalizedUnit.isNotEmpty && normalizedUnit != 't' && normalizedUnit != 'ton';
+    final amount = unit == 't' || normalizedUnit == 'ton'
+        ? AppFormat.tonnage(value.abs())
+        : value.abs().toStringAsFixed(2).replaceAll('.', ',');
+    final text = isZero ? '✓' : '$prefix$amount${showsUnit ? unit : ''}';
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
@@ -111,6 +118,11 @@ class KpiCard extends StatelessWidget {
   final bool compactHeight;
   final bool centerContent;
   final bool animateValue;
+
+  bool get _showsUnit {
+    final normalized = unit.trim().toLowerCase();
+    return normalized.isNotEmpty && normalized != 't' && normalized != 'ton';
+  }
 
   Widget _buildLabel() {
     final parts = label.trim().split(RegExp(r'\s+'));
@@ -173,7 +185,7 @@ class KpiCard extends StatelessWidget {
                               textAlign: TextAlign.end,
                             ),
                     ),
-                    if (unit.isNotEmpty) ...[
+                    if (_showsUnit) ...[
                       const SizedBox(width: 2),
                       Padding(
                         padding: const EdgeInsets.only(bottom: 2),
@@ -237,7 +249,7 @@ class KpiCard extends StatelessWidget {
                           centerContent ? TextAlign.center : TextAlign.start,
                     ),
             ),
-            if (unit.isNotEmpty) ...[
+            if (_showsUnit) ...[
               const SizedBox(width: 2),
               Padding(
                 padding: EdgeInsets.only(bottom: dense ? 2 : 4),
@@ -660,15 +672,17 @@ class AppTappable extends StatelessWidget {
 class AppFab extends StatelessWidget {
   const AppFab({
     super.key,
-    required this.label,
+    this.label = '',
     required this.onPressed,
-    this.extended = true,
+    this.extended = false,
     this.aboveBottomNav = true,
+    this.heroTag,
   });
 
   final String label;
   final VoidCallback onPressed;
   final bool extended;
+  final Object? heroTag;
 
   /// MainShell sekmesinde: gövde zaten alt nav üstünde biter; yalnızca hafif boşluk.
   final bool aboveBottomNav;
@@ -677,8 +691,8 @@ class AppFab extends StatelessWidget {
   static const _fabEdgeMargin = 16.0;
   /// FAB ile son etkileşimli içerik arasında ek boşluk.
   static const _contentGap = 24.0;
-  /// Nested shell gövdesinde nav’a yapışık duruş için ek alt boşluk.
-  static const _shellDockGap = 8.0;
+  /// Nested shell gövdesinde nav’ın hemen üstü.
+  static const _shellDockGap = 0.0;
 
   /// Kaydırılabilir içerik altına konacak boşluk — FAB hiçbir butonu örtmez.
   ///
@@ -695,14 +709,16 @@ class AppFab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final Widget fab;
-    if (extended) {
+    if (extended && label.isNotEmpty) {
       fab = FloatingActionButton.extended(
+        heroTag: heroTag,
         onPressed: onPressed,
         icon: const Icon(Icons.add),
         label: Text(label),
       );
     } else {
       fab = FloatingActionButton(
+        heroTag: heroTag,
         onPressed: onPressed,
         child: const Icon(Icons.add),
       );

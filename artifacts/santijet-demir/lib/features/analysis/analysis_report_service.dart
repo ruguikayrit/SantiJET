@@ -145,14 +145,14 @@ class AnalysisReportService {
     CuttingBendingBatch batch,
   ) {
     final values = <(String, String)>[
-      ('Ham tonaj', _tonnage(summary.rawMaterialTonnage)),
-      ('Ham stok tonajı', _tonnage(summary.rawStockTonnage)),
+      ('Ham', _tonnage(summary.rawMaterialTonnage, includeUnit: false)),
+      ('Ham stok', _tonnage(summary.rawStockTonnage, includeUnit: false)),
       ('Ham fire', '${_tonnage(summary.rawWasteTonnage)} (${_percent(summary.rawWastePercent)})'),
     ];
 
     if (summary.isPlannedReady) {
       values.addAll([
-        ('Plan stok tonajı', _tonnage(summary.plannedStockTonnage!)),
+        ('Plan stok', _tonnage(summary.plannedStockTonnage!, includeUnit: false)),
         ('Plan fire', '${_tonnage(summary.plannedWasteTonnage!)} (${_percent(summary.plannedWastePercent!)})'),
         ('Kazanç', '${_tonnage(summary.savedWasteTonnage)} (${_percent(summary.savedWastePercent)})'),
       ]);
@@ -185,8 +185,8 @@ class AnalysisReportService {
       keyValues: [
         ('Ham satır / adet', '${AppFormat.integer(comparison.rawLineCount)} / ${AppFormat.integer(comparison.rawPieceCount)}'),
         ('Revize satır / adet', '${AppFormat.integer(comparison.revisedLineCount)} / ${AppFormat.integer(comparison.revisedPieceCount)}'),
-        ('Ham tonaj', _tonnage(comparison.rawMaterialTonnage)),
-        ('Revize tonaj', _tonnage(comparison.revisedMaterialTonnage)),
+        ('Ham', _tonnage(comparison.rawMaterialTonnage, includeUnit: false)),
+        ('Revize', _tonnage(comparison.revisedMaterialTonnage, includeUnit: false)),
         ('Ham fire', '${_tonnage(comparison.rawFireTonnage)} (${_percent(comparison.rawFirePercent)})'),
         ('Plan fire', '${_tonnage(comparison.plannedFireTonnage)} (${_percent(comparison.plannedFirePercent)})'),
         ('Fire kazancı', '${_tonnage(comparison.savedFireTonnage)} (${_percent(comparison.savedFirePercent)})'),
@@ -203,9 +203,9 @@ class AnalysisReportService {
       title: 'Strateji Karşılaştırması',
       headers: const [
         'Strateji',
-        'Plan fire (t)',
+        'Plan fire',
         'Plan fire (%)',
-        'Kazanç (t)',
+        'Kazanç',
         'Kazanç (%)',
         'Durum',
       ],
@@ -236,7 +236,7 @@ class AnalysisReportService {
     return PdfReportSection(
       title: title,
       subtitle: subtitle,
-      headers: const ['ÇAP', 'Stok (t)', 'Kullanım (t)', 'Fire (t)', 'Fire (%)', 'Çubuk'],
+      headers: const ['ÇAP', 'Stok', 'Kullanım', 'Fire', 'Fire (%)', 'Çubuk'],
       rows: breakdown
           .map(
             (row) => [
@@ -397,7 +397,7 @@ class AnalysisReportService {
         'Stok (m)',
         'Fire (m)',
         'Fire (%)',
-        'Fire (t)',
+        'Fire',
       ],
       rows: plans
           .map(

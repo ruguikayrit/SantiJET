@@ -9,14 +9,11 @@ import 'package:santijet_demir/core/format/app_format.dart';
 import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_radii.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
-import 'package:santijet_demir/core/utils/open_external_url.dart';
 import 'package:santijet_demir/core/widgets/app_table_header.dart';
 import 'package:santijet_demir/core/widgets/empty_states.dart';
-import 'package:santijet_demir/data/services/puantaj_progress_cloud_service.dart';
 import 'package:santijet_demir/features/field_count/field_count_calculator.dart';
 import 'package:santijet_demir/features/projects/providers/project_provider.dart';
 import 'package:santijet_demir/features/shell/project_progress_provider.dart';
-import 'package:santijet_demir/features/shell/puantaj_progress_sync.dart';
 import 'package:santijet_demir/features/survey/providers/survey_provider.dart';
 
 class ProjectProgressSection extends ConsumerStatefulWidget {
@@ -29,26 +26,27 @@ class ProjectProgressSection extends ConsumerStatefulWidget {
 
 class _ProjectProgressSectionState
     extends ConsumerState<ProjectProgressSection> {
-  /// Toplu uygulama sonrası açılacak imalat satırları.
-  var _expandSignal = 0;
-  Set<String> _imalatIdsToExpand = {};
-
   @override
   Widget build(BuildContext context) {
-    ref.listen(activeProjectIdProvider, (previous, next) {
-      if (previous != next) {
-        ref.read(selectedProgressImalatIdsProvider.notifier).state = {};
-        setState(() {
-          _imalatIdsToExpand = {};
-          _expandSignal++;
-        });
-      }
-    });
-
     final summary = ref.watch(projectProgressSummaryProvider);
     final canEdit = ref.watch(canEditActiveProjectProvider);
-    final selectedImalatIds = ref.watch(selectedProgressImalatIdsProvider);
     final groupedRows = _groupProgressRows(summary.rows);
+
+    Future<void> applyToImalats(Set<String> imalatIds, double progressPercent) async {
+      if (imalatIds.isEmpty) return;
+      final messenger = ScaffoldMessenger.of(context);
+      try {
+        await ref.read(surveyProjectProvider.notifier).updateProgressForImalats(
+              imalatIds: imalatIds,
+              progressPercent: progressPercent,
+            );
+      } catch (_) {
+        if (!mounted) return;
+        messenger.showAppSnackBar(
+          const SnackBar(content: Text('İlerleme kaydedilemedi')),
+        );
+      }
+    }
 
     if (summary.rows.isEmpty) {
       return Column(
@@ -60,10 +58,6 @@ class _ProjectProgressSectionState
             'Planlanan kullanım = keşif tonajı × ilerleme oranı',
             style: AppTypography.bodySmall,
           ),
-          const SizedBox(height: 10),
-          const _PuantajProgressNudge(),
-          const SizedBox(height: 10),
-          const _PuantajCloudImportButton(),
           const SizedBox(height: 12),
           const ModuleEmptyState(type: EmptyStateType.noSurvey, inline: true),
         ],
@@ -75,71 +69,17 @@ class _ProjectProgressSectionState
       for (final group in groupedRows) group.first.imalatId,
     };
 
-    void setSelectedImalats(Set<String> next) {
-      ref.read(selectedProgressImalatIdsProvider.notifier).state = next;
-    }
-
-    Future<void> applyBulkProgress(double progressPercent) async {
-      if (selectedImalatIds.isEmpty) return;
-      final appliedIds = Set<String>.from(selectedImalatIds);
-      try {
-        await ref.read(surveyProjectProvider.notifier).updateProgressForImalats(
-              imalatIds: appliedIds,
-              progressPercent: progressPercent,
-            );
-        if (!mounted) return;
-        // Panel kapansın; uygulanan imalat satırları açılsın (çap kontrolü).
-        setSelectedImalats({});
-        setState(() {
-          _imalatIdsToExpand = appliedIds;
-          _expandSignal++;
-        });
-        ScaffoldMessenger.of(context).showAppSnackBar(
-          SnackBar(
-            content: Text(
-              '${appliedIds.length} imalata '
-              '%${progressPercent.round()} uygulandı',
-            ),
-          ),
-        );
-      } catch (_) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showAppSnackBar(
-          const SnackBar(content: Text('İlerleme kaydedilemedi')),
-        );
-      }
-    }
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text('Proje İlerleme Durumu', style: AppTypography.headlineMedium),
-        const SizedBox(height: 10),
-        const _PuantajProgressNudge(),
-        const SizedBox(height: 10),
-        const _PuantajCloudImportButton(),
         const SizedBox(height: 12),
         _OverallProgressCard(
           percent: overallPercent,
           totalPlanned: summary.totalPlanned,
           totalExpected: summary.totalExpected,
-        ),
-        AnimatedSize(
-          duration: const Duration(milliseconds: 220),
-          curve: Curves.easeOutCubic,
-          alignment: Alignment.topCenter,
-          child: canEdit && selectedImalatIds.isNotEmpty
-              ? Padding(
-                  padding: const EdgeInsets.only(top: 12),
-                  child: _BulkProgressEntryPanel(
-                    selectedImalatIds: selectedImalatIds,
-                    allImalatIds: allImalatIds,
-                    groupedRows: groupedRows,
-                    onSelectionChanged: setSelectedImalats,
-                    onApply: applyBulkProgress,
-                  ),
-                )
-              : const SizedBox.shrink(),
+          canEdit: canEdit,
+          onPercentCommitted: (value) => applyToImalats(allImalatIds, value),
         ),
         const SizedBox(height: 12),
         Container(
@@ -157,21 +97,10 @@ class _ProjectProgressSectionState
                   rows: entry.$2,
                   isFirst: entry.$1 == 0,
                   canEdit: canEdit,
-                  selected: selectedImalatIds.contains(entry.$2.first.imalatId),
-                  expandSignal: _expandSignal,
-                  forceExpand: _imalatIdsToExpand.contains(
-                    entry.$2.first.imalatId,
+                  onHeadingPercent: (value) => applyToImalats(
+                    {entry.$2.first.imalatId},
+                    value,
                   ),
-                  onSelectionChanged: (selected) {
-                    final imalatId = entry.$2.first.imalatId;
-                    final next = Set<String>.from(selectedImalatIds);
-                    if (selected) {
-                      next.add(imalatId);
-                    } else {
-                      next.remove(imalatId);
-                    }
-                    setSelectedImalats(next);
-                  },
                   onProgressChanged: (row, value) async {
                     final notifier = ref.read(surveyProjectProvider.notifier);
                     try {
@@ -220,260 +149,117 @@ List<List<ProjectProgressRow>> _groupProgressRows(List<ProjectProgressRow> rows)
   return order.map((id) => groups[id]!).toList();
 }
 
-class _BulkProgressEntryPanel extends StatefulWidget {
-  const _BulkProgressEntryPanel({
-    required this.selectedImalatIds,
-    required this.allImalatIds,
-    required this.groupedRows,
-    required this.onSelectionChanged,
-    required this.onApply,
+class _ManualPercentField extends StatefulWidget {
+  const _ManualPercentField({
+    required this.percent,
+    required this.enabled,
+    required this.onCommitted,
+    this.large = false,
   });
 
-  final Set<String> selectedImalatIds;
-  final Set<String> allImalatIds;
-  final List<List<ProjectProgressRow>> groupedRows;
-  final ValueChanged<Set<String>> onSelectionChanged;
-  final Future<void> Function(double progressPercent) onApply;
+  final double percent;
+  final bool enabled;
+  final ValueChanged<double> onCommitted;
+  final bool large;
 
   @override
-  State<_BulkProgressEntryPanel> createState() =>
-      _BulkProgressEntryPanelState();
+  State<_ManualPercentField> createState() => _ManualPercentFieldState();
 }
 
-class _BulkProgressEntryPanelState extends State<_BulkProgressEntryPanel> {
+class _ManualPercentFieldState extends State<_ManualPercentField> {
   late final TextEditingController _controller;
-  var _isApplying = false;
-  var _livePercent = 0.0;
+  late final FocusNode _focus;
+  var _editing = false;
 
   @override
   void initState() {
     super.initState();
-    _controller = TextEditingController();
+    _controller = TextEditingController(text: _text(widget.percent));
+    _focus = FocusNode()..addListener(_handleFocus);
+  }
+
+  void _handleFocus() {
+    if (!mounted) return;
+    if (_focus.hasFocus) {
+      _editing = true;
+      return;
+    }
+    _commit();
+  }
+
+  @override
+  void didUpdateWidget(covariant _ManualPercentField oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!_editing && oldWidget.percent != widget.percent) {
+      _controller.text = _text(widget.percent);
+    }
   }
 
   @override
   void dispose() {
+    _focus.removeListener(_handleFocus);
+    _focus.dispose();
     _controller.dispose();
     super.dispose();
   }
 
-  void _onPercentChanged(String value) {
-    final parsed = int.tryParse(value.trim());
-    setState(() {
-      _livePercent = parsed == null ? 0 : parsed.clamp(0, 100).toDouble();
-    });
+  String _text(double value) {
+    final rounded = value.round().clamp(0, 100);
+    return rounded == 0 ? '' : '$rounded';
   }
 
-  bool get _allSelected =>
-      widget.allImalatIds.isNotEmpty &&
-      widget.selectedImalatIds.length == widget.allImalatIds.length;
-
-  int get _targetRowCount => widget.groupedRows
-      .where((group) => widget.selectedImalatIds.contains(group.first.imalatId))
-      .fold(0, (sum, group) => sum + group.length);
-
-  String get _targetLabel {
-    if (widget.selectedImalatIds.length == 1) {
-      final group = widget.groupedRows.firstWhere(
-        (rows) => widget.selectedImalatIds.contains(rows.first.imalatId),
-      );
-      return group.first.imalatName;
-    }
-    return '${widget.selectedImalatIds.length} imalat';
-  }
-
-  Future<void> _apply() async {
+  void _commit() {
+    setState(() => _editing = false);
     final parsed = int.tryParse(_controller.text.trim());
-    if (parsed == null) return;
-
-    setState(() => _isApplying = true);
-    try {
-      await widget.onApply(parsed.clamp(0, 100).toDouble());
-      if (!mounted) return;
-      _controller.text = '${parsed.clamp(0, 100)}';
-    } finally {
-      if (mounted) setState(() => _isApplying = false);
+    if (parsed == null) {
+      _controller.text = _text(widget.percent);
+      return;
+    }
+    final clamped = parsed.clamp(0, 100).toDouble();
+    _controller.text = clamped == 0 ? '' : '${clamped.round()}';
+    if (clamped != widget.percent) {
+      widget.onCommitted(clamped);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceElevated,
-        borderRadius: AppRadii.md,
-        border: Border.all(
-          color: AppColors.electricBlueLight.withValues(alpha: 0.45),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              const Icon(
-                Icons.percent,
-                size: 18,
-                color: AppColors.electricBlueLight,
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  'Toplu ilerleme',
-                  style: AppTypography.titleMedium.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-              TextButton(
-                onPressed: () => widget.onSelectionChanged({}),
-                child: const Text('Seçimi kaldır'),
-              ),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'Hedef: $_targetLabel · $_targetRowCount çap satırı',
-            style: AppTypography.bodySmall.copyWith(
-              color: AppColors.textSecondary,
-            ),
-          ),
-          const SizedBox(height: 10),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              ActionChip(
-                avatar: Icon(
-                  _allSelected ? Icons.deselect : Icons.select_all,
-                  size: 16,
-                  color: AppColors.electricBlueLight,
-                ),
-                label: Text(
-                  _allSelected ? 'Seçimi kaldır' : 'Tümünü seç',
-                  style: AppTypography.labelMedium,
-                ),
-                backgroundColor: AppColors.canvas,
-                side: BorderSide(color: AppColors.border),
-                onPressed: () {
-                  widget.onSelectionChanged(
-                    _allSelected
-                        ? <String>{}
-                        : Set<String>.from(widget.allImalatIds),
-                  );
-                },
-              ),
-              ActionChip(
-                label: Text(
-                  '${widget.selectedImalatIds.length} seçili',
-                  style: AppTypography.labelMedium.copyWith(
-                    color: AppColors.electricBlueLight,
-                  ),
-                ),
-                backgroundColor:
-                    AppColors.electricBlue.withValues(alpha: 0.1),
-                side: BorderSide(
-                  color: AppColors.electricBlue.withValues(alpha: 0.35),
-                ),
-                onPressed: () => widget.onSelectionChanged({}),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  SizedBox(
-                    width: 72,
-                    child: TextField(
-                      controller: _controller,
-                      keyboardType: TextInputType.number,
-                      textAlign: TextAlign.center,
-                      autofocus: true,
-                      inputFormatters: [
-                        FilteringTextInputFormatter.digitsOnly,
-                        LengthLimitingTextInputFormatter(3),
-                      ],
-                      style: AppTypography.titleMedium.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.electricBlueLight,
-                      ),
-                      decoration: InputDecoration(
-                        isDense: true,
-                        hintText: '0',
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 12,
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: AppRadii.sm,
-                          borderSide: BorderSide(color: AppColors.border),
-                        ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: AppRadii.sm,
-                          borderSide: BorderSide(color: AppColors.border),
-                        ),
-                      ),
-                      onSubmitted: (_) => _apply(),
-                      onChanged: _onPercentChanged,
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    '%',
-                    style: AppTypography.titleMedium.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.electricBlueLight,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: FilledButton(
-                  onPressed: _isApplying ? null : _apply,
-                  style: FilledButton.styleFrom(
-                    minimumSize: const Size.fromHeight(48),
-                    backgroundColor: AppColors.electricBlueLight,
-                    foregroundColor: AppColors.canvas,
-                  ),
-                  child: _isApplying
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Text('Uygula'),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: AnimatedProgressBar(
-                  percent: _livePercent,
-                  color: AppColors.electricBlueLight,
-                  height: 8,
-                ),
-              ),
-              const SizedBox(width: 10),
-              AnimatedCountText(
-                value: '${_livePercent.round()}',
-                numericValue: _livePercent,
-                style: AppTypography.titleMedium.copyWith(
-                  color: AppColors.electricBlueLight,
-                  fontWeight: FontWeight.w700,
-                ),
-                formatter: (n) => '${n.round()}%',
-              ),
-            ],
-          ),
+    final style = widget.large
+        ? AppTypography.kpiValue.copyWith(
+            fontSize: AppTypography.scale * 28,
+            color: AppColors.electricBlueLight,
+          )
+        : AppTypography.labelMedium.copyWith(
+            color: AppColors.electricBlueLight,
+            fontWeight: FontWeight.w700,
+          );
+
+    return SizedBox(
+      width: widget.large ? 88 : 64,
+      child: TextField(
+        controller: _controller,
+        focusNode: _focus,
+        enabled: widget.enabled,
+        keyboardType: TextInputType.number,
+        textInputAction: TextInputAction.done,
+        textAlign: TextAlign.center,
+        inputFormatters: [
+          FilteringTextInputFormatter.digitsOnly,
+          LengthLimitingTextInputFormatter(3),
         ],
+        style: style,
+        decoration: InputDecoration(
+          isDense: true,
+          suffixText: '%',
+          suffixStyle: style,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+          border: const OutlineInputBorder(),
+        ),
+        onTap: () => _editing = true,
+        onChanged: (_) => _editing = true,
+        onTapOutside: (_) => _focus.unfocus(),
+        onEditingComplete: () => _focus.unfocus(),
+        onSubmitted: (_) => _focus.unfocus(),
       ),
     );
   }
@@ -484,20 +270,14 @@ class _ProgressImalatGroup extends StatefulWidget {
     required this.rows,
     required this.isFirst,
     required this.canEdit,
-    required this.selected,
-    required this.expandSignal,
-    required this.forceExpand,
-    required this.onSelectionChanged,
+    required this.onHeadingPercent,
     required this.onProgressChanged,
   });
 
   final List<ProjectProgressRow> rows;
   final bool isFirst;
   final bool canEdit;
-  final bool selected;
-  final int expandSignal;
-  final bool forceExpand;
-  final ValueChanged<bool> onSelectionChanged;
+  final ValueChanged<double> onHeadingPercent;
   final void Function(ProjectProgressRow row, double value) onProgressChanged;
 
   @override
@@ -505,16 +285,7 @@ class _ProgressImalatGroup extends StatefulWidget {
 }
 
 class _ProgressImalatGroupState extends State<_ProgressImalatGroup> {
-  /// Çap tablosu varsayılan kapalı; toplu uygulama sonrası açılır.
   bool _expanded = false;
-
-  @override
-  void didUpdateWidget(covariant _ProgressImalatGroup oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.expandSignal != oldWidget.expandSignal && widget.forceExpand) {
-      _expanded = true;
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -539,38 +310,19 @@ class _ProgressImalatGroupState extends State<_ProgressImalatGroup> {
             border: Border(
               top: widget.isFirst
                   ? BorderSide.none
-                  : BorderSide(
-                      color: AppColors.border.withValues(alpha: 0.8),
-                    ),
+                  : BorderSide(color: AppColors.border.withValues(alpha: 0.8)),
               bottom: BorderSide(color: AppColors.border),
             ),
           ),
           child: Row(
             children: [
-              if (widget.canEdit) ...[
-                Padding(
-                  padding: const EdgeInsets.only(left: 10),
-                  child: AppAnimatedCheckbox(
-                    value: widget.selected,
-                    onChanged: (value) =>
-                        widget.onSelectionChanged(value == true),
-                    visualDensity: VisualDensity.compact,
-                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  ),
-                ),
-              ],
               Expanded(
                 child: Material(
                   color: Colors.transparent,
                   child: InkWell(
                     onTap: () => setState(() => _expanded = !_expanded),
                     child: Padding(
-                      padding: EdgeInsets.fromLTRB(
-                        widget.canEdit ? 4 : 14,
-                        12,
-                        14,
-                        10,
-                      ),
+                      padding: const EdgeInsets.fromLTRB(14, 12, 8, 10),
                       child: Row(
                         children: [
                           Container(
@@ -590,7 +342,6 @@ class _ProgressImalatGroupState extends State<_ProgressImalatGroup> {
                                   imalatName,
                                   style: AppTypography.titleMedium.copyWith(
                                     fontWeight: FontWeight.w700,
-                                    letterSpacing: 0.4,
                                   ),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
@@ -602,44 +353,8 @@ class _ProgressImalatGroupState extends State<_ProgressImalatGroup> {
                                     color: AppColors.textMuted,
                                   ),
                                 ),
-                                Text(
-                                  'Planlanan kullanım ${AppFormat.tonnage(totalExpected)}t',
-                                  style: AppTypography.bodySmall.copyWith(
-                                    color: AppColors.textMuted,
-                                  ),
-                                ),
                               ],
                             ),
-                          ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: AppColors.electricBlue
-                                  .withValues(alpha: 0.12),
-                              borderRadius: AppRadii.full,
-                              border: Border.all(
-                                color: AppColors.electricBlue
-                                    .withValues(alpha: 0.25),
-                              ),
-                            ),
-                            child: Text(
-                              '$overallPercent%',
-                              style: AppTypography.labelMedium.copyWith(
-                                color: AppColors.electricBlueLight,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 4),
-                          Icon(
-                            _expanded
-                                ? Icons.expand_less
-                                : Icons.expand_more,
-                            color: AppColors.textMuted,
-                            size: 22,
                           ),
                         ],
                       ),
@@ -647,6 +362,12 @@ class _ProgressImalatGroupState extends State<_ProgressImalatGroup> {
                   ),
                 ),
               ),
+              _ManualPercentField(
+                percent: overallPercent.toDouble(),
+                enabled: widget.canEdit,
+                onCommitted: widget.onHeadingPercent,
+              ),
+              const SizedBox(width: 8),
             ],
           ),
         ),
@@ -655,158 +376,10 @@ class _ProgressImalatGroupState extends State<_ProgressImalatGroup> {
             (row) => _ProgressTableRow(
               row: row,
               canEdit: widget.canEdit,
-              onProgressChanged: (value) =>
-                  widget.onProgressChanged(row, value),
+              onProgressChanged: (value) => widget.onProgressChanged(row, value),
             ),
           ),
       ],
-    );
-  }
-}
-
-class _PuantajCloudImportButton extends ConsumerWidget {
-  const _PuantajCloudImportButton();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final syncing = ref.watch(puantajProgressSyncingProvider);
-    final canEdit = ref.watch(canEditActiveProjectProvider);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        FilledButton.icon(
-          onPressed: (!canEdit || syncing)
-              ? null
-              : () => _import(context, ref),
-          icon: syncing
-              ? const SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: Colors.white,
-                  ),
-                )
-              : const Icon(Icons.cloud_download_outlined, size: 20),
-          label: Text(
-            syncing
-                ? 'Buluttan aktarılıyor…'
-                : 'Puantaj’dan imalat ilerlemesini al',
-          ),
-          style: FilledButton.styleFrom(
-            backgroundColor: AppColors.electricBlue,
-            foregroundColor: Colors.white,
-            disabledBackgroundColor:
-                AppColors.electricBlue.withValues(alpha: 0.35),
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-            shape: RoundedRectangleBorder(borderRadius: AppRadii.md),
-          ),
-        ),
-        const SizedBox(height: 6),
-        Text(
-          'Aktarım, giriş yaptığınız e-posta hesabına bağlı bulut '
-          'kaydından yapılır. Puantaj ve Demir’de aynı hesap ve iş kodu gerekir.',
-          style: AppTypography.bodySmall.copyWith(
-            color: AppColors.textMuted,
-            height: 1.35,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Future<void> _import(BuildContext context, WidgetRef ref) async {
-    try {
-      final result = await importPuantajProgressFromCloud(ref);
-      if (!context.mounted) return;
-      final unmatched = result.unmatchedNames;
-      final detail = unmatched.isEmpty
-          ? '${result.updatedCount} imalat güncellendi'
-          : '${result.updatedCount} imalat güncellendi · '
-              '${unmatched.length} eşleşmedi';
-      ScaffoldMessenger.of(context).showAppSnackBar(
-        SnackBar(content: Text(detail)),
-      );
-    } on PuantajProgressCloudException catch (error) {
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showAppSnackBar(
-        SnackBar(content: Text(error.message)),
-      );
-    } catch (_) {
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showAppSnackBar(
-        const SnackBar(content: Text('Bulut aktarımı tamamlanamadı')),
-      );
-    }
-  }
-}
-
-class _PuantajProgressNudge extends StatelessWidget {
-  const _PuantajProgressNudge();
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: () => openPuantajStorePage(),
-        borderRadius: AppRadii.md,
-        child: Ink(
-          decoration: BoxDecoration(
-            color: AppColors.electricBlueLight.withValues(alpha: 0.08),
-            borderRadius: AppRadii.md,
-            border: Border.all(
-              color: AppColors.electricBlueLight.withValues(alpha: 0.28),
-            ),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(
-                  Icons.insights_outlined,
-                  size: 20,
-                  color: AppColors.electricBlueLight,
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Daha hassas ilerleme için ŞantiJET Puantaj',
-                        style: AppTypography.labelMedium.copyWith(
-                          color: AppColors.electricBlueLight,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Proje İlerleme Durumu’nda Puantaj uygulaması üzerinden '
-                        'gerçek imalat ilerleme verisini kullanın ve daha '
-                        'hassas sonuç elde edin.',
-                        style: AppTypography.bodySmall.copyWith(
-                          color: AppColors.textSecondary,
-                          height: 1.35,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        'Marketten indir →',
-                        style: AppTypography.labelMedium.copyWith(
-                          color: AppColors.electricBlueLight,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
     );
   }
 }
@@ -816,11 +389,15 @@ class _OverallProgressCard extends StatelessWidget {
     required this.percent,
     required this.totalPlanned,
     required this.totalExpected,
+    required this.canEdit,
+    required this.onPercentCommitted,
   });
 
   final int percent;
   final double totalPlanned;
   final double totalExpected;
+  final bool canEdit;
+  final ValueChanged<double> onPercentCommitted;
 
   @override
   Widget build(BuildContext context) {
@@ -839,14 +416,11 @@ class _OverallProgressCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text('Proje İlerleme Oranı', style: AppTypography.titleMedium),
-              AnimatedCountText(
-                value: '$percent',
-                numericValue: percent,
-                style: AppTypography.kpiValue.copyWith(
-                  fontSize: AppTypography.scale * 28,
-                  color: AppColors.electricBlueLight,
-                ),
-                formatter: (n) => '${n.round()}%',
+              _ManualPercentField(
+                percent: percent.toDouble(),
+                enabled: canEdit,
+                large: true,
+                onCommitted: onPercentCommitted,
               ),
             ],
           ),
@@ -877,8 +451,8 @@ class _ProgressTableHeader extends StatelessWidget {
       cells: [
         AppTableHeaderCell('ÇAP', flex: 2),
         AppTableHeaderCell('KEŞİF', flex: 3),
+        AppTableHeaderCell('PLAN. KULL.', flex: 3),
         AppTableHeaderCell('İLERLEME', flex: 3),
-        AppTableHeaderCell('PLAN.', line2: 'KULL.', flex: 3),
       ],
     );
   }
@@ -901,6 +475,7 @@ class _ProgressTableRow extends StatefulWidget {
 
 class _ProgressTableRowState extends State<_ProgressTableRow> {
   late final TextEditingController _controller;
+  late final FocusNode _focus;
   bool _isEditing = false;
   double? _draftPercent;
   Timer? _persistTimer;
@@ -913,6 +488,16 @@ class _ProgressTableRowState extends State<_ProgressTableRow> {
     _controller = TextEditingController(
       text: _formatPercent(widget.row.progressPercent),
     );
+    _focus = FocusNode()..addListener(_handleFocus);
+  }
+
+  void _handleFocus() {
+    if (!mounted) return;
+    if (_focus.hasFocus) {
+      _isEditing = true;
+      return;
+    }
+    _commitProgress();
   }
 
   @override
@@ -928,6 +513,8 @@ class _ProgressTableRowState extends State<_ProgressTableRow> {
   @override
   void dispose() {
     _persistTimer?.cancel();
+    _focus.removeListener(_handleFocus);
+    _focus.dispose();
     _controller.dispose();
     super.dispose();
   }
@@ -1034,10 +621,6 @@ class _ProgressTableRowState extends State<_ProgressTableRow> {
               ),
               Expanded(
                 flex: 3,
-                child: Center(child: _buildProgressCell(percent)),
-              ),
-              Expanded(
-                flex: 3,
                 child: Text(
                   '${AppFormat.tonnage(_displayExpected)}t',
                   style: AppTypography.bodyMedium.copyWith(
@@ -1045,6 +628,10 @@ class _ProgressTableRowState extends State<_ProgressTableRow> {
                   ),
                   textAlign: TextAlign.center,
                 ),
+              ),
+              Expanded(
+                flex: 3,
+                child: Center(child: _buildProgressCell(percent)),
               ),
             ],
           ),
@@ -1083,7 +670,9 @@ class _ProgressTableRowState extends State<_ProgressTableRow> {
           height: 32,
           child: TextField(
             controller: _controller,
+            focusNode: _focus,
             keyboardType: TextInputType.number,
+            textInputAction: TextInputAction.done,
             textAlign: TextAlign.center,
             inputFormatters: [
               FilteringTextInputFormatter.digitsOnly,
@@ -1110,8 +699,9 @@ class _ProgressTableRowState extends State<_ProgressTableRow> {
               ),
             ),
             onTap: () => _isEditing = true,
-            onSubmitted: (_) => _commitProgress(),
-            onEditingComplete: _commitProgress,
+            onTapOutside: (_) => _focus.unfocus(),
+            onSubmitted: (_) => _focus.unfocus(),
+            onEditingComplete: () => _focus.unfocus(),
             onChanged: _onTextChanged,
           ),
         ),

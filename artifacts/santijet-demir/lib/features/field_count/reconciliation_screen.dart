@@ -1,3 +1,4 @@
+import 'package:santijet_demir/core/format/app_format.dart';
 import 'package:flutter/material.dart';
 import 'package:santijet_demir/core/widgets/app_toast.dart';
 import 'package:flutter/services.dart';
@@ -149,14 +150,14 @@ class _ReconciliationScreenState extends ConsumerState<ReconciliationScreen> {
         .map(
           (row) => [
             'Ø${row.diameter}',
-            '${row.survey.toStringAsFixed(1)}t',
-            '${row.ordered.toStringAsFixed(1)}t',
-            '${row.delivered.toStringAsFixed(1)}t',
-            '${row.plannedUsage.toStringAsFixed(1)}t',
-            '${row.expectedStock.toStringAsFixed(1)}t',
-            '${row.counted.toStringAsFixed(1)}t',
-            '${row.used.toStringAsFixed(1)}t',
-            '${row.fire.toStringAsFixed(1)}t',
+            '${AppFormat.tonnage(row.survey)}t',
+            '${AppFormat.tonnage(row.ordered)}t',
+            '${AppFormat.tonnage(row.delivered)}t',
+            '${AppFormat.tonnage(row.plannedUsage)}t',
+            '${AppFormat.tonnage(row.expectedStock)}t',
+            '${AppFormat.tonnage(row.counted)}t',
+            '${AppFormat.tonnage(row.used)}t',
+            '${AppFormat.tonnage(row.fire)}t',
             row.plannedUsage > 0
                 ? '${row.firePercent.toStringAsFixed(1)}%'
                 : '—',

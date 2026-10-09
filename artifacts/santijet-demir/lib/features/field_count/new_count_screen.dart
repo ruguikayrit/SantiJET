@@ -1,3 +1,4 @@
+import 'package:santijet_demir/core/format/app_format.dart';
 import 'package:flutter/material.dart';
 import 'package:santijet_demir/core/widgets/app_toast.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -340,7 +341,7 @@ class _CountTableRow extends StatelessWidget {
           SizedBox(
             width: 72,
             child: Text(
-              '${line.delivered.toStringAsFixed(1)}t',
+              '${AppFormat.tonnage(line.delivered)}t',
               textAlign: TextAlign.center,
               style: AppTypography.bodyMedium,
             ),
@@ -348,7 +349,7 @@ class _CountTableRow extends StatelessWidget {
           SizedBox(
             width: 88,
             child: Text(
-              '${line.plannedUsage.toStringAsFixed(1)}t',
+              '${AppFormat.tonnage(line.plannedUsage)}t',
               textAlign: TextAlign.center,
               style: AppTypography.bodyMedium.copyWith(
                 color: AppColors.electricBlueLight,
@@ -365,7 +366,6 @@ class _CountTableRow extends StatelessWidget {
                 isDense: true,
                 hintText: '0',
                 contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                suffixText: 't',
               ),
               onChanged: onChanged,
             ),
@@ -373,7 +373,7 @@ class _CountTableRow extends StatelessWidget {
           SizedBox(
             width: 96,
             child: Text(
-              '${line.actualUsed.toStringAsFixed(1)}t',
+              '${AppFormat.tonnage(line.actualUsed)}t',
               textAlign: TextAlign.center,
               style: AppTypography.bodyMedium.copyWith(
                 color: line.actualUsed > line.plannedUsage

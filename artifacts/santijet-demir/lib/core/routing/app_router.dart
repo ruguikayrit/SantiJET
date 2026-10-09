@@ -18,6 +18,7 @@ import 'package:santijet_demir/features/incoming_rebar/select_in_transit_order_s
 import 'package:santijet_demir/features/incoming_rebar/supplier_performance_screen.dart';
 import 'package:santijet_demir/features/orders/new_order_wizard.dart';
 import 'package:santijet_demir/features/orders/orders_screen.dart';
+import 'package:santijet_demir/features/rebar_metraj/metraj_screen.dart';
 import 'package:santijet_demir/features/reports/report_detail_screen.dart';
 import 'package:santijet_demir/features/reports/reports_screen.dart';
 import 'package:santijet_demir/features/settings/company_settings_screen.dart';
@@ -169,34 +170,42 @@ final routerProvider = Provider<GoRouter>((ref) {
         ),
       ),
       GoRoute(
-        path: AppRoutes.survey,
+        path: '/survey/metraj/:recordId',
+        parentNavigatorKey: _rootNavigatorKey,
+        pageBuilder: (context, state) {
+          final recordId = state.pathParameters['recordId']!;
+          return fadeSlidePage(
+            key: state.pageKey,
+            child: SavedMetrajDetailScreen(recordId: recordId),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/survey/:id',
+        parentNavigatorKey: _rootNavigatorKey,
+        pageBuilder: (context, state) {
+          final id = state.pathParameters['id']!;
+          return fadeSlidePage(
+            key: state.pageKey,
+            child: SurveyDetailScreen(imalatId: id),
+          );
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.metraj,
         parentNavigatorKey: _rootNavigatorKey,
         pageBuilder: (context, state) => fadeSlidePage(
           key: state.pageKey,
-          child: const SurveyListScreen(),
+          child: const MetrajScreen(),
         ),
-        routes: [
-          GoRoute(
-            path: 'metraj/:recordId',
-            pageBuilder: (context, state) {
-              final recordId = state.pathParameters['recordId']!;
-              return fadeSlidePage(
-                key: state.pageKey,
-                child: SavedMetrajDetailScreen(recordId: recordId),
-              );
-            },
-          ),
-          GoRoute(
-            path: ':id',
-            pageBuilder: (context, state) {
-              final id = state.pathParameters['id']!;
-              return fadeSlidePage(
-                key: state.pageKey,
-                child: SurveyDetailScreen(imalatId: id),
-              );
-            },
-          ),
-        ],
+      ),
+      GoRoute(
+        path: AppRoutes.analysis,
+        parentNavigatorKey: _rootNavigatorKey,
+        pageBuilder: (context, state) => fadeSlidePage(
+          key: state.pageKey,
+          child: const AnalysisScreen(),
+        ),
       ),
       GoRoute(
         path: AppRoutes.deliveryList,
@@ -367,6 +376,14 @@ final routerProvider = Provider<GoRouter>((ref) {
           StatefulShellBranch(
             routes: [
               GoRoute(
+                path: AppRoutes.survey,
+                builder: (context, state) => const SurveyListScreen(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
                 path: AppRoutes.orders,
                 builder: (context, state) => const OrdersScreen(),
               ),
@@ -385,14 +402,6 @@ final routerProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: AppRoutes.fieldCount,
                 builder: (context, state) => const FieldCountScreen(),
-              ),
-            ],
-          ),
-          StatefulShellBranch(
-            routes: [
-              GoRoute(
-                path: AppRoutes.analysis,
-                builder: (context, state) => const AnalysisScreen(),
               ),
             ],
           ),

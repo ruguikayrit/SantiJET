@@ -19,7 +19,6 @@ import 'package:santijet_demir/features/rebar_metraj/rebar_metraj_report_service
 import 'package:santijet_demir/features/rebar_metraj/widgets/metraj_cetvel_section.dart';
 import 'package:santijet_demir/features/rebar_metraj/widgets/metraj_survey_actions.dart';
 import 'package:santijet_demir/features/rebar_metraj/widgets/rebar_label_details_section.dart';
-import 'package:santijet_demir/features/survey/providers/survey_provider.dart';
 
 class RebarMetrajPanel extends ConsumerStatefulWidget {
   const RebarMetrajPanel({super.key});
@@ -447,7 +446,7 @@ class _ResultSummaryBarState extends ConsumerState<_ResultSummaryBar> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Toplam Tonaj',
+                              'Toplam',
                               style: AppTypography.labelMedium.copyWith(
                                 color: AppColors.textMuted,
                               ),
@@ -463,12 +462,6 @@ class _ResultSummaryBarState extends ConsumerState<_ResultSummaryBar> {
                                     color: AppColors.electricBlueLight,
                                     fontSize: 28,
                                     height: 1,
-                                  ),
-                                ),
-                                Text(
-                                  ' t',
-                                  style: AppTypography.labelLarge.copyWith(
-                                    color: AppColors.textMuted,
                                   ),
                                 ),
                               ],
@@ -507,9 +500,7 @@ class _ResultSummaryBarState extends ConsumerState<_ResultSummaryBar> {
                     onPressed: projectId == null
                         ? () => context.push(AppRoutes.projects)
                         : linkedToImalat
-                            ? () =>
-                                ref.read(surveyTabIndexProvider.notifier).state =
-                                    0
+                            ? () => context.go(AppRoutes.survey)
                             : () => sendMetrajResultToImalat(
                                   context,
                                   ref,

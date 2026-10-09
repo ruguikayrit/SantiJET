@@ -24,6 +24,7 @@ abstract final class AppRoutes {
   static const countRecords = '/field-count/records';
   static String countDetail(String id) => '/field-count/detail/$id';
   static const analysis = '/analysis';
+  static const metraj = '/metraj';
   static const reports = '/reports';
   static String reportDetail(String id) => '/reports/$id';
   static const survey = '/survey';

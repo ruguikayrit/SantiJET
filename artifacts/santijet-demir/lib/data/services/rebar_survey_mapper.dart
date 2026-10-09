@@ -31,6 +31,7 @@ class RebarSurveyMapper {
       ordered: imalat.ordered,
       delivered: imalat.delivered,
       progressPercent: imalat.progressPercent,
+      blocks: imalat.blocks,
     );
   }
 
@@ -79,6 +80,7 @@ class RebarSurveyMapper {
     double ordered = 0,
     double delivered = 0,
     double? progressPercent,
+    List<ImalatBlock> blocks = const [],
   }) {
     final planned = diameterLines.fold(0.0, (sum, line) => sum + line.planned);
     final pending =
@@ -99,7 +101,28 @@ class RebarSurveyMapper {
       ordered: ordered,
       delivered: delivered,
       pending: pending,
+      blocks: blocks,
     );
+  }
+
+  static SurveyImalat imalatFromPlanned({
+    required String id,
+    required String name,
+    required Map<int, double> plannedByDiameter,
+  }) {
+    final diameterLines = plannedByDiameter.entries
+        .where((entry) => entry.value > 0)
+        .map(
+          (entry) => DiameterLine(
+            diameter: entry.key,
+            planned: entry.value,
+            ordered: 0,
+            delivered: 0,
+          ),
+        )
+        .toList()
+      ..sort((a, b) => a.diameter.compareTo(b.diameter));
+    return _buildImalat(id: id, name: name, diameterLines: diameterLines);
   }
 
   static SurveyImalat rebuildImalat({
@@ -110,6 +133,10 @@ class RebarSurveyMapper {
       id: imalat.id,
       name: imalat.name,
       diameterLines: diameterLines,
+      ordered: imalat.ordered,
+      delivered: imalat.delivered,
+      progressPercent: imalat.progressPercent,
+      blocks: imalat.blocks,
     );
   }
 

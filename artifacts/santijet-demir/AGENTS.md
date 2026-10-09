@@ -13,13 +13,13 @@ PRO splash skip, staging otomatik oturum, onboarding atlama, 16 modüllü hub **
 
 ## Kabuk (kilitli — geri alma)
 
-Alt nav: **Ana Sayfa · Sipariş · Gelen Demir · Saha Sayım · Analiz**
+Alt nav: **Ana Sayfa · Keşif · Sipariş · Gelen Demir · Saha Sayım**
 
 - Ayarlar alt navda yok. Sağ üst `SantijetHeader` **dişli** (`Icons.settings_outlined`) → `AppRoutes.settings`.
 - Bildirim zili yok. `showNotification` varsayılan `false`; açma. Avatar / baş harf butonu yok (çark kullan).
 - `PointerInterceptor` header çarkında yok (dokunuşu yutuyordu); alt navda web için kalır.
 - Alt nav: Saha (`santijet-puantaj`) stil / kurgu — `AppColors.surface` + üst kenarlık, lift dışarıda, `electricBlue` / `textMuted`, klavyede gizle, `Router.neglect`. Tema `dividerColor` / `onSurfaceVariant` ile boyama yok.
-- Ana sayfa proje seçici Saha ile aynı: logo kutusu + firma / iş adı / iş kodu; tıklanınca **İş seçin** alt sayfa (projeler listesine gitmez). Geri alma.
+- Ana sayfa proje seçici: logo kutusu + iş adı / iş kodu. Firma adı yok. Koda katıl yok. Tıklanınca **İş seçin** alt sayfa.
 - Ana sayfa wordmark header; iç sayfalar bolt + DEMİR + sayfa adı.
 - Shell body `SafeArea(bottom: false)` — üst inset status bar için.
 
@@ -42,7 +42,8 @@ Kaynak: `lib/core/widgets/santijet_header.dart`, `lib/features/shell/main_shell.
 - DWG analiz listesi kartının altında **İmalattan Veri Al** (mavi) sonra **Fire analizi yap** (yeşil). Üstte import butonu yok.
 - Fire özeti paneli yalnız fire analizi tamamlandıktan sonra görünür; panel içinde **Fire analizi yap** yok.
 - Analiz veri kaynağı: **İmalattan Veri Al** (CAD metrajı imalata gönderilmiş kayıtlar). **Ön İmalat** sekmesi / “Ön İmalattan Veri Al” yok; geri koyma.
-- Keşif sekmeleri yalnız **İmalat · Otomatik Metraj** (çerçeveli başlık). Üçüncü **Ön İmalat** sekmesi yok.
+- Keşif alt navda, Ana Sayfa ile Sipariş arasında. Sayfa başlığı diğer iç sayfalar gibi **Keşif**. İmalat listesinin üstünde proje/tarih satırı yok. Altta dışa aktar / içe aktar / Excel / PDF butonları yok. İçe aktar, başlıkta dişlinin solunda. Yeni imalat yalnız `+`. Otomatik Metraj ve Analiz Ayarlar listesindedir (Otomatik Metraj, hemen altında Analiz). Anasayfada Keşif satırı yok.
+- Ayarlar’da Bildirim Ayarları, Uygulama Kilidi ve Abonelik satırı yok. Profil: Ad Soyad, Meslek, mail, telefon. Üyelik tipi yok. Çıkış profil bilgilerinden. Projelerim sağ üst çıkış yok.
 - Fire analizi **tahvilsiz**: zayiatsız kesim + minimum fire (boy eşleştirme + stok kesim). Tahvil banner / `(tahvil ile fire analizi yap)` / tahvil zorunluluğu yok. Buton: **Fire analizi yap**. KPI: **Kesim Fire**.
 - Raporlar listesinde turuncu **DEMO — 16 rapor…** bandı yok. Geri koyma. Demo PDF veri (`useDemoReports`) ayrı; bandı açmak demek değil.
 

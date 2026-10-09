@@ -1,8 +1,8 @@
+import 'package:santijet_demir/core/format/app_format.dart';
 import 'package:flutter/material.dart';
 import 'package:santijet_demir/core/widgets/app_toast.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:santijet_demir/core/format/app_format.dart';
 import 'package:santijet_demir/core/routing/app_routes.dart';
 import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_radii.dart';
@@ -15,7 +15,6 @@ import 'package:santijet_demir/domain/enums/membership_type.dart';
 import 'package:santijet_demir/features/auth/providers/auth_provider.dart';
 import 'package:santijet_demir/features/orders/order_imalat_balance.dart';
 import 'package:santijet_demir/features/orders/providers/orders_provider.dart';
-import 'package:santijet_demir/features/orders/providers/supplier_provider.dart';
 import 'package:santijet_demir/features/survey/providers/survey_provider.dart';
 
 class NewOrderWizardScreen extends ConsumerStatefulWidget {
@@ -31,14 +30,11 @@ class _NewOrderWizardScreenState extends ConsumerState<NewOrderWizardScreen> {
   final _pageController = PageController();
 
   List<String> get _stepTitles {
-    final isIndividual = ref.read(authProvider).user?.membershipType !=
-        MembershipType.corporate;
     return [
       'İmalat Seçimi',
       'Oran Belirleme',
       'Çap Hesabı',
-      'Tedarikçi Seçimi',
-      isIndividual ? 'Özet' : 'Özet & Onay',
+      'Özet',
     ];
   }
 
@@ -49,7 +45,7 @@ class _NewOrderWizardScreenState extends ConsumerState<NewOrderWizardScreen> {
   }
 
   void _next() {
-    if (_step < 4) {
+    if (_step < 3) {
       if (_step == 1) {
         ref.read(newOrderDraftProvider.notifier).syncDiameterLinesFromTotal();
       }
@@ -114,7 +110,7 @@ class _NewOrderWizardScreenState extends ConsumerState<NewOrderWizardScreen> {
           children: [
             Text('Yeni Sipariş', style: AppTypography.titleLarge),
             Text(
-              'Adım ${_step + 1}/5 — ${_stepTitles[_step]}',
+              'Adım ${_step + 1}/${_stepTitles.length} — ${_stepTitles[_step]}',
               style: AppTypography.labelMedium,
             ),
           ],
@@ -125,12 +121,12 @@ class _NewOrderWizardScreenState extends ConsumerState<NewOrderWizardScreen> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
             child: Row(
-              children: List.generate(5, (i) {
+              children: List.generate(4, (i) {
                 final active = i <= _step;
                 return Expanded(
                   child: Container(
                     height: 3,
-                    margin: EdgeInsets.only(right: i < 4 ? 4 : 0),
+                    margin: EdgeInsets.only(right: i < 3 ? 4 : 0),
                     decoration: BoxDecoration(
                       color: active
                           ? AppColors.electricBlue
@@ -150,7 +146,6 @@ class _NewOrderWizardScreenState extends ConsumerState<NewOrderWizardScreen> {
                 _Step1ImalatSelection(draft: draft),
                 _Step2RatioSelector(draft: draft),
                 _Step3DiameterTable(draft: draft),
-                _Step4SupplierSelection(draft: draft),
                 _Step5Summary(draft: draft),
               ],
             ),
@@ -164,7 +159,6 @@ class _NewOrderWizardScreenState extends ConsumerState<NewOrderWizardScreen> {
   Widget _buildBottomBar(NewOrderDraft draft) {
     final canProceed = switch (_step) {
       0 => draft.selectedImalats.isNotEmpty,
-      3 => draft.selectedSupplier != null,
       _ => true,
     };
 
@@ -176,7 +170,7 @@ class _NewOrderWizardScreenState extends ConsumerState<NewOrderWizardScreen> {
       ),
       child: Row(
         children: [
-          if (_step == 4)
+          if (_step == 3)
             Expanded(
               child: FilledButton(
                 onPressed: _submit,
@@ -187,7 +181,7 @@ class _NewOrderWizardScreenState extends ConsumerState<NewOrderWizardScreen> {
             Expanded(
               child: FilledButton(
                 onPressed: canProceed ? _next : null,
-                child: Text(_step == 3 ? 'Özete Geç' : 'Devam'),
+                child: Text(_step == 2 ? 'Özete Geç' : 'Devam'),
               ),
             ),
         ],
@@ -307,9 +301,9 @@ class _Step1ImalatSelection extends ConsumerWidget {
                             Text(name, style: AppTypography.titleMedium),
                             const SizedBox(height: 6),
                             Text(
-                              'Toplam ${balance.surveyTotal.toStringAsFixed(0)}t · '
-                              'Sipariş ${balance.orderedSoFar.toStringAsFixed(0)}t · '
-                              'Kalan ${balance.remaining.toStringAsFixed(0)}t',
+                              'Toplam ${AppFormat.tonnage(balance.surveyTotal)}t · '
+                              'Sipariş ${AppFormat.tonnage(balance.orderedSoFar)}t · '
+                              'Kalan ${AppFormat.tonnage(balance.remaining)}t',
                               style: AppTypography.bodySmall.copyWith(
                                 color: canSelect
                                     ? AppColors.electricBlueLight
@@ -343,7 +337,7 @@ class _Step1ImalatSelection extends ConsumerWidget {
                   children: [
                     Text('Seçilen Kalan', style: AppTypography.titleMedium),
                     Text(
-                      '${total.toStringAsFixed(0)}t',
+                      '${AppFormat.tonnage(total)}t',
                       style: AppTypography.kpiValue.copyWith(
                         color: AppColors.electricBlueLight,
                       ),
@@ -356,7 +350,7 @@ class _Step1ImalatSelection extends ConsumerWidget {
                   children: [
                     Text('Toplam Kalan', style: AppTypography.bodyMedium),
                     Text(
-                      '${totalRemaining.toStringAsFixed(0)}t',
+                      '${AppFormat.tonnage(totalRemaining)}t',
                       style: AppTypography.bodyMedium,
                     ),
                   ],
@@ -471,9 +465,9 @@ class _Step2RatioSelector extends ConsumerWidget {
                   if (balance != null) ...[
                     const SizedBox(height: 6),
                     Text(
-                      'Toplam ${balance.surveyTotal.toStringAsFixed(0)}t · '
-                      'Sipariş ${balance.orderedSoFar.toStringAsFixed(0)}t · '
-                      'Kalan ${balance.remaining.toStringAsFixed(0)}t',
+                      'Toplam ${AppFormat.tonnage(balance.surveyTotal)}t · '
+                      'Sipariş ${AppFormat.tonnage(balance.orderedSoFar)}t · '
+                      'Kalan ${AppFormat.tonnage(balance.remaining)}t',
                       style: AppTypography.bodySmall.copyWith(
                         color: AppColors.textMuted,
                       ),
@@ -484,7 +478,7 @@ class _Step2RatioSelector extends ConsumerWidget {
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
                       Text(
-                        'Kalan ${remainingTonnage.toStringAsFixed(0)}t',
+                        'Kalan ${AppFormat.tonnage(remainingTonnage)}t',
                         style: AppTypography.bodySmall.copyWith(
                           color: AppColors.electricBlueLight,
                         ),
@@ -561,7 +555,7 @@ class _Step2RatioSelector extends ConsumerWidget {
                       ),
                       const Spacer(),
                       Text(
-                        'Sipariş: ${orderTonnage.toStringAsFixed(1)}t',
+                        'Sipariş: ${AppFormat.tonnage(orderTonnage)}t',
                         style: AppTypography.titleMedium.copyWith(
                           color: AppColors.electricBlueLight,
                         ),
@@ -585,17 +579,17 @@ class _Step2RatioSelector extends ConsumerWidget {
             children: [
               _SummaryRow(
                 'Keşif Toplamı',
-                '${totalSurvey.toStringAsFixed(0)}t',
+                '${AppFormat.tonnage(totalSurvey)}t',
               ),
               const SizedBox(height: 8),
               _SummaryRow(
                 'Kalan Toplam',
-                '${totalRemaining.toStringAsFixed(0)}t',
+                '${AppFormat.tonnage(totalRemaining)}t',
               ),
               Divider(height: 24, color: AppColors.border),
               _SummaryRow(
-                'Toplam Sipariş Tonajı',
-                '${draft.totalTonnage.toStringAsFixed(1)}t',
+                'Toplam Sipariş',
+                '${AppFormat.tonnage(draft.totalTonnage)}t',
                 highlight: true,
               ),
             ],
@@ -630,7 +624,7 @@ class _Step3DiameterTable extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              'Hesaplanan: ${calculatedAmount.toStringAsFixed(1)}t',
+              'Hesaplanan: ${AppFormat.tonnage(calculatedAmount)}t',
               style: AppTypography.bodySmall,
             ),
             const SizedBox(height: 12),
@@ -769,7 +763,7 @@ class _Step3DiameterTable extends ConsumerWidget {
                           Expanded(
                             flex: 3,
                             child: Text(
-                              '${line.currentStock.toStringAsFixed(1)}t',
+                              '${AppFormat.tonnage(line.currentStock)}t',
                               textAlign: TextAlign.center,
                               style: AppTypography.bodyMedium,
                             ),
@@ -784,7 +778,7 @@ class _Step3DiameterTable extends ConsumerWidget {
                                   crossAxisAlignment: CrossAxisAlignment.center,
                                   children: [
                                     Text(
-                                      '${line.orderAmount.toStringAsFixed(1)}t',
+                                      '${AppFormat.tonnage(line.orderAmount)}t',
                                       textAlign: TextAlign.center,
                                       style: AppTypography.titleMedium.copyWith(
                                         color: isAdjusted
@@ -794,7 +788,7 @@ class _Step3DiameterTable extends ConsumerWidget {
                                     ),
                                     if (isAdjusted)
                                       Text(
-                                        'Hesap: ${calculated.toStringAsFixed(1)}t',
+                                        'Hesap: ${AppFormat.tonnage(calculated)}t',
                                         textAlign: TextAlign.center,
                                         style: AppTypography.labelMedium.copyWith(
                                           color: AppColors.textMuted,
@@ -832,227 +826,12 @@ class _Step3DiameterTable extends ConsumerWidget {
             children: [
               Text('Toplam Sipariş', style: AppTypography.titleMedium),
               Text(
-                '${draft.finalOrderTonnage.toStringAsFixed(1)}t',
+                '${AppFormat.tonnage(draft.finalOrderTonnage)}t',
                 style: AppTypography.kpiValue.copyWith(fontSize: 22),
               ),
             ],
           ),
         ),
-      ],
-    );
-  }
-}
-
-class _Step4SupplierSelection extends ConsumerWidget {
-  const _Step4SupplierSelection({required this.draft});
-
-  final NewOrderDraft draft;
-
-  Future<void> _showCreateSupplierDialog(
-    BuildContext context,
-    WidgetRef ref,
-  ) async {
-    final nameCtrl = TextEditingController();
-    final priceCtrl = TextEditingController();
-    final deliveryCtrl = TextEditingController(text: '7');
-
-    final created = await showDialog<SupplierOption>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surfaceElevated,
-        title: Text('Tedarikçi Oluştur', style: AppTypography.titleLarge),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: nameCtrl,
-                decoration: const InputDecoration(labelText: 'Tedarikçi adı'),
-                textCapitalization: TextCapitalization.words,
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: priceCtrl,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                decoration: const InputDecoration(
-                  labelText: 'Birim fiyat (TL/ton)',
-                  hintText: 'Örn: 18500',
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: deliveryCtrl,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: 'Teslimat süresi (gün)',
-                ),
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('İptal'),
-          ),
-          FilledButton(
-            onPressed: () async {
-              final name = nameCtrl.text.trim();
-              final price = double.tryParse(
-                priceCtrl.text.trim().replaceAll(',', '.'),
-              );
-              final delivery = int.tryParse(deliveryCtrl.text.trim());
-
-              if (name.isEmpty) {
-                ScaffoldMessenger.of(context).showAppSnackBar(
-                  const SnackBar(content: Text('Tedarikçi adı girin')),
-                );
-                return;
-              }
-              if (price == null || price <= 0) {
-                ScaffoldMessenger.of(context).showAppSnackBar(
-                  const SnackBar(content: Text('Geçerli bir birim fiyat girin')),
-                );
-                return;
-              }
-              if (delivery == null || delivery < 1) {
-                ScaffoldMessenger.of(context).showAppSnackBar(
-                  const SnackBar(content: Text('Geçerli bir teslimat süresi girin')),
-                );
-                return;
-              }
-
-              final supplier = await ref
-                  .read(supplierOptionsProvider.notifier)
-                  .addSupplier(
-                    name: name,
-                    pricePerTon: price,
-                    deliveryDays: delivery,
-                  );
-              if (ctx.mounted) Navigator.pop(ctx, supplier);
-            },
-            child: const Text('Kaydet'),
-          ),
-        ],
-      ),
-    );
-
-    nameCtrl.dispose();
-    priceCtrl.dispose();
-    deliveryCtrl.dispose();
-
-    if (created != null) {
-      ref.read(newOrderDraftProvider.notifier).selectSupplier(created);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final notifier = ref.read(newOrderDraftProvider.notifier);
-    final suppliers = ref.watch(supplierOptionsProvider);
-
-    return ListView(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      children: [
-        Text('Tedarikçi seçin', style: AppTypography.headlineMedium),
-        const SizedBox(height: 16),
-        if (suppliers.isEmpty)
-          Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 24),
-                child: Text(
-                  'Henüz tanımlı tedarikçi yok.',
-                  style: AppTypography.bodyMedium.copyWith(color: AppColors.textMuted),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-              FilledButton.icon(
-                onPressed: () => _showCreateSupplierDialog(context, ref),
-                icon: const Icon(Icons.add),
-                label: const Text('Tedarikçi Oluştur'),
-              ),
-            ],
-          )
-        else ...[
-          Align(
-            alignment: Alignment.centerRight,
-            child: OutlinedButton.icon(
-              onPressed: () => _showCreateSupplierDialog(context, ref),
-              icon: const Icon(Icons.add, size: 16),
-              label: const Text('Tedarikçi Oluştur'),
-            ),
-          ),
-          const SizedBox(height: 12),
-          ...suppliers.map((supplier) {
-          final selected = draft.selectedSupplier?.name == supplier.name;
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 10),
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                onTap: () => notifier.selectSupplier(supplier),
-                borderRadius: AppRadii.md,
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: selected
-                        ? AppColors.electricBlue.withValues(alpha: 0.1)
-                        : AppColors.surfaceElevated,
-                    borderRadius: AppRadii.md,
-                    border: Border.all(
-                      color:
-                          selected ? AppColors.electricBlue : AppColors.border,
-                    ),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(supplier.name, style: AppTypography.titleLarge),
-                          Row(
-                            children: [
-                              const Icon(Icons.star, size: 16, color: AppColors.warning),
-                              const SizedBox(width: 4),
-                              Text(
-                                supplier.rating.toStringAsFixed(1),
-                                style: AppTypography.titleMedium,
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 10),
-                      Row(
-                        children: [
-                          _SupplierMetric(
-                            label: 'Birim Fiyat',
-                            value: '${AppFormat.currency(supplier.pricePerTon)}/t',
-                          ),
-                          const SizedBox(width: 24),
-                          _SupplierMetric(
-                            label: 'Teslimat',
-                            value: '${supplier.deliveryDays} gün',
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 10),
-                      Text(
-                        'Tahmini: ${AppFormat.currency(supplier.pricePerTon * draft.finalOrderTonnage)}',
-                        style: AppTypography.bodyMedium.copyWith(
-                          color: AppColors.electricBlueLight,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          );
-        }),
-        ],
       ],
     );
   }
@@ -1065,8 +844,6 @@ class _Step5Summary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final supplier = draft.selectedSupplier!;
-    final totalCost = supplier.pricePerTon * draft.finalOrderTonnage;
     final lines = draft.diameterLines;
     final autoTotalTonnage = calculateDiameterLinesFromSurvey(
       totalTonnage: draft.totalTonnage,
@@ -1094,21 +871,13 @@ class _Step5Summary extends StatelessWidget {
               const SizedBox(height: 12),
               _SummaryRow(
                 'Otomatik Hesap Toplam',
-                '${autoTotalTonnage.toStringAsFixed(1)}t',
+                '${AppFormat.tonnage(autoTotalTonnage)}t',
               ),
               const SizedBox(height: 8),
               _SummaryRow(
                 'Düzeltilmiş Toplam',
-                '${adjustedTotalTonnage.toStringAsFixed(1)}t',
+                '${AppFormat.tonnage(adjustedTotalTonnage)}t',
                 highlight: hasAdjustment,
-              ),
-              const SizedBox(height: 8),
-              _SummaryRow('Tedarikçi', supplier.name),
-              Divider(height: 24, color: AppColors.border),
-              _SummaryRow(
-                'Tahmini Tutar',
-                AppFormat.currency(totalCost),
-                highlight: true,
               ),
             ],
           ),
@@ -1123,7 +892,7 @@ class _Step5Summary extends StatelessWidget {
                 children: [
                   Text('Ø${l.diameter}', style: AppTypography.bodyMedium),
                   Text(
-                    '${l.orderAmount.toStringAsFixed(1)}t',
+                    '${AppFormat.tonnage(l.orderAmount)}t',
                     style: AppTypography.titleMedium,
                   ),
                 ],
@@ -1157,7 +926,7 @@ class _ImalatSummarySection extends StatelessWidget {
                   child: Text(name, style: AppTypography.labelMedium),
                 ),
                 Text(
-                  '%$ratio → ${tonnage.toStringAsFixed(1)}t',
+                  '%$ratio → ${AppFormat.tonnage(tonnage)}t',
                   style: AppTypography.labelMedium.copyWith(
                     color: AppColors.electricBlueLight,
                   ),
@@ -1206,20 +975,3 @@ class _SummaryRow extends StatelessWidget {
   }
 }
 
-class _SupplierMetric extends StatelessWidget {
-  const _SupplierMetric({required this.label, required this.value});
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: AppTypography.labelMedium),
-        Text(value, style: AppTypography.titleMedium),
-      ],
-    );
-  }
-}

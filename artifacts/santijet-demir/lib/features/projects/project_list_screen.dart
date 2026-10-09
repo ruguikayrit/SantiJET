@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:santijet_demir/core/widgets/app_toast.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:santijet_demir/core/routing/app_routes.dart';
@@ -55,24 +54,13 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
       backgroundColor: AppColors.canvas,
       appBar: AppBar(
         title: const Text('Projelerim'),
-        actions: [
-          IconButton(
-            tooltip: 'Çıkış',
-            onPressed: () async {
-              await ref.read(authProvider.notifier).logout();
-              if (context.mounted) context.go(AppRoutes.login);
-            },
-            icon: const Icon(Icons.logout),
-          ),
-        ],
       ),
       body: ListView(
         padding: EdgeInsets.fromLTRB(
           AppSpacing.md,
           AppSpacing.md,
           AppSpacing.md,
-          // İki stacked FAB (Koda Katıl + Yeni Proje)
-          AppFab.scrollClearanceOf(context, aboveBottomNav: false) + 68,
+          AppFab.scrollClearanceOf(context, aboveBottomNav: false),
         ),
         children: [
           Text(
@@ -81,9 +69,7 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
           ),
           const SizedBox(height: 4),
           Text(
-            auth.usesSupabase
-                ? 'Bulut senkronizasyonu aktif. Proje kodu tüm cihazlarda geçerlidir.'
-                : 'Her projenin verileri birbirinden ayrıdır. Proje kodu ile ekip arkadaşlarınızı davet edin.',
+            'Her proje size aittir. Veriler birbirinden ayrı tutulur.',
             style: AppTypography.bodySmall,
           ),
           const SizedBox(height: 20),
@@ -93,37 +79,24 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
               project: project,
               selected: selected,
               onOpen: () => _openProject(project),
-              onMembers: () => context.push(AppRoutes.projectMembers(project.id)),
             );
           }),
           if (projects.isEmpty)
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 24),
               child: Text(
-                'Henüz proje yok. Yeni proje oluşturun veya kod ile katılın.',
+                'Henüz proje yok. Yeni proje oluşturun.',
                 style: AppTypography.bodyMedium,
                 textAlign: TextAlign.center,
               ),
             ),
         ],
       ),
-      floatingActionButton: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          FloatingActionButton.extended(
-            heroTag: 'join',
-            onPressed: () => context.push(AppRoutes.joinProject),
-            icon: const Icon(Icons.qr_code),
-            label: const Text('Koda Katıl'),
-          ),
-          const SizedBox(height: 12),
-          FloatingActionButton.extended(
-            heroTag: 'new',
-            onPressed: () => _createProject(context),
-            icon: const Icon(Icons.add),
-            label: const Text('Yeni Proje'),
-          ),
-        ],
+      floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'new',
+        onPressed: () => _createProject(context),
+        icon: const Icon(Icons.add),
+        label: const Text('Yeni Proje'),
       ),
     );
   }
@@ -217,13 +190,11 @@ class _ProjectCard extends StatelessWidget {
     required this.project,
     required this.selected,
     required this.onOpen,
-    required this.onMembers,
   });
 
   final Project project;
   final bool selected;
   final VoidCallback onOpen;
-  final VoidCallback onMembers;
 
   @override
   Widget build(BuildContext context) {
@@ -262,34 +233,6 @@ class _ProjectCard extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               Text(project.location, style: AppTypography.bodySmall),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      'Kod: ${project.code}',
-                      style: AppTypography.labelMedium.copyWith(
-                        color: AppColors.electricBlueLight,
-                      ),
-                    ),
-                  ),
-                  IconButton(
-                    tooltip: 'Kodu kopyala',
-                    onPressed: () {
-                      Clipboard.setData(ClipboardData(text: project.code));
-                      ScaffoldMessenger.of(context).showAppSnackBar(
-                        const SnackBar(content: Text('Proje kodu kopyalandı')),
-                      );
-                    },
-                    icon: const Icon(Icons.copy, size: 18),
-                  ),
-                  IconButton(
-                    tooltip: 'Ekip',
-                    onPressed: onMembers,
-                    icon: const Icon(Icons.group, size: 20),
-                  ),
-                ],
-              ),
             ],
           ),
         ),

@@ -1,4 +1,9 @@
+import 'dart:io';
+
+import 'package:santijet_demir/core/format/app_format.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:santijet_demir/core/widgets/app_toast.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -153,6 +158,24 @@ class _NewDeliveryScreenState extends ConsumerState<NewDeliveryScreen> {
             ),
             onChanged: notifier.setIrsaliyeNo,
           ),
+          const SizedBox(height: 12),
+          _IrsaliyePhotoButton(
+            icon: Icons.add_photo_alternate_outlined,
+            label: 'İrsaliye Resmi Ekle',
+            onPressed: () => _attachIrsaliyePhoto(ImageSource.gallery),
+          ),
+          if (draft.irsaliyePhotoPath.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            ClipRRect(
+              borderRadius: AppRadii.md,
+              child: Image.file(
+                File(draft.irsaliyePhotoPath),
+                height: 140,
+                width: double.infinity,
+                fit: BoxFit.cover,
+              ),
+            ),
+          ],
           const SizedBox(height: 16),
           Text('Plaka No', style: AppTypography.titleMedium),
           const SizedBox(height: 8),
@@ -186,11 +209,11 @@ class _NewDeliveryScreenState extends ConsumerState<NewDeliveryScreen> {
             ),
             child: Column(
               children: [
-                _SummaryRow('Toplam Sipariş', '${totalOrdered.toStringAsFixed(1)}t'),
-                _SummaryRow('Toplam Teslim', '${totalDelivered.toStringAsFixed(1)}t'),
+                _SummaryRow('Toplam Sipariş', AppFormat.tonnage(totalOrdered)),
+                _SummaryRow('Toplam Teslim', AppFormat.tonnage(totalDelivered)),
                 _SummaryRow(
                   'Fark',
-                  '${diff >= 0 ? '+' : ''}${diff.toStringAsFixed(1)}t',
+                  '${diff >= 0 ? '+' : ''}${AppFormat.tonnage(diff)}',
                   highlight: diff.abs() > 0,
                 ),
                 _SummaryRow(
@@ -211,6 +234,20 @@ class _NewDeliveryScreenState extends ConsumerState<NewDeliveryScreen> {
     );
   }
 
+  Future<void> _attachIrsaliyePhoto(ImageSource source) async {
+    final picked = await ImagePicker().pickImage(
+      source: source,
+      imageQuality: 85,
+    );
+    if (picked == null || !mounted) return;
+    final directory = await getApplicationDocumentsDirectory();
+    final saved = await File(picked.path).copy(
+      '${directory.path}/irsaliye_${DateTime.now().microsecondsSinceEpoch}.jpg',
+    );
+    if (!mounted) return;
+    ref.read(newDeliveryDraftProvider.notifier).setIrsaliyePhoto(saved.path);
+  }
+
   Future<void> _saveDelivery(BuildContext context) async {
     final draft = ref.read(newDeliveryDraftProvider);
     final result =
@@ -222,7 +259,7 @@ class _NewDeliveryScreenState extends ConsumerState<NewDeliveryScreen> {
         '${draft.orderNo} teslimatı kaydedildi',
       DeliverySaveResult.missingOrder => 'Sevkiyat seçilmedi',
       DeliverySaveResult.invalidOrderStatus =>
-        'Sipariş yolda değil, teslimat kaydedilemez',
+        'Tamamlanan veya iptal edilen siparişe teslimat kaydedilemez',
       DeliverySaveResult.missingIrsaliye => 'İrsaliye numarası zorunludur',
       DeliverySaveResult.missingDeliveredAmount =>
         'En az bir çap için teslim miktarı girin',
@@ -242,6 +279,40 @@ class _NewDeliveryScreenState extends ConsumerState<NewDeliveryScreen> {
       ref.read(newDeliveryDraftProvider.notifier).reset();
       context.go('/incoming-rebar');
     }
+  }
+}
+
+class _IrsaliyePhotoButton extends StatelessWidget {
+  const _IrsaliyePhotoButton({
+    required this.icon,
+    required this.label,
+    required this.onPressed,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return OutlinedButton(
+      onPressed: onPressed,
+      style: OutlinedButton.styleFrom(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+        shape: RoundedRectangleBorder(borderRadius: AppRadii.md),
+      ),
+      child: Column(
+        children: [
+          Icon(icon, size: 18),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, height: 1.2),
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -292,7 +363,7 @@ class _CapEntryTable extends StatelessWidget {
                   ),
                   Expanded(
                     child: Text(
-                      '${(orderedDiameters[diameter] ?? 0).toStringAsFixed(1)}t',
+                      AppFormat.tonnage(orderedDiameters[diameter] ?? 0),
                       textAlign: TextAlign.center,
                       style: AppTypography.bodyMedium,
                     ),
@@ -307,7 +378,6 @@ class _CapEntryTable extends StatelessWidget {
                       decoration: const InputDecoration(
                         isDense: true,
                         contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                        suffixText: 't',
                         hintText: '0',
                       ),
                     ),

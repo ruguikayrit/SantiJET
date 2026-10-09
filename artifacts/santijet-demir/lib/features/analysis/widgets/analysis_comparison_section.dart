@@ -271,7 +271,7 @@ class _SourceVsRevisedPanel extends StatelessWidget {
             negative: comparison!.savedFirePercent < -0.05,
           ),
           _ComparisonRow(
-            label: 'Fire tonajı',
+            label: 'Fire',
             before: '${AppFormat.tonnage(comparison!.rawFireTonnage)} t',
             after: '${AppFormat.tonnage(comparison!.plannedFireTonnage)} t',
             delta: comparison!.savedFireTonnage > 0
@@ -639,7 +639,7 @@ class _StrategyFireComparisonPanel extends StatelessWidget {
           const SizedBox(height: 4),
           const AppDescriptionLines([
             'Ham fireye göre plan fire.',
-            'Tonaj kazancı özeti.',
+            'Kazanç özeti.',
           ]),
           const SizedBox(height: 10),
           const _ComparisonTableHeader(

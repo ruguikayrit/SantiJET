@@ -125,7 +125,7 @@ class FieldCountScreen extends ConsumerWidget {
       floatingActionButton: hasActiveProject &&
               ref.watch(canEditFieldCountProvider)
           ? AppFab(
-              label: 'Yeni Sayım',
+              heroTag: 'new-count',
               onPressed: () => context.push(AppRoutes.newCount),
             )
           : null,

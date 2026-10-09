@@ -1,3 +1,4 @@
+import 'package:santijet_demir/core/format/app_format.dart';
 import 'package:santijet_demir/domain/entities/prediction_models.dart';
 
 /// Calculator girişleri — saf veri, UI/Riverpod yok.
@@ -213,8 +214,8 @@ abstract final class PredictionCalculator {
             severity: PredictionRiskLevel.orange,
             message:
                 'Ø$d tüketimi plandan %${pct.toStringAsFixed(0)} fazla '
-                '(plan ${plannedDaily.toStringAsFixed(1)} t/gün, '
-                'gerçek ${actualDaily.toStringAsFixed(1)} t/gün).',
+                '(plan ${AppFormat.tonnage(plannedDaily)} t/gün, '
+                'gerçek ${AppFormat.tonnage(actualDaily)} t/gün).',
           ),
         );
       }

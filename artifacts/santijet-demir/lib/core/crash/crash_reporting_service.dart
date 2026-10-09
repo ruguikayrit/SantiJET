@@ -39,9 +39,19 @@ class CrashReportingService {
   Future<void> _tryInitializeFirebase() async {
     if (kIsWeb) return;
 
+    final options = DefaultFirebaseOptions.currentPlatform;
+    if (options.appId.contains('placeholder') ||
+        options.apiKey.startsWith('placeholder')) {
+      developer.log(
+        'Firebase options are placeholders — skipping native init',
+        name: 'CrashReporting',
+      );
+      return;
+    }
+
     try {
       await Firebase.initializeApp(
-        options: DefaultFirebaseOptions.currentPlatform,
+        options: options,
       );
       await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(
         !kDebugMode,

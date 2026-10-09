@@ -1,3 +1,4 @@
+import 'package:santijet_demir/core/format/app_format.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -144,25 +145,25 @@ class _CountDetailScreenState extends ConsumerState<CountDetailScreen> {
             children: [
               KpiCard(
                 label: 'Planlanan kullanım',
-                value: record.totalExpectedStock.toStringAsFixed(0),
+                value: AppFormat.tonnage(record.totalExpectedStock),
                 unit: 't',
                 accentColor: AppColors.electricBlueLight,
               ),
               KpiCard(
                 label: 'Sayım',
-                value: record.actual.toStringAsFixed(1),
+                value: AppFormat.tonnage(record.actual),
                 unit: 't',
                 accentColor: AppColors.info,
               ),
               KpiCard(
                 label: 'Kullanılan',
-                value: record.totalUsed.toStringAsFixed(1),
+                value: AppFormat.tonnage(record.totalUsed),
                 unit: 't',
                 accentColor: AppColors.warning,
               ),
               KpiCard(
                 label: 'Sapma',
-                value: record.variance.toStringAsFixed(1),
+                value: AppFormat.tonnage(record.variance),
                 unit: 't',
                 accentColor: record.variance.abs() > 5
                     ? AppColors.critical
@@ -282,25 +283,25 @@ class _LineTableRow extends StatelessWidget {
           ),
           Expanded(
             child: Text(
-              '${line.delivered.toStringAsFixed(1)}t',
+              '${AppFormat.tonnage(line.delivered)}t',
               textAlign: TextAlign.center,
             ),
           ),
           Expanded(
             child: Text(
-              '${line.plannedUsage.toStringAsFixed(1)}t',
+              '${AppFormat.tonnage(line.plannedUsage)}t',
               textAlign: TextAlign.center,
             ),
           ),
           Expanded(
             child: Text(
-              '${line.actual.toStringAsFixed(1)}t',
+              '${AppFormat.tonnage(line.actual)}t',
               textAlign: TextAlign.center,
             ),
           ),
           Expanded(
             child: Text(
-              '${line.actualUsed.toStringAsFixed(1)}t',
+              '${AppFormat.tonnage(line.actualUsed)}t',
               textAlign: TextAlign.center,
             ),
           ),

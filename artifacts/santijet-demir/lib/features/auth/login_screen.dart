@@ -6,7 +6,9 @@ import 'package:santijet_demir/core/config/supabase_config.dart';
 import 'package:santijet_demir/core/routing/app_routes.dart';
 import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_spacing.dart';
+import 'package:santijet_demir/core/theme/app_theme.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
+import 'package:santijet_demir/core/theme/page_background.dart';
 import 'package:santijet_demir/features/auth/providers/auth_provider.dart';
 import 'package:santijet_demir/features/demo/demo_seed_provider.dart';
 import 'package:santijet_demir/features/projects/providers/project_provider.dart';
@@ -121,128 +123,131 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final brightness = Theme.of(context).brightness;
-    final wordmarkAsset = AppColors.wordmarkAssetFor(brightness);
-    // Koyu: kullanıcı referans tipografisi (895×150). Açık: mevcut light asset.
-    final wordmarkAspect =
-        brightness == Brightness.dark ? (895 / 150) : (900 / 157);
-    final wordmarkWidth = 240.0;
+    const wordmarkAspect = 895 / 150;
+    const wordmarkWidth = 240.0;
     final wordmarkHeight = wordmarkWidth / wordmarkAspect;
 
-    return Scaffold(
-      backgroundColor: AppColors.canvas,
-      body: SafeArea(
-        bottom: false,
-        minimum: EdgeInsets.zero,
-        child: ListView(
-          padding: EdgeInsets.fromLTRB(
-            AppSpacing.lg,
-            AppSpacing.lg,
-            AppSpacing.lg,
-            AppSpacing.lg + MediaQuery.viewPaddingOf(context).bottom,
-          ),
-          children: [
-            const SizedBox(height: 36),
-            Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Image.asset(
-                    'assets/images/splash_bolt.png',
-                    width: 108,
-                    height: 108,
-                    fit: BoxFit.contain,
-                    filterQuality: FilterQuality.high,
-                  ),
-                  const SizedBox(height: 10),
-                  Image.asset(
-                    wordmarkAsset,
-                    width: wordmarkWidth,
-                    height: wordmarkHeight,
-                    fit: BoxFit.contain,
-                    filterQuality: FilterQuality.high,
-                    alignment: Alignment.center,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'DEMİR',
-                    style: AppTypography.titleMedium.copyWith(
-                      fontSize: AppTypography.brandScale * 18,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 4,
-                      height: 1.0,
-                      color: AppColors.electricBlue,
+    // Giriş her zaman koyu — uygulama teması ne olursa olsun.
+    syncPageBackground(AppColors.darkCanvas);
+    return Theme(
+      data: AppTheme.dark,
+      child: Scaffold(
+        backgroundColor: AppColors.darkCanvas,
+        body: SafeArea(
+          bottom: false,
+          minimum: EdgeInsets.zero,
+          child: ListView(
+            padding: EdgeInsets.fromLTRB(
+              AppSpacing.lg,
+              AppSpacing.lg,
+              AppSpacing.lg,
+              AppSpacing.lg + MediaQuery.viewPaddingOf(context).bottom,
+            ),
+            children: [
+              const SizedBox(height: 36),
+              Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Image.asset(
+                      'assets/images/splash_bolt.png',
+                      width: 108,
+                      height: 108,
+                      fit: BoxFit.contain,
+                      filterQuality: FilterQuality.high,
                     ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 28),
-            Text(
-              'Giriş Yap',
-              style: AppTypography.headlineLarge,
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 28),
-            TextField(
-              controller: _emailCtrl,
-              keyboardType: TextInputType.emailAddress,
-              decoration: const InputDecoration(labelText: 'E-posta'),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _passwordCtrl,
-              obscureText: true,
-              decoration: const InputDecoration(labelText: 'Şifre'),
-              onSubmitted: (_) => _submit(),
-            ),
-            if (SupabaseConfig.isConfigured)
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(
-                  onPressed: _loading
-                      ? null
-                      : () {
-                          final trimmed = _emailCtrl.text.trim();
-                          final path = trimmed.isEmpty
-                              ? AppRoutes.forgotPassword
-                              : '${AppRoutes.forgotPassword}?email=${Uri.encodeComponent(trimmed)}';
-                          context.push(path);
-                        },
-                  child: const Text('Şifremi unuttum'),
+                    const SizedBox(height: 10),
+                    Image.asset(
+                      'assets/images/splash_wordmark.png',
+                      width: wordmarkWidth,
+                      height: wordmarkHeight,
+                      fit: BoxFit.contain,
+                      filterQuality: FilterQuality.high,
+                      alignment: Alignment.center,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'DEMİR',
+                      style: AppTypography.titleMedium.copyWith(
+                        fontSize: AppTypography.brandScale * 18,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 4,
+                        height: 1.0,
+                        color: AppColors.electricBlue,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            const SizedBox(height: 24),
-            FilledButton(
-              onPressed: _loading ? null : _submit,
-              child: _loading
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Text('Giriş Yap'),
-            ),
-            const SizedBox(height: 12),
-            OutlinedButton(
-              onPressed: _loading ? null : _continueAsGuest,
-              child: const Text('Misafir girişi · Demo ile dene'),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Üyelik açmadan premium paket alınamaz. Misafir hesabı Demo Şantiye ile test içindir.',
-              style: AppTypography.bodySmall.copyWith(
-                color: AppColors.textMuted,
+              const SizedBox(height: 28),
+              Text(
+                'Giriş Yap',
+                style: AppTypography.headlineLarge.copyWith(
+                  color: AppColors.darkTextPrimary,
+                ),
+                textAlign: TextAlign.center,
               ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 12),
-            TextButton(
-              onPressed:
-                  _loading ? null : () => context.push(AppRoutes.register),
-              child: const Text('Bireysel veya kurumsal hesap oluştur'),
-            ),
-          ],
+              const SizedBox(height: 28),
+              TextField(
+                controller: _emailCtrl,
+                keyboardType: TextInputType.emailAddress,
+                decoration: const InputDecoration(labelText: 'E-posta'),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _passwordCtrl,
+                obscureText: true,
+                decoration: const InputDecoration(labelText: 'Şifre'),
+                onSubmitted: (_) => _submit(),
+              ),
+              if (SupabaseConfig.isConfigured)
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: _loading
+                        ? null
+                        : () {
+                            final trimmed = _emailCtrl.text.trim();
+                            final path = trimmed.isEmpty
+                                ? AppRoutes.forgotPassword
+                                : '${AppRoutes.forgotPassword}?email=${Uri.encodeComponent(trimmed)}';
+                            context.push(path);
+                          },
+                    child: const Text('Şifremi unuttum'),
+                  ),
+                ),
+              const SizedBox(height: 24),
+              FilledButton(
+                onPressed: _loading ? null : _submit,
+                child: _loading
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Text('Giriş Yap'),
+              ),
+              const SizedBox(height: 12),
+              OutlinedButton(
+                onPressed: _loading ? null : _continueAsGuest,
+                child: const Text('Misafir girişi · Demo ile dene'),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Üyelik açmadan premium paket alınamaz. Misafir hesabı Demo Şantiye ile test içindir.',
+                style: AppTypography.bodySmall.copyWith(
+                  color: AppColors.darkTextMuted,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 12),
+              TextButton(
+                onPressed:
+                    _loading ? null : () => context.push(AppRoutes.register),
+                child: const Text('Bireysel hesap oluştur.'),
+              ),
+            ],
+          ),
         ),
       ),
     );

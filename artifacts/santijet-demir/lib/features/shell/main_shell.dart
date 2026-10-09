@@ -6,7 +6,6 @@ import 'package:santijet_demir/core/format/app_format.dart';
 import 'package:santijet_demir/core/routing/app_routes.dart';
 import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_spacing.dart';
-import 'package:santijet_demir/core/theme/app_typography.dart';
 import 'package:santijet_demir/core/theme/theme_rebuild_gate.dart';
 import 'package:santijet_demir/core/widgets/app_bottom_nav_bar.dart';
 import 'package:santijet_demir/core/widgets/project_permission_gate.dart';
@@ -21,7 +20,6 @@ import 'package:santijet_demir/features/shell/dashboard_feed_provider.dart';
 import 'package:santijet_demir/features/shell/dashboard_summary_provider.dart';
 import 'package:santijet_demir/features/shell/widgets/dashboard_feed_section.dart';
 import 'package:santijet_demir/features/shell/widgets/project_progress_section.dart';
-import 'package:santijet_demir/features/survey/providers/survey_provider.dart';
 
 class MainShell extends ConsumerWidget {
   const MainShell({super.key, required this.navigationShell});
@@ -81,7 +79,10 @@ class DashboardScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
-      body: CustomScrollView(
+      body: GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+        child: CustomScrollView(
           slivers: [
             const SliverToBoxAdapter(
               child: SantijetHeader(showWordmark: true),
@@ -100,20 +101,6 @@ class DashboardScreen extends ConsumerWidget {
             if (!hasActiveProject)
               const ActiveProjectSliverGate()
             else ...[
-              const SliverToBoxAdapter(
-                child: Padding(
-                  padding: EdgeInsets.fromLTRB(
-                    AppSpacing.md,
-                    _dashboardSectionGap,
-                    AppSpacing.md,
-                    0,
-                  ),
-                  child: StaggeredFadeIn(
-                    index: 0,
-                    child: _DashboardSurveyBar(),
-                  ),
-                ),
-              ),
               _DashboardKpiSliver(sectionGap: _dashboardSectionGap),
               SliverPadding(
                 padding: const EdgeInsets.all(AppSpacing.md),
@@ -144,6 +131,7 @@ class DashboardScreen extends ConsumerWidget {
               ),
           ],
         ),
+      ),
     );
   }
 }
@@ -170,7 +158,7 @@ class _DashboardKpiSliver extends ConsumerWidget {
           value: AppFormat.tonnage(dashboard.totalSurvey),
           percent: dashboard.percentLabel(dashboard.totalSurvey),
           accentColor: AppColors.electricBlueLight,
-          onTap: () => context.push(AppRoutes.survey),
+          onTap: () => context.go(AppRoutes.survey),
         ),
         SummaryKpiItem(
           label: 'Toplam Sipariş',
@@ -193,38 +181,7 @@ class _DashboardKpiSliver extends ConsumerWidget {
           accentColor: AppColors.critical,
           onTap: () => context.go(AppRoutes.orders),
         ),
-        SummaryKpiItem(
-          label: 'Onayda',
-          value: AppFormat.tonnage(dashboard.pendingApproval),
-          percent: dashboard.percentLabel(dashboard.pendingApproval),
-          accentColor: AppColors.warning,
-          onTap: () => context.go(AppRoutes.orders),
-        ),
-        SummaryKpiItem(
-          label: 'Yolda',
-          value: AppFormat.tonnage(dashboard.inTransit),
-          percent: dashboard.percentLabel(dashboard.inTransit),
-          accentColor: AppColors.partial,
-          onTap: () => context.go(AppRoutes.orders),
-        ),
       ],
-    );
-  }
-}
-
-class _DashboardSurveyBar extends ConsumerWidget {
-  const _DashboardSurveyBar();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final surveySummary = ref.watch(surveyDashboardSummaryProvider);
-    final surveyImalatLabel = surveySummary.imalatCount == 0
-        ? 'Henüz imalat yok'
-        : '${surveySummary.imalatCount} imalat';
-
-    return _SurveyQuickAccessBar(
-      subtitle: surveyImalatLabel,
-      onTap: () => context.push(AppRoutes.survey),
     );
   }
 }
@@ -246,45 +203,5 @@ class _DashboardActivitiesBlock extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final activities = ref.watch(dashboardRecentActivitiesProvider);
     return DashboardActivitiesSection(activities: activities);
-  }
-}
-
-class _SurveyQuickAccessBar extends StatelessWidget {
-  const _SurveyQuickAccessBar({
-    required this.subtitle,
-    required this.onTap,
-  });
-
-  final String subtitle;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return TapScale(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        decoration: BoxDecoration(
-          color: AppColors.surfaceElevated,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.border),
-        ),
-        child: Row(
-          children: [
-            Icon(Icons.search, color: AppColors.electricBlueLight, size: 22),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                'Keşif · $subtitle',
-                style: AppTypography.titleMedium,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            Icon(Icons.chevron_right, color: AppColors.textMuted, size: 20),
-          ],
-        ),
-      ),
-    );
   }
 }

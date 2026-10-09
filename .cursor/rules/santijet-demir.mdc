@@ -8,9 +8,9 @@ alwaysApply: false
 
 Kapsam: `artifacts/santijet-demir/**`. Başka ürüne dokunma. Özet: `artifacts/santijet-demir/AGENTS.md`.
 
-- Alt nav: Ana Sayfa · Sipariş · Gelen Demir · Saha Sayım · Analiz. Ayarlar navda yok.
+- Alt nav: Ana Sayfa · Keşif · Sipariş · Gelen Demir · Saha Sayım. Analiz navda yok. Ayarlar navda yok.
 - Alt nav Saha stilinde (`AppColors.surface` / border / electricBlue / textMuted, lift dışarıda). Tema renkleriyle boyama yok.
-- Ana sayfa proje seçici Saha ile aynı kurgu: logo kutusu + firma/iş/kod + tıklanınca **İş seçin** alt sayfa (sayfa açılmaz). Projeler listesine yönlendirmeyi geri koyma.
+- Ana sayfa proje seçici: logo kutusu + iş adı / iş kodu. Firma adı yok. Koda katıl yok. Tıklanınca **İş seçin** alt sayfa. Projeler listesine yönlendirmeyi geri koyma.
 - Ayarlar = sağ üst **dişli** (`Icons.settings_outlined`). Bildirim zili ve baş harf avatarı yok; `showNotification` varsayılan `false`.
 - Staging URL: https://ruguikayrit.github.io/SantiJET/demir/ — `/staging/` yoluna DEMİR uygulamasını geri koyma.
 - Anasayfaya Günlük Brifing / Tahmin kartı ve ilerleme formül satırını geri koyma.
@@ -18,7 +18,8 @@ Kapsam: `artifacts/santijet-demir/**`. Başka ürüne dokunma. Özet: `artifacts
 - Ayarlar’da **Demo veriyi yükle** (Yedekleme sonrası) kalır; Demo Şantiye seed’i.
 - Girişte **Misafir girişi · Demo ile dene** kalır. Misafir premium satın alamaz.
 - Analiz’de **Tahvil Hesaplayıcı** yok; geri koyma.
-- Keşif: yalnız **İmalat · Otomatik Metraj** (çerçeveli). Ön İmalat sekmesi yok. Analiz: **İmalattan Veri Al**.
+- Keşif: navda, başlık **Keşif**. İmalat / Otomatik Metraj sekmeleri yok. Otomatik Metraj ve Analiz Ayarlar’da (metraj satırının altı Analiz). Anasayfa Keşif satırı yok. Analiz: **İmalattan Veri Al**.
+- Ayarlar’da Bildirim, Uygulama Kilidi ve Abonelik satırı yok. Profilde üyelik tipi yok; Ad Soyad, Meslek, mail, telefon. Çıkış profil sayfasından.
 - Fire analizi tahvilsiz (minimum fire / zayiatsız kesim). Liste altında: **İmalattan Veri Al** (mavi) → **Fire analizi yap** (yeşil). Fire özeti yalnız analiz sonrası; panelde tekrar buton yok.
 - Raporlar DEMO bandını açma.
 - `AppMediaQuery` `padding.bottom = 0`; nav yalnız `viewPadding`. Turuncu STAGING şeridi, 28px spacer ve `flutter-view` `top:28px` yok; geri koyma.

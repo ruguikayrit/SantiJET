@@ -102,7 +102,7 @@ class RebarMetrajReportService {
         ('Dosya', result.fileName),
         ('Format', result.sourceFormat),
         ('Analiz tarihi', dateFormat.format(result.parsedAt)),
-        ('Toplam tonaj', '${numberFormat.format(result.totalTonnage)} t'),
+        ('Toplam', numberFormat.format(result.totalTonnage)),
         ('Toplam uzunluk', '${lengthFormat.format(result.totalLengthM)} m'),
         ('Toplam çubuk', intFormat.format(result.totalBarCount)),
         ('Okunan etiket', intFormat.format(result.textDetails.length)),
@@ -143,9 +143,9 @@ class RebarMetrajReportService {
     return PdfReportSection(
       title: 'Metraj İcmali',
       subtitle:
-          'Toplam ${numberFormat.format(summary.totalTonnage)} t · '
-          'İnce (Ø8–12) ${numberFormat.format(summary.thinTonnage)} t · '
-          'Kalın (Ø≥14) ${numberFormat.format(summary.thickTonnage)} t',
+          'Toplam ${numberFormat.format(summary.totalTonnage)} · '
+          'İnce (Ø8–12) ${numberFormat.format(summary.thinTonnage)} · '
+          'Kalın (Ø≥14) ${numberFormat.format(summary.thickTonnage)}',
       headers: const ['Çap', 'Birim ağ.', 'Adet', 'Uzunluk', 'Ağırlık'],
       rows: rows,
     );
@@ -193,12 +193,12 @@ class RebarMetrajReportService {
         keyValues: [
           ('Eleman sayısı', intFormat.format(cetvelSummary.elementCount)),
           ('Satır sayısı', intFormat.format(cetvelSummary.rowCount)),
-          ('Toplam tonaj', '${numberFormat.format(cetvelSummary.totalTonnage)} t'),
+          ('Toplam', numberFormat.format(cetvelSummary.totalTonnage)),
           ('Toplam uzunluk', '${lengthFormat.format(cetvelSummary.totalLengthM)} m'),
           (
             'İnce / Kalın',
-            '${numberFormat.format(cetvelSummary.thinTonnage)} t / '
-                '${numberFormat.format(cetvelSummary.thickTonnage)} t',
+            '${numberFormat.format(cetvelSummary.thinTonnage)} / '
+                '${numberFormat.format(cetvelSummary.thickTonnage)}',
           ),
         ],
       ),
@@ -249,7 +249,7 @@ class RebarMetrajReportService {
         PdfReportSection(
           title: 'Metraj Cetveli — ${group.key.label}',
           subtitle:
-              '${group.value.length} eleman · ${numberFormat.format(typeTonnage)} t',
+              '${group.value.length} eleman · ${numberFormat.format(typeTonnage)}',
           headers: const [
             'Eleman',
             'Benzer',

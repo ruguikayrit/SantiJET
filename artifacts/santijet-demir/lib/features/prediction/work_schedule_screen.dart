@@ -171,7 +171,7 @@ class _WorkScheduleScreenState extends ConsumerState<WorkScheduleScreen> {
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  'Keşif tonajı · ${row.imalat.diameterLines.length} çap',
+                                  'Keşif · ${row.imalat.diameterLines.length} çap',
                                   style: AppTypography.bodySmall.copyWith(
                                     color: AppColors.textMuted,
                                   ),

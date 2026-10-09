@@ -1,3 +1,4 @@
+import 'package:santijet_demir/core/format/app_format.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -21,7 +22,7 @@ class SelectInTransitOrderScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppColors.canvas,
       appBar: AppBar(
-        title: const Text('Yoldaki Sevkiyatlar'),
+        title: const Text('Yeni Teslimat Kaydı'),
       ),
       body: inTransitOrders.isEmpty
           ? const ModuleEmptyState(
@@ -31,12 +32,12 @@ class SelectInTransitOrderScreen extends ConsumerWidget {
               padding: const EdgeInsets.all(AppSpacing.md),
               children: [
                 Text(
-                  'Teslim alınacak yoldaki sevkiyatı seçin',
+                  'Bekleyen siparişi seçin',
                   style: AppTypography.headlineMedium,
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Seçilen sipariş için irsaliye bilgileri ve çap bazlı teslim miktarları girilecektir.',
+                  'Sipariş sayfasındaki bekleyen siparişlerin tamamı listelenir. Seçilen sipariş için irsaliye ve çap teslim miktarları girilir.',
                   style: AppTypography.bodySmall,
                 ),
                 const SizedBox(height: 16),
@@ -101,7 +102,7 @@ class _InTransitOrderTile extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            '${order.tonnage.toStringAsFixed(0)}t',
+                            '${AppFormat.tonnage(order.tonnage)}t',
                             style: AppTypography.titleMedium.copyWith(
                               color: AppColors.electricBlueLight,
                             ),

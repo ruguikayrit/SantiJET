@@ -115,7 +115,7 @@ class HorizontalBarChart extends StatelessWidget {
     required this.value,
     required this.maxValue,
     required this.color,
-    this.suffix = 't',
+    this.suffix = '',
   });
 
   final String label;

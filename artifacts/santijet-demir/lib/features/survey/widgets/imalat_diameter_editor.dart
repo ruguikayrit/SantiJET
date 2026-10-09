@@ -1,3 +1,4 @@
+import 'package:santijet_demir/core/format/app_format.dart';
 import 'package:flutter/material.dart';
 import 'package:santijet_demir/core/widgets/app_toast.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -90,10 +91,7 @@ class _ImalatDiameterEditorState extends ConsumerState<ImalatDiameterEditor> {
   }
 
   String _formatTonnage(double value) {
-    if (value == value.roundToDouble()) {
-      return value.toStringAsFixed(0);
-    }
-    return value.toStringAsFixed(1);
+    return value.toStringAsFixed(2).replaceAll('.', ',');
   }
 
   double get _draftTotal {
@@ -160,7 +158,7 @@ class _ImalatDiameterEditorState extends ConsumerState<ImalatDiameterEditor> {
     ScaffoldMessenger.of(context).showAppSnackBar(
       SnackBar(
         content: Text(
-          '${widget.imalat.name} güncellendi — ${_draftTotal.toStringAsFixed(1)}t',
+          '${widget.imalat.name} güncellendi — ${AppFormat.tonnage(_draftTotal)}t',
         ),
         backgroundColor: AppColors.success,
       ),
@@ -247,7 +245,6 @@ class _ImalatDiameterEditorState extends ConsumerState<ImalatDiameterEditor> {
                     decoration: InputDecoration(
                       isDense: true,
                       hintText: '0',
-                      suffixText: 't',
                       contentPadding: const EdgeInsets.symmetric(
                         horizontal: 10,
                         vertical: 10,
@@ -295,7 +292,7 @@ class _ImalatDiameterEditorState extends ConsumerState<ImalatDiameterEditor> {
             children: [
               Text('Toplam', style: AppTypography.titleMedium),
               Text(
-                '${_draftTotal.toStringAsFixed(1)}t',
+                '${AppFormat.tonnage(_draftTotal)}t',
                 style: AppTypography.titleMedium.copyWith(
                   color: AppColors.electricBlueLight,
                 ),
@@ -344,7 +341,7 @@ class _ReadOnlyDiameterLines extends StatelessWidget {
               ),
               Expanded(
                 child: Text(
-                  line.planned.toStringAsFixed(1),
+                  AppFormat.tonnage(line.planned),
                   style: AppTypography.bodyMedium.copyWith(fontSize: 12),
                 ),
               ),

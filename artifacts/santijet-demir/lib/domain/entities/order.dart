@@ -173,6 +173,7 @@ class OrderItem {
     required this.supplier,
     this.approvals = const OrderApprovals(),
     this.imalatTonnages = const {},
+    this.diameterAmounts = const {},
     this.cancellation,
   });
 
@@ -185,6 +186,8 @@ class OrderItem {
   final String supplier;
   final OrderApprovals approvals;
   final Map<String, double> imalatTonnages;
+  /// Sipariş edilen çap → ton. Boşsa keşif dağılımından türetilir.
+  final Map<int, double> diameterAmounts;
   final OrderCancellation? cancellation;
 
   OrderItem copyWith({
@@ -197,6 +200,7 @@ class OrderItem {
     String? supplier,
     OrderApprovals? approvals,
     Map<String, double>? imalatTonnages,
+    Map<int, double>? diameterAmounts,
     OrderCancellation? cancellation,
     bool clearCancellation = false,
   }) {
@@ -210,6 +214,7 @@ class OrderItem {
       supplier: supplier ?? this.supplier,
       approvals: approvals ?? this.approvals,
       imalatTonnages: imalatTonnages ?? this.imalatTonnages,
+      diameterAmounts: diameterAmounts ?? this.diameterAmounts,
       cancellation:
           clearCancellation ? null : (cancellation ?? this.cancellation),
     );
@@ -225,6 +230,10 @@ class OrderItem {
         'supplier': supplier,
         'approvals': approvals.toJson(),
         'imalatTonnages': imalatTonnages,
+        'diameterAmounts': {
+          for (final entry in diameterAmounts.entries)
+            entry.key.toString(): entry.value,
+        },
         if (cancellation != null) 'cancellation': cancellation!.toJson(),
       };
 
@@ -250,10 +259,23 @@ class OrderItem {
         json['approvals'] is Map ? json['approvals'] as Map : null,
       ),
       imalatTonnages: _parseImalatTonnages(json['imalatTonnages']),
+      diameterAmounts: _parseDiameterAmounts(json['diameterAmounts']),
       cancellation: json['cancellation'] is Map
           ? OrderCancellation.fromJson(json['cancellation'] as Map)
           : null,
     );
+  }
+
+  static Map<int, double> _parseDiameterAmounts(Object? raw) {
+    if (raw is! Map) return const {};
+    final amounts = <int, double>{};
+    for (final entry in raw.entries) {
+      final diameter = int.tryParse(entry.key.toString());
+      final amount = (entry.value as num?)?.toDouble() ?? 0;
+      if (diameter == null || amount <= 0) continue;
+      amounts[diameter] = amount;
+    }
+    return amounts;
   }
 
   static Map<String, double> _parseImalatTonnages(Object? raw) {

@@ -1,3 +1,4 @@
+import 'package:santijet_demir/core/format/app_format.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -74,7 +75,7 @@ class DeliveryDetailScreen extends ConsumerWidget {
             children: [
               KpiCard(
                 label: 'Toplam Teslim',
-                value: delivery.tonnage.toStringAsFixed(0),
+                value: AppFormat.tonnage(delivery.tonnage),
                 unit: 't',
                 accentColor: AppColors.success,
               ),
@@ -154,11 +155,11 @@ class _ComparisonRow extends StatelessWidget {
       diffText = '✓';
       diffColor = AppColors.success;
     } else if (line.isExcess) {
-      diffText = '+${diff.toStringAsFixed(1)}t';
+      diffText = '+${AppFormat.tonnage(diff)}t';
       diffColor = AppColors.info;
       icon = Icons.trending_up;
     } else {
-      diffText = '${diff.toStringAsFixed(1)}t';
+      diffText = '${AppFormat.tonnage(diff)}t';
       diffColor = diff.abs() > 5 ? AppColors.critical : AppColors.warning;
       icon = Icons.trending_down;
     }
@@ -183,7 +184,7 @@ class _ComparisonRow extends StatelessWidget {
               Expanded(
                 flex: 3,
                 child: Text(
-                  '${line.ordered.toStringAsFixed(1)}t',
+                  '${AppFormat.tonnage(line.ordered)}t',
                   textAlign: TextAlign.center,
                   style: AppTypography.bodyMedium,
                 ),
@@ -191,7 +192,7 @@ class _ComparisonRow extends StatelessWidget {
               Expanded(
                 flex: 3,
                 child: Text(
-                  '${line.delivered.toStringAsFixed(1)}t',
+                  '${AppFormat.tonnage(line.delivered)}t',
                   textAlign: TextAlign.center,
                   style: AppTypography.titleMedium,
                 ),

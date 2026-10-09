@@ -1,7 +1,7 @@
 class AppSettings {
   AppSettings({
     this.themeMode = 'santijet_pro',
-    this.weightUnit = 'kg',
+    this.weightUnit = 'ton',
     this.language = 'tr',
     this.companyName = '',
     this.taxNo = '',
@@ -141,7 +141,7 @@ class AppSettings {
           json['themeMode'] as String,
         _ => 'santijet_pro',
       },
-      weightUnit: json['weightUnit'] as String? ?? 'kg',
+      weightUnit: json['weightUnit'] as String? ?? 'ton',
       language: json['language'] as String? ?? 'tr',
       companyName: json['companyName'] as String? ?? '',
       taxNo: json['taxNo'] as String? ?? '',

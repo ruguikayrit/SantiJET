@@ -74,7 +74,7 @@ class _CountRecordsScreenState extends ConsumerState<CountRecordsScreen> {
       ),
       floatingActionButton: ref.watch(canEditFieldCountProvider)
           ? AppFab(
-              label: 'Yeni Sayım',
+              heroTag: 'new-count-list',
               aboveBottomNav: false,
               onPressed: () => context.push(AppRoutes.newCount),
             )

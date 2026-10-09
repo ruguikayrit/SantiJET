@@ -205,7 +205,7 @@ class ReportService {
         ['Proje', context.projectName],
         ['Dönem', monthLabel],
         ['Sipariş Adedi', '${monthOrders.length}'],
-        ['Sipariş Tonajı', AppFormat.tonnage(orderedTonnage)],
+        ['Sipariş', AppFormat.tonnage(orderedTonnage)],
         ['Teslimat Adedi', '${monthDeliveries.length}'],
         ['Teslimat Tonajı', AppFormat.tonnage(deliveredTonnage)],
         ['Saha Sayım Adedi', '${monthCounts.length}'],

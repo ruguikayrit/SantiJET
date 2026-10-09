@@ -135,6 +135,14 @@ Map<int, double> computeOrderedByDiameterFromOrders(
   for (final order in orders) {
     if (order.status == OrderStatus.cancelled) continue;
 
+    if (order.diameterAmounts.isNotEmpty) {
+      for (final entry in order.diameterAmounts.entries) {
+        if (entry.value <= 0) continue;
+        totals[entry.key] = (totals[entry.key] ?? 0) + entry.value;
+      }
+      continue;
+    }
+
     for (final entry in order.imalatTonnages.entries) {
       final tonnage = entry.value;
       if (tonnage <= 0) continue;

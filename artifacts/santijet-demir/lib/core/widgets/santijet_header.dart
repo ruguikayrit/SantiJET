@@ -13,6 +13,9 @@ class SantijetHeader extends StatelessWidget {
     this.showNotification = false,
     this.showAvatar = true,
     this.avatarInitial,
+    this.onCreateReport,
+    this.onImport,
+    this.showBack = false,
   });
 
   /// Ana sayfa DEMİR — wordmark altı ürün adı (%50 büyütülmüş).
@@ -41,6 +44,12 @@ class SantijetHeader extends StatelessWidget {
   final bool showAvatar;
   /// Kullanılmıyor — API uyumu için tutuluyor (çark ikonu avatar yerine).
   final String? avatarInitial;
+  /// Verilirse dişlinin solunda rapor oluşturma butonu gösterilir.
+  final VoidCallback? onCreateReport;
+  /// Verilirse dişlinin solunda içe aktar butonu gösterilir.
+  final VoidCallback? onImport;
+  /// Ayarlardan açılan sayfalarda geri oku.
+  final bool showBack;
 
   @override
   Widget build(BuildContext context) {
@@ -59,6 +68,9 @@ class SantijetHeader extends StatelessWidget {
     return _PageBrandHeader(
       subtitle: subtitle,
       showAvatar: showAvatar,
+      onCreateReport: onCreateReport,
+      onImport: onImport,
+      showBack: showBack,
     );
   }
 }
@@ -114,15 +126,104 @@ class _HeaderSettingsButton extends StatelessWidget {
   }
 }
 
+class _HeaderReportButton extends StatelessWidget {
+  const _HeaderReportButton({
+    required this.onDarkBand,
+    required this.onPressed,
+  });
+
+  final bool onDarkBand;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return _HeaderTextButton(
+      onDarkBand: onDarkBand,
+      onPressed: onPressed,
+      label: 'Rapor',
+      icon: Icons.description_outlined,
+      semanticsLabel: 'Rapor oluştur',
+    );
+  }
+}
+
+class _HeaderTextButton extends StatelessWidget {
+  const _HeaderTextButton({
+    required this.onDarkBand,
+    required this.onPressed,
+    required this.label,
+    required this.icon,
+    required this.semanticsLabel,
+  });
+
+  final bool onDarkBand;
+  final VoidCallback onPressed;
+  final String label;
+  final IconData icon;
+  final String semanticsLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    final foreground = onDarkBand
+        ? Colors.white.withValues(alpha: 0.92)
+        : AppColors.textSecondary;
+    final border = onDarkBand
+        ? Colors.white.withValues(alpha: 0.28)
+        : AppColors.border;
+
+    return Semantics(
+      label: semanticsLabel,
+      button: true,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onPressed,
+          borderRadius: BorderRadius.circular(8),
+          child: Container(
+            height: 32,
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: border),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(icon, size: 16, color: foreground),
+                const SizedBox(width: 6),
+                Text(
+                  label,
+                  style: AppTypography.labelMedium.copyWith(
+                    color: foreground,
+                    fontWeight: FontWeight.w700,
+                    height: 1,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 /// Bolt + muted DEMİR etiketi + baskın sayfa adı — ana sayfa hariç.
 class _PageBrandHeader extends StatelessWidget {
   const _PageBrandHeader({
     required this.showAvatar,
     this.subtitle,
+    this.onCreateReport,
+    this.onImport,
+    this.showBack = false,
   });
 
   final String? subtitle;
   final bool showAvatar;
+  final VoidCallback? onCreateReport;
+  final VoidCallback? onImport;
+  final bool showBack;
 
   @override
   Widget build(BuildContext context) {
@@ -156,6 +257,24 @@ class _PageBrandHeader extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
+          if (showBack && context.canPop()) ...[
+            IconButton(
+              tooltip: 'Geri',
+              style: IconButton.styleFrom(
+                fixedSize: const Size(
+                  SantijetHeader.actionSize,
+                  SantijetHeader.actionSize,
+                ),
+                padding: EdgeInsets.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              onPressed: () => context.pop(),
+              icon: Icon(
+                Icons.arrow_back,
+                color: onDarkBand ? Colors.white : AppColors.textPrimary,
+              ),
+            ),
+          ],
           Expanded(
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -189,6 +308,23 @@ class _PageBrandHeader extends StatelessWidget {
               ],
             ),
           ),
+          if (onCreateReport != null) ...[
+            _HeaderReportButton(
+              onDarkBand: onDarkBand,
+              onPressed: onCreateReport!,
+            ),
+            const SizedBox(width: 4),
+          ],
+          if (onImport != null) ...[
+            _HeaderTextButton(
+              onDarkBand: onDarkBand,
+              onPressed: onImport!,
+              label: 'İçe Aktar',
+              icon: Icons.download_outlined,
+              semanticsLabel: 'İçe aktar',
+            ),
+            const SizedBox(width: 4),
+          ],
           _HeaderActions(
             showAvatar: showAvatar,
             onDarkBand: onDarkBand,

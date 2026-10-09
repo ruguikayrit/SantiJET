@@ -165,11 +165,45 @@ class DemoSeedController {
       ],
     );
 
+    final temel = _imalat(
+      id: 'demo-imalat-temel',
+      name: 'Temel',
+      progressPercent: 62,
+      lines: const [
+        DiameterLine(diameter: 12, planned: 80, ordered: 50, delivered: 42, progressPercent: 62),
+        DiameterLine(diameter: 14, planned: 70, ordered: 42, delivered: 36, progressPercent: 62),
+        DiameterLine(diameter: 16, planned: 70, ordered: 42, delivered: 36, progressPercent: 62),
+        DiameterLine(diameter: 20, planned: 60, ordered: 38, delivered: 34, progressPercent: 62),
+      ],
+    );
+    final doseme = _imalat(
+      id: 'demo-imalat-doseme',
+      name: 'Döşeme',
+      progressPercent: 40,
+      lines: const [
+        DiameterLine(diameter: 8, planned: 70, ordered: 28, delivered: 16, progressPercent: 40),
+        DiameterLine(diameter: 10, planned: 60, ordered: 24, delivered: 14, progressPercent: 40),
+        DiameterLine(diameter: 12, planned: 70, ordered: 28, delivered: 16, progressPercent: 40),
+        DiameterLine(diameter: 14, planned: 60, ordered: 24, delivered: 14, progressPercent: 40),
+        DiameterLine(diameter: 16, planned: 60, ordered: 24, delivered: 12, progressPercent: 40),
+      ],
+    );
+    final merdiven = _imalat(
+      id: 'demo-imalat-merdiven',
+      name: 'Merdiven',
+      progressPercent: 35,
+      lines: const [
+        DiameterLine(diameter: 10, planned: 30, ordered: 12, delivered: 8, progressPercent: 35),
+        DiameterLine(diameter: 12, planned: 30, ordered: 12, delivered: 8, progressPercent: 35),
+        DiameterLine(diameter: 14, planned: 25, ordered: 10, delivered: 6, progressPercent: 35),
+      ],
+    );
+
     return SurveyProject(
       projectName: projectName,
       date: DateTime.now(),
       revision: 'Rev.Demo',
-      imalats: [kolon, kiris, perde],
+      imalats: [temel, kolon, perde, kiris, doseme, merdiven],
     );
   }
 

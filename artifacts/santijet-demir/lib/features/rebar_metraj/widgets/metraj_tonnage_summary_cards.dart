@@ -39,7 +39,7 @@ class MetrajTonnageSummaryCards extends StatelessWidget {
           children: [
             Expanded(
               child: _StackedMetricCard(
-                label: 'Toplam Tonaj',
+                label: 'Toplam',
                 value: numberFormat.format(summary.totalTonnage),
                 accentColor: AppColors.electricBlueLight,
               ),
@@ -145,10 +145,6 @@ class _StackedMetricCard extends StatelessWidget {
                         fontSize: 18,
                         height: 1.05,
                       ),
-                    ),
-                    TextSpan(
-                      text: ' t',
-                      style: AppTypography.labelSmall.copyWith(height: 1.05),
                     ),
                   ],
                 ),

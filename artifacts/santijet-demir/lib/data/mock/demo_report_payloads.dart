@@ -22,7 +22,7 @@ ReportPayload? demoReportPayload(String reportId) {
       ),
     'kesif_icmal' => const ReportPayload(
         title: 'Keşif Metraj İcmali (DEMO)',
-        headers: ['İmalat', 'Çap', 'Tonaj', 'Oran'],
+        headers: ['İmalat', 'Çap', 'Miktar', 'Oran'],
         rows: [
           ['Kolon', 'Ø16', '42,50', '%22,8'],
           ['Kolon', 'Ø20', '31,20', '%16,7'],
@@ -54,7 +54,7 @@ ReportPayload? demoReportPayload(String reportId) {
           ['Format', 'DWG'],
           ['Okunan etiket', '248'],
           ['Toplam boy', '12.480 m'],
-          ['Toplam tonaj', '64,85 t'],
+          ['Toplam', '64,85'],
           ['İnce demir', '18,20 t'],
           ['Kalın demir', '46,65 t'],
           ['Eleman tipi', 'Kolon / Kiriş / Perde'],
@@ -63,7 +63,7 @@ ReportPayload? demoReportPayload(String reportId) {
       ),
     'siparis_ozet' => const ReportPayload(
         title: 'Sipariş Özet Raporu (DEMO)',
-        headers: ['Sipariş No', 'Tarih', 'Firma', 'Durum', 'Tonaj', 'İmalat'],
+        headers: ['Sipariş No', 'Tarih', 'Firma', 'Durum', 'Miktar', 'İmalat'],
         rows: [
           ['SP-2026-014', '12.06.2026', 'Çelik A.Ş.', 'Onaylı', '28,40', 'Kolon'],
           ['SP-2026-018', '21.06.2026', 'Demir Lojistik', 'Yolda', '22,10', 'Kiriş'],
@@ -85,7 +85,7 @@ ReportPayload? demoReportPayload(String reportId) {
       ),
     'teslimat_liste' => const ReportPayload(
         title: 'Teslimat / İrsaliye Listesi (DEMO)',
-        headers: ['Sipariş', 'İrsaliye', 'Firma', 'Tarih', 'Tonaj', 'Durum'],
+        headers: ['Sipariş', 'İrsaliye', 'Firma', 'Tarih', 'Miktar', 'Durum'],
         rows: [
           ['SP-014', 'IRS-8891', 'Çelik A.Ş.', '14.06.2026', '14,20', 'Tam'],
           ['SP-014', 'IRS-8910', 'Çelik A.Ş.', '18.06.2026', '14,20', 'Tam'],
@@ -157,7 +157,7 @@ ReportPayload? demoReportPayload(String reportId) {
         headers: ['Alan', 'Değer'],
         rows: [
           ['Kaynak', 'İmalat · A Blok Kolon'],
-          ['Ham tonaj', '64,85 t'],
+          ['Ham', '64,85'],
           ['Ham fire', '7,90 t (%12,2)'],
           ['Plan fire', '4,10 t (%6,3)'],
           ['Kazanç', '3,80 t'],
@@ -172,8 +172,8 @@ ReportPayload? demoReportPayload(String reportId) {
         title: 'Fire Karşılaştırma Raporu (DEMO)',
         headers: ['Metrik', 'Ham', 'Plan', 'Fark'],
         rows: [
-          ['Stok tonajı', '72,75', '68,95', '-3,80'],
-          ['Fire tonajı', '7,90', '4,10', '-3,80'],
+          ['Stok', '72,75', '68,95', '-3,80'],
+          ['Fire', '7,90', '4,10', '-3,80'],
           ['Fire %', '%12,2', '%6,3', '-5,9 pp'],
           ['Çubuk adedi', '2.180', '2.058', '-122'],
           ['Tahvil grubu', '0', '6', '+6'],
@@ -210,9 +210,9 @@ ReportPayload? demoReportPayload(String reportId) {
           ['Proje', 'Ankara Rezidans A Blok'],
           ['Dönem', 'Temmuz 2026'],
           ['Sipariş adedi', '3'],
-          ['Sipariş tonajı', '91,60 t'],
+          ['Sipariş', '91,60'],
           ['Teslimat adedi', '4'],
-          ['Teslimat tonajı', '78,55 t'],
+          ['Teslimat', '78,55'],
           ['Saha sayım', '2'],
           ['Keşif revizyonu', '18.07.2026'],
           ['Güncel fire', '5,20 t'],

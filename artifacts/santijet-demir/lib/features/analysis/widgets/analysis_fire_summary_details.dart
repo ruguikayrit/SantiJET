@@ -164,11 +164,11 @@ class _RawFireDetailState extends ConsumerState<_RawFireDetail> {
         ),
         const SizedBox(height: 10),
         _FormulaRow(
-          label: 'Fire tonajı',
+          label: 'Fire',
           value: '${AppFormat.tonnage(widget.summary.rawWasteTonnage)} t',
         ),
         _FormulaRow(
-          label: 'Stok tonajı',
+          label: 'Stok',
           value: '${AppFormat.tonnage(widget.summary.rawStockTonnage)} t',
         ),
         _FormulaRow(
@@ -272,11 +272,11 @@ class _PlannedFireDetailState extends ConsumerState<_PlannedFireDetail> {
         ),
         const SizedBox(height: 10),
         _FormulaRow(
-          label: 'Fire tonajı',
+          label: 'Fire',
           value: '${AppFormat.tonnage(widget.summary.plannedWasteTonnage!)} t',
         ),
         _FormulaRow(
-          label: 'Stok tonajı',
+          label: 'Stok',
           value: '${AppFormat.tonnage(widget.summary.plannedStockTonnage!)} t',
         ),
         _FormulaRow(
@@ -657,7 +657,7 @@ class _SavingsDetail extends StatelessWidget {
               '(%${summary.plannedWastePercent!.toStringAsFixed(1)})',
         ),
         _FormulaRow(
-          label: 'Tonaj kazancı',
+          label: 'Kazanç',
           value: '−${AppFormat.tonnage(summary.savedWasteTonnage)} t',
           highlight: summary.savedWasteTonnage > 0,
         ),

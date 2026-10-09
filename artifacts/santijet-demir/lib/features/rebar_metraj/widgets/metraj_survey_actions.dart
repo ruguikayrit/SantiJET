@@ -1,3 +1,4 @@
+import 'package:santijet_demir/core/format/app_format.dart';
 import 'package:flutter/material.dart';
 import 'package:santijet_demir/core/widgets/app_toast.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -47,7 +48,6 @@ Future<void> sendMetrajResultToImalat(
   }
 
   if (existing?.surveyImalatId != null) {
-    ref.read(surveyTabIndexProvider.notifier).state = 0;
     if (context.mounted) {
       ScaffoldMessenger.of(context).showAppSnackBar(
         SnackBar(
@@ -112,7 +112,7 @@ class MetrajResultActions extends ConsumerWidget {
             onPressed: projectId == null
                 ? () => context.push(AppRoutes.projects)
                 : linkedToImalat
-                    ? () => ref.read(surveyTabIndexProvider.notifier).state = 0
+                    ? () => context.go(AppRoutes.survey)
                     : () => sendMetrajResultToImalat(context, ref, result),
             icon: Icon(linkedToImalat ? Icons.check_circle : Icons.send),
             label: Text(
@@ -197,7 +197,6 @@ Future<void> sendSelectedMetrajRecordsToSurvey(
       if (!context.mounted) return;
       if (sent > 0) {
         ref.read(selectedMetrajRecordIdsProvider.notifier).state = {};
-        ref.read(surveyTabIndexProvider.notifier).state = 0;
         ScaffoldMessenger.of(context).showAppSnackBar(
           SnackBar(content: Text('$sent kayıt imalat listesine gönderildi.')),
         );
@@ -276,15 +275,13 @@ Future<void> _applySendRequest(
   }
 
   ref.read(selectedMetrajRecordIdsProvider.notifier).state = {};
-  ref.read(surveyTabIndexProvider.notifier).state = 0;
-
   if (!context.mounted) return;
   ScaffoldMessenger.of(context).showAppSnackBar(
     SnackBar(
       content: Text('Metraj "${imalat.name}" imalat listesine aktarıldı.'),
       action: SnackBarAction(
         label: 'İmalat',
-        onPressed: () => ref.read(surveyTabIndexProvider.notifier).state = 0,
+        onPressed: () => context.go(AppRoutes.survey),
       ),
     ),
   );
@@ -390,7 +387,7 @@ class _BulkSendMetrajDialogState extends State<_BulkSendMetrajDialog> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            '${widget.records.length} kayıt · ${totalTonnage.toStringAsFixed(2)} t',
+            '${widget.records.length} kayıt · ${AppFormat.tonnage(totalTonnage)} t',
             style: AppTypography.bodySmall,
           ),
           const SizedBox(height: 16),
@@ -498,7 +495,7 @@ class _SendMetrajToSurveyDialogState
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              '${widget.result.totalTonnage.toStringAsFixed(2)} t · '
+              '${AppFormat.tonnage(widget.result.totalTonnage)} t · '
               '${widget.result.lines.length} çap',
               style: AppTypography.bodySmall,
             ),
@@ -532,7 +529,7 @@ class _SendMetrajToSurveyDialogState
                 const SizedBox(height: 8),
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
-                  title: const Text('Mevcut tonajın üzerine yaz'),
+                  title: const Text('Mevcut değerin üzerine yaz'),
                   subtitle: Text(
                     _replaceExisting
                         ? 'Seçili çaplardaki keşif değerleri metraj ile değiştirilir'
@@ -684,7 +681,7 @@ class _SaveMetrajNameDialogState extends State<SaveMetrajNameDialog> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            '${widget.result.totalTonnage.toStringAsFixed(2)} t · '
+            '${AppFormat.tonnage(widget.result.totalTonnage)} t · '
             '${widget.result.totalBarCount} çubuk',
             style: AppTypography.bodySmall,
           ),

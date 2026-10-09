@@ -30,11 +30,7 @@ final userPermissionsProvider = Provider<Set<AppPermission>>((ref) {
 
 final visibleBottomNavTabsProvider = Provider<List<BottomNavTab>>((ref) {
   final permissions = ref.watch(userPermissionsProvider);
-  final canAnalysis = ref.watch(canAccessAnalysisBySubscriptionProvider);
-  var tabs = AppPermissionMatrix.visibleTabs(permissions);
-  if (!canAnalysis) {
-    tabs = tabs.where((tab) => tab != BottomNavTab.analysis).toList();
-  }
+  final tabs = AppPermissionMatrix.visibleTabs(permissions);
   if (tabs.isEmpty) return [BottomNavTab.dashboard];
   return tabs;
 });

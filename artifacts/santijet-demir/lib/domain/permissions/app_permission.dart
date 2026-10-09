@@ -95,12 +95,12 @@ abstract final class AppPermissionMatrix {
     return switch (tab) {
       BottomNavTab.dashboard =>
         permissions.contains(AppPermission.viewDashboard),
+      BottomNavTab.survey => permissions.contains(AppPermission.viewSurvey),
       BottomNavTab.orders => permissions.contains(AppPermission.viewOrders),
       BottomNavTab.incomingRebar =>
         permissions.contains(AppPermission.viewIncomingRebar),
       BottomNavTab.fieldCount =>
         permissions.contains(AppPermission.viewFieldCount),
-      BottomNavTab.analysis => permissions.contains(AppPermission.viewAnalysis),
     };
   }
 

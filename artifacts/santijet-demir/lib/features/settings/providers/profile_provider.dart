@@ -20,6 +20,16 @@ final profileRoleProvider = Provider<String>((ref) {
   return settings.profileRole.trim();
 });
 
+final profileEmailProvider = Provider<String>((ref) {
+  final custom = ref.watch(appSettingsProvider).contactEmail.trim();
+  if (custom.isNotEmpty) return custom;
+  return ref.watch(authProvider).user?.email ?? '';
+});
+
+final profilePhoneProvider = Provider<String>((ref) {
+  return ref.watch(appSettingsProvider).contactPhone.trim();
+});
+
 final profileInitialProvider = Provider<String>((ref) {
   final name = ref.watch(profileDisplayNameProvider).trim();
   if (name.isEmpty) return 'U';

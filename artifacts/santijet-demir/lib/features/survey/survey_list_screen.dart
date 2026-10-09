@@ -1,23 +1,20 @@
+import 'package:santijet_demir/core/format/app_format.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:santijet_demir/core/widgets/app_toast.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:santijet_demir/core/routing/app_routes.dart';
 import 'package:santijet_demir/core/theme/app_colors.dart';
-import 'package:santijet_demir/core/theme/app_radii.dart';
 import 'package:santijet_demir/core/theme/app_spacing.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
 import 'package:santijet_demir/core/widgets/app_components.dart';
-import 'package:santijet_demir/core/widgets/app_subpage_app_bar.dart';
+import 'package:santijet_demir/core/widgets/santijet_header.dart';
 import 'package:santijet_demir/core/widgets/swipe_to_delete_row.dart';
-import 'package:santijet_demir/data/services/export_service.dart';
 import 'package:santijet_demir/domain/entities/survey.dart';
-import 'package:santijet_demir/data/services/project_backup_service.dart';
 import 'package:santijet_demir/features/projects/providers/project_provider.dart';
-import 'package:santijet_demir/features/settings/providers/backup_provider.dart';
-import 'package:santijet_demir/features/rebar_metraj/widgets/rebar_metraj_panel.dart';
 import 'package:santijet_demir/features/survey/providers/survey_provider.dart';
-import 'package:santijet_demir/features/survey/widgets/imalat_diameter_editor.dart';
+import 'package:santijet_demir/features/survey/survey_table_import.dart';
 
 class SurveyListScreen extends ConsumerStatefulWidget {
   const SurveyListScreen({super.key});
@@ -26,48 +23,26 @@ class SurveyListScreen extends ConsumerStatefulWidget {
   ConsumerState<SurveyListScreen> createState() => _SurveyListScreenState();
 }
 
-class _SurveyListScreenState extends ConsumerState<SurveyListScreen>
-    with SingleTickerProviderStateMixin {
-  static const _tabCount = 2;
-  late final TabController _tabController;
+class _SurveyListScreenState extends ConsumerState<SurveyListScreen> {
   late final ScrollController _imalatListScrollController;
+  final _searchController = TextEditingController();
+  String _query = '';
+  var _ensuredTypes = false;
 
   @override
   void initState() {
     super.initState();
     _imalatListScrollController = ScrollController();
-    final initialTab = ref.read(surveyTabIndexProvider);
-    _tabController = TabController(
-      length: _tabCount,
-      vsync: this,
-      initialIndex: initialTab.clamp(0, _tabCount - 1),
-    );
-    _tabController.addListener(() {
-      if (!_tabController.indexIsChanging) {
-        ref.read(surveyTabIndexProvider.notifier).state = _tabController.index;
-      }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _ensuredTypes) return;
+      _ensuredTypes = true;
+      ref.read(surveyProjectProvider.notifier).ensureStandardImalats();
     });
   }
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    final tab = GoRouterState.of(context).uri.queryParameters['tab'];
-    final targetIndex = switch (tab) {
-      'cad' || 'metraj' => 1,
-      // Eski Ön İmalat / records → İmalat sekmesi
-      'records' || 'kayit' => 0,
-      _ => null,
-    };
-    if (targetIndex != null && _tabController.index != targetIndex) {
-      _tabController.index = targetIndex;
-      ref.read(surveyTabIndexProvider.notifier).state = targetIndex;
-    }
-  }
-
-  @override
   void dispose() {
-    _tabController.dispose();
+    _searchController.dispose();
     _imalatListScrollController.dispose();
     super.dispose();
   }
@@ -131,7 +106,6 @@ class _SurveyListScreenState extends ConsumerState<SurveyListScreen>
     if (!mounted) return;
 
     ref.read(expandedImalatProvider.notifier).state = imalat.id;
-    ref.read(surveyTabIndexProvider.notifier).state = 0;
     _scrollToImalatListEnd();
 
     ScaffoldMessenger.of(context).showAppSnackBar(
@@ -142,108 +116,171 @@ class _SurveyListScreenState extends ConsumerState<SurveyListScreen>
     );
   }
 
+  Future<void> _importSurveyTable() async {
+    final canEdit = ref.read(canEditActiveProjectProvider);
+    if (!canEdit) {
+      ScaffoldMessenger.of(context).showAppSnackBar(
+        const SnackBar(content: Text('İçe aktarmak için düzenleme yetkisi gerekir')),
+      );
+      return;
+    }
+
+    final picked = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: const ['xlsx', 'xls', 'csv'],
+      withData: true,
+    );
+    if (picked == null || picked.files.isEmpty || !mounted) return;
+    final file = picked.files.single;
+    final bytes = file.bytes;
+    if (bytes == null) {
+      ScaffoldMessenger.of(context).showAppSnackBar(
+        const SnackBar(content: Text('Dosya okunamadı')),
+      );
+      return;
+    }
+
+    final List<SurveyImalat> imalats;
+    try {
+      imalats = parseSurveyImport(fileName: file.name, bytes: bytes);
+    } on SurveyImportException catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showAppSnackBar(
+        SnackBar(content: Text(error.message)),
+      );
+      return;
+    }
+
+    final hasExisting = ref.read(surveyProjectProvider).imalats.isNotEmpty;
+    if (hasExisting) {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          backgroundColor: AppColors.surfaceElevated,
+          title: const Text('İmalat listesini değiştir'),
+          content: Text(
+            '${imalats.length} imalat içe aktarılacak. Mevcut imalat listesi '
+            'bu dosyayla değiştirilir.\n\n$surveyImportFormatHint',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('İptal'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('İçe Aktar'),
+            ),
+          ],
+        ),
+      );
+      if (confirmed != true || !mounted) return;
+    }
+
+    await ref.read(surveyProjectProvider.notifier).replaceImportedImalats(imalats);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showAppSnackBar(
+      SnackBar(content: Text('${imalats.length} imalat içe aktarıldı')),
+    );
+  }
+
+  List<SurveyImalat> _visibleImalats(List<SurveyImalat> source) {
+    final query = _foldImalat(_query.trim());
+    final visible = query.isEmpty
+        ? [...source]
+        : source.where((imalat) => _foldImalat(imalat.name).contains(query)).toList();
+    visible.sort((a, b) {
+      final rank = _imalatRank(a.name).compareTo(_imalatRank(b.name));
+      if (rank != 0) return rank;
+      return _foldImalat(a.name).compareTo(_foldImalat(b.name));
+    });
+    return visible;
+  }
+
   @override
   Widget build(BuildContext context) {
-    ref.listen(surveyTabIndexProvider, (previous, next) {
-      if (_tabController.index != next) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted && _tabController.index != next) {
-            _tabController.animateTo(next.clamp(0, _tabCount - 1));
-          }
-        });
-      }
-    });
-
     final project = ref.watch(surveyProjectProvider);
     final expandedId = ref.watch(expandedImalatProvider);
-    final tabIndex = ref.watch(surveyTabIndexProvider);
     final canEdit = ref.watch(canEditActiveProjectProvider);
-    final screenBg = AppColors.canvas;
-    final tabLabelStyle = AppTypography.labelMedium.copyWith(
-      fontSize: 13,
-      height: 1.2,
-    );
+    final imalats = _visibleImalats(project.imalats);
+    const screenBg = Color(0xFFF4F7FB);
 
     return Scaffold(
       backgroundColor: screenBg,
       primary: false,
       resizeToAvoidBottomInset: false,
-      appBar: appTabbedSubpageAppBar(
-        context,
-        backgroundColor: screenBg,
-        tabBarHeight: 60,
-        tabBar: _SurveyFramedTabBar(
-          controller: _tabController,
-          labelStyle: tabLabelStyle,
-          labels: const ['İmalat', 'Otomatik Metraj'],
-        ),
-      ),
-      floatingActionButton: canEdit && tabIndex == 0
+      floatingActionButton: canEdit
           ? AppFab(
-              label: 'Yeni İmalat',
-              aboveBottomNav: false,
+              heroTag: 'new-imalat',
               onPressed: _showCreateImalatDialog,
             )
           : null,
       body: ColoredBox(
         color: screenBg,
-        child: IndexedStack(
-          index: tabIndex.clamp(0, _tabCount - 1),
+        child: Column(
           children: [
-            Material(
-              color: screenBg,
+            SantijetHeader(
+              subtitle: 'Keşif',
+              onImport: canEdit ? _importSurveyTable : null,
+            ),
+            Expanded(
               child: ListView(
               controller: _imalatListScrollController,
               padding: EdgeInsets.fromLTRB(
                 AppSpacing.md,
                 AppSpacing.md,
                 AppSpacing.md,
-                AppFab.scrollClearanceOf(context, aboveBottomNav: false),
+                AppFab.scrollClearanceOf(context),
               ),
               children: [
-                _ProjectMetaRow(project: project),
-                const SizedBox(height: 16),
-                Text('İmalat Listesi', style: AppTypography.headlineMedium),
+                _ImalatSearchField(
+                  controller: _searchController,
+                  onChanged: (value) => setState(() => _query = value),
+                ),
                 const SizedBox(height: 12),
-                ...project.imalats.map(
-                  (imalat) => SwipeToDeleteRow(
-                    itemKey: ValueKey('imalat-${imalat.id}'),
-                    enabled: canEdit,
-                    title: 'İmalatı Sil',
-                    message:
-                        '"${imalat.name}" imalatını silmek istediğinize emin misiniz?',
-                    onDelete: () async {
-                      await ref
-                          .read(surveyProjectProvider.notifier)
-                          .deleteImalat(imalat.id);
-                      if (expandedId == imalat.id) {
-                        ref.read(expandedImalatProvider.notifier).state = null;
-                      }
-                    },
-                    child: SurveyImalatCard(
-                      imalat: imalat,
-                      expanded: expandedId == imalat.id,
-                      canEdit: canEdit,
-                      onToggle: () {
-                        final currentExpanded =
-                            ref.read(expandedImalatProvider);
-                        ref.read(expandedImalatProvider.notifier).state =
-                            currentExpanded == imalat.id ? null : imalat.id;
+                if (imalats.isEmpty)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 28),
+                    child: Center(
+                      child: Text(
+                        'İmalat bulunamadı',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF8B95A5),
+                        ),
+                      ),
+                    ),
+                  )
+                else
+                  ...imalats.map(
+                    (imalat) => SwipeToDeleteRow(
+                      itemKey: ValueKey('imalat-${imalat.id}'),
+                      enabled: canEdit,
+                      title: 'İmalatı Sil',
+                      message:
+                          '"${imalat.name}" imalatını silmek istediğinize emin misiniz?',
+                      onDelete: () async {
+                        await ref
+                            .read(surveyProjectProvider.notifier)
+                            .deleteImalat(imalat.id);
+                        if (expandedId == imalat.id) {
+                          ref.read(expandedImalatProvider.notifier).state = null;
+                        }
                       },
-                      onDetail: () {
-                        ref.read(selectedImalatProvider.notifier).state =
-                            imalat;
-                        context.push('${AppRoutes.survey}/${imalat.id}');
-                      },
+                      child: SurveyImalatCard(
+                        imalat: imalat,
+                        onDetail: () {
+                          ref.read(selectedImalatProvider.notifier).state =
+                              imalat;
+                          context.push('${AppRoutes.survey}/${imalat.id}');
+                        },
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 16),
-                _BottomActions(project: project),
               ],
               ),
             ),
-            const SizedBox.expand(child: RebarMetrajPanel()),
           ],
         ),
       ),
@@ -251,50 +288,33 @@ class _SurveyListScreenState extends ConsumerState<SurveyListScreen>
   }
 }
 
-class _ProjectMetaRow extends StatelessWidget {
-  const _ProjectMetaRow({required this.project});
+class _ImalatSearchField extends StatelessWidget {
+  const _ImalatSearchField({required this.controller, required this.onChanged});
 
-  final SurveyProject project;
+  final TextEditingController controller;
+  final ValueChanged<String> onChanged;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(14),
+      height: 44,
       decoration: BoxDecoration(
-        color: AppColors.surfaceElevated,
-        borderRadius: AppRadii.md,
-        border: Border.all(color: AppColors.border),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFE6EBF2)),
       ),
-      child: Row(
-        children: [
-          _MetaItem(label: 'Proje', value: project.projectName),
-          _MetaItem(
-            label: 'Tarih',
-            value:
-                '${project.date.day}.${project.date.month}.${project.date.year}',
-          ),
-          _MetaItem(label: 'Revizyon', value: project.revision),
-        ],
-      ),
-    );
-  }
-}
-
-class _MetaItem extends StatelessWidget {
-  const _MetaItem({required this.label, required this.value});
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(label, style: AppTypography.labelMedium),
-          Text(value, style: AppTypography.titleMedium, maxLines: 1, overflow: TextOverflow.ellipsis),
-        ],
+      child: TextField(
+        controller: controller,
+        onChanged: onChanged,
+        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF1C2430)),
+        decoration: const InputDecoration(
+          hintText: 'İmalat ara...',
+          hintStyle: TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Color(0xFF8B95A5)),
+          prefixIcon: Icon(Icons.search, size: 20, color: Color(0xFF8B95A5)),
+          border: InputBorder.none,
+          isDense: true,
+          contentPadding: EdgeInsets.symmetric(vertical: 12),
+        ),
       ),
     );
   }
@@ -304,398 +324,366 @@ class SurveyImalatCard extends StatelessWidget {
   const SurveyImalatCard({
     super.key,
     required this.imalat,
-    required this.expanded,
-    required this.canEdit,
-    required this.onToggle,
     required this.onDetail,
   });
 
   final SurveyImalat imalat;
-  final bool expanded;
-  final bool canEdit;
-  final VoidCallback onToggle;
   final VoidCallback onDetail;
 
   @override
   Widget build(BuildContext context) {
+    final accent = _imalatAccent(imalat.name);
+    final diameters = imalat.diameters;
+    final orderedShare = _share(imalat.ordered, imalat.planned);
+    final deliveredShare = _share(imalat.delivered, imalat.planned);
+    final pendingShare = _share(imalat.pending, imalat.planned);
+    final remaining = imalat.planned - imalat.delivered;
+    final remainingShare = _share(remaining < 0 ? 0 : remaining, imalat.planned);
+    final progress = imalat.progressPercent.clamp(0, 100).toDouble();
+
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
+      margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: AppColors.surfaceElevated,
-        borderRadius: AppRadii.md,
-        border: Border.all(color: AppColors.border),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFE6EBF2)),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x0C1C2430),
+            blurRadius: 16,
+            offset: Offset(0, 6),
+          ),
+        ],
       ),
-      child: Column(
-        children: [
-          Material(
-            color: Colors.transparent,
-            child: InkWell(
-              onTap: onToggle,
-              borderRadius: AppRadii.md,
-              child: Padding(
-                padding: const EdgeInsets.all(14),
-                child: Column(
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onDetail,
+          borderRadius: BorderRadius.circular(18),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(12, 12, 10, 12),
+            child: Column(
+              children: [
+                Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(imalat.name, style: AppTypography.titleLarge),
-                        Icon(
-                          expanded ? Icons.expand_less : Icons.expand_more,
-                          color: AppColors.textMuted,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Text(
-                          '${imalat.totalTonnage.toStringAsFixed(0)}t',
-                          style: AppTypography.kpiValue.copyWith(fontSize: 22),
-                        ),
-                        const SizedBox(width: 12),
-                        Text(
-                          '%${imalat.progressPercent.toStringAsFixed(0)}',
-                          style: AppTypography.titleMedium.copyWith(
-                            color: AppColors.electricBlueLight,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      imalat.diameterLines.isEmpty
-                          ? 'Çap/miktar girilmedi'
-                          : imalat.diameters.map((d) => 'Ø$d').join(' · '),
-                      style: AppTypography.bodySmall,
-                    ),
-                    const SizedBox(height: 10),
                     ClipRRect(
-                      borderRadius: AppRadii.full,
-                      child: LinearProgressIndicator(
-                        value: imalat.progressPercent / 100,
-                        minHeight: 4,
-                        backgroundColor: AppColors.border,
-                        color: AppColors.electricBlueLight,
+                      borderRadius: BorderRadius.circular(14),
+                      child: Image.asset(
+                        _imalatThumb(imalat.name),
+                        width: 72,
+                        height: 72,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  imalat.name,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w800,
+                                    color: Color(0xFF1C2430),
+                                    height: 1.1,
+                                  ),
+                                ),
+                              ),
+                              const Icon(Icons.chevron_right, size: 20, color: Color(0xFFB0B8C4)),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Row(
+                            children: [
+                              Flexible(
+                                child: Text(
+                                  diameters.isEmpty
+                                      ? 'Çap yok'
+                                      : diameters.map((d) => 'Ø$d').join(' · '),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                    color: Color(0xFF8B95A5),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFE8F1FF),
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Text(
+                                  '${diameters.length} çap',
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w700,
+                                    color: Color(0xFF3B82F6),
+                                    height: 1.1,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      '${AppFormat.tonnage(imalat.planned)} t',
+                                      style: const TextStyle(
+                                        fontSize: 22,
+                                        fontWeight: FontWeight.w800,
+                                        color: Color(0xFF1C2430),
+                                        height: 1,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 3),
+                                    const Text(
+                                      'Planlanan',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w500,
+                                        color: Color(0xFF8B95A5),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Text(
+                                    '%${progress.round()}',
+                                    style: TextStyle(
+                                      fontSize: 22,
+                                      fontWeight: FontWeight.w800,
+                                      color: accent,
+                                      height: 1,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 3),
+                                  const Text(
+                                    'Keşif İlerlemesi',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w500,
+                                      color: Color(0xFF8B95A5),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
                     ),
                   ],
                 ),
-              ),
+                const SizedBox(height: 10),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(99),
+                  child: LinearProgressIndicator(
+                    value: progress / 100,
+                    minHeight: 5,
+                    backgroundColor: const Color(0xFFE6EBF2),
+                    color: accent,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _MiniStat(
+                        value: imalat.ordered,
+                        label: 'Sipariş Edilen',
+                        percent: orderedShare,
+                        color: const Color(0xFF3B82F6),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: _MiniStat(
+                        value: imalat.delivered,
+                        label: 'Teslim Alınan',
+                        percent: deliveredShare,
+                        color: const Color(0xFF16A34A),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: _MiniStat(
+                        value: imalat.pending,
+                        label: 'Bekleyen',
+                        percent: pendingShare,
+                        color: const Color(0xFFF59E0B),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: _MiniStat(
+                        value: remaining < 0 ? 0 : remaining,
+                        label: 'Kalan İhtiyaç',
+                        percent: remainingShare,
+                        color: const Color(0xFFEF4444),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
-          if (expanded) ...[
-            Divider(height: 1, color: AppColors.border),
-            Padding(
-              padding: const EdgeInsets.all(14),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  ImalatDiameterEditor(
-                    imalat: imalat,
-                    canEdit: canEdit,
-                  ),
-                  const SizedBox(height: 12),
-                  SizedBox(
-                    width: double.infinity,
-                    child: OutlinedButton(
-                      onPressed: onDetail,
-                      child: const Text('İmalat Detayı →'),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ],
+        ),
       ),
     );
   }
 }
 
-class _BottomActions extends ConsumerWidget {
-  const _BottomActions({required this.project});
-
-  final SurveyProject project;
-
-  List<String> get _headers => const ['İmalat', 'Çap', 'Miktar (ton)', 'Oran (%)'];
-
-  List<List<String>> _buildRows() {
-    final rows = <List<String>>[];
-    for (final imalat in project.imalats) {
-      for (final line in imalat.diameterLines) {
-        final ratio = imalat.planned > 0
-            ? (line.planned / imalat.planned * 100).toStringAsFixed(0)
-            : '0';
-        rows.add([
-          imalat.name,
-          'Ø${line.diameter}',
-          line.planned.toStringAsFixed(0),
-          ratio,
-        ]);
-      }
-    }
-    return rows;
-  }
-
-  Future<void> _exportExcel(BuildContext context) async {
-    try {
-      await exportService.shareExcel(
-        title: 'Keşif Raporu',
-        headers: _headers,
-        rows: _buildRows(),
-      );
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showAppSnackBar(
-          const SnackBar(content: Text('Keşif Excel olarak dışa aktarıldı')),
-        );
-      }
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showAppSnackBar(
-          SnackBar(content: Text('Dışa aktarma hatası: $e')),
-        );
-      }
-    }
-  }
-
-  Future<void> _exportSurveyJson(BuildContext context, WidgetRef ref) async {
-    try {
-      await ref.read(projectBackupControllerProvider).exportSurvey();
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showAppSnackBar(
-          const SnackBar(content: Text('Keşif verisi JSON olarak dışa aktarıldı')),
-        );
-      }
-    } on BackupParseException catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showAppSnackBar(
-          SnackBar(content: Text(e.message)),
-        );
-      }
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showAppSnackBar(
-          SnackBar(content: Text('Dışa aktarma hatası: $e')),
-        );
-      }
-    }
-  }
-
-  Future<void> _importSurveyJson(BuildContext context, WidgetRef ref) async {
-    final canEdit = ref.read(canEditActiveProjectProvider);
-    if (!canEdit) {
-      ScaffoldMessenger.of(context).showAppSnackBar(
-        const SnackBar(content: Text('İçe aktarmak için düzenleme yetkisi gerekir')),
-      );
-      return;
-    }
-
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surfaceElevated,
-        title: const Text('Keşif Verisini İçe Aktar'),
-        content: const Text(
-          'Seçilen keşif yedeği aktif projeye yazılır. Mevcut imalat listesi '
-          've çap/miktar verileri değiştirilir. Devam edilsin mi?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('İptal'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('İçe Aktar'),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed != true || !context.mounted) return;
-
-    try {
-      final summary = await ref.read(projectBackupControllerProvider).importBackup(
-            expectedScope: BackupScope.survey,
-          );
-      if (!context.mounted || summary.cancelled) return;
-
-      ScaffoldMessenger.of(context).showAppSnackBar(
-        const SnackBar(content: Text('Keşif verisi içe aktarıldı')),
-      );
-    } on BackupParseException catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showAppSnackBar(
-          SnackBar(content: Text(e.message)),
-        );
-      }
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showAppSnackBar(
-          SnackBar(content: Text('İçe aktarma hatası: $e')),
-        );
-      }
-    }
-  }
-
-  Future<void> _previewPdf(BuildContext context) async {
-    try {
-      await exportService.previewPdf(
-        title: 'Keşif Raporu — ${project.projectName}',
-        headers: _headers,
-        rows: _buildRows(),
-      );
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showAppSnackBar(
-          SnackBar(content: Text('PDF önizleme hatası: $e')),
-        );
-      }
-    }
-  }
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final canEdit = ref.watch(canEditActiveProjectProvider);
-
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: [
-        _ActionChip(
-          icon: Icons.upload,
-          label: 'Dışa Aktar',
-          onPressed: () => _exportSurveyJson(context, ref),
-        ),
-        _ActionChip(
-          icon: Icons.download,
-          label: 'İçe Aktar',
-          onPressed: canEdit ? () => _importSurveyJson(context, ref) : null,
-        ),
-        _ActionChip(
-          icon: Icons.table_chart,
-          label: 'Excel Dışa Aktar',
-          onPressed: () => _exportExcel(context),
-        ),
-        _ActionChip(
-          icon: Icons.picture_as_pdf,
-          label: 'PDF Görüntüle',
-          onPressed: () => _previewPdf(context),
-        ),
-      ],
-    );
-  }
-}
-
-class _SurveyFramedTabBar extends StatelessWidget {
-  const _SurveyFramedTabBar({
-    required this.controller,
-    required this.labels,
-    required this.labelStyle,
-  });
-
-  final TabController controller;
-  final List<String> labels;
-  final TextStyle labelStyle;
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: controller,
-      builder: (context, _) {
-        return Padding(
-          padding: const EdgeInsets.fromLTRB(12, 6, 12, 8),
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              color: AppColors.surfaceElevated,
-              borderRadius: AppRadii.md,
-              border: Border.all(color: AppColors.border),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(4),
-              child: Row(
-                children: List.generate(labels.length, (index) {
-                  final selected = controller.index == index;
-                  return Expanded(
-                    child: Padding(
-                      padding: EdgeInsets.only(
-                        left: index == 0 ? 0 : 3,
-                        right: index == labels.length - 1 ? 0 : 3,
-                      ),
-                      child: Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          onTap: () => controller.animateTo(index),
-                          borderRadius: AppRadii.sm,
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 180),
-                            curve: Curves.easeOut,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 10,
-                            ),
-                            decoration: BoxDecoration(
-                              color: selected
-                                  ? AppColors.electricBlue.withValues(alpha: 0.14)
-                                  : Colors.transparent,
-                              borderRadius: AppRadii.sm,
-                              border: Border.all(
-                                color: selected
-                                    ? AppColors.electricBlueLight
-                                    : AppColors.borderSubtle,
-                                width: selected ? 1.4 : 1,
-                              ),
-                            ),
-                            child: Text(
-                              labels[index],
-                              style: labelStyle.copyWith(
-                                fontWeight: selected
-                                    ? FontWeight.w700
-                                    : FontWeight.w500,
-                                color: selected
-                                    ? AppColors.electricBlueLight
-                                    : AppColors.textMuted,
-                              ),
-                              textAlign: TextAlign.center,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  );
-                }),
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-}
-
-class _ActionChip extends StatelessWidget {
-  const _ActionChip({
-    required this.icon,
+class _MiniStat extends StatelessWidget {
+  const _MiniStat({
+    required this.value,
     required this.label,
-    this.onPressed,
+    required this.percent,
+    required this.color,
   });
 
-  final IconData icon;
+  final double value;
   final String label;
-  final VoidCallback? onPressed;
+  final int percent;
+  final Color color;
 
   @override
   Widget build(BuildContext context) {
-    return ActionChip(
-      avatar: Icon(icon, size: 16, color: AppColors.electricBlueLight),
-      label: Text(label, style: AppTypography.labelMedium),
-      backgroundColor: AppColors.surfaceElevated,
-      side: BorderSide(color: AppColors.border),
-      onPressed: onPressed,
+    return Container(
+      padding: const EdgeInsets.fromLTRB(6, 8, 6, 8),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF7F9FC),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Column(
+        children: [
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              '${AppFormat.tonnage(value)} t',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w800,
+                color: color,
+                height: 1,
+              ),
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            maxLines: 2,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontSize: 9,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF8B95A5),
+              height: 1.15,
+            ),
+          ),
+          const SizedBox(height: 3),
+          Text(
+            '%$percent',
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w800,
+              color: color,
+              height: 1,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
+
+int _share(double part, double whole) {
+  if (whole <= 0) return 0;
+  return (part / whole * 100).round().clamp(0, 999);
+}
+
+Color _imalatAccent(String name) {
+  final normalized = _foldImalat(name);
+  if (normalized.contains('temel') || normalized.contains('kolon')) {
+    return const Color(0xFF3B82F6);
+  }
+  if (normalized.contains('doseme') || normalized.contains('kiris')) {
+    return const Color(0xFF8B5CF6);
+  }
+  if (normalized.contains('merdiven') || normalized.contains('perde')) {
+    return const Color(0xFFF59E0B);
+  }
+  return const Color(0xFF3B82F6);
+}
+
+String _imalatThumb(String name) {
+  final normalized = _foldImalat(name);
+  if (normalized.contains('temel')) return 'assets/images/kesif_temel.jpg';
+  if (normalized.contains('kolon')) return 'assets/images/kesif_kolon.jpg';
+  if (normalized.contains('perde')) return 'assets/images/kesif_perde.jpg';
+  if (normalized.contains('kiris')) return 'assets/images/kesif_kiris.jpg';
+  if (normalized.contains('doseme')) return 'assets/images/kesif_doseme.jpg';
+  if (normalized.contains('merdiven')) return 'assets/images/kesif_merdiven.jpg';
+  return 'assets/images/kesif_imalat.jpg';
+}
+
+const _standardImalatOrder = [
+  'temel',
+  'kolon',
+  'perde',
+  'kiris',
+  'doseme',
+  'merdiven',
+];
+
+int _imalatRank(String name) {
+  final folded = _foldImalat(name);
+  final index = _standardImalatOrder.indexWhere(folded.contains);
+  return index < 0 ? _standardImalatOrder.length : index;
+}
+
+String _foldImalat(String name) {
+  const map = {
+    'ş': 's',
+    'Ş': 's',
+    'ı': 'i',
+    'I': 'i',
+    'İ': 'i',
+    'i': 'i',
+    'ö': 'o',
+    'Ö': 'o',
+    'ü': 'u',
+    'Ü': 'u',
+    'ğ': 'g',
+    'Ğ': 'g',
+    'ç': 'c',
+    'Ç': 'c',
+  };
+  final buffer = StringBuffer();
+  for (final rune in name.runes) {
+    final char = String.fromCharCode(rune);
+    buffer.write(map[char] ?? char.toLowerCase());
+  }
+  return buffer.toString();
+}
+
+

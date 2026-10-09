@@ -1,9 +1,9 @@
 enum BottomNavTab {
   dashboard('Ana Sayfa', 'Ana Sayfa', '/dashboard'),
+  survey('Keşif', 'Keşif', '/survey'),
   orders('Sipariş', 'Sipariş', '/orders'),
   incomingRebar('Gelen Demir', 'Gelen Demir', '/incoming-rebar'),
-  fieldCount('Saha Sayım', 'Saha Sayım', '/field-count'),
-  analysis('Hesap / Analiz / Rapor', 'Analiz', '/analysis');
+  fieldCount('Saha Sayım', 'Saha Sayım', '/field-count');
 
   const BottomNavTab(this.label, this.navLabel, this.path);
 
@@ -43,7 +43,11 @@ enum OrderStatus {
         cancelled => '',
       };
 
-  bool get canCancel => this == submitted;
+  bool get canDeliver =>
+      this == pendingApproval || this == submitted || this == inTransit;
+
+  bool get canCancel =>
+      this == pendingApproval || this == submitted || this == inTransit;
 }
 
 enum DeliveryStatus {
