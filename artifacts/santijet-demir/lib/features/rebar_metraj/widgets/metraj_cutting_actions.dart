@@ -349,7 +349,7 @@ class _ImalatImportPageState extends State<_ImalatImportPage> {
                                 const SizedBox(height: 4),
                                 Text(
                                   '${option.linkedRecords.length} CAD kayıt · '
-                                  '${AppFormat.tonnage(option.linkedTonnage)} t',
+                                  '${AppFormat.tonnage(option.linkedTonnage)}',
                                   style: AppTypography.bodySmall.copyWith(
                                     color: AppColors.textMuted,
                                   ),

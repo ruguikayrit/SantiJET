@@ -88,8 +88,6 @@ class DeliveryDetailScreen extends ConsumerWidget {
             ],
           ),
           const SizedBox(height: 20),
-          Text('Çap Karşılaştırma', style: AppTypography.headlineMedium),
-          const SizedBox(height: 12),
           _ComparisonTable(lines: delivery.diameterLines),
         ],
       ),
@@ -128,10 +126,10 @@ class _ComparisonTableHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return const AppTableHeaderRow(
       cells: [
-        AppTableHeaderCell('ÇAP', flex: 2),
-        AppTableHeaderCell('SİPARİŞ', flex: 3),
-        AppTableHeaderCell('TESLİM', flex: 3),
-        AppTableHeaderCell('FARK', flex: 3),
+        AppTableHeaderCell('ÇAP'),
+        AppTableHeaderCell('SİPARİŞ'),
+        AppTableHeaderCell('TESLİM'),
+        AppTableHeaderCell('FARK'),
       ],
     );
   }
@@ -155,11 +153,11 @@ class _ComparisonRow extends StatelessWidget {
       diffText = '✓';
       diffColor = AppColors.success;
     } else if (line.isExcess) {
-      diffText = '+${AppFormat.tonnage(diff)}t';
+      diffText = '+${AppFormat.tonnage(diff)}';
       diffColor = AppColors.info;
       icon = Icons.trending_up;
     } else {
-      diffText = '${AppFormat.tonnage(diff)}t';
+      diffText = '${AppFormat.tonnage(diff)}';
       diffColor = diff.abs() > 5 ? AppColors.critical : AppColors.warning;
       icon = Icons.trending_down;
     }
@@ -174,7 +172,6 @@ class _ComparisonRow extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                flex: 2,
                 child: Text(
                   'Ø${line.diameter}',
                   textAlign: TextAlign.center,
@@ -182,23 +179,20 @@ class _ComparisonRow extends StatelessWidget {
                 ),
               ),
               Expanded(
-                flex: 3,
                 child: Text(
-                  '${AppFormat.tonnage(line.ordered)}t',
+                  '${AppFormat.tonnage(line.ordered)}',
                   textAlign: TextAlign.center,
                   style: AppTypography.bodyMedium,
                 ),
               ),
               Expanded(
-                flex: 3,
                 child: Text(
-                  '${AppFormat.tonnage(line.delivered)}t',
+                  '${AppFormat.tonnage(line.delivered)}',
                   textAlign: TextAlign.center,
                   style: AppTypography.titleMedium,
                 ),
               ),
               Expanded(
-                flex: 3,
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [

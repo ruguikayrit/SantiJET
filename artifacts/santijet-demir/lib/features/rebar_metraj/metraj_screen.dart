@@ -11,6 +11,7 @@ class MetrajScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppColors.canvas,
       body: const SafeArea(
+        top: false,
         bottom: false,
         child: Column(
           children: [

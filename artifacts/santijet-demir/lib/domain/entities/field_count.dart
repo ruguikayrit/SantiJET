@@ -58,6 +58,8 @@ class FieldCountRecord {
     this.lines = const [],
     this.varianceCauses = const [],
     this.varianceOtherNote = '',
+    this.note = '',
+    this.photoPath = '',
   });
 
   final String id;
@@ -71,6 +73,8 @@ class FieldCountRecord {
   final List<FieldCountLineRecord> lines;
   final List<String> varianceCauses;
   final String varianceOtherNote;
+  final String note;
+  final String photoPath;
 
   double get totalExpectedStock => lines.isEmpty
       ? expected
@@ -86,21 +90,33 @@ class FieldCountRecord {
       lines.fold(0.0, (sum, line) => sum + line.actualUsed);
 
   FieldCountRecord copyWith({
+    String? title,
+    DateTime? date,
+    String? personnel,
+    String? region,
+    double? expected,
+    double? actual,
+    String? status,
+    List<FieldCountLineRecord>? lines,
     List<String>? varianceCauses,
     String? varianceOtherNote,
+    String? note,
+    String? photoPath,
   }) {
     return FieldCountRecord(
       id: id,
-      title: title,
-      date: date,
-      personnel: personnel,
-      region: region,
-      expected: expected,
-      actual: actual,
-      status: status,
-      lines: lines,
+      title: title ?? this.title,
+      date: date ?? this.date,
+      personnel: personnel ?? this.personnel,
+      region: region ?? this.region,
+      expected: expected ?? this.expected,
+      actual: actual ?? this.actual,
+      status: status ?? this.status,
+      lines: lines ?? this.lines,
       varianceCauses: varianceCauses ?? this.varianceCauses,
       varianceOtherNote: varianceOtherNote ?? this.varianceOtherNote,
+      note: note ?? this.note,
+      photoPath: photoPath ?? this.photoPath,
     );
   }
 
@@ -116,6 +132,8 @@ class FieldCountRecord {
         'lines': lines.map((line) => line.toJson()).toList(),
         'varianceCauses': varianceCauses,
         if (varianceOtherNote.isNotEmpty) 'varianceOtherNote': varianceOtherNote,
+        if (note.isNotEmpty) 'note': note,
+        if (photoPath.isNotEmpty) 'photoPath': photoPath,
       };
 
   factory FieldCountRecord.fromJson(Map<dynamic, dynamic> json) {
@@ -137,6 +155,8 @@ class FieldCountRecord {
           .whereType<String>()
           .toList(),
       varianceOtherNote: json['varianceOtherNote'] as String? ?? '',
+      note: json['note'] as String? ?? '',
+      photoPath: json['photoPath'] as String? ?? '',
     );
   }
 }
@@ -194,6 +214,9 @@ class NewCountDraft {
     this.date,
     this.personnel = '',
     this.region = '',
+    this.note = '',
+    this.photoPath = '',
+    this.editingRecordId,
     this.expectedByDiameter = const {},
     this.diameterEntries = const {},
   });
@@ -201,6 +224,9 @@ class NewCountDraft {
   final DateTime? date;
   final String personnel;
   final String region;
+  final String note;
+  final String photoPath;
+  final String? editingRecordId;
 
   /// Planlanan stok — çap bazında beklenen kalan (teslim − plan kullanım).
   final Map<int, double> expectedByDiameter;
@@ -208,10 +234,15 @@ class NewCountDraft {
   /// Saha sayım miktarları — kullanıcı girişi.
   final Map<int, double> diameterEntries;
 
+  bool get isEditing => editingRecordId != null && editingRecordId!.isNotEmpty;
+
   NewCountDraft copyWith({
     DateTime? date,
     String? personnel,
     String? region,
+    String? note,
+    String? photoPath,
+    String? editingRecordId,
     Map<int, double>? expectedByDiameter,
     Map<int, double>? diameterEntries,
   }) {
@@ -219,6 +250,9 @@ class NewCountDraft {
       date: date ?? this.date,
       personnel: personnel ?? this.personnel,
       region: region ?? this.region,
+      note: note ?? this.note,
+      photoPath: photoPath ?? this.photoPath,
+      editingRecordId: editingRecordId ?? this.editingRecordId,
       expectedByDiameter: expectedByDiameter ?? this.expectedByDiameter,
       diameterEntries: diameterEntries ?? this.diameterEntries,
     );

@@ -26,6 +26,7 @@ class AnalysisScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppColors.canvas,
       body: SafeArea(
+        top: false,
         bottom: false,
         child: CustomScrollView(
           slivers: [

@@ -8,7 +8,11 @@ import 'package:santijet_demir/domain/entities/project.dart';
 import 'package:santijet_demir/domain/entities/project_member.dart';
 import 'package:santijet_demir/domain/enums/corporate_role.dart';
 import 'package:santijet_demir/features/auth/providers/auth_provider.dart';
+import 'package:santijet_demir/features/field_count/providers/field_count_provider.dart';
+import 'package:santijet_demir/features/incoming_rebar/providers/incoming_rebar_provider.dart';
+import 'package:santijet_demir/features/orders/providers/orders_provider.dart';
 import 'package:santijet_demir/features/settings/providers/settings_provider.dart';
+import 'package:santijet_demir/features/survey/providers/survey_provider.dart';
 
 final projectsBoxProvider = Provider<Box>((ref) {
   return Hive.box('projects');
@@ -196,6 +200,7 @@ class ProjectsController {
     }
 
     _ref.read(activeProjectIdProvider.notifier).state = project.id;
+    _reloadProjectScopedProviders(project.id);
     _ref.invalidate(userProjectsProvider);
     _ref.invalidate(projectMembersProvider(project.id));
     return project;
@@ -219,6 +224,7 @@ class ProjectsController {
     }
 
     _ref.read(activeProjectIdProvider.notifier).state = project.id;
+    _reloadProjectScopedProviders(project.id);
     _ref.invalidate(userProjectsProvider);
     _ref.invalidate(projectMembersProvider(project.id));
     return project;
@@ -227,9 +233,24 @@ class ProjectsController {
   Future<void> switchProject(String projectId) async {
     await _repo.setActiveProjectId(projectId);
     _ref.read(activeProjectIdProvider.notifier).state = projectId;
+    _reloadProjectScopedProviders(projectId);
+  }
+
+  void _reloadProjectScopedProviders(String projectId) {
+    _ref.read(surveyProjectProvider.notifier).reloadForProject(projectId);
+    _ref.read(ordersProvider.notifier).loadForProject(projectId);
+    _ref.read(deliveriesProvider.notifier).loadForProject(projectId);
+    _ref.read(fieldCountsProvider.notifier).loadForProject(projectId);
   }
 
   Future<void> updateProject(Project project) async {
+    if (_auth.user?.isGuest == true) {
+      await _repo.updateProject(project);
+      _ref.invalidate(userProjectsProvider);
+      _ref.invalidate(activeProjectProvider);
+      return;
+    }
+
     final sync = await _cloudSync();
     if (SupabaseService.isConfigured && sync == null) {
       throw ProjectException(

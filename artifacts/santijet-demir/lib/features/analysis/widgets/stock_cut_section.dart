@@ -147,7 +147,7 @@ class _CollapsibleDiameterCutPlanCard extends ConsumerWidget {
                             const SizedBox(height: 4),
                             Text(
                               '${AppFormat.integer(plan.totalBars)} ad · '
-                              '${AppFormat.tonnage(plan.totalUsedTonnage)} t · '
+                              '${AppFormat.tonnage(plan.totalUsedTonnage)} · '
                               'fire $firePercentLabel',
                               style: AppTypography.bodySmall.copyWith(
                                 color: AppColors.textMuted,

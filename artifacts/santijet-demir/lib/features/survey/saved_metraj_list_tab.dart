@@ -513,7 +513,7 @@ class MetrajRecordCard extends StatelessWidget {
   }
 }
 
-String _formatTonnage(double value) => '${AppFormat.tonnage(value)} t';
+String _formatTonnage(double value) => '${AppFormat.tonnage(value)}';
 
 String _formatDate(DateTime value) {
   String two(int number) => number.toString().padLeft(2, '0');

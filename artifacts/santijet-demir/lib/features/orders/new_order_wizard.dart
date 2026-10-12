@@ -301,9 +301,9 @@ class _Step1ImalatSelection extends ConsumerWidget {
                             Text(name, style: AppTypography.titleMedium),
                             const SizedBox(height: 6),
                             Text(
-                              'Toplam ${AppFormat.tonnage(balance.surveyTotal)}t · '
-                              'Sipariş ${AppFormat.tonnage(balance.orderedSoFar)}t · '
-                              'Kalan ${AppFormat.tonnage(balance.remaining)}t',
+                              'Toplam ${AppFormat.tonnage(balance.surveyTotal)} · '
+                              'Sipariş ${AppFormat.tonnage(balance.orderedSoFar)} · '
+                              'Kalan ${AppFormat.tonnage(balance.remaining)}',
                               style: AppTypography.bodySmall.copyWith(
                                 color: canSelect
                                     ? AppColors.electricBlueLight
@@ -337,7 +337,7 @@ class _Step1ImalatSelection extends ConsumerWidget {
                   children: [
                     Text('Seçilen Kalan', style: AppTypography.titleMedium),
                     Text(
-                      '${AppFormat.tonnage(total)}t',
+                      '${AppFormat.tonnage(total)}',
                       style: AppTypography.kpiValue.copyWith(
                         color: AppColors.electricBlueLight,
                       ),
@@ -350,7 +350,7 @@ class _Step1ImalatSelection extends ConsumerWidget {
                   children: [
                     Text('Toplam Kalan', style: AppTypography.bodyMedium),
                     Text(
-                      '${AppFormat.tonnage(totalRemaining)}t',
+                      '${AppFormat.tonnage(totalRemaining)}',
                       style: AppTypography.bodyMedium,
                     ),
                   ],
@@ -376,41 +376,9 @@ class _Step2RatioSelector extends ConsumerWidget {
     String imalatName,
     int currentRatio,
   ) async {
-    final controller = TextEditingController(text: currentRatio.toString());
     final result = await showDialog<int>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surfaceElevated,
-        title: Text('Manuel Oran', style: AppTypography.titleLarge),
-        content: TextField(
-          controller: controller,
-          keyboardType: TextInputType.number,
-          decoration: const InputDecoration(
-            labelText: 'Sipariş oranı (%)',
-            hintText: '1 – 100',
-            suffixText: '%',
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('İptal'),
-          ),
-          FilledButton(
-            onPressed: () {
-              final value = int.tryParse(controller.text.trim());
-              if (value == null || value < 1 || value > 100) {
-                ScaffoldMessenger.of(context).showAppSnackBar(
-                  const SnackBar(content: Text('1 ile 100 arasında bir oran girin')),
-                );
-                return;
-              }
-              Navigator.pop(ctx, value);
-            },
-            child: const Text('Uygula'),
-          ),
-        ],
-      ),
+      builder: (_) => _ManualRatioDialog(initial: currentRatio.toString()),
     );
 
     if (result != null) {
@@ -465,9 +433,9 @@ class _Step2RatioSelector extends ConsumerWidget {
                   if (balance != null) ...[
                     const SizedBox(height: 6),
                     Text(
-                      'Toplam ${AppFormat.tonnage(balance.surveyTotal)}t · '
-                      'Sipariş ${AppFormat.tonnage(balance.orderedSoFar)}t · '
-                      'Kalan ${AppFormat.tonnage(balance.remaining)}t',
+                      'Toplam ${AppFormat.tonnage(balance.surveyTotal)} · '
+                      'Sipariş ${AppFormat.tonnage(balance.orderedSoFar)} · '
+                      'Kalan ${AppFormat.tonnage(balance.remaining)}',
                       style: AppTypography.bodySmall.copyWith(
                         color: AppColors.textMuted,
                       ),
@@ -478,7 +446,7 @@ class _Step2RatioSelector extends ConsumerWidget {
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
                       Text(
-                        'Kalan ${AppFormat.tonnage(remainingTonnage)}t',
+                        'Kalan ${AppFormat.tonnage(remainingTonnage)}',
                         style: AppTypography.bodySmall.copyWith(
                           color: AppColors.electricBlueLight,
                         ),
@@ -555,7 +523,7 @@ class _Step2RatioSelector extends ConsumerWidget {
                       ),
                       const Spacer(),
                       Text(
-                        'Sipariş: ${AppFormat.tonnage(orderTonnage)}t',
+                        'Sipariş: ${AppFormat.tonnage(orderTonnage)}',
                         style: AppTypography.titleMedium.copyWith(
                           color: AppColors.electricBlueLight,
                         ),
@@ -579,17 +547,17 @@ class _Step2RatioSelector extends ConsumerWidget {
             children: [
               _SummaryRow(
                 'Keşif Toplamı',
-                '${AppFormat.tonnage(totalSurvey)}t',
+                '${AppFormat.tonnage(totalSurvey)}',
               ),
               const SizedBox(height: 8),
               _SummaryRow(
                 'Kalan Toplam',
-                '${AppFormat.tonnage(totalRemaining)}t',
+                '${AppFormat.tonnage(totalRemaining)}',
               ),
               Divider(height: 24, color: AppColors.border),
               _SummaryRow(
                 'Toplam Sipariş',
-                '${AppFormat.tonnage(draft.totalTonnage)}t',
+                '${AppFormat.tonnage(draft.totalTonnage)}',
                 highlight: true,
               ),
             ],
@@ -611,53 +579,12 @@ class _Step3DiameterTable extends ConsumerWidget {
     DiameterOrderLine line,
     double calculatedAmount,
   ) async {
-    final controller = TextEditingController(
-      text: line.orderAmount.toStringAsFixed(1),
-    );
     final result = await showDialog<double>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surfaceElevated,
-        title: Text('Ø${line.diameter} Sipariş Düzeltmesi', style: AppTypography.titleLarge),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              'Hesaplanan: ${AppFormat.tonnage(calculatedAmount)}t',
-              style: AppTypography.bodySmall,
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: controller,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              decoration: const InputDecoration(
-                labelText: 'Sipariş miktarı (ton)',
-                hintText: 'Örn: 286',
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('İptal'),
-          ),
-          FilledButton(
-            onPressed: () {
-              final normalized = controller.text.trim().replaceAll(',', '.');
-              final value = double.tryParse(normalized);
-              if (value == null || value < 0) {
-                ScaffoldMessenger.of(context).showAppSnackBar(
-                  const SnackBar(content: Text('Geçerli bir tonaj girin')),
-                );
-                return;
-              }
-              Navigator.pop(ctx, value);
-            },
-            child: const Text('Kaydet'),
-          ),
-        ],
+      builder: (_) => _OrderAmountDialog(
+        title: 'Ø${line.diameter} Sipariş Düzeltmesi',
+        initial: line.orderAmount.toStringAsFixed(1),
+        calculatedAmount: calculatedAmount,
       ),
     );
 
@@ -763,7 +690,7 @@ class _Step3DiameterTable extends ConsumerWidget {
                           Expanded(
                             flex: 3,
                             child: Text(
-                              '${AppFormat.tonnage(line.currentStock)}t',
+                              '${AppFormat.tonnage(line.currentStock)}',
                               textAlign: TextAlign.center,
                               style: AppTypography.bodyMedium,
                             ),
@@ -778,7 +705,7 @@ class _Step3DiameterTable extends ConsumerWidget {
                                   crossAxisAlignment: CrossAxisAlignment.center,
                                   children: [
                                     Text(
-                                      '${AppFormat.tonnage(line.orderAmount)}t',
+                                      '${AppFormat.tonnage(line.orderAmount)}',
                                       textAlign: TextAlign.center,
                                       style: AppTypography.titleMedium.copyWith(
                                         color: isAdjusted
@@ -788,7 +715,7 @@ class _Step3DiameterTable extends ConsumerWidget {
                                     ),
                                     if (isAdjusted)
                                       Text(
-                                        'Hesap: ${AppFormat.tonnage(calculated)}t',
+                                        'Hesap: ${AppFormat.tonnage(calculated)}',
                                         textAlign: TextAlign.center,
                                         style: AppTypography.labelMedium.copyWith(
                                           color: AppColors.textMuted,
@@ -826,7 +753,7 @@ class _Step3DiameterTable extends ConsumerWidget {
             children: [
               Text('Toplam Sipariş', style: AppTypography.titleMedium),
               Text(
-                '${AppFormat.tonnage(draft.finalOrderTonnage)}t',
+                '${AppFormat.tonnage(draft.finalOrderTonnage)}',
                 style: AppTypography.kpiValue.copyWith(fontSize: 22),
               ),
             ],
@@ -871,12 +798,12 @@ class _Step5Summary extends StatelessWidget {
               const SizedBox(height: 12),
               _SummaryRow(
                 'Otomatik Hesap Toplam',
-                '${AppFormat.tonnage(autoTotalTonnage)}t',
+                '${AppFormat.tonnage(autoTotalTonnage)}',
               ),
               const SizedBox(height: 8),
               _SummaryRow(
                 'Düzeltilmiş Toplam',
-                '${AppFormat.tonnage(adjustedTotalTonnage)}t',
+                '${AppFormat.tonnage(adjustedTotalTonnage)}',
                 highlight: hasAdjustment,
               ),
             ],
@@ -892,7 +819,7 @@ class _Step5Summary extends StatelessWidget {
                 children: [
                   Text('Ø${l.diameter}', style: AppTypography.bodyMedium),
                   Text(
-                    '${AppFormat.tonnage(l.orderAmount)}t',
+                    '${AppFormat.tonnage(l.orderAmount)}',
                     style: AppTypography.titleMedium,
                   ),
                 ],
@@ -926,7 +853,7 @@ class _ImalatSummarySection extends StatelessWidget {
                   child: Text(name, style: AppTypography.labelMedium),
                 ),
                 Text(
-                  '%$ratio → ${AppFormat.tonnage(tonnage)}t',
+                  '%$ratio → ${AppFormat.tonnage(tonnage)}',
                   style: AppTypography.labelMedium.copyWith(
                     color: AppColors.electricBlueLight,
                   ),
@@ -970,6 +897,125 @@ class _SummaryRow extends StatelessWidget {
             style: valueStyle,
           ),
         ),
+      ],
+    );
+  }
+}
+
+class _ManualRatioDialog extends StatefulWidget {
+  const _ManualRatioDialog({required this.initial});
+
+  final String initial;
+
+  @override
+  State<_ManualRatioDialog> createState() => _ManualRatioDialogState();
+}
+
+class _ManualRatioDialogState extends State<_ManualRatioDialog> {
+  late final TextEditingController _controller = TextEditingController(text: widget.initial);
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    final value = int.tryParse(_controller.text.trim());
+    if (value == null || value < 1 || value > 100) {
+      ScaffoldMessenger.of(context).showAppSnackBar(
+        const SnackBar(content: Text('1 ile 100 arasında bir oran girin')),
+      );
+      return;
+    }
+    Navigator.pop(context, value);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      backgroundColor: AppColors.surfaceElevated,
+      title: Text('Manuel Oran', style: AppTypography.titleLarge),
+      content: TextField(
+        controller: _controller,
+        keyboardType: TextInputType.number,
+        decoration: const InputDecoration(
+          labelText: 'Sipariş oranı (%)',
+          hintText: '1 – 100',
+          suffixText: '%',
+        ),
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text('İptal')),
+        FilledButton(onPressed: _submit, child: const Text('Uygula')),
+      ],
+    );
+  }
+}
+
+class _OrderAmountDialog extends StatefulWidget {
+  const _OrderAmountDialog({
+    required this.title,
+    required this.initial,
+    required this.calculatedAmount,
+  });
+
+  final String title;
+  final String initial;
+  final double calculatedAmount;
+
+  @override
+  State<_OrderAmountDialog> createState() => _OrderAmountDialogState();
+}
+
+class _OrderAmountDialogState extends State<_OrderAmountDialog> {
+  late final TextEditingController _controller = TextEditingController(text: widget.initial);
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    final normalized = _controller.text.trim().replaceAll(',', '.');
+    final value = double.tryParse(normalized);
+    if (value == null || value < 0) {
+      ScaffoldMessenger.of(context).showAppSnackBar(
+        const SnackBar(content: Text('Geçerli bir tonaj girin')),
+      );
+      return;
+    }
+    Navigator.pop(context, value);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      backgroundColor: AppColors.surfaceElevated,
+      title: Text(widget.title, style: AppTypography.titleLarge),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            'Hesaplanan: ${AppFormat.tonnage(widget.calculatedAmount)}',
+            style: AppTypography.bodySmall,
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _controller,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            decoration: const InputDecoration(
+              labelText: 'Sipariş miktarı (ton)',
+              hintText: 'Örn: 286',
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text('İptal')),
+        FilledButton(onPressed: _submit, child: const Text('Kaydet')),
       ],
     );
   }

@@ -19,12 +19,12 @@ abstract final class PredictionNarrator {
     final planned = snapshot.plannedDailyConsumption;
     if (actual != null && actual > 0) {
       lines.add(
-        'Mevcut gerçek ortalama tüketim ${AppFormat.tonnage(actual)} t/gün.',
+        'Mevcut gerçek ortalama tüketim ${AppFormat.tonnage(actual)}/gün.',
       );
     }
     if (planned != null && planned > 0) {
       lines.add(
-        'İş programına göre planlı tüketim ${AppFormat.tonnage(planned)} t/gün.',
+        'İş programına göre planlı tüketim ${AppFormat.tonnage(planned)}/gün.',
       );
     }
 
@@ -43,8 +43,8 @@ abstract final class PredictionNarrator {
       lines.add(
         'Ø${d.diameter} stokunun ${d.daysRemaining!.toStringAsFixed(1)} gün '
         'içinde kritik seviyeye düşmesi bekleniyor '
-        '(stok ${AppFormat.tonnage(d.currentStock)} t, '
-        'tüketim ${AppFormat.tonnage(d.actualDailyConsumption > 0 ? d.actualDailyConsumption : d.plannedDailyConsumption)} t/gün).',
+        '(stok ${AppFormat.tonnage(d.currentStock)}, '
+        'tüketim ${AppFormat.tonnage(d.actualDailyConsumption > 0 ? d.actualDailyConsumption : d.plannedDailyConsumption)}/gün).',
       );
     }
 
@@ -52,7 +52,7 @@ abstract final class PredictionNarrator {
     if (purchase != null && purchase.totalRequired > 0) {
       lines.add(
         'Önerilen toplam sipariş miktarı '
-        '${AppFormat.tonnage(purchase.totalRequired)} t. '
+        '${AppFormat.tonnage(purchase.totalRequired)}. '
         'Tedarikçi teslimat süresi ${purchase.supplierLeadDays} gün.',
       );
       if (purchase.requiredPurchaseDate != null) {
@@ -67,7 +67,7 @@ abstract final class PredictionNarrator {
     if (snapshot.tonsPerWorkerDay != null && snapshot.tonsPerWorkerDay! > 0) {
       lines.add(
         'Puantaj verilerine göre yaklaşık '
-        '${AppFormat.tonnage(snapshot.tonsPerWorkerDay!)} t/adam-gün verimlilik.',
+        '${AppFormat.tonnage(snapshot.tonsPerWorkerDay!)}/adam-gün verimlilik.',
       );
     }
 

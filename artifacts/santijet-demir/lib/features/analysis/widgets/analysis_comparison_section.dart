@@ -255,8 +255,8 @@ class _SourceVsRevisedPanel extends StatelessWidget {
           ),
           _ComparisonRow(
             label: 'Ağırlık',
-            before: '${AppFormat.tonnage(comparison!.rawMaterialTonnage)} t',
-            after: '${AppFormat.tonnage(comparison!.revisedMaterialTonnage)} t',
+            before: '${AppFormat.tonnage(comparison!.rawMaterialTonnage)}',
+            after: '${AppFormat.tonnage(comparison!.revisedMaterialTonnage)}',
           ),
           _ComparisonRow(
             label: 'Stok fire oranı',
@@ -272,10 +272,10 @@ class _SourceVsRevisedPanel extends StatelessWidget {
           ),
           _ComparisonRow(
             label: 'Fire',
-            before: '${AppFormat.tonnage(comparison!.rawFireTonnage)} t',
-            after: '${AppFormat.tonnage(comparison!.plannedFireTonnage)} t',
+            before: '${AppFormat.tonnage(comparison!.rawFireTonnage)}',
+            after: '${AppFormat.tonnage(comparison!.plannedFireTonnage)}',
             delta: comparison!.savedFireTonnage > 0
-                ? '−${AppFormat.tonnage(comparison!.savedFireTonnage)} t'
+                ? '−${AppFormat.tonnage(comparison!.savedFireTonnage)}'
                 : null,
             positive: comparison!.savedFireTonnage > 0,
           ),
@@ -687,7 +687,7 @@ class _StrategyFireRow extends StatelessWidget {
             flex: 3,
             child: Text(
               row.isAvailable
-                  ? '${AppFormat.tonnage(row.plannedFireTonnage!)} t\n'
+                  ? '${AppFormat.tonnage(row.plannedFireTonnage!)}\n'
                       '%${row.plannedFirePercent!.toStringAsFixed(1)}'
                   : '—',
               style: AppTypography.bodySmall,
@@ -698,7 +698,7 @@ class _StrategyFireRow extends StatelessWidget {
             flex: 3,
             child: Text(
               row.isAvailable && (row.savedFireTonnage ?? 0) > 0
-                  ? '−${AppFormat.tonnage(row.savedFireTonnage!)} t\n'
+                  ? '−${AppFormat.tonnage(row.savedFireTonnage!)}\n'
                       '−%${row.savedFirePercent!.toStringAsFixed(1)}'
                   : row.isAvailable
                       ? '—'

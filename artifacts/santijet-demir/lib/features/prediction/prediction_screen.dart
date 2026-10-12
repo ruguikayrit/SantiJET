@@ -142,7 +142,7 @@ class _PredictionScreenState extends ConsumerState<PredictionScreen> {
                       subtitle: Text(
                         entry.snapshot.canPredict
                             ? '${predictionRiskLabel(entry.snapshot.overallRisk)} · '
-                                '${AppFormat.tonnage(entry.snapshot.actualDailyConsumption ?? 0)} t/gün'
+                                '${AppFormat.tonnage(entry.snapshot.actualDailyConsumption ?? 0)}/gün'
                             : 'Eksik veri',
                       ),
                     ),
@@ -155,101 +155,11 @@ class _PredictionScreenState extends ConsumerState<PredictionScreen> {
 
   Future<void> _openConfig(BuildContext context, WidgetRef ref) async {
     final config = ref.read(predictionConfigProvider);
-    final critical = TextEditingController(
-      text: config.criticalDays.toStringAsFixed(0),
-    );
-    final purchase = TextEditingController(
-      text: config.purchaseSoonDays.toStringAsFixed(0),
-    );
-    final safety = TextEditingController(
-      text: config.safetyStockDays.toStringAsFixed(0),
-    );
-    final deviation = TextEditingController(
-      text: config.deviationWarningPercent.toStringAsFixed(0),
-    );
-
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor: AppColors.surfaceElevated,
-      builder: (ctx) {
-        return Padding(
-          padding: EdgeInsets.fromLTRB(
-            16,
-            16,
-            16,
-            16 + MediaQuery.viewInsetsOf(ctx).bottom,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text('Tahmin eşikleri', style: AppTypography.titleLarge),
-              const SizedBox(height: 12),
-              TextField(
-                controller: critical,
-                keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                decoration: const InputDecoration(
-                  labelText: 'Kritik kalan gün (kırmızı)',
-                ),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: purchase,
-                keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                decoration: const InputDecoration(
-                  labelText: 'Sipariş yakında gün (turuncu)',
-                ),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: safety,
-                keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                decoration: const InputDecoration(
-                  labelText: 'Güvenlik stoğu (gün)',
-                ),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: deviation,
-                keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                decoration: const InputDecoration(
-                  labelText: 'Plan sapma uyarı eşiği (%)',
-                ),
-              ),
-              const SizedBox(height: 16),
-              FilledButton(
-                onPressed: () async {
-                  await ref.read(predictionConfigProvider.notifier).update(
-                        config.copyWith(
-                          criticalDays:
-                              double.tryParse(critical.text) ?? config.criticalDays,
-                          purchaseSoonDays: double.tryParse(purchase.text) ??
-                              config.purchaseSoonDays,
-                          safetyStockDays:
-                              double.tryParse(safety.text) ?? config.safetyStockDays,
-                          deviationWarningPercent:
-                              double.tryParse(deviation.text) ??
-                                  config.deviationWarningPercent,
-                        ),
-                      );
-                  if (ctx.mounted) Navigator.pop(ctx);
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showAppSnackBar(
-                      const SnackBar(content: Text('Eşikler kaydedildi')),
-                    );
-                  }
-                },
-                child: const Text('Kaydet'),
-              ),
-            ],
-          ),
-        );
-      },
+      builder: (ctx) => _ThresholdSheet(config: config, hostContext: context),
     );
   }
 }
@@ -392,13 +302,13 @@ class _SummaryBlock extends StatelessWidget {
           _kv(
             'Günlük tüketim',
             snapshot.actualDailyConsumption != null
-                ? '${AppFormat.tonnage(snapshot.actualDailyConsumption!)} t/gün'
+                ? '${AppFormat.tonnage(snapshot.actualDailyConsumption!)}/gün'
                 : '—',
           ),
           _kv(
             'Planlı tüketim',
             snapshot.plannedDailyConsumption != null
-                ? '${AppFormat.tonnage(snapshot.plannedDailyConsumption!)} t/gün'
+                ? '${AppFormat.tonnage(snapshot.plannedDailyConsumption!)}/gün'
                 : '—',
           ),
           _kv(
@@ -410,7 +320,7 @@ class _SummaryBlock extends StatelessWidget {
           _kv(
             'Gerekli sipariş',
             snapshot.purchase != null
-                ? '${AppFormat.tonnage(snapshot.purchase!.totalRequired)} t'
+                ? '${AppFormat.tonnage(snapshot.purchase!.totalRequired)}'
                 : '—',
           ),
           if (snapshot.purchase?.requiredPurchaseDate != null)
@@ -496,6 +406,102 @@ class _DiameterRow extends StatelessWidget {
               textAlign: TextAlign.center,
               style: AppTypography.labelSmall.copyWith(color: color),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ThresholdSheet extends ConsumerStatefulWidget {
+  const _ThresholdSheet({required this.config, required this.hostContext});
+
+  final PredictionConfig config;
+  final BuildContext hostContext;
+
+  @override
+  ConsumerState<_ThresholdSheet> createState() => _ThresholdSheetState();
+}
+
+class _ThresholdSheetState extends ConsumerState<_ThresholdSheet> {
+  late final TextEditingController _critical = TextEditingController(
+    text: widget.config.criticalDays.toStringAsFixed(0),
+  );
+  late final TextEditingController _purchase = TextEditingController(
+    text: widget.config.purchaseSoonDays.toStringAsFixed(0),
+  );
+  late final TextEditingController _safety = TextEditingController(
+    text: widget.config.safetyStockDays.toStringAsFixed(0),
+  );
+  late final TextEditingController _deviation = TextEditingController(
+    text: widget.config.deviationWarningPercent.toStringAsFixed(0),
+  );
+
+  @override
+  void dispose() {
+    _critical.dispose();
+    _purchase.dispose();
+    _safety.dispose();
+    _deviation.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final config = widget.config;
+    return Padding(
+      padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + MediaQuery.viewInsetsOf(context).bottom),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text('Tahmin eşikleri', style: AppTypography.titleLarge),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _critical,
+            keyboardType: TextInputType.number,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            decoration: const InputDecoration(labelText: 'Kritik kalan gün (kırmızı)'),
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _purchase,
+            keyboardType: TextInputType.number,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            decoration: const InputDecoration(labelText: 'Sipariş yakında gün (turuncu)'),
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _safety,
+            keyboardType: TextInputType.number,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            decoration: const InputDecoration(labelText: 'Güvenlik stoğu (gün)'),
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _deviation,
+            keyboardType: TextInputType.number,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            decoration: const InputDecoration(labelText: 'Plan sapma uyarı eşiği (%)'),
+          ),
+          const SizedBox(height: 16),
+          FilledButton(
+            onPressed: () async {
+              await ref.read(predictionConfigProvider.notifier).update(
+                    config.copyWith(
+                      criticalDays: double.tryParse(_critical.text) ?? config.criticalDays,
+                      purchaseSoonDays: double.tryParse(_purchase.text) ?? config.purchaseSoonDays,
+                      safetyStockDays: double.tryParse(_safety.text) ?? config.safetyStockDays,
+                      deviationWarningPercent:
+                          double.tryParse(_deviation.text) ?? config.deviationWarningPercent,
+                    ),
+                  );
+              if (!context.mounted) return;
+              final messenger = ScaffoldMessenger.maybeOf(widget.hostContext);
+              Navigator.pop(context);
+              messenger?.showAppSnackBar(const SnackBar(content: Text('Eşikler kaydedildi')));
+            },
+            child: const Text('Kaydet'),
           ),
         ],
       ),

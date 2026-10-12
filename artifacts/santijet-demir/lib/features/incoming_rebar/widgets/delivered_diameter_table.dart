@@ -3,16 +3,14 @@ import 'package:santijet_demir/core/format/app_format.dart';
 import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/features/incoming_rebar/providers/incoming_rebar_provider.dart';
 
-/// Referans ölçek: başlık 11, hücre 12, satır yüksekliği sıkı, bar 5 px.
+/// Referans ölçek: başlık 13, hücre 14, yüzde 12, satır yüksekliği sıkı.
 class DeliveredDiameterTable extends StatelessWidget {
   const DeliveredDiameterTable({
     super.key,
     required this.rows,
-    this.asPercent = false,
   });
 
   final List<DeliveredDiameterRow> rows;
-  final bool asPercent;
 
   @override
   Widget build(BuildContext context) {
@@ -29,14 +27,14 @@ class DeliveredDiameterTable extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       child: Column(
         children: [
-          _Header(unit: asPercent ? '%' : ''),
+          const _Header(),
           if (rows.isEmpty)
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 12, vertical: 18),
               child: Text(
                 'Bu dönemde çap kaydı yok',
                 style: TextStyle(
-                  fontSize: 12,
+                  fontSize: 14,
                   fontWeight: FontWeight.w500,
                   color: Color(0xFF8B95A5),
                 ),
@@ -46,20 +44,24 @@ class DeliveredDiameterTable extends StatelessWidget {
             for (final row in rows)
               _DataRow(
                 diameter: row.diameter,
-                ordered: _cell(row.ordered, totalOrdered),
-                delivered: _cell(row.delivered, row.ordered),
-                remaining: _cell(_remaining(row), row.ordered),
-                percent: _percent(row.delivered, row.ordered),
+                ordered: row.ordered,
+                orderedPercent: _percent(row.ordered, totalOrdered),
+                delivered: row.delivered,
+                deliveredPercent: _percent(row.delivered, row.ordered),
+                remaining: _remaining(row),
+                remainingPercent: _percent(_remaining(row), row.ordered),
                 barColor: _percent(row.delivered, row.ordered) >= 100
                     ? AppColors.success
                     : AppColors.diameterColor(row.diameter),
               ),
           _DataRow(
             label: 'TOPLAM',
-            ordered: _cell(totalOrdered, totalOrdered),
-            delivered: _cell(totalDelivered, totalOrdered),
-            remaining: _cell(totalRemaining, totalOrdered),
-            percent: _percent(totalDelivered, totalOrdered),
+            ordered: totalOrdered,
+            orderedPercent: 100,
+            delivered: totalDelivered,
+            deliveredPercent: _percent(totalDelivered, totalOrdered),
+            remaining: totalRemaining,
+            remainingPercent: _percent(totalRemaining, totalOrdered),
             barColor: AppColors.electricBlueLight,
             emphasized: true,
           ),
@@ -76,24 +78,15 @@ class DeliveredDiameterTable extends StatelessWidget {
     return (part / whole * 100).round();
   }
 
-  String _cell(double value, double base) {
-    if (!asPercent) return AppFormat.tonnage(value);
-    if (base <= 0) return '0';
-    return (value / base * 100).round().toString();
-  }
 }
 
 class _Header extends StatelessWidget {
-  const _Header({required this.unit});
-
-  final String unit;
-
-  String _title(String label) => unit.isEmpty ? label : '$label\n($unit)';
+  const _Header();
 
   @override
   Widget build(BuildContext context) {
     const style = TextStyle(
-      fontSize: 11,
+      fontSize: 13,
       fontWeight: FontWeight.w600,
       color: Color(0xFF8B95A5),
       height: 1.1,
@@ -103,10 +96,9 @@ class _Header extends StatelessWidget {
       child: Row(
         children: [
           const Expanded(flex: 22, child: Text('ÇAP', style: style)),
-          Expanded(flex: 18, child: Text(_title('SİPARİŞ'), style: style, textAlign: TextAlign.center)),
-          Expanded(flex: 18, child: Text(_title('TESLİM'), style: style, textAlign: TextAlign.center)),
-          Expanded(flex: 16, child: Text(_title('KALAN'), style: style, textAlign: TextAlign.center)),
-          const Expanded(flex: 26, child: Text('DURUM', style: style, textAlign: TextAlign.right)),
+          const Expanded(flex: 26, child: Text('SİPARİŞ', style: style, textAlign: TextAlign.center)),
+          const Expanded(flex: 26, child: Text('TESLİM', style: style, textAlign: TextAlign.center)),
+          const Expanded(flex: 26, child: Text('KALAN', style: style, textAlign: TextAlign.center)),
         ],
       ),
     );
@@ -118,36 +110,38 @@ class _DataRow extends StatelessWidget {
     this.diameter,
     this.label,
     required this.ordered,
+    required this.orderedPercent,
     required this.delivered,
+    required this.deliveredPercent,
     required this.remaining,
-    required this.percent,
+    required this.remainingPercent,
     required this.barColor,
     this.emphasized = false,
   });
 
   final int? diameter;
   final String? label;
-  final String ordered;
-  final String delivered;
-  final String remaining;
-  final int percent;
+  final double ordered;
+  final int orderedPercent;
+  final double delivered;
+  final int deliveredPercent;
+  final double remaining;
+  final int remainingPercent;
   final Color barColor;
   final bool emphasized;
 
   @override
   Widget build(BuildContext context) {
     final valueStyle = TextStyle(
-      fontSize: 12,
+      fontSize: 14,
       fontWeight: emphasized ? FontWeight.w700 : FontWeight.w600,
       color: const Color(0xFF1C2430),
       height: 1.1,
     );
-    final shown = percent < 0 ? 0 : percent;
-    final barValue = (shown / 100).clamp(0.0, 1.0);
 
     return Container(
       color: emphasized ? const Color(0xFFF7F9FC) : Colors.white,
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
       child: Row(
         children: [
           Expanded(
@@ -170,52 +164,77 @@ class _DataRow extends StatelessWidget {
                   ),
           ),
           Expanded(
-            flex: 18,
-            child: Text(ordered, style: valueStyle, textAlign: TextAlign.center),
-          ),
-          Expanded(
-            flex: 18,
-            child: Text(delivered, style: valueStyle, textAlign: TextAlign.center),
-          ),
-          Expanded(
-            flex: 16,
-            child: Text(remaining, style: valueStyle, textAlign: TextAlign.center),
+            flex: 26,
+            child: _AmountCell(
+              value: ordered,
+              percent: orderedPercent,
+              valueStyle: valueStyle,
+            ),
           ),
           Expanded(
             flex: 26,
-            child: Row(
-              children: [
-                const SizedBox(width: 4),
-                Expanded(
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(99),
-                    child: LinearProgressIndicator(
-                      value: barValue,
-                      minHeight: 5,
-                      backgroundColor: const Color(0xFFE6EBF2),
-                      color: barColor,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 6),
-                SizedBox(
-                  width: 32,
-                  child: Text(
-                    '%$shown',
-                    textAlign: TextAlign.right,
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
-                      color: barColor,
-                      height: 1,
-                    ),
-                  ),
-                ),
-              ],
+            child: _AmountCell(
+              value: delivered,
+              percent: deliveredPercent,
+              valueStyle: valueStyle,
+              percentColor: barColor,
+            ),
+          ),
+          Expanded(
+            flex: 26,
+            child: _AmountCell(
+              value: remaining,
+              percent: remainingPercent,
+              valueStyle: valueStyle,
+              percentColor: remaining > 0.05
+                  ? const Color(0xFFF59E0B)
+                  : AppColors.success,
             ),
           ),
         ],
       ),
+    );
+  }
+}
+
+class _AmountCell extends StatelessWidget {
+  const _AmountCell({
+    required this.value,
+    required this.percent,
+    required this.valueStyle,
+    this.percentColor,
+  });
+
+  final double value;
+  final int percent;
+  final TextStyle valueStyle;
+  final Color? percentColor;
+
+  @override
+  Widget build(BuildContext context) {
+    final shown = percent.clamp(0, 999);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Text(
+          AppFormat.tonnage(value),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: valueStyle,
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 2),
+        Text(
+          '%$shown',
+          style: TextStyle(
+            color: percentColor ?? const Color(0xFF8B95A5),
+            fontSize: 12,
+            fontWeight: FontWeight.w700,
+            height: 1,
+          ),
+          textAlign: TextAlign.center,
+        ),
+      ],
     );
   }
 }

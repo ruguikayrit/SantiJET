@@ -214,8 +214,8 @@ abstract final class PredictionCalculator {
             severity: PredictionRiskLevel.orange,
             message:
                 'Ø$d tüketimi plandan %${pct.toStringAsFixed(0)} fazla '
-                '(plan ${AppFormat.tonnage(plannedDaily)} t/gün, '
-                'gerçek ${AppFormat.tonnage(actualDaily)} t/gün).',
+                '(plan ${AppFormat.tonnage(plannedDaily)}/gün, '
+                'gerçek ${AppFormat.tonnage(actualDaily)}/gün).',
           ),
         );
       }

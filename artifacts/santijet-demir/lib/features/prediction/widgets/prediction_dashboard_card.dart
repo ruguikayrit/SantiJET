@@ -117,7 +117,7 @@ class PredictionDashboardCard extends ConsumerWidget {
                 _MetricRow(
                   label: 'Günlük tüketim',
                   value: snapshot.actualDailyConsumption != null
-                      ? '${AppFormat.tonnage(snapshot.actualDailyConsumption!)} t/gün'
+                      ? '${AppFormat.tonnage(snapshot.actualDailyConsumption!)}/gün'
                       : '—',
                 ),
                 _MetricRow(
@@ -137,7 +137,7 @@ class PredictionDashboardCard extends ConsumerWidget {
                 _MetricRow(
                   label: 'Gerekli sipariş',
                   value: snapshot.purchase != null
-                      ? '${AppFormat.tonnage(snapshot.purchase!.totalRequired)} t'
+                      ? '${AppFormat.tonnage(snapshot.purchase!.totalRequired)}'
                       : '—',
                 ),
                 if (snapshot.narratives.isNotEmpty) ...[

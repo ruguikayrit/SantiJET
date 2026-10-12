@@ -15,6 +15,7 @@ import 'package:santijet_demir/features/demo/demo_seed_provider.dart';
 import 'package:santijet_demir/features/projects/providers/project_provider.dart';
 import 'package:santijet_demir/features/settings/providers/profile_provider.dart';
 import 'package:santijet_demir/features/settings/providers/backup_provider.dart';
+import 'package:santijet_demir/core/widgets/santijet_header.dart';
 import 'package:santijet_demir/features/settings/providers/settings_provider.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -32,8 +33,15 @@ class SettingsScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
-      appBar: AppBar(title: const Text('Ayarlar')),
-      body: ListView(
+      body: Column(
+        children: [
+          const DemirBrandHeader(
+            title: 'Ayarlar',
+            showBack: true,
+            showSettings: false,
+          ),
+          Expanded(
+            child: ListView(
         padding: const EdgeInsets.all(AppSpacing.md),
         children: [
           _ProfileHeader(
@@ -99,6 +107,9 @@ class SettingsScreen extends ConsumerWidget {
             destructive: true,
           ),
         ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -111,109 +122,17 @@ class SettingsScreen extends ConsumerWidget {
     required String email,
     required String phone,
   }) {
-    final nameCtrl = TextEditingController(text: displayName);
-    final professionCtrl = TextEditingController(text: profession);
-    final emailCtrl = TextEditingController(text: email);
-    final phoneCtrl = TextEditingController(text: phone);
-
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       backgroundColor: AppColors.surfaceElevated,
-      builder: (ctx) {
-        return Padding(
-          padding: EdgeInsets.fromLTRB(
-            16,
-            16,
-            16,
-            16 + MediaQuery.viewInsetsOf(ctx).bottom,
-          ),
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text('Profil Bilgileri', style: AppTypography.headlineMedium),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: nameCtrl,
-                  textCapitalization: TextCapitalization.words,
-                  decoration: const InputDecoration(labelText: 'Ad Soyad'),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: professionCtrl,
-                  textCapitalization: TextCapitalization.sentences,
-                  decoration: const InputDecoration(
-                    labelText: 'Meslek',
-                    hintText: 'Örn: İnşaat mühendisi',
-                  ),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: emailCtrl,
-                  keyboardType: TextInputType.emailAddress,
-                  decoration: const InputDecoration(labelText: 'Mail adresi'),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: phoneCtrl,
-                  keyboardType: TextInputType.phone,
-                  decoration: const InputDecoration(labelText: 'Telefon numarası'),
-                ),
-                const SizedBox(height: 20),
-                FilledButton(
-                  onPressed: () async {
-                    final okProfile =
-                        await ref.read(authProvider.notifier).updateProfile(
-                              displayName: nameCtrl.text,
-                              profession: professionCtrl.text,
-                              role: ref.read(profileRoleProvider),
-                            );
-                    if (!okProfile) {
-                      if (!context.mounted) return;
-                      final error = ref.read(authProvider).error;
-                      ScaffoldMessenger.of(context).showAppSnackBar(
-                        SnackBar(
-                          content: Text(error ?? 'Profil güncellenemedi'),
-                        ),
-                      );
-                      return;
-                    }
-                    await ref.read(appSettingsProvider.notifier).updateCompany(
-                          contactEmail: emailCtrl.text.trim(),
-                          contactPhone: phoneCtrl.text.trim(),
-                        );
-                    if (!context.mounted) return;
-                    Navigator.pop(ctx);
-                    ScaffoldMessenger.of(context).showAppSnackBar(
-                      const SnackBar(content: Text('Profil güncellendi')),
-                    );
-                  },
-                  child: const Text('Kaydet'),
-                ),
-                const SizedBox(height: 8),
-                OutlinedButton.icon(
-                  onPressed: () async {
-                    Navigator.pop(ctx);
-                    await ref.read(authProvider.notifier).logout();
-                    if (!context.mounted) return;
-                    context.go(AppRoutes.login);
-                  },
-                  icon: const Icon(Icons.logout),
-                  label: const Text('Çıkış Yap'),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    ).whenComplete(() {
-      nameCtrl.dispose();
-      professionCtrl.dispose();
-      emailCtrl.dispose();
-      phoneCtrl.dispose();
-    });
+      builder: (ctx) => _ProfileEditorSheet(
+        displayName: displayName,
+        profession: profession,
+        email: email,
+        phone: phone,
+      ),
+    );
   }
 
   Future<void> _confirmDeleteAllData(BuildContext context, WidgetRef ref) async {
@@ -258,10 +177,7 @@ class SettingsScreen extends ConsumerWidget {
 
   String _themeLabel(String mode) => switch (mode) {
         'light' => 'Açık',
-        'dark' => 'Koyu',
-        'santijet' => 'ŞantiJET',
-        'santijet_pro' || 'gecejet' => 'ŞantiJET Pro',
-        _ => 'Sistem',
+        _ => 'Koyu',
       };
 
   void _showThemePicker(BuildContext context, WidgetRef ref) {
@@ -282,29 +198,6 @@ class SettingsScreen extends ConsumerWidget {
             title: const Text('Koyu'),
             onTap: () {
               ref.read(appSettingsProvider.notifier).setThemeMode('dark');
-              Navigator.pop(ctx);
-            },
-          ),
-          ListTile(
-            title: const Text('ŞantiJET'),
-            subtitle: const Text('Açık zemin · koyu özet kartları'),
-            onTap: () {
-              ref.read(appSettingsProvider.notifier).setThemeMode('santijet');
-              Navigator.pop(ctx);
-            },
-          ),
-          ListTile(
-            title: const Text('ŞantiJET Pro'),
-            subtitle: const Text('Koyu zemin · açık özet kartları'),
-            onTap: () {
-              ref.read(appSettingsProvider.notifier).setThemeMode('santijet_pro');
-              Navigator.pop(ctx);
-            },
-          ),
-          ListTile(
-            title: const Text('Sistem'),
-            onTap: () {
-              ref.read(appSettingsProvider.notifier).setThemeMode('system');
               Navigator.pop(ctx);
             },
           ),
@@ -454,9 +347,9 @@ class _DemoLoadSettingsTileState extends ConsumerState<_DemoLoadSettingsTile> {
       builder: (ctx) => AlertDialog(
         title: const Text('Demo veriyi yükle'),
         content: const Text(
-          'Demo Şantiye sıfırlanıp yeniden doldurulur: keşif (imalat), '
-          'sipariş, gelen demir, saha sayım ve CAD metraj. '
-          'Aktif proje Demo Şantiye olur. Devam edilsin mi?',
+          'Demo Şantiye\'deki tüm kayıtlar silinir ve sıfırdan kurulur: '
+          '4 imalat (A–D blok keşif), 4 sipariş, 2 teslimat, 2 saha sayımı '
+          've Kolon CAD metrajı. Aktif proje Demo Şantiye olur. Devam edilsin mi?',
         ),
         actions: [
           TextButton(
@@ -502,7 +395,7 @@ class _DemoLoadSettingsTileState extends ConsumerState<_DemoLoadSettingsTile> {
       title: 'Demo veriyi yükle',
       subtitle: _busy
           ? 'Yükleniyor…'
-          : 'Keşif, sipariş, teslimat, sayım ve metraj örneği',
+          : 'Eski demo silinir · yeni senaryo yüklenir',
       onTap: _busy ? () {} : _confirmAndLoad,
     );
   }
@@ -782,6 +675,128 @@ class _SettingsTile extends StatelessWidget {
   }
 }
 
+class _ProfileEditorSheet extends ConsumerStatefulWidget {
+  const _ProfileEditorSheet({
+    required this.displayName,
+    required this.profession,
+    required this.email,
+    required this.phone,
+  });
+
+  final String displayName;
+  final String profession;
+  final String email;
+  final String phone;
+
+  @override
+  ConsumerState<_ProfileEditorSheet> createState() => _ProfileEditorSheetState();
+}
+
+class _ProfileEditorSheetState extends ConsumerState<_ProfileEditorSheet> {
+  late final TextEditingController _nameCtrl = TextEditingController(text: widget.displayName);
+  late final TextEditingController _professionCtrl = TextEditingController(text: widget.profession);
+  late final TextEditingController _emailCtrl = TextEditingController(text: widget.email);
+  late final TextEditingController _phoneCtrl = TextEditingController(text: widget.phone);
+
+  @override
+  void dispose() {
+    _nameCtrl.dispose();
+    _professionCtrl.dispose();
+    _emailCtrl.dispose();
+    _phoneCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + MediaQuery.viewInsetsOf(context).bottom),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text('Profil Bilgileri', style: AppTypography.headlineMedium),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _nameCtrl,
+              textCapitalization: TextCapitalization.words,
+              decoration: const InputDecoration(labelText: 'Ad Soyad'),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _professionCtrl,
+              textCapitalization: TextCapitalization.sentences,
+              decoration: const InputDecoration(
+                labelText: 'Meslek',
+                hintText: 'Örn: İnşaat mühendisi',
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _emailCtrl,
+              keyboardType: TextInputType.emailAddress,
+              decoration: const InputDecoration(labelText: 'Mail adresi'),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _phoneCtrl,
+              keyboardType: TextInputType.phone,
+              decoration: const InputDecoration(labelText: 'Telefon numarası'),
+            ),
+            const SizedBox(height: 20),
+            FilledButton(
+              onPressed: _save,
+              child: const Text('Kaydet'),
+            ),
+            const SizedBox(height: 8),
+            OutlinedButton.icon(
+              onPressed: _logout,
+              icon: const Icon(Icons.logout),
+              label: const Text('Çıkış Yap'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _save() async {
+    final okProfile = await ref.read(authProvider.notifier).updateProfile(
+          displayName: _nameCtrl.text,
+          profession: _professionCtrl.text,
+          role: ref.read(profileRoleProvider),
+        );
+    if (!mounted) return;
+    if (!okProfile) {
+      final error = ref.read(authProvider).error;
+      ScaffoldMessenger.of(context).showAppSnackBar(
+        SnackBar(content: Text(error ?? 'Profil güncellenemedi')),
+      );
+      return;
+    }
+    await ref.read(appSettingsProvider.notifier).updateCompany(
+          contactEmail: _emailCtrl.text.trim(),
+          contactPhone: _phoneCtrl.text.trim(),
+        );
+    if (!mounted) return;
+    final messenger = ScaffoldMessenger.of(context);
+    Navigator.pop(context);
+    messenger.showAppSnackBar(const SnackBar(content: Text('Profil güncellendi')));
+  }
+
+  Future<void> _logout() async {
+    final router = GoRouter.of(context);
+    await ref.read(authProvider.notifier).logout();
+    if (!mounted) {
+      router.go(AppRoutes.login);
+      return;
+    }
+    Navigator.pop(context);
+    router.go(AppRoutes.login);
+  }
+}
+
 class AboutScreen extends StatelessWidget {
   const AboutScreen({super.key});
 
@@ -789,8 +804,15 @@ class AboutScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.canvas,
-      appBar: AppBar(title: const Text('Hakkında')),
-      body: Padding(
+      body: Column(
+        children: [
+          const DemirBrandHeader(
+            title: 'Hakkında',
+            showBack: true,
+            showSettings: false,
+          ),
+          Expanded(
+            child: Padding(
         padding: const EdgeInsets.all(AppSpacing.md),
         child: Column(
           children: [
@@ -815,6 +837,9 @@ class AboutScreen extends StatelessWidget {
             ),
           ],
         ),
+            ),
+          ),
+        ],
       ),
     );
   }

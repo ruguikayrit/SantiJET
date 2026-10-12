@@ -283,25 +283,25 @@ class _LineTableRow extends StatelessWidget {
           ),
           Expanded(
             child: Text(
-              '${AppFormat.tonnage(line.delivered)}t',
+              '${AppFormat.tonnage(line.delivered)}',
               textAlign: TextAlign.center,
             ),
           ),
           Expanded(
             child: Text(
-              '${AppFormat.tonnage(line.plannedUsage)}t',
+              '${AppFormat.tonnage(line.plannedUsage)}',
               textAlign: TextAlign.center,
             ),
           ),
           Expanded(
             child: Text(
-              '${AppFormat.tonnage(line.actual)}t',
+              '${AppFormat.tonnage(line.actual)}',
               textAlign: TextAlign.center,
             ),
           ),
           Expanded(
             child: Text(
-              '${AppFormat.tonnage(line.actualUsed)}t',
+              '${AppFormat.tonnage(line.actualUsed)}',
               textAlign: TextAlign.center,
             ),
           ),

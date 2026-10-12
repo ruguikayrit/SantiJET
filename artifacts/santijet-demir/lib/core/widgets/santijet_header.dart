@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:santijet_demir/core/routing/app_routes.dart';
 import 'package:santijet_demir/core/theme/app_colors.dart';
-import 'package:santijet_demir/core/theme/app_spacing.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
 
 class SantijetHeader extends StatelessWidget {
@@ -21,14 +21,7 @@ class SantijetHeader extends StatelessWidget {
   /// Ana sayfa DEMİR — wordmark altı ürün adı (%50 büyütülmüş).
   static const homeDemirScale = 1.875; // 1.25 × 1.5
   static const homeDemirLetterSpacing = 0.75;
-  static const _homeBrandToActionsGap = 8.0;
   static const _homeWordmarkToDemirGap = 6.0;
-
-  /// İç sayfa: bolt + küçük DEMİR etiketi + baskın sayfa adı.
-  static const _pageLogoSize = 40.0;
-  static const _pageLogoGap = 12.0;
-  static const _pageTitleGap = 2.0;
-  static const _pageTitleLift = 4.0;
 
   /// Sağ aksiyon — diğer uygulamalarla aynı çark ikonu.
   static const actionSize = 40.0;
@@ -53,41 +46,178 @@ class SantijetHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (showWordmark) {
-      return Padding(
-        padding: const EdgeInsets.fromLTRB(
-          AppSpacing.md,
-          AppSpacing.sm,
-          AppSpacing.md,
-          AppSpacing.sm,
-        ),
-        child: _WordmarkHeader(showAvatar: showAvatar),
-      );
-    }
-
-    return _PageBrandHeader(
-      subtitle: subtitle,
-      showAvatar: showAvatar,
+    return DemirBrandHeader(
+      title: showWordmark ? null : subtitle,
+      showBack: showBack,
+      showSettings: showAvatar,
       onCreateReport: onCreateReport,
       onImport: onImport,
-      showBack: showBack,
     );
   }
 }
 
-class _HeaderActions extends StatelessWidget {
-  const _HeaderActions({
-    required this.showAvatar,
-    this.onDarkBand = false,
+/// Ana sayfadaki siyah gradyan, wordmark ve DEMİR kilidi.
+/// Sayfa adı varsa wordmark’ın altında, aynı bantta durur.
+class DemirBrandHeader extends StatelessWidget {
+  const DemirBrandHeader({
+    super.key,
+    this.title,
+    this.caption,
+    this.showWordmark = false,
+    this.showBack = false,
+    this.showSettings = true,
+    this.onCreateReport,
+    this.onImport,
   });
 
-  final bool showAvatar;
-  final bool onDarkBand;
+  final String? title;
+  final String? caption;
+  final bool showWordmark;
+  final bool showBack;
+  final bool showSettings;
+  final VoidCallback? onCreateReport;
+  final VoidCallback? onImport;
+
+  static const headerTop = Color(0xFF2A2A2A);
+  static const headerBottom = Color(0xFF000000);
 
   @override
   Widget build(BuildContext context) {
-    if (!showAvatar) return const SizedBox.shrink();
-    return _HeaderSettingsButton(onDarkBand: onDarkBand);
+    final top = MediaQuery.paddingOf(context).top;
+    final canBack = showBack && context.canPop();
+
+    return DecoratedBox(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [headerTop, headerBottom],
+        ),
+      ),
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(canBack ? 4 : 14, top + 8, 6, 16),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            if (canBack)
+              IconButton(
+                tooltip: 'Geri',
+                onPressed: () => context.pop(),
+                padding: EdgeInsets.zero,
+                visualDensity: VisualDensity.compact,
+                constraints: const BoxConstraints.tightFor(width: 40, height: 40),
+                icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 18),
+              ),
+            Expanded(
+              child: showWordmark
+                  ? const _WordmarkLockup()
+                  : _PageTitleLockup(title: title, caption: caption),
+            ),
+            if (onCreateReport != null)
+              _HeaderReportButton(onDarkBand: true, onPressed: onCreateReport!),
+            if (onImport != null) ...[
+              const SizedBox(width: 4),
+              _HeaderTextButton(
+                onDarkBand: true,
+                onPressed: onImport!,
+                label: 'İçe Aktar',
+                icon: Icons.download_outlined,
+                semanticsLabel: 'İçe aktar',
+              ),
+            ],
+            if (showSettings) const _HeaderSettingsButton(onDarkBand: true),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _WordmarkLockup extends StatelessWidget {
+  const _WordmarkLockup();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(
+          height: 19.6,
+          width: double.infinity,
+          child: Image(
+            image: AssetImage(SantijetHomeBrand.darkWordmarkAsset),
+            fit: BoxFit.contain,
+            alignment: Alignment.centerLeft,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          'DEMİR',
+          style: GoogleFonts.inter(
+            color: Colors.white,
+            fontSize: 21,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 0.4,
+            height: 1.1,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _PageTitleLockup extends StatelessWidget {
+  const _PageTitleLockup({required this.title, required this.caption});
+
+  final String? title;
+  final String? caption;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Image.asset(
+          'assets/images/splash_bolt.png',
+          width: 42.5,
+          height: 40,
+          fit: BoxFit.contain,
+          filterQuality: FilterQuality.high,
+        ),
+        const SizedBox(width: 7.5),
+        Expanded(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title?.trim().isNotEmpty == true ? title! : 'ŞantiJET',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: GoogleFonts.inter(
+                  color: Colors.white,
+                  fontSize: 21,
+                  fontWeight: FontWeight.w800,
+                  height: 1.1,
+                ),
+              ),
+              if (caption != null && caption!.trim().isNotEmpty) ...[
+                const SizedBox(height: 3),
+                Text(
+                  caption!,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.inter(
+                    color: Colors.white.withValues(alpha: 0.66),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ],
+    );
   }
 }
 
@@ -209,181 +339,6 @@ class _HeaderTextButton extends StatelessWidget {
   }
 }
 
-/// Bolt + muted DEMİR etiketi + baskın sayfa adı — ana sayfa hariç.
-class _PageBrandHeader extends StatelessWidget {
-  const _PageBrandHeader({
-    required this.showAvatar,
-    this.subtitle,
-    this.onCreateReport,
-    this.onImport,
-    this.showBack = false,
-  });
-
-  final String? subtitle;
-  final bool showAvatar;
-  final VoidCallback? onCreateReport;
-  final VoidCallback? onImport;
-  final bool showBack;
-
-  @override
-  Widget build(BuildContext context) {
-    final onDarkBand = Theme.of(context).brightness == Brightness.light;
-
-    final productLabelStyle = AppTypography.labelSmall.copyWith(
-      fontSize: AppTypography.scale * 11,
-      letterSpacing: 0.9,
-      fontWeight: FontWeight.w700,
-      color: onDarkBand
-          ? Colors.white.withValues(alpha: 0.62)
-          : AppColors.textMuted,
-      height: 1.0,
-    );
-
-    final pageTitleStyle = AppTypography.headlineMedium.copyWith(
-      fontSize: AppTypography.scale * 18,
-      fontWeight: FontWeight.w700,
-      letterSpacing: -0.2,
-      color: onDarkBand ? Colors.white : AppColors.textPrimary,
-      height: 1.15,
-    );
-
-    final content = Padding(
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.md,
-        AppSpacing.sm,
-        AppSpacing.md,
-        AppSpacing.sm,
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          if (showBack && context.canPop()) ...[
-            IconButton(
-              tooltip: 'Geri',
-              style: IconButton.styleFrom(
-                fixedSize: const Size(
-                  SantijetHeader.actionSize,
-                  SantijetHeader.actionSize,
-                ),
-                padding: EdgeInsets.zero,
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              ),
-              onPressed: () => context.pop(),
-              icon: Icon(
-                Icons.arrow_back,
-                color: onDarkBand ? Colors.white : AppColors.textPrimary,
-              ),
-            ),
-          ],
-          Expanded(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Image.asset(
-                  'assets/images/splash_bolt.png',
-                  width: SantijetHeader._pageLogoSize,
-                  height: SantijetHeader._pageLogoSize,
-                  fit: BoxFit.contain,
-                  filterQuality: FilterQuality.high,
-                ),
-                const SizedBox(width: SantijetHeader._pageLogoGap),
-                Expanded(
-                  child: Transform.translate(
-                    offset: subtitle != null
-                        ? const Offset(0, SantijetHeader._pageTitleLift)
-                        : Offset.zero,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text('DEMİR', style: productLabelStyle),
-                        if (subtitle != null) ...[
-                          const SizedBox(height: SantijetHeader._pageTitleGap),
-                          Text(subtitle!, style: pageTitleStyle),
-                        ],
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          if (onCreateReport != null) ...[
-            _HeaderReportButton(
-              onDarkBand: onDarkBand,
-              onPressed: onCreateReport!,
-            ),
-            const SizedBox(width: 4),
-          ],
-          if (onImport != null) ...[
-            _HeaderTextButton(
-              onDarkBand: onDarkBand,
-              onPressed: onImport!,
-              label: 'İçe Aktar',
-              icon: Icons.download_outlined,
-              semanticsLabel: 'İçe aktar',
-            ),
-            const SizedBox(width: 4),
-          ],
-          _HeaderActions(
-            showAvatar: showAvatar,
-            onDarkBand: onDarkBand,
-          ),
-        ],
-      ),
-    );
-
-    if (!onDarkBand) return content;
-
-    // Açık tema: logo + DEMİR + sayfa adı + aksiyonlar siyah bant içinde.
-    return ColoredBox(
-      color: SantijetHeader.pageHeaderBandColor,
-      child: content,
-    );
-  }
-}
-
-class _WordmarkHeader extends StatelessWidget {
-  const _WordmarkHeader({required this.showAvatar});
-
-  final bool showAvatar;
-
-  @override
-  Widget build(BuildContext context) {
-    final wordmarkHeight = _BrandTitleMetrics.wordmarkHeightOf(context);
-    final demirIndent = _BrandTitleMetrics.demirIndentOf(context);
-
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Image.asset(
-                AppColors.wordmarkAssetFor(Theme.of(context).brightness),
-                height: wordmarkHeight,
-                fit: BoxFit.fitHeight,
-                filterQuality: FilterQuality.high,
-                alignment: Alignment.centerLeft,
-              ),
-              const SizedBox(height: SantijetHeader._homeWordmarkToDemirGap),
-              Padding(
-                padding: EdgeInsets.only(left: demirIndent),
-                child: Text('DEMİR', style: _homeDemirTitleStyle),
-              ),
-            ],
-          ),
-        ),
-        if (showAvatar) ...[
-          const SizedBox(width: SantijetHeader._homeBrandToActionsGap),
-          _HeaderActions(showAvatar: showAvatar),
-        ],
-      ],
-    );
-  }
-}
 
 TextStyle get _demirTitleStyle => AppTypography.titleMedium.copyWith(
       letterSpacing: 1.2,
@@ -404,6 +359,30 @@ TextStyle get _homeDemirTitleStyle => _demirTitleStyle.copyWith(
           SantijetHeader.homeDemirScale,
       letterSpacing: SantijetHeader.homeDemirLetterSpacing,
     );
+
+/// Ana sayfa wordmark + DEMİR — güncelleme öncesi kilitli ölçek.
+abstract final class SantijetHomeBrand {
+  static const darkWordmarkAsset = 'assets/images/splash_wordmark.png';
+  static const wordmarkToDemirGap = SantijetHeader._homeWordmarkToDemirGap;
+
+  static double wordmarkHeightOf(BuildContext context) =>
+      _BrandTitleMetrics.wordmarkHeightOf(context);
+
+  static double demirIndentOf(BuildContext context) =>
+      _BrandTitleMetrics.demirIndentOf(context);
+
+  /// Lacivert banttaki koyu wordmark — açık temada da aynı girinti.
+  static double darkDemirIndentOf(BuildContext context) {
+    return wordmarkHeightOf(context) *
+        (_BrandTitleMetrics._darkWordmarkLeftInkPx /
+            _BrandTitleMetrics._darkWordmarkPixelHeight);
+  }
+
+  static TextStyle demirStyle({Color? color}) {
+    final style = _homeDemirTitleStyle;
+    return color == null ? style : style.copyWith(color: color);
+  }
+}
 
 abstract final class _BrandTitleMetrics {
   /// Wordmark harf doluluk oranı — açık/koyu aynı görsel ölçek.

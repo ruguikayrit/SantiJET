@@ -1,12 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:santijet_demir/core/format/app_format.dart';
-import 'package:santijet_demir/core/routing/app_routes.dart';
 import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/widgets/empty_states.dart';
 import 'package:santijet_demir/core/widgets/santijet_header.dart';
-import 'package:santijet_demir/features/auth/providers/membership_permission_provider.dart';
 import 'package:santijet_demir/features/incoming_rebar/providers/incoming_rebar_provider.dart';
 import 'package:santijet_demir/features/incoming_rebar/widgets/delivery_card.dart';
 import 'package:santijet_demir/features/projects/providers/project_provider.dart';
@@ -18,12 +15,12 @@ class DeliveryListScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final deliveries = ref.watch(deliveriesProvider);
     final projectName = ref.watch(activeProjectProvider)?.name ?? '';
-    final canCreate = ref.watch(canCreateDeliveryProvider);
     final totalTonnage = deliveries.fold(0.0, (sum, item) => sum + item.tonnage);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF3F6FA),
       body: SafeArea(
+        top: false,
         bottom: false,
         child: Column(
           children: [
@@ -33,13 +30,7 @@ class DeliveryListScreen extends ConsumerWidget {
             ),
             Expanded(
               child: deliveries.isEmpty
-                  ? ModuleEmptyState(
-                      type: EmptyStateType.noDelivery,
-                      actionLabel: canCreate ? 'Yeni Teslimat' : null,
-                      onAction: canCreate
-                          ? () => context.push(AppRoutes.selectInTransitOrder)
-                          : null,
-                    )
+                  ? const ModuleEmptyState(type: EmptyStateType.noDelivery)
                   : Column(
               children: [
                 Padding(
@@ -79,30 +70,6 @@ class DeliveryListScreen extends ConsumerWidget {
                     },
                   ),
                 ),
-                if (canCreate)
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                    child: SizedBox(
-                      width: double.infinity,
-                      height: 48,
-                      child: FilledButton.icon(
-                        onPressed: () => context.push(AppRoutes.selectInTransitOrder),
-                        style: FilledButton.styleFrom(
-                          backgroundColor: AppColors.electricBlueLight,
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          textStyle: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        icon: const Icon(Icons.add, size: 18),
-                        label: const Text('Yeni Teslimat Kaydı'),
-                      ),
-                    ),
-                  ),
               ],
             ),
             ),

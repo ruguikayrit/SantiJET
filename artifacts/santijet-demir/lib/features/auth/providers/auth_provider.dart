@@ -159,11 +159,17 @@ class AuthNotifier extends StateNotifier<AuthState> {
     required String email,
     required String displayName,
     required String password,
+    String phone = '',
     MembershipType membershipType = MembershipType.individual,
     CorporateRole? corporateRole,
   }) async {
     if (!_isValidEmail(email)) {
       state = state.copyWith(error: 'Geçerli bir e-posta adresi girin');
+      return false;
+    }
+    final phoneDigits = phone.replaceAll(RegExp(r'\D'), '');
+    if (phoneDigits.length < 10) {
+      state = state.copyWith(error: 'Geçerli bir telefon numarası girin');
       return false;
     }
     if (password.trim().length < 6) {
@@ -214,6 +220,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
             profileName: displayName.trim(),
             profileProfession: '',
             profileRole: roleLabel,
+          );
+      await _ref.read(appSettingsProvider.notifier).updateCompany(
+            contactPhone: phone.trim(),
           );
 
       state = AuthState(

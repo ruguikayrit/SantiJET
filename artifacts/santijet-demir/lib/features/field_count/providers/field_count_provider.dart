@@ -75,11 +75,55 @@ class FieldCountsNotifier extends StateNotifier<List<FieldCountRecord>> {
       actual: actual,
       status: computeFieldCountStatus(lineRecords),
       lines: lineRecords,
+      note: draft.note.trim(),
+      photoPath: draft.photoPath,
     );
 
     state = [record, ...state];
     await _persist();
     return record;
+  }
+
+  Future<FieldCountRecord?> updateRecord({
+    required String recordId,
+    required NewCountDraft draft,
+    required List<CountDiameterLine> lines,
+  }) async {
+    if (lines.isEmpty) return null;
+
+    final hasAnyCount = lines.any((line) => line.actual > 0);
+    if (!hasAnyCount) return null;
+
+    final lineRecords =
+        lines.map(FieldCountLineRecord.fromCountLine).toList();
+    final expected =
+        lines.fold(0.0, (sum, line) => sum + line.expectedStock);
+    final actual = lines.fold(0.0, (sum, line) => sum + line.actual);
+    final region = draft.region.trim();
+    final personnel = draft.personnel.trim();
+
+    FieldCountRecord? updated;
+    state = [
+      for (final record in state)
+        if (record.id == recordId)
+          updated = record.copyWith(
+            title: region.isNotEmpty ? region : record.title,
+            date: draft.date ?? record.date,
+            personnel: personnel,
+            region: region,
+            expected: expected,
+            actual: actual,
+            status: computeFieldCountStatus(lineRecords),
+            lines: lineRecords,
+            note: draft.note.trim(),
+            photoPath: draft.photoPath,
+          )
+        else
+          record,
+    ];
+    if (updated == null) return null;
+    await _persist();
+    return updated;
   }
 
   Future<void> updateVarianceCauses({
@@ -243,15 +287,25 @@ final countDiameterLinesProvider = Provider<List<CountDiameterLine>>((ref) {
   final delivered = ref.watch(deliveredDiametersForCountProvider);
   final plannedUsage = ref.watch(plannedUsageByDiameterProvider);
   final expectedStock = ref.watch(expectedStockByDiameterProvider);
+  final surveyDiameters = surveyDiametersFromImalats(
+    ref.watch(surveyProjectProvider).imalats,
+  );
 
-  return delivered.entries
+  final diameters = {
+    ...delivered.keys,
+    ...surveyDiameters,
+    ...draft.diameterEntries.keys,
+  }.toList()
+    ..sort();
+
+  return diameters
       .map(
-        (entry) => CountDiameterLine(
-          diameter: entry.key,
-          delivered: entry.value,
-          plannedUsage: plannedUsage[entry.key] ?? 0,
-          expectedStock: expectedStock[entry.key] ?? entry.value,
-          actual: draft.diameterEntries[entry.key] ?? 0,
+        (diameter) => CountDiameterLine(
+          diameter: diameter,
+          delivered: delivered[diameter] ?? 0,
+          plannedUsage: plannedUsage[diameter] ?? 0,
+          expectedStock: expectedStock[diameter] ?? delivered[diameter] ?? 0,
+          actual: draft.diameterEntries[diameter] ?? 0,
         ),
       )
       .toList();
@@ -292,21 +346,51 @@ class NewCountDraftNotifier extends StateNotifier<NewCountDraft> {
     state = state.copyWith(region: value);
   }
 
-  void setActualCount(int diameter, double actual) {
-    final delivered = _ref.read(deliveredDiametersForCountProvider);
-    if (!delivered.containsKey(diameter)) return;
+  void setNote(String value) {
+    state = state.copyWith(note: value);
+  }
 
+  void setPhotoPath(String value) {
+    state = state.copyWith(photoPath: value);
+  }
+
+  void setDate(DateTime value) {
+    state = state.copyWith(date: value);
+  }
+
+  void setActualCount(int diameter, double actual) {
     final updated = Map<int, double>.from(state.diameterEntries);
     updated[diameter] = actual;
-
     state = state.copyWith(diameterEntries: updated);
   }
 
+  void loadFromRecord(FieldCountRecord record) {
+    state = NewCountDraft(
+      date: record.date,
+      personnel: record.personnel,
+      region: record.region,
+      note: record.note,
+      photoPath: record.photoPath,
+      editingRecordId: record.id,
+      diameterEntries: {
+        for (final line in record.lines) line.diameter: line.actual,
+      },
+    );
+    syncFromSources();
+  }
+
   Future<FieldCountRecord?> completeCount(List<CountDiameterLine> lines) async {
-    final record = await _ref.read(fieldCountsProvider.notifier).addRecord(
-          draft: state,
-          lines: lines,
-        );
+    final notifier = _ref.read(fieldCountsProvider.notifier);
+    final record = state.isEditing
+        ? await notifier.updateRecord(
+            recordId: state.editingRecordId!,
+            draft: state,
+            lines: lines,
+          )
+        : await notifier.addRecord(
+            draft: state,
+            lines: lines,
+          );
     reset();
     return record;
   }

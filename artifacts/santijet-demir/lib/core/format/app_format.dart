@@ -19,7 +19,7 @@ abstract final class AppFormat {
     return '$symbol${integer(value)}';
   }
 
-  /// Tonaj — her zaman virgülden sonra 2 hane (1.234,50).
+  /// Tonaj — her zaman virgülden sonra 2 hane (1.234,50 t).
   static String tonnage(num value) {
     final negative = value < 0;
     final fixed = value.abs().toStringAsFixed(2);
@@ -35,6 +35,6 @@ abstract final class AppFormat {
     buffer
       ..write(',')
       ..write(fraction);
-    return buffer.toString();
+    return '${buffer.toString()} t';
   }
 }

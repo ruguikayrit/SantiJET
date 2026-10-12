@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:santijet_demir/core/routing/app_router.dart';
 import 'package:santijet_demir/core/responsive/app_safe_area.dart';
@@ -9,6 +10,17 @@ import 'package:santijet_demir/features/auth/providers/app_lock_provider.dart';
 import 'package:santijet_demir/features/auth/providers/auth_provider.dart';
 import 'package:santijet_demir/features/auth/session_expired_screen.dart';
 import 'package:santijet_demir/features/settings/providers/settings_provider.dart';
+
+const _appLocalizationsDelegates = [
+  GlobalMaterialLocalizations.delegate,
+  GlobalWidgetsLocalizations.delegate,
+  GlobalCupertinoLocalizations.delegate,
+];
+
+const _appSupportedLocales = [
+  Locale('tr', 'TR'),
+  Locale('en', 'US'),
+];
 
 class SantijetDemirApp extends ConsumerWidget {
   const SantijetDemirApp({super.key});
@@ -36,6 +48,9 @@ class SantijetDemirApp extends ConsumerWidget {
         theme: AppTheme.light,
         darkTheme: AppTheme.dark,
         themeMode: themeMode,
+        locale: const Locale('tr', 'TR'),
+        localizationsDelegates: _appLocalizationsDelegates,
+        supportedLocales: _appSupportedLocales,
         builder: (context, child) => wrap(child),
         home: const SessionExpiredScreen(),
       );
@@ -48,6 +63,9 @@ class SantijetDemirApp extends ConsumerWidget {
         theme: AppTheme.light,
         darkTheme: AppTheme.dark,
         themeMode: themeMode,
+        locale: const Locale('tr', 'TR'),
+        localizationsDelegates: _appLocalizationsDelegates,
+        supportedLocales: _appSupportedLocales,
         builder: (context, child) => wrap(child),
         home: const AppLockScreen(),
       );
@@ -59,6 +77,9 @@ class SantijetDemirApp extends ConsumerWidget {
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
       themeMode: themeMode,
+      locale: const Locale('tr', 'TR'),
+      localizationsDelegates: _appLocalizationsDelegates,
+      supportedLocales: _appSupportedLocales,
       routerConfig: router,
       builder: (context, child) => wrap(child),
     );

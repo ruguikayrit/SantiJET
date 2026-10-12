@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:santijet_demir/data/repositories/project_data_repository.dart';
 import 'package:santijet_demir/data/services/rebar_weight_calculator.dart';
 import 'package:santijet_demir/data/services/rebar_text_parser.dart';
 import 'package:santijet_demir/domain/entities/delivery.dart';
@@ -14,26 +15,31 @@ import 'package:santijet_demir/features/orders/providers/orders_provider.dart';
 import 'package:santijet_demir/features/projects/providers/project_provider.dart';
 import 'package:santijet_demir/features/rebar_metraj/providers/rebar_metraj_storage_provider.dart';
 import 'package:santijet_demir/features/settings/providers/settings_provider.dart';
+import 'package:santijet_demir/features/survey/imalat_block_template.dart';
 import 'package:santijet_demir/features/survey/providers/survey_provider.dart';
 
-/// Ayarlar → Demo: keşif, sipariş, teslimat, saha sayım ve CAD metraj örneği.
+/// Ayarlar / misafir girişi: Demo Şantiye verisini siler ve tutarlı örnek set kurar.
 class DemoSeedController {
   DemoSeedController(this._ref);
 
   final Ref _ref;
 
   static const demoProjectName = 'Demo Şantiye';
-  static const demoProjectCode = 'DEMO-001';
+  static const demoProjectCode = 'DEMO-2026';
+  static const _legacyDemoCodes = {'DEMO-001', 'DEMO-2026'};
   static const demoCompanyName = 'Demo İnşaat A.Ş.';
-  static const demoSupplier = 'Demo Demir A.Ş.';
+  static const demoSupplier = 'Kardemir Demir San.';
 
-  static const _imalatKolonId = 'demo-imalat-kolon';
-  static const _imalatKirisId = 'demo-imalat-kiris';
-  static const _imalatPerdeId = 'demo-imalat-perde';
+  static const _kolonId = 'demo-kolon';
+  static const _kirisId = 'demo-kiris';
+  static const _perdeId = 'demo-perde';
+  static const _temelId = 'demo-temel';
+  static const _dosemeId = 'demo-doseme';
 
+  /// Mevcut demo projesinin tüm modül verisini siler, sonra yeni senaryoyu yazar.
   Future<Project> loadAll() async {
-    final project = await _ensureProject();
-    await _ref.read(projectsControllerProvider).switchProject(project.id);
+    final project = await _ensureDemoProject();
+    await _wipeProjectData(project.id);
 
     await _ref.read(appSettingsProvider.notifier).updateCompany(
           companyName: demoCompanyName,
@@ -48,27 +54,57 @@ class DemoSeedController {
     final deliveries = _buildDeliveries(orders);
     await _ref.read(deliveryRepositoryProvider).write(project.id, deliveries);
 
-    final counts = _buildFieldCounts(survey, deliveries);
+    final counts = _buildFieldCounts();
     await _ref.read(fieldCountRepositoryProvider).write(project.id, counts);
 
-    await _writeMetraj(project.id, survey);
+    await _writeMetraj(project.id);
 
+    await _ref.read(projectsControllerProvider).switchProject(project.id);
     _reloadProviders(project.id);
     return project;
   }
 
-  Future<Project> _ensureProject() async {
-    final existing = _ref.read(userProjectsProvider).where(
-          (p) => p.name == demoProjectName || p.code == demoProjectCode,
+  Future<Project> _ensureDemoProject() async {
+    final matches = _ref.read(userProjectsProvider).where(
+          (p) =>
+              p.name == demoProjectName ||
+              (p.code != null && _legacyDemoCodes.contains(p.code)),
         );
-    if (existing.isNotEmpty) return existing.first;
+    final today = DateTime.now();
+    final startDate = DateTime(today.year, today.month, today.day)
+        .subtract(const Duration(days: 150));
+    final endDate = startDate.add(const Duration(days: 365));
+
+    if (matches.isNotEmpty) {
+      final existing = matches.first;
+      if (existing.startDate != null && existing.endDate != null) {
+        return existing;
+      }
+      final dated = existing.copyWith(startDate: startDate, endDate: endDate);
+      try {
+        await _ref.read(projectsControllerProvider).updateProject(dated);
+        return dated;
+      } catch (_) {
+        return existing;
+      }
+    }
 
     return _ref.read(projectsControllerProvider).createProject(
           name: demoProjectName,
-          location: 'İstanbul · Demo Şantiye',
+          location: 'İstanbul · Kartal · 4 Blok Konut',
+          startDate: startDate,
+          endDate: endDate,
           code: demoProjectCode,
-          progress: 48,
+          progress: 44,
         );
+  }
+
+  Future<void> _wipeProjectData(String projectId) async {
+    final box = _ref.read(projectsBoxProvider);
+    for (final domain in ProjectDataRepository.projectDomains) {
+      await box.delete('pdata:$projectId:$domain');
+    }
+    await box.delete('pdata:$projectId:seeded');
   }
 
   void _reloadProviders(String projectId) {
@@ -80,134 +116,95 @@ class DemoSeedController {
   }
 
   SurveyProject _buildSurvey(String projectName) {
-    final kolon = _imalat(
-      id: _imalatKolonId,
-      name: 'Kolon',
-      progressPercent: 55,
-      lines: const [
-        DiameterLine(
-          diameter: 12,
-          planned: 85,
-          ordered: 48,
-          delivered: 42,
-          progressPercent: 55,
-        ),
-        DiameterLine(
-          diameter: 14,
-          planned: 62,
-          ordered: 34,
-          delivered: 30,
-          progressPercent: 50,
-        ),
-        DiameterLine(
-          diameter: 16,
-          planned: 44,
-          ordered: 22,
-          delivered: 18,
-          progressPercent: 45,
-        ),
-      ],
-    );
-    final kiris = _imalat(
-      id: _imalatKirisId,
-      name: 'Kiriş',
-      progressPercent: 42,
-      lines: const [
-        DiameterLine(
-          diameter: 12,
-          planned: 52,
-          ordered: 28,
-          delivered: 24,
-          progressPercent: 40,
-        ),
-        DiameterLine(
-          diameter: 14,
-          planned: 70,
-          ordered: 36,
-          delivered: 30,
-          progressPercent: 45,
-        ),
-        DiameterLine(
-          diameter: 20,
-          planned: 38,
-          ordered: 16,
-          delivered: 12,
-          progressPercent: 35,
-        ),
-      ],
-    );
-    final perde = _imalat(
-      id: _imalatPerdeId,
-      name: 'Perde',
-      progressPercent: 58,
-      lines: const [
-        DiameterLine(
-          diameter: 10,
-          planned: 40,
-          ordered: 22,
-          delivered: 20,
-          progressPercent: 60,
-        ),
-        DiameterLine(
-          diameter: 12,
-          planned: 58,
-          ordered: 32,
-          delivered: 28,
-          progressPercent: 55,
-        ),
-        DiameterLine(
-          diameter: 16,
-          planned: 46,
-          ordered: 20,
-          delivered: 14,
-          progressPercent: 50,
-        ),
-      ],
-    );
-
-    final temel = _imalat(
-      id: 'demo-imalat-temel',
-      name: 'Temel',
-      progressPercent: 62,
-      lines: const [
-        DiameterLine(diameter: 12, planned: 80, ordered: 50, delivered: 42, progressPercent: 62),
-        DiameterLine(diameter: 14, planned: 70, ordered: 42, delivered: 36, progressPercent: 62),
-        DiameterLine(diameter: 16, planned: 70, ordered: 42, delivered: 36, progressPercent: 62),
-        DiameterLine(diameter: 20, planned: 60, ordered: 38, delivered: 34, progressPercent: 62),
-      ],
-    );
-    final doseme = _imalat(
-      id: 'demo-imalat-doseme',
-      name: 'Döşeme',
-      progressPercent: 40,
-      lines: const [
-        DiameterLine(diameter: 8, planned: 70, ordered: 28, delivered: 16, progressPercent: 40),
-        DiameterLine(diameter: 10, planned: 60, ordered: 24, delivered: 14, progressPercent: 40),
-        DiameterLine(diameter: 12, planned: 70, ordered: 28, delivered: 16, progressPercent: 40),
-        DiameterLine(diameter: 14, planned: 60, ordered: 24, delivered: 14, progressPercent: 40),
-        DiameterLine(diameter: 16, planned: 60, ordered: 24, delivered: 12, progressPercent: 40),
-      ],
-    );
-    final merdiven = _imalat(
-      id: 'demo-imalat-merdiven',
-      name: 'Merdiven',
-      progressPercent: 35,
-      lines: const [
-        DiameterLine(diameter: 10, planned: 30, ordered: 12, delivered: 8, progressPercent: 35),
-        DiameterLine(diameter: 12, planned: 30, ordered: 12, delivered: 8, progressPercent: 35),
-        DiameterLine(diameter: 14, planned: 25, ordered: 10, delivered: 6, progressPercent: 35),
-      ],
-    );
+    final now = DateTime.now();
+    final imalats = [
+      _imalatWithBlocks(
+        id: _kolonId,
+        name: 'Kolon',
+        progressPercent: 52,
+        lines: const [
+          DiameterLine(diameter: 12, planned: 96, ordered: 52, delivered: 46, progressPercent: 52),
+          DiameterLine(diameter: 14, planned: 74, ordered: 38, delivered: 32, progressPercent: 50),
+          DiameterLine(diameter: 16, planned: 48, ordered: 24, delivered: 20, progressPercent: 48),
+        ],
+      ),
+      _imalatWithBlocks(
+        id: _kirisId,
+        name: 'Kiriş',
+        progressPercent: 38,
+        lines: const [
+          DiameterLine(diameter: 12, planned: 58, ordered: 32, delivered: 22, progressPercent: 38),
+          DiameterLine(diameter: 14, planned: 82, ordered: 44, delivered: 28, progressPercent: 36),
+          DiameterLine(diameter: 20, planned: 36, ordered: 18, delivered: 10, progressPercent: 32),
+        ],
+      ),
+      _imalatWithBlocks(
+        id: _perdeId,
+        name: 'Perde',
+        progressPercent: 41,
+        lines: const [
+          DiameterLine(diameter: 10, planned: 42, ordered: 22, delivered: 14, progressPercent: 42),
+          DiameterLine(diameter: 12, planned: 64, ordered: 34, delivered: 22, progressPercent: 40),
+          DiameterLine(diameter: 16, planned: 52, ordered: 26, delivered: 16, progressPercent: 38),
+        ],
+      ),
+      _imalatWithBlocks(
+        id: _temelId,
+        name: 'Temel',
+        progressPercent: 66,
+        lines: const [
+          DiameterLine(diameter: 12, planned: 88, ordered: 58, delivered: 52, progressPercent: 66),
+          DiameterLine(diameter: 14, planned: 76, ordered: 48, delivered: 42, progressPercent: 64),
+          DiameterLine(diameter: 16, planned: 68, ordered: 44, delivered: 38, progressPercent: 62),
+          DiameterLine(diameter: 20, planned: 54, ordered: 32, delivered: 28, progressPercent: 60),
+        ],
+      ),
+      _imalatWithBlocks(
+        id: _dosemeId,
+        name: 'Döşeme',
+        progressPercent: 34,
+        lines: const [
+          DiameterLine(diameter: 10, planned: 42, ordered: 18, delivered: 8, progressPercent: 34),
+          DiameterLine(diameter: 12, planned: 56, ordered: 24, delivered: 10, progressPercent: 32),
+          DiameterLine(diameter: 14, planned: 48, ordered: 20, delivered: 8, progressPercent: 30),
+        ],
+      ),
+    ];
 
     return SurveyProject(
       projectName: projectName,
-      date: DateTime.now(),
-      revision: 'Rev.Demo',
-      imalats: [temel, kolon, perde, kiris, doseme, merdiven],
+      date: now,
+      revision: 'Rev.2026.03',
+      imalats: imalats,
     );
   }
 
-  SurveyImalat _imalat({
+  SurveyImalat _imalatWithBlocks({
+    required String id,
+    required String name,
+    required double progressPercent,
+    required List<DiameterLine> lines,
+  }) {
+    final base = _imalatSummary(
+      id: id,
+      name: name,
+      progressPercent: progressPercent,
+      lines: lines,
+    );
+    final blocks = ImalatBlockTemplate.build(base);
+    final patchedBlocks = [
+      for (final block in blocks)
+        block.copyWith(
+          items: [
+            for (final item in block.items)
+              item.copyWith(progressPercent: progressPercent),
+          ],
+        ),
+    ];
+    return base.copyWith(blocks: patchedBlocks);
+  }
+
+  SurveyImalat _imalatSummary({
     required String id,
     required String name,
     required double progressPercent,
@@ -215,8 +212,7 @@ class DemoSeedController {
   }) {
     final planned = lines.fold<double>(0, (sum, line) => sum + line.planned);
     final ordered = lines.fold<double>(0, (sum, line) => sum + line.ordered);
-    final delivered =
-        lines.fold<double>(0, (sum, line) => sum + line.delivered);
+    final delivered = lines.fold<double>(0, (sum, line) => sum + line.delivered);
     return SurveyImalat(
       id: id,
       name: name,
@@ -233,218 +229,232 @@ class DemoSeedController {
 
   List<OrderItem> _buildOrders() {
     final now = DateTime.now();
+    final year = now.year;
     return [
       OrderItem(
-        id: 'demo-order-completed',
-        orderNo: 'SP-${now.year}-D001',
-        date: now.subtract(const Duration(days: 12)),
+        id: 'demo-order-001',
+        orderNo: 'SP-$year-0001',
+        date: now.subtract(const Duration(days: 14)),
         imalatTypes: const ['Kolon'],
         imalatTonnages: const {'Kolon': 72},
         tonnage: 72,
         status: OrderStatus.completed,
         supplier: demoSupplier,
-        approvals: const OrderApprovals(
-          purchasing: true,
-          projectManager: true,
-        ),
+        diameterAmounts: const {12: 28, 14: 26, 16: 18},
+        approvals: const OrderApprovals(purchasing: true, projectManager: true),
       ),
       OrderItem(
-        id: 'demo-order-transit',
-        orderNo: 'SP-${now.year}-D002',
-        date: now.subtract(const Duration(days: 4)),
+        id: 'demo-order-002',
+        orderNo: 'SP-$year-0002',
+        date: now.subtract(const Duration(days: 6)),
         imalatTypes: const ['Kiriş'],
-        imalatTonnages: const {'Kiriş': 48},
-        tonnage: 48,
+        imalatTonnages: const {'Kiriş': 58},
+        tonnage: 58,
         status: OrderStatus.inTransit,
         supplier: demoSupplier,
-        approvals: const OrderApprovals(
-          purchasing: true,
-          projectManager: true,
-        ),
+        diameterAmounts: const {12: 16, 14: 28, 20: 14},
+        approvals: const OrderApprovals(purchasing: true, projectManager: true),
       ),
       OrderItem(
-        id: 'demo-order-submitted',
-        orderNo: 'SP-${now.year}-D003',
-        date: now.subtract(const Duration(days: 1)),
+        id: 'demo-order-003',
+        orderNo: 'SP-$year-0003',
+        date: now.subtract(const Duration(days: 2)),
         imalatTypes: const ['Perde'],
-        imalatTonnages: const {'Perde': 40},
-        tonnage: 40,
+        imalatTonnages: const {'Perde': 50},
+        tonnage: 50,
         status: OrderStatus.submitted,
         supplier: demoSupplier,
-        approvals: const OrderApprovals(
-          purchasing: true,
-          projectManager: true,
+        diameterAmounts: const {10: 10, 12: 22, 16: 18},
+        approvals: const OrderApprovals(purchasing: true, projectManager: true),
+      ),
+      OrderItem(
+        id: 'demo-order-004',
+        orderNo: 'SP-$year-0004',
+        date: now.subtract(const Duration(hours: 8)),
+        imalatTypes: const ['Temel'],
+        imalatTonnages: const {'Temel': 94},
+        tonnage: 94,
+        status: OrderStatus.pendingApproval,
+        supplier: demoSupplier,
+        diameterAmounts: const {12: 24, 14: 22, 16: 20, 20: 28},
+        approvals: const OrderApprovals(purchasing: false, projectManager: false),
+      ),
+      OrderItem(
+        id: 'demo-order-005',
+        orderNo: 'SP-$year-0005',
+        date: now.subtract(const Duration(days: 20)),
+        imalatTypes: const ['Döşeme'],
+        imalatTonnages: const {'Döşeme': 46},
+        tonnage: 46,
+        status: OrderStatus.cancelled,
+        supplier: demoSupplier,
+        diameterAmounts: const {10: 12, 12: 18, 14: 16},
+        approvals: const OrderApprovals(purchasing: true, projectManager: true),
+        cancellation: OrderCancellation(
+          cancelledByName: 'Demo Proje Müdürü',
+          cancellationReason: 'İmalat takvimi revizyonu — döşeme siparişi iptal.',
+          cancelledAt: now.subtract(const Duration(days: 18)),
         ),
       ),
     ];
   }
 
   List<DeliveryItem> _buildDeliveries(List<OrderItem> orders) {
-    final completed = orders.firstWhere((o) => o.id == 'demo-order-completed');
-    final transit = orders.firstWhere((o) => o.id == 'demo-order-transit');
+    final kolon = orders.firstWhere((o) => o.id == 'demo-order-001');
+    final kiris = orders.firstWhere((o) => o.id == 'demo-order-002');
     final now = DateTime.now();
 
-    final kolonLines = const [
-      DeliveryDiameterLine(diameter: 12, ordered: 48, delivered: 42),
-      DeliveryDiameterLine(diameter: 14, ordered: 34, delivered: 30),
-      DeliveryDiameterLine(diameter: 16, ordered: 22, delivered: 18),
+    const kolonLines = [
+      DeliveryDiameterLine(diameter: 12, ordered: 28, delivered: 26),
+      DeliveryDiameterLine(diameter: 14, ordered: 26, delivered: 24),
+      DeliveryDiameterLine(diameter: 16, ordered: 18, delivered: 16),
     ];
-    final kolonTonnage =
-        kolonLines.fold<double>(0, (sum, line) => sum + line.delivered);
+    const kirisLines = [
+      DeliveryDiameterLine(diameter: 12, ordered: 16, delivered: 12),
+      DeliveryDiameterLine(diameter: 14, ordered: 28, delivered: 20),
+      DeliveryDiameterLine(diameter: 20, ordered: 14, delivered: 8),
+    ];
 
-    final kirisLines = const [
-      DeliveryDiameterLine(diameter: 12, ordered: 28, delivered: 24),
-      DeliveryDiameterLine(diameter: 14, ordered: 36, delivered: 30),
-      DeliveryDiameterLine(diameter: 20, ordered: 16, delivered: 12),
-    ];
-    final kirisTonnage =
+    final kolonDelivered =
+        kolonLines.fold<double>(0, (sum, line) => sum + line.delivered);
+    final kirisDelivered =
         kirisLines.fold<double>(0, (sum, line) => sum + line.delivered);
 
     return [
       DeliveryItem(
-        id: 'demo-delivery-1',
-        orderId: completed.id,
-        orderNo: completed.orderNo,
-        irsaliyeNo: 'IRS-DEMO-1001',
-        date: now.subtract(const Duration(days: 10)),
+        id: 'demo-delivery-001',
+        orderId: kolon.id,
+        orderNo: kolon.orderNo,
+        irsaliyeNo: 'IRS-2026-0142',
+        date: now.subtract(const Duration(days: 11)),
         supplier: demoSupplier,
-        tonnage: kolonTonnage,
-        fulfillmentPercent: kolonTonnage / completed.tonnage * 100,
+        tonnage: kolonDelivered,
+        fulfillmentPercent: kolonDelivered / kolon.tonnage * 100,
         status: DeliveryStatus.partial,
         diameterLines: kolonLines,
-        plateNo: '34 DEMO 01',
+        plateNo: '34 DK 4821',
       ),
       DeliveryItem(
-        id: 'demo-delivery-2',
-        orderId: transit.id,
-        orderNo: transit.orderNo,
-        irsaliyeNo: 'IRS-DEMO-1002',
-        date: now.subtract(const Duration(days: 2)),
+        id: 'demo-delivery-002',
+        orderId: kiris.id,
+        orderNo: kiris.orderNo,
+        irsaliyeNo: 'IRS-2026-0198',
+        date: now.subtract(const Duration(days: 1)),
         supplier: demoSupplier,
-        tonnage: kirisTonnage,
-        fulfillmentPercent: kirisTonnage / transit.tonnage * 100,
+        tonnage: kirisDelivered,
+        fulfillmentPercent: kirisDelivered / kiris.tonnage * 100,
         status: DeliveryStatus.partial,
         diameterLines: kirisLines,
-        plateNo: '34 DEMO 02',
+        plateNo: '34 FN 9033',
       ),
     ];
   }
 
-  List<FieldCountRecord> _buildFieldCounts(
-    SurveyProject survey,
-    List<DeliveryItem> deliveries,
-  ) {
-    final deliveredByDiameter = <int, double>{};
-    for (final delivery in deliveries) {
-      for (final line in delivery.diameterLines) {
-        deliveredByDiameter[line.diameter] =
-            (deliveredByDiameter[line.diameter] ?? 0) + line.delivered;
-      }
-    }
-
-    final plannedUsageByDiameter = <int, double>{};
-    for (final imalat in survey.imalats) {
-      for (final line in imalat.diameterLines) {
-        plannedUsageByDiameter[line.diameter] =
-            (plannedUsageByDiameter[line.diameter] ?? 0) + line.expectedUsage;
-      }
-    }
-
-    final diameters = {
-      ...deliveredByDiameter.keys,
-      ...plannedUsageByDiameter.keys,
-    }.toList()
-      ..sort();
-
-    final lines = <FieldCountLineRecord>[];
-    for (final diameter in diameters) {
-      final delivered = deliveredByDiameter[diameter] ?? 0;
-      final plannedUsage = plannedUsageByDiameter[diameter] ?? 0;
-      final expectedStock =
-          (delivered - plannedUsage).clamp(0, double.infinity).toDouble();
-      // Sayım: beklenenin biraz altında → mukayesede sapma görünsün.
-      final actual =
-          (expectedStock * 0.92).clamp(0.0, double.infinity).toDouble();
-      lines.add(
-        FieldCountLineRecord(
-          diameter: diameter,
-          delivered: delivered,
-          plannedUsage: plannedUsage,
-          expectedStock: expectedStock,
-          actual: actual,
-        ),
-      );
-    }
-
-    final expected =
-        lines.fold<double>(0, (sum, line) => sum + line.expectedStock);
-    final actual = lines.fold<double>(0, (sum, line) => sum + line.actual);
-
+  List<FieldCountRecord> _buildFieldCounts() {
+    final now = DateTime.now();
     return [
       FieldCountRecord(
-        id: 'demo-count-1',
-        title: 'A Blok · Bodrum',
-        date: DateTime.now().subtract(const Duration(days: 1)),
-        personnel: 'Demo Saha Ekibi',
-        region: 'A Blok · Bodrum',
-        expected: expected,
-        actual: actual,
-        status: 'warning',
-        lines: lines,
-        varianceCauses: const ['Kesim firesi', 'Montaj kaybı'],
+        id: 'demo-count-latest',
+        title: 'A Blok · Zemin depo',
+        date: now.subtract(const Duration(hours: 5)),
+        personnel: 'Mehmet Yılmaz',
+        region: 'A Blok · Zemin depo',
+        expected: 0,
+        actual: 86.4,
+        status: 'completed',
+        note: 'Sabah sayımı — yağmur sonrası nemli zemin.',
+        lines: const [
+          FieldCountLineRecord(
+            diameter: 12,
+            delivered: 0,
+            plannedUsage: 0,
+            expectedStock: 0,
+            actual: 24.2,
+          ),
+          FieldCountLineRecord(
+            diameter: 14,
+            delivered: 0,
+            plannedUsage: 0,
+            expectedStock: 0,
+            actual: 28.6,
+          ),
+          FieldCountLineRecord(
+            diameter: 16,
+            delivered: 0,
+            plannedUsage: 0,
+            expectedStock: 0,
+            actual: 18.4,
+          ),
+          FieldCountLineRecord(
+            diameter: 20,
+            delivered: 0,
+            plannedUsage: 0,
+            expectedStock: 0,
+            actual: 15.2,
+          ),
+        ],
+      ),
+      FieldCountRecord(
+        id: 'demo-count-prev',
+        title: 'C Blok · Perde hattı',
+        date: now.subtract(const Duration(days: 3)),
+        personnel: 'Ayşe Kaya',
+        region: 'C Blok · Perde hattı',
+        expected: 0,
+        actual: 52.8,
+        status: 'completed',
+        note: 'Perde öncesi stok kontrolü.',
+        lines: const [
+          FieldCountLineRecord(
+            diameter: 10,
+            delivered: 0,
+            plannedUsage: 0,
+            expectedStock: 0,
+            actual: 8.6,
+          ),
+          FieldCountLineRecord(
+            diameter: 12,
+            delivered: 0,
+            plannedUsage: 0,
+            expectedStock: 0,
+            actual: 22.4,
+          ),
+          FieldCountLineRecord(
+            diameter: 16,
+            delivered: 0,
+            plannedUsage: 0,
+            expectedStock: 0,
+            actual: 21.8,
+          ),
+        ],
       ),
     ];
   }
 
-  Future<void> _writeMetraj(String projectId, SurveyProject survey) async {
-    final kolon = survey.imalats.firstWhere((i) => i.id == _imalatKolonId);
+  Future<void> _writeMetraj(String projectId) async {
     final details = <RebarMetrajTextDetail>[
       _pieceDetail(
-        source: 'Ø12 L=6.00 n=40',
+        source: 'Ø12 L=5.40 n=48',
         diameter: 12,
-        lengthM: 6.0,
-        quantity: 40,
-        elementCode: 'K01',
+        lengthM: 5.4,
+        quantity: 48,
+        elementCode: 'K-A1',
         elementTypeCode: 'K',
       ),
       _pieceDetail(
-        source: 'Ø12 L=5.80 n=36',
-        diameter: 12,
-        lengthM: 5.8,
-        quantity: 36,
-        elementCode: 'K01',
-        elementTypeCode: 'K',
-      ),
-      _pieceDetail(
-        source: 'Ø14 L=7.20 n=28',
+        source: 'Ø14 L=6.80 n=32',
         diameter: 14,
-        lengthM: 7.2,
-        quantity: 28,
-        elementCode: 'K02',
+        lengthM: 6.8,
+        quantity: 32,
+        elementCode: 'K-A2',
         elementTypeCode: 'K',
       ),
       _pieceDetail(
-        source: 'Ø14 L=7.00 n=24',
-        diameter: 14,
-        lengthM: 7.0,
-        quantity: 24,
-        elementCode: 'K02',
-        elementTypeCode: 'K',
-      ),
-      _pieceDetail(
-        source: 'Ø16 L=8.00 n=18',
+        source: 'Ø16 L=7.50 n=20',
         diameter: 16,
-        lengthM: 8.0,
-        quantity: 18,
-        elementCode: 'K03',
-        elementTypeCode: 'K',
-      ),
-      _pieceDetail(
-        source: 'Ø16 L=7.85 n=16',
-        diameter: 16,
-        lengthM: 7.85,
-        quantity: 16,
-        elementCode: 'K03',
+        lengthM: 7.5,
+        quantity: 20,
+        elementCode: 'K-B1',
         elementTypeCode: 'K',
       ),
     ];
@@ -462,7 +472,7 @@ class DemoSeedController {
           totalLengthM: addLength,
           weightKg: addWeight,
           barCount: detail.quantity,
-          layerName: 'DEMO',
+          layerName: 'KOLON',
         );
       } else {
         linesByDiameter[diameter] = RebarMetrajLine(
@@ -470,35 +480,34 @@ class DemoSeedController {
           totalLengthM: existing.totalLengthM + addLength,
           weightKg: existing.weightKg + addWeight,
           barCount: existing.barCount + detail.quantity,
-          layerName: 'DEMO',
+          layerName: 'KOLON',
         );
       }
     }
 
     final result = RebarMetrajResult(
-      fileName: 'demo_kolon.dwg',
+      fileName: 'demo_kolon_a_blok.dwg',
       sourceFormat: 'DWG',
       parsedAt: DateTime.now(),
       lines: linesByDiameter.values.toList(),
       textDetails: details,
       skippedEntityCount: 0,
-      warnings: const ['[DEMO] Örnek CAD metraj kaydı'],
+      warnings: const ['Demo: Kolon A blok CAD metraj örneği'],
     );
 
-    final repo = _ref.read(rebarMetrajRepositoryProvider);
     await _ref.read(projectDataRepositoryProvider).writeDomain(
-      projectId,
-      'rebar_metraj',
-      {'records': <Map<String, dynamic>>[]},
-    );
+          projectId,
+          'rebar_metraj',
+          {'records': <Map<String, dynamic>>[]},
+        );
 
-    await repo.saveResult(
-      projectId: projectId,
-      result: result,
-      title: 'Demo · Kolon CAD Metraj',
-      surveyImalatId: kolon.id,
-      surveyImalatName: kolon.name,
-    );
+    await _ref.read(rebarMetrajRepositoryProvider).saveResult(
+          projectId: projectId,
+          result: result,
+          title: 'Demo · Kolon A Blok Metraj',
+          surveyImalatId: _kolonId,
+          surveyImalatName: 'Kolon',
+        );
 
     await _ref.read(projectDataRepositoryProvider).markSeeded(projectId);
   }

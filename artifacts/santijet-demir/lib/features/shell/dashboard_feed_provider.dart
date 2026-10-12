@@ -103,7 +103,7 @@ final _allDashboardAlertsProvider = Provider<List<DashboardAlert>>((ref) {
       DashboardAlert(
         title: 'Ø${row.diameter} yüksek fire',
         message:
-            'Gerçek − planlanan kullanım: ${AppFormat.tonnage(row.fire)}t '
+            'Gerçek − planlanan kullanım: ${AppFormat.tonnage(row.fire)} '
             '(%${row.firePercent.toStringAsFixed(1)})',
         severity: AlertSeverity.critical,
         category: DashboardAlertCategory.fieldCount,
@@ -130,7 +130,7 @@ final _allDashboardAlertsProvider = Provider<List<DashboardAlert>>((ref) {
       DashboardAlert(
         title: 'Ø${row.diameter} fire uyarısı',
         message:
-            'Gerçek − planlanan kullanım: ${AppFormat.tonnage(row.fire)}t '
+            'Gerçek − planlanan kullanım: ${AppFormat.tonnage(row.fire)} '
             '(%${row.firePercent.toStringAsFixed(1)})',
         severity: AlertSeverity.warning,
         category: DashboardAlertCategory.fieldCount,
@@ -143,7 +143,7 @@ final _allDashboardAlertsProvider = Provider<List<DashboardAlert>>((ref) {
     alerts.add(
       DashboardAlert(
         title: 'Eksik teslimat',
-        message: '${AppFormat.tonnage(incoming.missing)}t henüz gelmedi',
+        message: '${AppFormat.tonnage(incoming.missing)} henüz gelmedi',
         severity: AlertSeverity.warning,
         category: DashboardAlertCategory.incoming,
         route: AppRoutes.incomingRebar,
@@ -155,7 +155,7 @@ final _allDashboardAlertsProvider = Provider<List<DashboardAlert>>((ref) {
     alerts.add(
       DashboardAlert(
         title: 'Fazla teslimat',
-        message: '${AppFormat.tonnage(incoming.excess)}t plan üstü teslim',
+        message: '${AppFormat.tonnage(incoming.excess)} plan üstü teslim',
         severity: AlertSeverity.info,
         category: DashboardAlertCategory.incoming,
         route: AppRoutes.incomingRebar,
@@ -170,7 +170,7 @@ final _allDashboardAlertsProvider = Provider<List<DashboardAlert>>((ref) {
       DashboardAlert(
         title: 'Onay bekleyen sipariş',
         message:
-            '$pendingCount sipariş · ${AppFormat.tonnage(dashboard.pendingApproval)}t',
+            '$pendingCount sipariş · ${AppFormat.tonnage(dashboard.pendingApproval)}',
         severity: AlertSeverity.warning,
         category: DashboardAlertCategory.orders,
         route: AppRoutes.orders,
@@ -185,7 +185,7 @@ final _allDashboardAlertsProvider = Provider<List<DashboardAlert>>((ref) {
       DashboardAlert(
         title: 'Yoldaki sipariş',
         message:
-            '$inTransitCount sipariş · ${AppFormat.tonnage(dashboard.inTransit)}t',
+            '$inTransitCount sipariş · ${AppFormat.tonnage(dashboard.inTransit)}',
         severity: AlertSeverity.info,
         category: DashboardAlertCategory.orders,
         route: AppRoutes.orders,
@@ -239,7 +239,7 @@ final dashboardRecentActivitiesProvider =
         date: delivery.date,
         title: 'Teslimat · ${delivery.orderNo}',
         subtitle:
-            '${AppFormat.tonnage(delivery.tonnage)}t · ${delivery.supplier}',
+            '${AppFormat.tonnage(delivery.tonnage)} · ${delivery.supplier}',
         icon: Icons.local_shipping_outlined,
         iconColor: Color(DeliveryStatus.received.colorValue),
         route: AppRoutes.deliveryDetail(delivery.id),
@@ -249,7 +249,7 @@ final dashboardRecentActivitiesProvider =
         date: record.date,
         title: 'Sayım · ${record.title}',
         subtitle:
-            '${AppFormat.tonnage(record.actual)}t sayım · ${record.region.isNotEmpty ? record.region : record.personnel}',
+            '${AppFormat.tonnage(record.actual)} sayım · ${record.region.isNotEmpty ? record.region : record.personnel}',
         icon: Icons.inventory_2_outlined,
         iconColor: switch (record.status) {
           'critical' => Color(AlertSeverity.critical.colorValue),
@@ -263,7 +263,7 @@ final dashboardRecentActivitiesProvider =
         date: order.date,
         title: 'Sipariş · ${order.orderNo}',
         subtitle:
-            '${order.status.label} · ${AppFormat.tonnage(order.tonnage)}t',
+            '${order.status.label} · ${AppFormat.tonnage(order.tonnage)}',
         icon: Icons.receipt_long_outlined,
         iconColor: Color(order.status.colorValue),
         route: AppRoutes.orders,

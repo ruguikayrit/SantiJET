@@ -451,7 +451,7 @@ class ReconciliationTable extends StatelessWidget {
 
 
 
-  static String _formatTonnage(double value) => '${AppFormat.tonnage(value)}t';
+  static String _formatTonnage(double value) => '${AppFormat.tonnage(value)}';
 
 
 
@@ -495,7 +495,7 @@ class _CompactSapmaTag extends StatelessWidget {
 
     final prefix = isZero ? '' : isFire ? '+' : '';
 
-    final text = isZero ? '✓' : '$prefix${AppFormat.tonnage(value)}t';
+    final text = isZero ? '✓' : '$prefix${AppFormat.tonnage(value)}';
 
 
 

@@ -121,7 +121,7 @@ class MorningBriefingBuilder {
     if (!input.hasKesif) {
       return 'Keşif: henüz keşif tonajı girilmemiş';
     }
-    return 'Keşif: ${AppFormat.tonnage(input.kesifTonnage)} ton';
+    return 'Keşif: ${AppFormat.tonnage(input.kesifTonnage)}on';
   }
 
   String _gerceklesenBullet(DailyOpsBriefingInput input) {
@@ -129,7 +129,7 @@ class MorningBriefingBuilder {
       return 'Gerçekleşen imalat: keşif olmadan hesaplanamaz';
     }
     final pct = input.overallProgressPercent.clamp(0, 100);
-    return 'Gerçekleşen imalat: ${AppFormat.tonnage(input.gerceklesenImalat)} ton '
+    return 'Gerçekleşen imalat: ${AppFormat.tonnage(input.gerceklesenImalat)}on '
         '(%${pct.toStringAsFixed(0)})';
   }
 
@@ -137,14 +137,14 @@ class MorningBriefingBuilder {
     if (!input.hasKesif) {
       return 'Kalan imalat: keşif tamamlanınca görünecek';
     }
-    return 'Kalan imalat: ${AppFormat.tonnage(input.kalanImalat)} ton';
+    return 'Kalan imalat: ${AppFormat.tonnage(input.kalanImalat)}on';
   }
 
   String _stokBullet(DailyOpsBriefingInput input) {
     if (!input.hasCount) {
       return 'Demir stok: saha sayımı yok — stok henüz ölçülmedi';
     }
-    return 'Demir stok: ${AppFormat.tonnage(input.demirStok)} ton '
+    return 'Demir stok: ${AppFormat.tonnage(input.demirStok)}on '
         '(son saha sayımı)';
   }
 
@@ -158,10 +158,10 @@ class MorningBriefingBuilder {
     final stock = input.demirStok;
     final used = count.totalUsed;
     if (used > 0.0001) {
-      return 'Saha sayımı: $dateLabel · stok ${AppFormat.tonnage(stock)} t · '
-          'kullanılan ${AppFormat.tonnage(used)} t';
+      return 'Saha sayımı: $dateLabel · stok ${AppFormat.tonnage(stock)} · '
+          'kullanılan ${AppFormat.tonnage(used)}';
     }
-    return 'Saha sayımı: $dateLabel · ${AppFormat.tonnage(stock)} ton sayıldı';
+    return 'Saha sayımı: $dateLabel · ${AppFormat.tonnage(stock)}on sayıldı';
   }
 
   String? _riskBullet(DailyOpsBriefingInput input) {
@@ -171,7 +171,7 @@ class MorningBriefingBuilder {
     if (critical.isNotEmpty) {
       final r = critical.first;
       return 'Ø${r.diameter} fire riski yüksek '
-          '(${AppFormat.tonnage(r.fire)} t sapma)';
+          '(${AppFormat.tonnage(r.fire)} sapma)';
     }
 
     final snapshot = input.snapshot;

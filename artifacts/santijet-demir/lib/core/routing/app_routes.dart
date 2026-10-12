@@ -7,6 +7,8 @@ abstract final class AppRoutes {
   static const joinProject = '/projects/join';
   static String projectMembers(String id) => '/projects/$id/members';
   static const dashboard = '/dashboard';
+  static const diameterStatus = '/dashboard/cap-durum';
+  static String diameterCalc(int diameter) => '/dashboard/cap-durum/$diameter';
   static const orders = '/orders';
   static const newOrder = '/orders/new';
   static const incomingRebar = '/incoming-rebar';
@@ -21,6 +23,7 @@ abstract final class AppRoutes {
   static const fieldCount = '/field-count';
   static const reconciliation = '/field-count/reconciliation';
   static const newCount = '/field-count/new';
+  static String editCount(String id) => '/field-count/edit/$id';
   static const countRecords = '/field-count/records';
   static String countDetail(String id) => '/field-count/detail/$id';
   static const analysis = '/analysis';

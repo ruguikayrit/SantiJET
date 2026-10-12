@@ -1,5 +1,4 @@
 import 'package:santijet_demir/core/format/app_format.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:santijet_demir/core/widgets/app_toast.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -14,7 +13,6 @@ import 'package:santijet_demir/core/widgets/swipe_to_delete_row.dart';
 import 'package:santijet_demir/domain/entities/survey.dart';
 import 'package:santijet_demir/features/projects/providers/project_provider.dart';
 import 'package:santijet_demir/features/survey/providers/survey_provider.dart';
-import 'package:santijet_demir/features/survey/survey_table_import.dart';
 
 class SurveyListScreen extends ConsumerStatefulWidget {
   const SurveyListScreen({super.key});
@@ -59,44 +57,10 @@ class _SurveyListScreenState extends ConsumerState<SurveyListScreen> {
   }
 
   Future<void> _showCreateImalatDialog() async {
-    final nameController = TextEditingController();
     final name = await showDialog<String>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.surfaceElevated,
-        title: Text('Yeni İmalat', style: AppTypography.titleLarge),
-        content: TextField(
-          controller: nameController,
-          autofocus: true,
-          textCapitalization: TextCapitalization.words,
-          decoration: const InputDecoration(
-            labelText: 'İmalat adı',
-            hintText: 'Örn: Temel, Perde, Döşeme',
-          ),
-          onSubmitted: (value) {
-            if (value.trim().isNotEmpty) {
-              Navigator.pop(ctx, value.trim());
-            }
-          },
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('İptal'),
-          ),
-          FilledButton(
-            onPressed: () {
-              final trimmed = nameController.text.trim();
-              if (trimmed.isEmpty) return;
-              Navigator.pop(ctx, trimmed);
-            },
-            child: const Text('Oluştur'),
-          ),
-        ],
-      ),
+      builder: (_) => const CreateImalatDialog(),
     );
-
-    nameController.dispose();
     if (!mounted || name == null) return;
 
     final imalat = await ref
@@ -113,74 +77,6 @@ class _SurveyListScreenState extends ConsumerState<SurveyListScreen> {
         content: Text('"${imalat.name}" imalatı oluşturuldu'),
         backgroundColor: AppColors.success,
       ),
-    );
-  }
-
-  Future<void> _importSurveyTable() async {
-    final canEdit = ref.read(canEditActiveProjectProvider);
-    if (!canEdit) {
-      ScaffoldMessenger.of(context).showAppSnackBar(
-        const SnackBar(content: Text('İçe aktarmak için düzenleme yetkisi gerekir')),
-      );
-      return;
-    }
-
-    final picked = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: const ['xlsx', 'xls', 'csv'],
-      withData: true,
-    );
-    if (picked == null || picked.files.isEmpty || !mounted) return;
-    final file = picked.files.single;
-    final bytes = file.bytes;
-    if (bytes == null) {
-      ScaffoldMessenger.of(context).showAppSnackBar(
-        const SnackBar(content: Text('Dosya okunamadı')),
-      );
-      return;
-    }
-
-    final List<SurveyImalat> imalats;
-    try {
-      imalats = parseSurveyImport(fileName: file.name, bytes: bytes);
-    } on SurveyImportException catch (error) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showAppSnackBar(
-        SnackBar(content: Text(error.message)),
-      );
-      return;
-    }
-
-    final hasExisting = ref.read(surveyProjectProvider).imalats.isNotEmpty;
-    if (hasExisting) {
-      final confirmed = await showDialog<bool>(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          backgroundColor: AppColors.surfaceElevated,
-          title: const Text('İmalat listesini değiştir'),
-          content: Text(
-            '${imalats.length} imalat içe aktarılacak. Mevcut imalat listesi '
-            'bu dosyayla değiştirilir.\n\n$surveyImportFormatHint',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('İptal'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('İçe Aktar'),
-            ),
-          ],
-        ),
-      );
-      if (confirmed != true || !mounted) return;
-    }
-
-    await ref.read(surveyProjectProvider.notifier).replaceImportedImalats(imalats);
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showAppSnackBar(
-      SnackBar(content: Text('${imalats.length} imalat içe aktarıldı')),
     );
   }
 
@@ -219,9 +115,8 @@ class _SurveyListScreenState extends ConsumerState<SurveyListScreen> {
         color: screenBg,
         child: Column(
           children: [
-            SantijetHeader(
+            const SantijetHeader(
               subtitle: 'Keşif',
-              onImport: canEdit ? _importSurveyTable : null,
             ),
             Expanded(
               child: ListView(
@@ -334,11 +229,6 @@ class SurveyImalatCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final accent = _imalatAccent(imalat.name);
     final diameters = imalat.diameters;
-    final orderedShare = _share(imalat.ordered, imalat.planned);
-    final deliveredShare = _share(imalat.delivered, imalat.planned);
-    final pendingShare = _share(imalat.pending, imalat.planned);
-    final remaining = imalat.planned - imalat.delivered;
-    final remainingShare = _share(remaining < 0 ? 0 : remaining, imalat.planned);
     final progress = imalat.progressPercent.clamp(0, 100).toDouble();
 
     return Container(
@@ -444,7 +334,7 @@ class SurveyImalatCard extends StatelessWidget {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      '${AppFormat.tonnage(imalat.planned)} t',
+                                      AppFormat.tonnage(imalat.planned),
                                       style: const TextStyle(
                                         fontSize: 22,
                                         fontWeight: FontWeight.w800,
@@ -504,46 +394,6 @@ class SurveyImalatCard extends StatelessWidget {
                     color: accent,
                   ),
                 ),
-                const SizedBox(height: 10),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _MiniStat(
-                        value: imalat.ordered,
-                        label: 'Sipariş Edilen',
-                        percent: orderedShare,
-                        color: const Color(0xFF3B82F6),
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: _MiniStat(
-                        value: imalat.delivered,
-                        label: 'Teslim Alınan',
-                        percent: deliveredShare,
-                        color: const Color(0xFF16A34A),
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: _MiniStat(
-                        value: imalat.pending,
-                        label: 'Bekleyen',
-                        percent: pendingShare,
-                        color: const Color(0xFFF59E0B),
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: _MiniStat(
-                        value: remaining < 0 ? 0 : remaining,
-                        label: 'Kalan İhtiyaç',
-                        percent: remainingShare,
-                        color: const Color(0xFFEF4444),
-                      ),
-                    ),
-                  ],
-                ),
               ],
             ),
           ),
@@ -551,74 +401,6 @@ class SurveyImalatCard extends StatelessWidget {
       ),
     );
   }
-}
-
-class _MiniStat extends StatelessWidget {
-  const _MiniStat({
-    required this.value,
-    required this.label,
-    required this.percent,
-    required this.color,
-  });
-
-  final double value;
-  final String label;
-  final int percent;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(6, 8, 6, 8),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF7F9FC),
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Column(
-        children: [
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Text(
-              '${AppFormat.tonnage(value)} t',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w800,
-                color: color,
-                height: 1,
-              ),
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            maxLines: 2,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 9,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF8B95A5),
-              height: 1.15,
-            ),
-          ),
-          const SizedBox(height: 3),
-          Text(
-            '%$percent',
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w800,
-              color: color,
-              height: 1,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-int _share(double part, double whole) {
-  if (whole <= 0) return 0;
-  return (part / whole * 100).round().clamp(0, 999);
 }
 
 Color _imalatAccent(String name) {
@@ -684,6 +466,59 @@ String _foldImalat(String name) {
     buffer.write(map[char] ?? char.toLowerCase());
   }
   return buffer.toString();
+}
+
+/// İmalat adı penceresi. Denetleyici rota ile birlikte yok edilir;
+/// pencere kapanırken hemen [TextEditingController.dispose] kırmızı ekran açar.
+class CreateImalatDialog extends StatefulWidget {
+  const CreateImalatDialog({super.key});
+
+  @override
+  State<CreateImalatDialog> createState() => _CreateImalatDialogState();
+}
+
+class _CreateImalatDialogState extends State<CreateImalatDialog> {
+  late final TextEditingController _controller = TextEditingController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    final trimmed = _controller.text.trim();
+    if (trimmed.isEmpty) return;
+    Navigator.pop(context, trimmed);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      backgroundColor: AppColors.surfaceElevated,
+      title: Text('Yeni İmalat', style: AppTypography.titleLarge),
+      content: TextField(
+        controller: _controller,
+        autofocus: true,
+        textCapitalization: TextCapitalization.words,
+        decoration: const InputDecoration(
+          labelText: 'İmalat adı',
+          hintText: 'Örn: Temel, Perde, Döşeme',
+        ),
+        onSubmitted: (_) => _submit(),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('İptal'),
+        ),
+        FilledButton(
+          onPressed: _submit,
+          child: const Text('Oluştur'),
+        ),
+      ],
+    );
+  }
 }
 
 

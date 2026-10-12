@@ -116,7 +116,7 @@ class _WorkScheduleScreenState extends ConsumerState<WorkScheduleScreen> {
                             Expanded(
                               child: _SummaryChip(
                                 label: 'Keşif',
-                                value: '${AppFormat.tonnage(totalTonnage)} t',
+                                value: '${AppFormat.tonnage(totalTonnage)}',
                               ),
                             ),
                             Expanded(
@@ -162,7 +162,7 @@ class _WorkScheduleScreenState extends ConsumerState<WorkScheduleScreen> {
                                       ),
                                     ),
                                     Text(
-                                      '${AppFormat.tonnage(row.imalat.planned)} t',
+                                      '${AppFormat.tonnage(row.imalat.planned)}',
                                       style: AppTypography.titleMedium.copyWith(
                                         color: AppColors.electricBlueLight,
                                       ),
@@ -415,69 +415,13 @@ class _PlannedWorkerField extends StatelessWidget {
   }
 
   Future<void> _promptCount(BuildContext context) async {
-    final controller = TextEditingController(
-      text: value == null ? '' : '$value',
-    );
     final confirmed = await showDialog<_CountDialogResult>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Planlanan adam sayısı'),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          keyboardType: TextInputType.number,
-          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-          decoration: const InputDecoration(
-            hintText: 'Örn. 12',
-            suffixText: 'adam',
-          ),
-          onSubmitted: (raw) {
-            final trimmed = raw.trim();
-            if (trimmed.isEmpty) {
-              Navigator.pop(ctx, const _CountDialogResult.clear());
-              return;
-            }
-            final parsed = int.tryParse(trimmed);
-            if (parsed == null) {
-              Navigator.pop(ctx);
-              return;
-            }
-            Navigator.pop(ctx, _CountDialogResult.value(parsed.clamp(0, _max)));
-          },
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Vazgeç'),
-          ),
-          TextButton(
-            onPressed: () =>
-                Navigator.pop(ctx, const _CountDialogResult.clear()),
-            child: const Text('Temizle'),
-          ),
-          FilledButton(
-            onPressed: () {
-              final trimmed = controller.text.trim();
-              if (trimmed.isEmpty) {
-                Navigator.pop(ctx, const _CountDialogResult.clear());
-                return;
-              }
-              final parsed = int.tryParse(trimmed);
-              if (parsed == null) {
-                Navigator.pop(ctx);
-                return;
-              }
-              Navigator.pop(
-                ctx,
-                _CountDialogResult.value(parsed.clamp(0, _max)),
-              );
-            },
-            child: const Text('Tamam'),
-          ),
-        ],
+      builder: (_) => _CrewCountDialog(
+        initial: value == null ? '' : '$value',
+        max: _max,
       ),
     );
-    controller.dispose();
     if (confirmed == null) return;
     if (confirmed.clear) {
       if (value != null) onCommit(null);
@@ -495,6 +439,72 @@ class _CountDialogResult {
 
   final int? count;
   final bool clear;
+}
+
+class _CrewCountDialog extends StatefulWidget {
+  const _CrewCountDialog({required this.initial, required this.max});
+
+  final String initial;
+  final int max;
+
+  @override
+  State<_CrewCountDialog> createState() => _CrewCountDialogState();
+}
+
+class _CrewCountDialogState extends State<_CrewCountDialog> {
+  late final TextEditingController _controller = TextEditingController(text: widget.initial);
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _submit(String raw) {
+    final trimmed = raw.trim();
+    if (trimmed.isEmpty) {
+      Navigator.pop(context, const _CountDialogResult.clear());
+      return;
+    }
+    final parsed = int.tryParse(trimmed);
+    if (parsed == null) {
+      Navigator.pop(context);
+      return;
+    }
+    Navigator.pop(context, _CountDialogResult.value(parsed.clamp(0, widget.max)));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Planlanan adam sayısı'),
+      content: TextField(
+        controller: _controller,
+        autofocus: true,
+        keyboardType: TextInputType.number,
+        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+        decoration: const InputDecoration(
+          hintText: 'Örn. 12',
+          suffixText: 'adam',
+        ),
+        onSubmitted: _submit,
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Vazgeç'),
+        ),
+        TextButton(
+          onPressed: () => Navigator.pop(context, const _CountDialogResult.clear()),
+          child: const Text('Temizle'),
+        ),
+        FilledButton(
+          onPressed: () => _submit(_controller.text),
+          child: const Text('Tamam'),
+        ),
+      ],
+    );
+  }
 }
 
 class _CrewStepButton extends StatelessWidget {

@@ -102,7 +102,7 @@ class _InTransitOrderTile extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            '${AppFormat.tonnage(order.tonnage)}t',
+                            '${AppFormat.tonnage(order.tonnage)}',
                             style: AppTypography.titleMedium.copyWith(
                               color: AppColors.electricBlueLight,
                             ),

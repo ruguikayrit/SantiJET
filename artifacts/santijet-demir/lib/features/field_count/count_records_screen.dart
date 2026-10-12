@@ -157,12 +157,12 @@ class _CountRecordCard extends StatelessWidget {
                           children: [
                             _MetricChip(
                               label: 'Planlanan kullanım',
-                              value: '${AppFormat.tonnage(record.expected)}t',
+                              value: '${AppFormat.tonnage(record.expected)}',
                             ),
                             const SizedBox(width: 8),
                             _MetricChip(
                               label: 'Sayım',
-                              value: '${AppFormat.tonnage(record.actual)}t',
+                              value: '${AppFormat.tonnage(record.actual)}',
                             ),
                             const Spacer(),
                             SapmaTag(value: record.variance),

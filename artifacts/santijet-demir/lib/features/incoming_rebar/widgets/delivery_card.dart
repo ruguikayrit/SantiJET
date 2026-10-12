@@ -204,52 +204,7 @@ class _DeliveryCardState extends State<DeliveryCard> {
             ],
             if (_expanded) ...[
               const SizedBox(height: 10),
-              const Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  'Çap Karşılaştırma',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w800,
-                    color: Color(0xFF1C2430),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 8),
-              Container(
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF7F9FC),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
-                child: Column(
-                  children: [
-                    const Row(
-                      children: [
-                        Expanded(flex: 2, child: _Head('ÇAP')),
-                        Expanded(flex: 3, child: _Head('SİPARİŞ', align: TextAlign.center)),
-                        Expanded(flex: 3, child: _Head('TESLİM', align: TextAlign.center)),
-                        Expanded(flex: 3, child: _Head('FARK', align: TextAlign.end)),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-                    if (lines.isEmpty)
-                      const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 8),
-                        child: Text(
-                          'Çap kaydı yok',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                            color: Color(0xFF8B95A5),
-                          ),
-                        ),
-                      )
-                    else
-                      for (final line in lines) _LineRow(line: line),
-                  ],
-                ),
-              ),
+              _DeliveryComparisonTable(lines: lines),
             ],
           ],
         ),
@@ -260,103 +215,177 @@ class _DeliveryCardState extends State<DeliveryCard> {
   }
 }
 
-class _Head extends StatelessWidget {
-  const _Head(this.label, {this.align = TextAlign.start});
+class _DeliveryComparisonTable extends StatelessWidget {
+  const _DeliveryComparisonTable({required this.lines});
 
-  final String label;
-  final TextAlign align;
+  final List<DeliveryDiameterLine> lines;
 
   @override
   Widget build(BuildContext context) {
-    return Text(
-      label,
-      textAlign: align,
-      maxLines: 1,
-      overflow: TextOverflow.ellipsis,
-      style: const TextStyle(
-        fontSize: 11,
-        fontWeight: FontWeight.w600,
-        color: Color(0xFF8B95A5),
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFFF7F9FC),
+        borderRadius: BorderRadius.circular(10),
       ),
+      padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
+      child: lines.isEmpty
+          ? const Padding(
+              padding: EdgeInsets.symmetric(vertical: 8),
+              child: Text(
+                'Çap kaydı yok',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: Color(0xFF8B95A5),
+                ),
+              ),
+            )
+          : LayoutBuilder(
+              builder: (context, constraints) {
+                return SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(minWidth: constraints.maxWidth),
+                    child: _ComparisonTableBody(lines: lines),
+                  ),
+                );
+              },
+            ),
     );
   }
 }
 
-class _LineRow extends StatelessWidget {
-  const _LineRow({required this.line});
+class _ComparisonTableBody extends StatelessWidget {
+  const _ComparisonTableBody({required this.lines});
 
-  final DeliveryDiameterLine line;
+  final List<DeliveryDiameterLine> lines;
+
+  static const _headStyle = TextStyle(
+    fontSize: 11,
+    fontWeight: FontWeight.w600,
+    color: Color(0xFF8B95A5),
+  );
+  static const _cellStyle = TextStyle(
+    fontSize: 12,
+    fontWeight: FontWeight.w600,
+    color: Color(0xFF1C2430),
+  );
+  static const _totalStyle = TextStyle(
+    fontSize: 12,
+    fontWeight: FontWeight.w800,
+    color: Color(0xFF1C2430),
+  );
 
   @override
   Widget build(BuildContext context) {
+    final totalOrdered = lines.fold<double>(0, (s, l) => s + l.ordered);
+    final totalDelivered = lines.fold<double>(0, (s, l) => s + l.delivered);
+    final totalDiff = totalDelivered - totalOrdered;
+    final totalDiffText = totalDiff.abs() < 0.05
+        ? '✓'
+        : totalDiff > 0
+            ? '+${AppFormat.tonnage(totalDiff)}'
+            : AppFormat.tonnage(totalDiff);
+    final totalDiffColor = totalDiff.abs() < 0.05
+        ? AppColors.success
+        : totalDiff > 0
+            ? const Color(0xFF8B5CF6)
+            : AppColors.critical;
+
+    return Table(
+      defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+      columnWidths: const {
+        0: IntrinsicColumnWidth(),
+        1: IntrinsicColumnWidth(),
+        2: IntrinsicColumnWidth(),
+        3: IntrinsicColumnWidth(),
+      },
+      border: TableBorder(
+        horizontalInside: BorderSide(color: Colors.black.withValues(alpha: 0.06)),
+      ),
+      children: [
+        TableRow(
+          children: [
+            _cell('ÇAP', _headStyle, align: TextAlign.start),
+            _cell('SİPARİŞ', _headStyle, align: TextAlign.center, tight: true),
+            _cell('TESLİM', _headStyle, align: TextAlign.center, tight: true),
+            _cell('FARK', _headStyle, align: TextAlign.end, tight: true),
+          ],
+        ),
+        for (final line in lines) _dataRow(line),
+        TableRow(
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.7),
+          ),
+          children: [
+            _cell('Toplam', _totalStyle, align: TextAlign.start),
+            _cell(AppFormat.tonnage(totalOrdered), _totalStyle, align: TextAlign.center, tight: true),
+            _cell(AppFormat.tonnage(totalDelivered), _totalStyle, align: TextAlign.center, tight: true),
+            _cell(
+              totalDiffText,
+              _totalStyle.copyWith(color: totalDiffColor),
+              align: TextAlign.end,
+              tight: true,
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  TableRow _dataRow(DeliveryDiameterLine line) {
     final diff = line.difference;
     final (diffText, diffColor) = switch (line) {
       _ when line.isMatch => ('✓', AppColors.success),
       _ when line.isExcess => ('+${AppFormat.tonnage(diff)}', const Color(0xFF8B5CF6)),
       _ => (AppFormat.tonnage(diff), AppColors.critical),
     };
-    const valueStyle = TextStyle(
-      fontSize: 12,
-      fontWeight: FontWeight.w600,
-      color: Color(0xFF1C2430),
-    );
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        children: [
-          Expanded(
-            flex: 2,
-            child: Row(
-              children: [
-                Container(
-                  width: 7,
-                  height: 7,
-                  decoration: BoxDecoration(
-                    color: AppColors.diameterColor(line.diameter),
-                    shape: BoxShape.circle,
-                  ),
+
+    return TableRow(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 2),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 7,
+                height: 7,
+                decoration: BoxDecoration(
+                  color: AppColors.diameterColor(line.diameter),
+                  shape: BoxShape.circle,
                 ),
-                const SizedBox(width: 6),
-                Text(
-                  'Ø${line.diameter}',
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF1C2430),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Expanded(
-            flex: 3,
-            child: Text(
-              AppFormat.tonnage(line.ordered),
-              textAlign: TextAlign.center,
-              style: valueStyle,
-            ),
-          ),
-          Expanded(
-            flex: 3,
-            child: Text(
-              AppFormat.tonnage(line.delivered),
-              textAlign: TextAlign.center,
-              style: valueStyle,
-            ),
-          ),
-          Expanded(
-            flex: 3,
-            child: Text(
-              diffText,
-              textAlign: TextAlign.end,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-                color: diffColor,
               ),
-            ),
+              const SizedBox(width: 6),
+              Text('Ø${line.diameter}', style: _cellStyle.copyWith(fontWeight: FontWeight.w700)),
+            ],
           ),
-        ],
+        ),
+        _cell(AppFormat.tonnage(line.ordered), _cellStyle, align: TextAlign.center, tight: true),
+        _cell(AppFormat.tonnage(line.delivered), _cellStyle, align: TextAlign.center, tight: true),
+        _cell(diffText, _cellStyle.copyWith(color: diffColor, fontWeight: FontWeight.w700),
+            align: TextAlign.end, tight: true),
+      ],
+    );
+  }
+
+  Widget _cell(
+    String text,
+    TextStyle style, {
+    required TextAlign align,
+    bool tight = false,
+  }) {
+    return Padding(
+      padding: EdgeInsets.symmetric(
+        vertical: 5,
+        horizontal: tight ? 4 : 6,
+      ),
+      child: Text(
+        text,
+        textAlign: align,
+        maxLines: 2,
+        softWrap: true,
+        style: style,
       ),
     );
   }

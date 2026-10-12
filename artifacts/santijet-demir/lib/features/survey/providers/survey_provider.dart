@@ -154,6 +154,8 @@ class SurveyProjectNotifier extends StateNotifier<SurveyProject> {
 
     if (_loadedProjectId == projectId) return;
 
+    _loadedProjectId = projectId;
+
     final saved = _repo.read(projectId);
     final activeName = _ref.read(activeProjectProvider)?.name ?? '';
     if (saved != null) {
@@ -163,13 +165,13 @@ class SurveyProjectNotifier extends StateNotifier<SurveyProject> {
     } else {
       state = _repo.defaultProject(projectName: activeName);
     }
-    _loadedProjectId = projectId;
     ensureStandardImalats();
   }
 
   Future<void> _persist() async {
-    final projectId = _ref.read(activeProjectIdProvider);
+    final projectId = _loadedProjectId;
     if (projectId == null) return;
+    if (projectId != _ref.read(activeProjectIdProvider)) return;
     try {
       await _repo.write(projectId, state);
     } catch (_) {
@@ -179,6 +181,7 @@ class SurveyProjectNotifier extends StateNotifier<SurveyProject> {
 
   void updateProjectName(String projectName) {
     if (projectName.isEmpty || state.projectName == projectName) return;
+    if (_loadedProjectId != _ref.read(activeProjectIdProvider)) return;
     state = state.copyWith(projectName: projectName);
     _persist();
   }

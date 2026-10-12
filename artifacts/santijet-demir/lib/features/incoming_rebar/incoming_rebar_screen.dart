@@ -24,17 +24,10 @@ class IncomingRebarScreen extends ConsumerStatefulWidget {
 }
 
 class _IncomingRebarScreenState extends ConsumerState<IncomingRebarScreen> {
-  bool _asPercent = false;
-
   @override
   Widget build(BuildContext context) {
     final hasActiveProject = ref.watch(activeProjectProvider) != null;
-    final project = ref.watch(activeProjectProvider);
-    final period = ref.watch(incomingRebarPeriodProvider);
-    final deliveries = filterDeliveriesByPeriod(
-      ref.watch(deliveriesProvider),
-      period,
-    );
+    final deliveries = ref.watch(deliveriesProvider);
     final surveyDiameters = surveyDiametersFromImalats(
       ref.watch(surveyProjectProvider).imalats,
     );
@@ -51,6 +44,15 @@ class _IncomingRebarScreenState extends ConsumerState<IncomingRebarScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF3F6FA),
+      floatingActionButton: hasActiveProject && canCreate
+          ? FloatingActionButton(
+              heroTag: 'new-delivery',
+              backgroundColor: const Color(0xFF2563EB),
+              foregroundColor: Colors.white,
+              onPressed: () => context.push(AppRoutes.selectInTransitOrder),
+              child: const Icon(Icons.add, size: 28),
+            )
+          : null,
       body: Column(
         children: [
           SantijetHeader(
@@ -68,19 +70,8 @@ class _IncomingRebarScreenState extends ConsumerState<IncomingRebarScreen> {
           else
             Expanded(
               child: ListView(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 96),
                 children: [
-                  _FilterRow(
-                    projectName: project?.name ?? 'Şantiye',
-                    periodLabel: switch (period) {
-                      IncomingRebarPeriod.all => 'Tümü',
-                      IncomingRebarPeriod.month => 'Bu Ay',
-                      IncomingRebarPeriod.year => 'Bu Yıl',
-                    },
-                    onProject: () => _pickProject(context, ref),
-                    onPeriod: () => _pickPeriod(context, ref, period),
-                  ),
-                  const SizedBox(height: 10),
                   SizedBox(
                     height: 100,
                     child: Row(
@@ -163,7 +154,7 @@ class _IncomingRebarScreenState extends ConsumerState<IncomingRebarScreen> {
                       const SizedBox(width: 6),
                       Expanded(
                         child: Text(
-                          'Çap Bazında Durum',
+                          'Çap Bazlı Durum',
                           style: AppTypography.titleMedium.copyWith(
                             fontSize: 15,
                             fontWeight: FontWeight.w700,
@@ -171,17 +162,10 @@ class _IncomingRebarScreenState extends ConsumerState<IncomingRebarScreen> {
                           ),
                         ),
                       ),
-                      _UnitSwitch(
-                        asPercent: _asPercent,
-                        onChanged: (value) => setState(() => _asPercent = value),
-                      ),
                     ],
                   ),
                   const SizedBox(height: 10),
-                  DeliveredDiameterTable(
-                    rows: diameterRows,
-                    asPercent: _asPercent,
-                  ),
+                  DeliveredDiameterTable(rows: diameterRows),
                   const SizedBox(height: 12),
                   _DeliveryRecordsShortcut(
                     recordCount: deliveries.length,
@@ -191,168 +175,7 @@ class _IncomingRebarScreenState extends ConsumerState<IncomingRebarScreen> {
                 ],
               ),
             ),
-          if (hasActiveProject && canCreate)
-            const Padding(
-              padding: EdgeInsets.fromLTRB(16, 0, 16, 10),
-              child: _DeliveryActions(),
-            ),
         ],
-      ),
-    );
-  }
-
-  Future<void> _pickProject(BuildContext context, WidgetRef ref) async {
-    final projects = ref.read(userProjectsProvider);
-    final activeId = ref.read(activeProjectIdProvider);
-    await showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: Colors.white,
-      showDragHandle: true,
-      builder: (sheetContext) {
-        return SafeArea(
-          child: ListView(
-            shrinkWrap: true,
-            children: [
-              for (final item in projects)
-                ListTile(
-                  title: Text(item.name),
-                  trailing: item.id == activeId
-                      ? const Icon(Icons.check, color: AppColors.electricBlueLight)
-                      : null,
-                  onTap: () async {
-                    await ref.read(projectsControllerProvider).switchProject(item.id);
-                    if (sheetContext.mounted) Navigator.pop(sheetContext);
-                  },
-                ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Future<void> _pickPeriod(
-    BuildContext context,
-    WidgetRef ref,
-    IncomingRebarPeriod current,
-  ) async {
-    await showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: Colors.white,
-      showDragHandle: true,
-      builder: (sheetContext) {
-        return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              for (final item in IncomingRebarPeriod.values)
-                ListTile(
-                  title: Text(switch (item) {
-                    IncomingRebarPeriod.all => 'Tümü',
-                    IncomingRebarPeriod.month => 'Bu Ay',
-                    IncomingRebarPeriod.year => 'Bu Yıl',
-                  }),
-                  trailing: item == current
-                      ? const Icon(Icons.check, color: AppColors.electricBlueLight)
-                      : null,
-                  onTap: () {
-                    ref.read(incomingRebarPeriodProvider.notifier).state = item;
-                    Navigator.pop(sheetContext);
-                  },
-                ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-}
-
-class _FilterRow extends StatelessWidget {
-  const _FilterRow({
-    required this.projectName,
-    required this.periodLabel,
-    required this.onProject,
-    required this.onPeriod,
-  });
-
-  final String projectName;
-  final String periodLabel;
-  final VoidCallback onProject;
-  final VoidCallback onPeriod;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          flex: 3,
-          child: _FilterChip(
-            icon: Icons.apartment_outlined,
-            label: projectName,
-            onTap: onProject,
-          ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          flex: 2,
-          child: _FilterChip(
-            icon: Icons.calendar_today_outlined,
-            label: periodLabel,
-            onTap: onPeriod,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _FilterChip extends StatelessWidget {
-  const _FilterChip({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(12),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          height: 44,
-          padding: const EdgeInsets.symmetric(horizontal: 10),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFFE6EBF2)),
-          ),
-          child: Row(
-            children: [
-              Icon(icon, size: 16, color: AppColors.electricBlueLight),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF1C2430),
-                  ),
-                ),
-              ),
-              const Icon(Icons.keyboard_arrow_down, size: 18, color: Color(0xFF8B95A5)),
-            ],
-          ),
-        ),
       ),
     );
   }
@@ -411,55 +234,6 @@ class _MetricCard extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _UnitSwitch extends StatelessWidget {
-  const _UnitSwitch({required this.asPercent, required this.onChanged});
-
-  final bool asPercent;
-  final ValueChanged<bool> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 30,
-      padding: const EdgeInsets.all(2),
-      decoration: BoxDecoration(
-        color: const Color(0xFFE8EEF5),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _seg('Miktar', !asPercent, () => onChanged(false)),
-          _seg('Yüzde', asPercent, () => onChanged(true)),
-        ],
-      ),
-    );
-  }
-
-  Widget _seg(String label, bool selected, VoidCallback onTap) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10),
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: selected ? AppColors.electricBlueLight : Colors.transparent,
-          borderRadius: BorderRadius.circular(6),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w700,
-            color: selected ? Colors.white : const Color(0xFF5C6B80),
-            height: 1,
-          ),
-        ),
       ),
     );
   }
@@ -531,31 +305,6 @@ class _DeliveryRecordsShortcut extends StatelessWidget {
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _DeliveryActions extends ConsumerWidget {
-  const _DeliveryActions();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    void openForm() => context.push(AppRoutes.selectInTransitOrder);
-
-    return SizedBox(
-      height: 48,
-      width: double.infinity,
-      child: FilledButton.icon(
-        onPressed: openForm,
-        style: FilledButton.styleFrom(
-          backgroundColor: AppColors.electricBlueLight,
-          foregroundColor: Colors.white,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
-        ),
-        icon: const Icon(Icons.add, size: 18),
-        label: const Text('Yeni Teslimat Kaydı'),
       ),
     );
   }

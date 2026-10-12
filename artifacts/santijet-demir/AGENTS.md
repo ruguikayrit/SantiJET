@@ -19,8 +19,9 @@ Alt nav: **Ana Sayfa · Keşif · Sipariş · Gelen Demir · Saha Sayım**
 - Bildirim zili yok. `showNotification` varsayılan `false`; açma. Avatar / baş harf butonu yok (çark kullan).
 - `PointerInterceptor` header çarkında yok (dokunuşu yutuyordu); alt navda web için kalır.
 - Alt nav: Saha (`santijet-puantaj`) stil / kurgu — `AppColors.surface` + üst kenarlık, lift dışarıda, `electricBlue` / `textMuted`, klavyede gizle, `Router.neglect`. Tema `dividerColor` / `onSurfaceVariant` ile boyama yok.
-- Ana sayfa proje seçici: logo kutusu + iş adı / iş kodu. Firma adı yok. Koda katıl yok. Tıklanınca **İş seçin** alt sayfa.
-- Ana sayfa wordmark header; iç sayfalar bolt + DEMİR + sayfa adı.
+- Ana sayfa başlığı: siyah gradyan bant. Wordmark (`splash_wordmark.png`) ve altındaki **DEMİR** yazısı güncelleme öncesi ölçekte kalır. Sağda yalnız dişli. İş seçici anasayfada yok; iş **Ayarlar → Projelerim** üzerinden seçilir. Firma adı yok. Koda katıl yok.
+- Ana sayfa gövdesi referans düzen: Proje ilerlemesi, Gelen / Tüketilen / Mevcut Stok, Çap Bazlı Durum, Demir tüketim ilerlemesi. Eski KPI ızgarası, kritik uyarı ve aktivite listesi anasayfada yok.
+- İç sayfalar bolt + DEMİR + sayfa adı.
 - Shell body `SafeArea(bottom: false)` — üst inset status bar için.
 
 Kaynak: `lib/core/widgets/santijet_header.dart`, `lib/features/shell/main_shell.dart`, `app_bottom_nav_bar.dart`.

@@ -25,6 +25,8 @@ import 'package:santijet_demir/features/settings/company_settings_screen.dart';
 import 'package:santijet_demir/features/settings/notification_settings_screen.dart';
 import 'package:santijet_demir/features/settings/project_settings_screen.dart';
 import 'package:santijet_demir/features/settings/settings_screen.dart';
+import 'package:santijet_demir/features/shell/diameter_calc_detail_screen.dart';
+import 'package:santijet_demir/features/shell/diameter_status_screen.dart';
 import 'package:santijet_demir/features/shell/main_shell.dart';
 import 'package:santijet_demir/features/auth/forgot_password_screen.dart';
 import 'package:santijet_demir/features/auth/login_screen.dart';
@@ -286,6 +288,17 @@ final routerProvider = Provider<GoRouter>((ref) {
         ),
       ),
       GoRoute(
+        path: '/field-count/edit/:id',
+        parentNavigatorKey: _rootNavigatorKey,
+        pageBuilder: (context, state) {
+          final id = state.pathParameters['id']!;
+          return fadeSlidePage(
+            key: state.pageKey,
+            child: NewCountScreen(recordId: id),
+          );
+        },
+      ),
+      GoRoute(
         path: '/field-count/detail/:id',
         parentNavigatorKey: _rootNavigatorKey,
         pageBuilder: (context, state) {
@@ -370,6 +383,22 @@ final routerProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: AppRoutes.dashboard,
                 builder: (context, state) => const DashboardScreen(),
+                routes: [
+                  GoRoute(
+                    path: 'cap-durum',
+                    builder: (context, state) => const DiameterStatusScreen(),
+                    routes: [
+                      GoRoute(
+                        path: ':diameter',
+                        builder: (context, state) {
+                          final diameter =
+                              int.tryParse(state.pathParameters['diameter'] ?? '') ?? 0;
+                          return DiameterCalcDetailScreen(diameter: diameter);
+                        },
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ],
           ),

@@ -11,7 +11,7 @@ Bu monorepoda her Flutter ürünü ayrıdır. İstenmeyen `artifacts/santijet-*`
 
 ŞantiJET DEMİR (`artifacts/santijet-demir`, Pages `/demir/`) kilitlidir (sohbet gerekmez):
 
-- Alt nav: Ana Sayfa · Sipariş · Gelen Demir · Saha Sayım · Analiz. Ayarlar navda yok.
+- Alt nav: Ana Sayfa · Keşif · Sipariş · Gelen Demir · Saha Sayım. Analiz navda yok; Ayarlar’da. Ayarlar navda yok.
 - Ayarlar sağ üst dişli. Bildirim zili ve baş harf avatarı yok.
 - Önizleme URL: `/demir/` — uygulamayı `/staging/` altına geri koyma.
 - Turuncu STAGING ÖNİZLEME şeridi ve `flutter-view { top:28px }` kaydırması yok; geri koyma.

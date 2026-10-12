@@ -150,14 +150,14 @@ class _ReconciliationScreenState extends ConsumerState<ReconciliationScreen> {
         .map(
           (row) => [
             'Ø${row.diameter}',
-            '${AppFormat.tonnage(row.survey)}t',
-            '${AppFormat.tonnage(row.ordered)}t',
-            '${AppFormat.tonnage(row.delivered)}t',
-            '${AppFormat.tonnage(row.plannedUsage)}t',
-            '${AppFormat.tonnage(row.expectedStock)}t',
-            '${AppFormat.tonnage(row.counted)}t',
-            '${AppFormat.tonnage(row.used)}t',
-            '${AppFormat.tonnage(row.fire)}t',
+            '${AppFormat.tonnage(row.survey)}',
+            '${AppFormat.tonnage(row.ordered)}',
+            '${AppFormat.tonnage(row.delivered)}',
+            '${AppFormat.tonnage(row.plannedUsage)}',
+            '${AppFormat.tonnage(row.expectedStock)}',
+            '${AppFormat.tonnage(row.counted)}',
+            '${AppFormat.tonnage(row.used)}',
+            '${AppFormat.tonnage(row.fire)}',
             row.plannedUsage > 0
                 ? '${row.firePercent.toStringAsFixed(1)}%'
                 : '—',

@@ -60,12 +60,14 @@ class ImalatSubWork {
     required this.name,
     this.note = '',
     this.lines = const [],
+    this.progressPercent = 0,
   });
 
   final String id;
   final String name;
   final String note;
   final List<DiameterLine> lines;
+  final double progressPercent;
 
   double get planned => lines.fold(0, (sum, line) => sum + line.planned);
 
@@ -74,12 +76,14 @@ class ImalatSubWork {
     String? name,
     String? note,
     List<DiameterLine>? lines,
+    double? progressPercent,
   }) {
     return ImalatSubWork(
       id: id ?? this.id,
       name: name ?? this.name,
       note: note ?? this.note,
       lines: lines ?? this.lines,
+      progressPercent: progressPercent ?? this.progressPercent,
     );
   }
 
@@ -87,6 +91,7 @@ class ImalatSubWork {
         'id': id,
         'name': name,
         'note': note,
+        'progressPercent': progressPercent,
         'lines': lines.map((line) => line.toJson()).toList(),
       };
 
@@ -95,6 +100,7 @@ class ImalatSubWork {
       id: json['id'] as String? ?? '',
       name: json['name'] as String? ?? '',
       note: json['note'] as String? ?? '',
+      progressPercent: (json['progressPercent'] as num?)?.toDouble() ?? 0,
       lines: (json['lines'] as List<dynamic>? ?? const [])
           .map((line) => DiameterLine.fromJson(line as Map<dynamic, dynamic>))
           .toList(),

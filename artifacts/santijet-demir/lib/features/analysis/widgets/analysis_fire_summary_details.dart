@@ -88,7 +88,7 @@ class _RawMaterialDetail extends ConsumerWidget {
           (item) => _DetailTableRow(
             cells: [
               'Ø${item.diameter}',
-              '${AppFormat.tonnage(item.tonnage)} t',
+              '${AppFormat.tonnage(item.tonnage)}',
               AppFormat.integer(item.pieceCount),
               '${item.lineCount}',
             ],
@@ -165,11 +165,11 @@ class _RawFireDetailState extends ConsumerState<_RawFireDetail> {
         const SizedBox(height: 10),
         _FormulaRow(
           label: 'Fire',
-          value: '${AppFormat.tonnage(widget.summary.rawWasteTonnage)} t',
+          value: '${AppFormat.tonnage(widget.summary.rawWasteTonnage)}',
         ),
         _FormulaRow(
           label: 'Stok',
-          value: '${AppFormat.tonnage(widget.summary.rawStockTonnage)} t',
+          value: '${AppFormat.tonnage(widget.summary.rawStockTonnage)}',
         ),
         _FormulaRow(
           label: 'Fire oranı',
@@ -194,8 +194,8 @@ class _RawFireDetailState extends ConsumerState<_RawFireDetail> {
           (item) => _DetailTableRow(
             cells: [
               'Ø${item.diameter}',
-              '${AppFormat.tonnage(item.stockTonnage)} t',
-              '${AppFormat.tonnage(item.wasteTonnage)} t',
+              '${AppFormat.tonnage(item.stockTonnage)}',
+              '${AppFormat.tonnage(item.wasteTonnage)}',
               '%${item.wastePercent.toStringAsFixed(1)}',
               '${item.totalBars}',
             ],
@@ -273,11 +273,11 @@ class _PlannedFireDetailState extends ConsumerState<_PlannedFireDetail> {
         const SizedBox(height: 10),
         _FormulaRow(
           label: 'Fire',
-          value: '${AppFormat.tonnage(widget.summary.plannedWasteTonnage!)} t',
+          value: '${AppFormat.tonnage(widget.summary.plannedWasteTonnage!)}',
         ),
         _FormulaRow(
           label: 'Stok',
-          value: '${AppFormat.tonnage(widget.summary.plannedStockTonnage!)} t',
+          value: '${AppFormat.tonnage(widget.summary.plannedStockTonnage!)}',
         ),
         _FormulaRow(
           label: 'Fire oranı',
@@ -302,8 +302,8 @@ class _PlannedFireDetailState extends ConsumerState<_PlannedFireDetail> {
           (item) => _DetailTableRow(
             cells: [
               'Ø${item.diameter}',
-              '${AppFormat.tonnage(item.stockTonnage)} t',
-              '${AppFormat.tonnage(item.wasteTonnage)} t',
+              '${AppFormat.tonnage(item.stockTonnage)}',
+              '${AppFormat.tonnage(item.wasteTonnage)}',
               '%${item.wastePercent.toStringAsFixed(1)}',
               '${item.totalBars}',
             ],
@@ -421,7 +421,7 @@ class _FireDiameterDrillDownState extends State<_FireDiameterDrillDown> {
               Text(
                 '${breakdown.totalBars} çubuk · '
                 '${plan.totalWasteM.toStringAsFixed(2)} m fire · '
-                '${AppFormat.tonnage(breakdown.wasteTonnage)} t · '
+                '${AppFormat.tonnage(breakdown.wasteTonnage)} · '
                 '%${breakdown.wastePercent.toStringAsFixed(1)}',
                 style: AppTypography.bodySmall
                     .copyWith(color: AppColors.textMuted),
@@ -458,7 +458,7 @@ class _FireDiameterDrillDownState extends State<_FireDiameterDrillDown> {
                       '${bucket.wasteLengthM.toStringAsFixed(2)} m',
                       '${bucket.barCount}',
                       '${bucket.totalWasteM.toStringAsFixed(2)} m',
-                      '${AppFormat.tonnage(bucket.wasteTonnage)} t',
+                      '${AppFormat.tonnage(bucket.wasteTonnage)}',
                     ],
                     flexes: const [3, 2, 3, 3],
                     accentColor: diameterColor,
@@ -647,18 +647,18 @@ class _SavingsDetail extends StatelessWidget {
         _FormulaRow(
           label: 'Ham fire',
           value:
-              '${AppFormat.tonnage(summary.rawWasteTonnage)} t '
+              '${AppFormat.tonnage(summary.rawWasteTonnage)} '
               '(%${summary.rawWastePercent.toStringAsFixed(1)})',
         ),
         _FormulaRow(
           label: 'Plan fire',
           value:
-              '${AppFormat.tonnage(summary.plannedWasteTonnage!)} t '
+              '${AppFormat.tonnage(summary.plannedWasteTonnage!)} '
               '(%${summary.plannedWastePercent!.toStringAsFixed(1)})',
         ),
         _FormulaRow(
           label: 'Kazanç',
-          value: '−${AppFormat.tonnage(summary.savedWasteTonnage)} t',
+          value: '−${AppFormat.tonnage(summary.savedWasteTonnage)}',
           highlight: summary.savedWasteTonnage > 0,
         ),
         _FormulaRow(

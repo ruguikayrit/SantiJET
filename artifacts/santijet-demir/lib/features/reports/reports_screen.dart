@@ -8,6 +8,7 @@ import 'package:santijet_demir/core/theme/app_radii.dart';
 import 'package:santijet_demir/core/theme/app_spacing.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
 import 'package:santijet_demir/core/widgets/app_components.dart';
+import 'package:santijet_demir/core/widgets/santijet_header.dart';
 import 'package:santijet_demir/domain/entities/report.dart';
 import 'package:santijet_demir/features/reports/providers/reports_provider.dart';
 import 'package:santijet_demir/features/reports/report_dialogs.dart';
@@ -44,8 +45,11 @@ class ReportsScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
-      appBar: AppBar(title: const Text('Raporlar')),
-      body: ListView(
+      body: Column(
+        children: [
+          const DemirBrandHeader(title: 'Raporlar', showBack: true),
+          Expanded(
+            child: ListView(
         padding: const EdgeInsets.all(AppSpacing.md),
         children: [
           Text('Rapor Kategorileri', style: AppTypography.headlineMedium),
@@ -77,6 +81,9 @@ class ReportsScreen extends ConsumerWidget {
               onTap: () => context.push(AppRoutes.reportDetail(report.id)),
             );
           }),
+        ],
+            ),
+          ),
         ],
       ),
     );

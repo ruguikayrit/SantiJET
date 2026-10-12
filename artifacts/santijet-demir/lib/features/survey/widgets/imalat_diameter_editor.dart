@@ -158,7 +158,7 @@ class _ImalatDiameterEditorState extends ConsumerState<ImalatDiameterEditor> {
     ScaffoldMessenger.of(context).showAppSnackBar(
       SnackBar(
         content: Text(
-          '${widget.imalat.name} güncellendi — ${AppFormat.tonnage(_draftTotal)}t',
+          '${widget.imalat.name} güncellendi — ${AppFormat.tonnage(_draftTotal)}',
         ),
         backgroundColor: AppColors.success,
       ),
@@ -292,7 +292,7 @@ class _ImalatDiameterEditorState extends ConsumerState<ImalatDiameterEditor> {
             children: [
               Text('Toplam', style: AppTypography.titleMedium),
               Text(
-                '${AppFormat.tonnage(_draftTotal)}t',
+                '${AppFormat.tonnage(_draftTotal)}',
                 style: AppTypography.titleMedium.copyWith(
                   color: AppColors.electricBlueLight,
                 ),

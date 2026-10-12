@@ -12,6 +12,7 @@ class SwipeToDeleteRow extends StatelessWidget {
     required this.message,
     required this.onDelete,
     required this.child,
+    this.backgroundMargin = const EdgeInsets.only(bottom: 10),
   });
 
   final Key itemKey;
@@ -20,6 +21,7 @@ class SwipeToDeleteRow extends StatelessWidget {
   final String message;
   final Future<void> Function() onDelete;
   final Widget child;
+  final EdgeInsets backgroundMargin;
 
   @override
   Widget build(BuildContext context) {
@@ -57,7 +59,7 @@ class SwipeToDeleteRow extends StatelessWidget {
       background: Container(
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 20),
-        margin: const EdgeInsets.only(bottom: 10),
+        margin: backgroundMargin,
         decoration: BoxDecoration(
           color: AppColors.critical.withValues(alpha: 0.15),
           borderRadius: AppRadii.md,

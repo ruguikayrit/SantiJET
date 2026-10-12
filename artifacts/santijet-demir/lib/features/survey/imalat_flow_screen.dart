@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:santijet_demir/core/format/app_format.dart';
-import 'package:santijet_demir/core/routing/app_routes.dart';
+import 'package:santijet_demir/core/widgets/swipe_to_delete_row.dart';
 import 'package:santijet_demir/domain/entities/project.dart';
 import 'package:santijet_demir/domain/entities/survey.dart';
 import 'package:santijet_demir/features/projects/providers/project_provider.dart';
@@ -31,7 +31,7 @@ const _blockColors = [
 
 const _diameters = [8, 10, 12, 14, 16, 18, 20, 22, 25, 28, 32];
 
-enum _Stage { blocks, entry, summary }
+enum _Stage { blocks, entry }
 
 /// Keşif imalat satırının devamı: Veri Girişi ve Son Durum.
 class ImalatFlowScreen extends ConsumerStatefulWidget {
@@ -47,8 +47,8 @@ class _ImalatFlowScreenState extends ConsumerState<ImalatFlowScreen> {
   _Stage _stage = _Stage.blocks;
   var _ready = false;
   var _booted = false;
-  int _entryTab = 0;
-  int _summaryTab = 0;
+  /// İcmal görünümü: 0 çapa göre, 1 imalat adına göre.
+  int _icmalView = 0;
   var _showPercent = false;
   final _expanded = <String>{};
   final _copyTargets = <String>{};
@@ -161,6 +161,94 @@ class _ImalatFlowScreenState extends ConsumerState<ImalatFlowScreen> {
       ];
     });
     if (persist) _persist();
+  }
+
+  Future<void> _deleteSub(String blockId, String subId) async {
+    setState(() {
+      _blocks = [
+        for (final block in _blocks)
+          if (block.id != blockId)
+            block
+          else
+            block.copyWith(
+              items: [
+                for (final item in block.items)
+                  if (item.id != subId) item,
+              ],
+            ),
+      ];
+    });
+    await _persist();
+  }
+
+  Future<void> _editSubProgress(String blockId, ImalatSubWork item) async {
+    final value = await showModalBottomSheet<double>(
+      context: context,
+      backgroundColor: Colors.white,
+      builder: (ctx) => _OwnedField(
+        initial: item.progressPercent.round().toString(),
+        builder: (ctx, controller) => SafeArea(
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(16, 16, 16, 12 + MediaQuery.viewInsetsOf(ctx).bottom),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(item.name, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: _ink)),
+                const SizedBox(height: 4),
+                const Text('İlerleme', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: _muted)),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: controller,
+                  autofocus: true,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  decoration: const InputDecoration(suffixText: '%', labelText: 'Tamamlanma'),
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    onPressed: () {
+                      final parsed = double.tryParse(controller.text.replaceAll(',', '.'));
+                      if (parsed == null) return;
+                      Navigator.pop(ctx, parsed.clamp(0, 100));
+                    },
+                    child: const Text('Kaydet'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+    if (value == null) return;
+    _replaceSub(
+      blockId,
+      item.copyWith(
+        progressPercent: value,
+        lines: [
+          for (final line in item.lines) line.copyWith(progressPercent: value),
+        ],
+      ),
+    );
+  }
+
+  Widget _subRow(ImalatBlock block, ImalatSubWork item) {
+    return SwipeToDeleteRow(
+      itemKey: ValueKey('sub-${block.id}-${item.id}'),
+      enabled: true,
+      title: 'Alt imalatı sil',
+      message: '"${item.name}" silinsin mi?',
+      backgroundMargin: EdgeInsets.zero,
+      onDelete: () => _deleteSub(block.id, item.id),
+      child: _SubTile(
+        item: item,
+        thumb: _thumbFor(item.name),
+        onTap: () => _editSubProgress(block.id, item),
+        onOpen: () => _openSub(block.id, item.id),
+      ),
+    );
   }
 
   void _openSub(String blockId, String subId) {
@@ -504,13 +592,10 @@ class _ImalatFlowScreenState extends ConsumerState<ImalatFlowScreen> {
   @override
   Widget build(BuildContext context) {
     final project = ref.watch(surveyProjectProvider);
-    final active = ref.watch(activeProjectProvider);
     SurveyImalat? imalat;
     for (final item in project.imalats) {
       if (item.id == widget.imalatId) imalat = item;
     }
-    final step = _stage == _Stage.summary ? 1 : 0;
-
     return PopScope(
       canPop: _stage == _Stage.blocks,
       onPopInvokedWithResult: (didPop, _) {
@@ -525,14 +610,12 @@ class _ImalatFlowScreenState extends ConsumerState<ImalatFlowScreen> {
             children: [
               _FlowHeader(
                 title: imalat?.name ?? 'Keşif',
-                step: step,
                 onBack: _leaveOrPop,
-                onStep: (index) => _setStage(index == 0 ? _Stage.blocks : _Stage.summary),
               ),
               Expanded(
                 child: !_ready || imalat == null
                     ? const Center(child: CircularProgressIndicator(color: _blue))
-                    : _body(imalat, active?.name ?? project.projectName),
+                    : _body(imalat),
               ),
               if (_ready && imalat != null) _footer(imalat),
             ],
@@ -542,66 +625,112 @@ class _ImalatFlowScreenState extends ConsumerState<ImalatFlowScreen> {
     );
   }
 
-  Widget _body(SurveyImalat imalat, String projectName) {
+  Widget _body(SurveyImalat imalat) {
     return switch (_stage) {
-      _Stage.blocks => _blocksBody(imalat, projectName),
+      _Stage.blocks => _blocksBody(imalat),
       _Stage.entry => _entryBody(imalat),
-      _Stage.summary => _summaryBody(imalat),
     };
   }
 
   Widget _footer(SurveyImalat imalat) {
     final bottom = MediaQuery.paddingOf(context).bottom;
-    if (_stage == _Stage.summary) {
-      return _SummaryActions(
-        bottom: bottom,
-        onReport: () => context.push(AppRoutes.analysis),
-        onOrder: () => context.push(AppRoutes.newOrder),
-        onDelivery: () => context.push(AppRoutes.newDelivery),
-        onMore: () => _editProgress(imalat),
-      );
-    }
     if (_stage == _Stage.entry) {
       return _TwinBar(
         bottom: bottom,
         onBack: () => _setStage(_Stage.blocks),
-        onNext: () => _setStage(_Stage.summary),
+        onNext: () async {
+          await _persist();
+          if (!mounted) return;
+          _setStage(_Stage.blocks);
+        },
       );
     }
-    final total = _blocks.fold<double>(0, (sum, block) => sum + block.planned);
-    return _NextBar(
-      bottom: bottom,
-      label: 'Proje Toplamı (${imalat.name})',
-      value: '${AppFormat.tonnage(total)} t',
-      onNext: () => _setStage(_Stage.summary),
-    );
+    return SizedBox(height: bottom > 0 ? bottom : 8);
   }
 
-  Widget _blocksBody(SurveyImalat imalat, String projectName) {
+  Widget _blocksBody(SurveyImalat imalat) {
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
       children: [
-        Row(
-          children: [
-            Expanded(child: _ProjectChip(name: projectName, onTap: _pickProject)),
-            const SizedBox(width: 8),
-            _ToolChip(icon: Icons.description_outlined, label: 'Şablon', onTap: () => _applyTemplate(imalat)),
-            const SizedBox(width: 8),
-            _ToolChip(icon: Icons.settings_outlined, label: 'Ayarlar', onTap: () => _editProgress(imalat)),
-          ],
-        ),
-        const SizedBox(height: 12),
+        const _SectionHeading('Veri Girişi'),
+        const SizedBox(height: 10),
+        ..._blockCards(),
+        const SizedBox(height: 22),
+        const _SectionHeading('İcmal'),
+        const SizedBox(height: 10),
         _TabBar(
-          labels: const ['Bloklar', 'Alt İmalatlar', 'Çaplar', 'Açıklama'],
-          index: _entryTab,
-          onChanged: (index) => setState(() => _entryTab = index),
+          labels: const ['Çap bazlı', 'İmalat bazlı'],
+          index: _icmalView,
+          onChanged: (index) => setState(() => _icmalView = index),
         ),
         const SizedBox(height: 12),
-        if (_entryTab == 0) ..._blockCards(),
-        if (_entryTab == 1) ..._flatSubs(),
-        if (_entryTab == 2) _diameterRollup(),
-        if (_entryTab == 3) ..._notesList(),
+        if (_icmalView == 0) _diameterRollup(),
+        if (_icmalView == 1) _blockDiameterMatrix(),
       ],
+    );
+  }
+
+  Widget _blockDiameterMatrix() {
+    if (_blocks.isEmpty) return const _EmptyHint('İmalat bloğu yok');
+
+    final byBlockDiameter = <String, Map<int, double>>{
+      for (final block in _blocks) block.id: {},
+    };
+    final diameters = <int>{};
+
+    for (final block in _blocks) {
+      final map = byBlockDiameter[block.id]!;
+      for (final item in block.items) {
+        for (final line in item.lines) {
+          diameters.add(line.diameter);
+          map.update(
+            line.diameter,
+            (value) => value + line.planned,
+            ifAbsent: () => line.planned,
+          );
+        }
+      }
+    }
+
+    final rows = diameters.toList()..sort();
+    if (rows.isEmpty) return const _EmptyHint('Çap yok');
+
+    return _WhiteCard(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          return SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(minWidth: constraints.maxWidth),
+              child: _PivotTable(
+                cornerLabel: 'Çap',
+                columnLabels: [
+                  for (final block in _blocks)
+                    block.name.isNotEmpty ? block.name : block.code,
+                ],
+                rowLabels: [for (final diameter in rows) 'Ø$diameter'],
+                cellAt: (rowIndex, colIndex) {
+                  final block = _blocks[colIndex];
+                  return byBlockDiameter[block.id]?[rows[rowIndex]] ?? 0;
+                },
+                rowTotal: (rowIndex) {
+                  final diameter = rows[rowIndex];
+                  var sum = 0.0;
+                  for (final block in _blocks) {
+                    sum += byBlockDiameter[block.id]?[diameter] ?? 0;
+                  }
+                  return sum;
+                },
+                columnTotal: (colIndex) {
+                  final block = _blocks[colIndex];
+                  return (byBlockDiameter[block.id]?.values ?? const <double>[])
+                      .fold<double>(0, (sum, value) => sum + value);
+                },
+              ),
+            ),
+          );
+        },
+      ),
     );
   }
 
@@ -615,38 +744,13 @@ class _ImalatFlowScreenState extends ConsumerState<ImalatFlowScreen> {
           onToggle: () => setState(() {
             if (!_expanded.add(_blocks[i].id)) _expanded.remove(_blocks[i].id);
           }),
-          onOpen: (subId) => _openSub(_blocks[i].id, subId),
           onAdd: () => _addSub(_blocks[i]),
+          subRow: (item) => _subRow(_blocks[i], item),
         ),
         const SizedBox(height: 10),
       ],
-      _DashedButton(label: 'Yeni Blok Ekle', icon: Icons.add, onTap: _addBlock),
+      _DashedButton(label: 'Yeni İmalat Ekle', icon: Icons.add, onTap: _addBlock),
     ];
-  }
-
-  List<Widget> _flatSubs() {
-    final tiles = <Widget>[];
-    for (var i = 0; i < _blocks.length; i++) {
-      final block = _blocks[i];
-      tiles.add(Padding(
-        padding: const EdgeInsets.only(bottom: 8, top: 4),
-        child: Text(block.name, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: _ink)),
-      ));
-      for (final item in block.items) {
-        tiles.add(Padding(
-          padding: const EdgeInsets.only(bottom: 8),
-          child: _SubTile(
-            item: item,
-            thumb: _thumbFor(item.name),
-            onTap: () => _openSub(block.id, item.id),
-          ),
-        ));
-      }
-    }
-    if (tiles.isEmpty) {
-      tiles.add(const _EmptyHint('Alt imalat yok'));
-    }
-    return tiles;
   }
 
   Widget _diameterRollup() {
@@ -677,30 +781,6 @@ class _ImalatFlowScreenState extends ConsumerState<ImalatFlowScreen> {
         ],
       ),
     );
-  }
-
-  List<Widget> _notesList() {
-    final tiles = <Widget>[];
-    for (final block in _blocks) {
-      for (final item in block.items) {
-        tiles.add(Padding(
-          padding: const EdgeInsets.only(bottom: 8),
-          child: _WhiteCard(
-            child: ListTile(
-              title: Text(item.name, style: const TextStyle(fontWeight: FontWeight.w800, color: _ink, fontSize: 14)),
-              subtitle: Text(
-                item.note.isEmpty ? 'Açıklama yok' : item.note,
-                style: const TextStyle(color: _muted, fontSize: 12),
-              ),
-              trailing: const Icon(Icons.chevron_right, color: Color(0xFFB0B8C4)),
-              onTap: () => _openSub(block.id, item.id),
-            ),
-          ),
-        ));
-      }
-    }
-    if (tiles.isEmpty) tiles.add(const _EmptyHint('Açıklama yok'));
-    return tiles;
   }
 
   Widget _entryBody(SurveyImalat imalat) {
@@ -748,9 +828,9 @@ class _ImalatFlowScreenState extends ConsumerState<ImalatFlowScreen> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  const Text('Blok Toplamı', style: TextStyle(fontSize: 11, color: _muted, fontWeight: FontWeight.w600)),
+                  const Text('Toplam', style: TextStyle(fontSize: 11, color: _muted, fontWeight: FontWeight.w600)),
                   Text(
-                    '${AppFormat.tonnage(block.planned)} t',
+                    '${AppFormat.tonnage(block.planned)}',
                     style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: _ink),
                   ),
                 ],
@@ -949,46 +1029,6 @@ class _ImalatFlowScreenState extends ConsumerState<ImalatFlowScreen> {
     return _blockColors[(index < 0 ? 0 : index) % _blockColors.length];
   }
 
-  Widget _summaryBody(SurveyImalat imalat) {
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
-      children: [
-        _TabBar(
-          labels: const ['Proje Özeti', 'Blok Bazlı', 'Alt İmalat Bazlı', 'Çap Bazlı'],
-          index: _summaryTab,
-          onChanged: (index) => setState(() => _summaryTab = index),
-        ),
-        const SizedBox(height: 12),
-        if (_summaryTab == 0) ...[
-          _SummaryHero(imalat: imalat),
-          const SizedBox(height: 10),
-          _FormulaBanner(onDetail: () => _showFormula()),
-          const SizedBox(height: 14),
-          _sectionTitle('Blok Bazlı Durum'),
-          const SizedBox(height: 8),
-          _sliceTable(_blockSlices(imalat), firstFlexLabel: 'Blok'),
-          const SizedBox(height: 14),
-          _focusSubs(imalat),
-        ],
-        if (_summaryTab == 1) ...[
-          _sectionTitle('Blok Bazlı Durum'),
-          const SizedBox(height: 8),
-          _sliceTable(_blockSlices(imalat), firstFlexLabel: 'Blok'),
-        ],
-        if (_summaryTab == 2) ...[
-          _sectionTitle('Alt İmalat Bazlı Durum'),
-          const SizedBox(height: 8),
-          _sliceTable(_subSlices(imalat), firstFlexLabel: 'Alt İmalat'),
-        ],
-        if (_summaryTab == 3) ...[
-          _sectionTitle('Çap Bazlı Durum'),
-          const SizedBox(height: 8),
-          _sliceTable(_diameterSlices(imalat), firstFlexLabel: 'Çap'),
-        ],
-      ],
-    );
-  }
-
   Widget _sectionTitle(String title) {
     return Row(
       children: [
@@ -1031,17 +1071,17 @@ class _ImalatFlowScreenState extends ConsumerState<ImalatFlowScreen> {
           children: [
             Expanded(
               child: Text(
-                '${block.name} Alt İmalatları',
+                block.name,
                 style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: _ink),
               ),
             ),
             TextButton(
-              onPressed: () => setState(() => _summaryTab = 2),
+              onPressed: () => setState(() => _icmalView = 1),
               child: const Text('Tümünü Gör', style: TextStyle(color: _blue, fontWeight: FontWeight.w800)),
             ),
           ],
         ),
-        _sliceTable(_slicesFor(block, imalat), firstFlexLabel: 'Alt İmalat'),
+        _sliceTable(_slicesFor(block, imalat), firstFlexLabel: 'İmalat adı'),
       ],
     );
   }
@@ -1191,15 +1231,11 @@ class _Slice {
 class _FlowHeader extends StatelessWidget {
   const _FlowHeader({
     required this.title,
-    required this.step,
     required this.onBack,
-    required this.onStep,
   });
 
   final String title;
-  final int step;
   final VoidCallback onBack;
-  final ValueChanged<int> onStep;
 
   @override
   Widget build(BuildContext context) {
@@ -1243,14 +1279,6 @@ class _FlowHeader extends StatelessWidget {
                   ],
                 ),
               ),
-              _StepMark(index: 0, label: 'Veri Girişi', active: step == 0, done: step > 0, onTap: () => onStep(0)),
-              Container(
-                width: 22,
-                height: 2,
-                margin: const EdgeInsets.only(bottom: 16),
-                color: step > 0 ? _blue : const Color(0xFF334155),
-              ),
-              _StepMark(index: 1, label: 'Son Durum', active: step == 1, done: false, onTap: () => onStep(1)),
             ],
           ),
         ),
@@ -1459,20 +1487,21 @@ class _BlockCard extends StatelessWidget {
     required this.color,
     required this.expanded,
     required this.onToggle,
-    required this.onOpen,
     required this.onAdd,
+    required this.subRow,
   });
 
   final ImalatBlock block;
   final Color color;
   final bool expanded;
   final VoidCallback onToggle;
-  final ValueChanged<String> onOpen;
   final VoidCallback onAdd;
+  final Widget Function(ImalatSubWork item) subRow;
 
   @override
   Widget build(BuildContext context) {
     return Container(
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -1497,7 +1526,7 @@ class _BlockCard extends StatelessWidget {
                         Text(block.name, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: _ink)),
                         const SizedBox(height: 2),
                         Text(
-                          '${block.items.length} alt imalat · ${AppFormat.tonnage(block.planned)} t',
+                          '${block.items.length} kalem · ${AppFormat.tonnage(block.planned)}',
                           style: const TextStyle(fontSize: 12, color: _muted, fontWeight: FontWeight.w600),
                         ),
                       ],
@@ -1514,7 +1543,7 @@ class _BlockCard extends StatelessWidget {
               child: Column(
                 children: [
                   for (final item in block.items) ...[
-                    _SubTile(item: item, thumb: _thumbFor(item.name), onTap: () => onOpen(item.id)),
+                    subRow(item),
                     const SizedBox(height: 8),
                   ],
                   _DashedButton(label: 'Alt İmalat Ekle', icon: Icons.add, onTap: onAdd),
@@ -1549,11 +1578,17 @@ class _LetterBadge extends StatelessWidget {
 }
 
 class _SubTile extends StatelessWidget {
-  const _SubTile({required this.item, required this.thumb, required this.onTap});
+  const _SubTile({
+    required this.item,
+    required this.thumb,
+    required this.onTap,
+    required this.onOpen,
+  });
 
   final ImalatSubWork item;
   final String thumb;
   final VoidCallback onTap;
+  final VoidCallback onOpen;
 
   @override
   Widget build(BuildContext context) {
@@ -1593,10 +1628,22 @@ class _SubTile extends StatelessWidget {
                 ),
               ),
               Text(
-                '${AppFormat.tonnage(item.planned)} t',
+                '${AppFormat.tonnage(item.planned)}',
                 style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: _ink),
               ),
-              const Icon(Icons.chevron_right, color: Color(0xFFB0B8C4), size: 20),
+              const SizedBox(width: 8),
+              Text(
+                '%${item.progressPercent.round()}',
+                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: _blue),
+              ),
+              GestureDetector(
+                onTap: onOpen,
+                behavior: HitTestBehavior.opaque,
+                child: const Padding(
+                  padding: EdgeInsets.only(left: 2),
+                  child: Icon(Icons.chevron_right, color: Color(0xFFB0B8C4), size: 20),
+                ),
+              ),
             ],
           ),
         ),
@@ -1660,6 +1707,138 @@ class _DashPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+class _SectionHeading extends StatelessWidget {
+  const _SectionHeading(this.label);
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      label,
+      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: _ink),
+    );
+  }
+}
+
+class _PivotTable extends StatelessWidget {
+  const _PivotTable({
+    required this.cornerLabel,
+    required this.columnLabels,
+    required this.rowLabels,
+    required this.cellAt,
+    required this.rowTotal,
+    required this.columnTotal,
+  });
+
+  final String cornerLabel;
+  final List<String> columnLabels;
+  final List<String> rowLabels;
+  final double Function(int rowIndex, int colIndex) cellAt;
+  final double Function(int rowIndex) rowTotal;
+  final double Function(int colIndex) columnTotal;
+
+  @override
+  Widget build(BuildContext context) {
+    const headStyle = TextStyle(
+      fontSize: 11,
+      fontWeight: FontWeight.w700,
+      color: _muted,
+    );
+    const cellStyle = TextStyle(
+      fontSize: 12,
+      fontWeight: FontWeight.w600,
+      color: _ink,
+    );
+    const boldStyle = TextStyle(
+      fontSize: 12,
+      fontWeight: FontWeight.w800,
+      color: _ink,
+    );
+
+    return Table(
+      defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+      columnWidths: {
+        0: const IntrinsicColumnWidth(),
+        for (var i = 0; i < columnLabels.length; i++) i + 1: const IntrinsicColumnWidth(),
+        columnLabels.length + 1: const IntrinsicColumnWidth(),
+      },
+      border: TableBorder(
+        horizontalInside: BorderSide(color: _line.withValues(alpha: 0.9)),
+        verticalInside: BorderSide(color: _line.withValues(alpha: 0.6)),
+      ),
+      children: [
+        TableRow(
+          decoration: const BoxDecoration(
+            border: Border(bottom: BorderSide(color: _line)),
+          ),
+          children: [
+            _tableCell(cornerLabel, headStyle, align: TextAlign.start),
+            for (final label in columnLabels)
+              _tableCell(label, headStyle, align: TextAlign.center),
+            _tableCell('Toplam', headStyle, align: TextAlign.end),
+          ],
+        ),
+        for (var r = 0; r < rowLabels.length; r++)
+          TableRow(
+            children: [
+              _tableCell(rowLabels[r], cellStyle, align: TextAlign.start, maxLines: 2),
+              for (var c = 0; c < columnLabels.length; c++)
+                _tableCell(
+                  AppFormat.tonnage(cellAt(r, c)),
+                  cellStyle,
+                  align: TextAlign.center,
+                ),
+              _tableCell(
+                AppFormat.tonnage(rowTotal(r)),
+                boldStyle,
+                align: TextAlign.end,
+              ),
+            ],
+          ),
+        TableRow(
+          decoration: BoxDecoration(color: _bg.withValues(alpha: 0.6)),
+          children: [
+            _tableCell('Toplam', boldStyle, align: TextAlign.start),
+            for (var c = 0; c < columnLabels.length; c++)
+              _tableCell(
+                AppFormat.tonnage(columnTotal(c)),
+                boldStyle,
+                align: TextAlign.center,
+              ),
+            _tableCell(
+              AppFormat.tonnage(
+                List.generate(columnLabels.length, columnTotal)
+                    .fold<double>(0, (a, b) => a + b),
+              ),
+              boldStyle,
+              align: TextAlign.end,
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _tableCell(
+    String text,
+    TextStyle style, {
+    required TextAlign align,
+    int maxLines = 1,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+      child: Text(
+        text,
+        textAlign: align,
+        maxLines: maxLines,
+        overflow: TextOverflow.ellipsis,
+        style: style,
+      ),
+    );
+  }
 }
 
 class _WhiteCard extends StatelessWidget {
@@ -1800,7 +1979,7 @@ class _TotalRow extends StatelessWidget {
           const Expanded(
             child: Text('Toplam', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: _ink)),
           ),
-          Text('${AppFormat.tonnage(amount)} t', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: _ink)),
+          Text('${AppFormat.tonnage(amount)}', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: _ink)),
           const SizedBox(width: 16),
           const Text('%100', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: _muted)),
           const SizedBox(width: 28),
@@ -1883,7 +2062,7 @@ class _SummaryHero extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                '${AppFormat.tonnage(imalat.planned)} t',
+                                '${AppFormat.tonnage(imalat.planned)}',
                                 style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: _ink, height: 1),
                               ),
                               const SizedBox(height: 2),
@@ -1955,7 +2134,7 @@ class _StatBox extends StatelessWidget {
           children: [
             FittedBox(
               child: Text(
-                '${AppFormat.tonnage(value)} t',
+                '${AppFormat.tonnage(value)}',
                 style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: color),
               ),
             ),
@@ -2052,13 +2231,12 @@ class _MetricCell extends StatelessWidget {
   }
 }
 
-class _NextBar extends StatelessWidget {
-  const _NextBar({required this.bottom, required this.label, required this.value, required this.onNext});
+class _TotalBar extends StatelessWidget {
+  const _TotalBar({required this.bottom, required this.label, required this.value});
 
   final double bottom;
   final String label;
   final String value;
-  final VoidCallback onNext;
 
   @override
   Widget build(BuildContext context) {
@@ -2068,26 +2246,11 @@ class _NextBar extends StatelessWidget {
         color: Colors.white,
         border: Border(top: BorderSide(color: _line)),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(label, style: const TextStyle(fontSize: 11, color: _muted, fontWeight: FontWeight.w600)),
-                Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: _ink)),
-              ],
-            ),
-          ),
-          FilledButton(
-            onPressed: onNext,
-            style: FilledButton.styleFrom(
-              backgroundColor: _blue,
-              minimumSize: const Size(132, 48),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-            child: const Text('Sonraki  →', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15)),
-          ),
+          Text(label, style: const TextStyle(fontSize: 11, color: _muted, fontWeight: FontWeight.w600)),
+          Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: _ink)),
         ],
       ),
     );
@@ -2134,7 +2297,7 @@ class _TwinBar extends StatelessWidget {
                 minimumSize: const Size.fromHeight(48),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
-              child: const Text('Sonraki  →', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15)),
+              child: const Text('Kaydet', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15)),
             ),
           ),
         ],

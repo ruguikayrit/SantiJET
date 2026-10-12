@@ -387,7 +387,7 @@ class _BulkSendMetrajDialogState extends State<_BulkSendMetrajDialog> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            '${widget.records.length} kayıt · ${AppFormat.tonnage(totalTonnage)} t',
+            '${widget.records.length} kayıt · ${AppFormat.tonnage(totalTonnage)}',
             style: AppTypography.bodySmall,
           ),
           const SizedBox(height: 16),
@@ -495,7 +495,7 @@ class _SendMetrajToSurveyDialogState
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              '${AppFormat.tonnage(widget.result.totalTonnage)} t · '
+              '${AppFormat.tonnage(widget.result.totalTonnage)} · '
               '${widget.result.lines.length} çap',
               style: AppTypography.bodySmall,
             ),
@@ -681,7 +681,7 @@ class _SaveMetrajNameDialogState extends State<SaveMetrajNameDialog> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            '${AppFormat.tonnage(widget.result.totalTonnage)} t · '
+            '${AppFormat.tonnage(widget.result.totalTonnage)} · '
             '${widget.result.totalBarCount} çubuk',
             style: AppTypography.bodySmall,
           ),

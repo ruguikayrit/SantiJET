@@ -8,6 +8,7 @@ import 'package:santijet_demir/core/theme/app_radii.dart';
 import 'package:santijet_demir/core/theme/app_spacing.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
 import 'package:santijet_demir/core/widgets/app_components.dart';
+import 'package:santijet_demir/core/widgets/santijet_header.dart';
 import 'package:santijet_demir/features/auth/providers/auth_provider.dart';
 import 'package:santijet_demir/data/repositories/project_repository.dart';
 import 'package:santijet_demir/domain/entities/project.dart';
@@ -52,10 +53,11 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
-      appBar: AppBar(
-        title: const Text('Projelerim'),
-      ),
-      body: ListView(
+      body: Column(
+        children: [
+          const DemirBrandHeader(title: 'Projelerim', showBack: true),
+          Expanded(
+            child: ListView(
         padding: EdgeInsets.fromLTRB(
           AppSpacing.md,
           AppSpacing.md,
@@ -91,6 +93,9 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
               ),
             ),
         ],
+            ),
+          ),
+        ],
       ),
       floatingActionButton: FloatingActionButton.extended(
         heroTag: 'new',
@@ -108,41 +113,14 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
 
   Future<void> _createProject(BuildContext context) async {
     final messenger = ScaffoldMessenger.of(context);
-    final nameCtrl = TextEditingController();
-    final locationCtrl = TextEditingController(text: 'İstanbul');
-
-    final created = await showDialog<bool>(
+    final created = await showDialog<({String name, String location})>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Yeni Proje'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: nameCtrl,
-              autofocus: true,
-              decoration: const InputDecoration(labelText: 'Proje Adı'),
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: locationCtrl,
-              decoration: const InputDecoration(labelText: 'Konum'),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('İptal')),
-          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Oluştur')),
-        ],
-      ),
+      builder: (_) => const _CreateProjectDialog(),
     );
 
-    final name = nameCtrl.text;
-    final location = locationCtrl.text;
-    nameCtrl.dispose();
-    locationCtrl.dispose();
-
-    if (created != true || !context.mounted) return;
+    if (created == null || !context.mounted) return;
+    final name = created.name;
+    final location = created.location;
 
     showDialog<void>(
       context: context,
@@ -182,6 +160,55 @@ class _ProjectListScreenState extends ConsumerState<ProjectListScreen> {
         SnackBar(content: Text('Proje oluşturulamadı: $e')),
       );
     }
+  }
+}
+
+class _CreateProjectDialog extends StatefulWidget {
+  const _CreateProjectDialog();
+
+  @override
+  State<_CreateProjectDialog> createState() => _CreateProjectDialogState();
+}
+
+class _CreateProjectDialogState extends State<_CreateProjectDialog> {
+  late final TextEditingController _nameCtrl = TextEditingController();
+  late final TextEditingController _locationCtrl = TextEditingController(text: 'İstanbul');
+
+  @override
+  void dispose() {
+    _nameCtrl.dispose();
+    _locationCtrl.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    Navigator.pop(context, (name: _nameCtrl.text, location: _locationCtrl.text));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Yeni Proje'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextField(
+            controller: _nameCtrl,
+            autofocus: true,
+            decoration: const InputDecoration(labelText: 'Proje Adı'),
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _locationCtrl,
+            decoration: const InputDecoration(labelText: 'Konum'),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text('İptal')),
+        FilledButton(onPressed: _submit, child: const Text('Oluştur')),
+      ],
+    );
   }
 }
 

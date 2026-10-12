@@ -45,8 +45,8 @@ class SupplierPerformanceScreen extends ConsumerWidget {
             ),
             child: Row(
               children: [
-                _OverallMetric(label: 'Sipariş', value: '${AppFormat.tonnage(totalOrdered)}t'),
-                _OverallMetric(label: 'Teslim', value: '${AppFormat.tonnage(totalDelivered)}t'),
+                _OverallMetric(label: 'Sipariş', value: '${AppFormat.tonnage(totalOrdered)}'),
+                _OverallMetric(label: 'Teslim', value: '${AppFormat.tonnage(totalDelivered)}'),
                 _OverallMetric(
                   label: 'Performans',
                   value: '%${overallPerf.toStringAsFixed(1)}',
@@ -167,10 +167,10 @@ class _SupplierScoreCard extends StatelessWidget {
           const SizedBox(height: 12),
           Row(
             children: [
-              _Metric(label: 'Sipariş', value: '${AppFormat.tonnage(supplier.totalOrdered)}t'),
-              _Metric(label: 'Teslim', value: '${AppFormat.tonnage(supplier.totalDelivered)}t'),
-              _Metric(label: 'Eksik', value: '${AppFormat.tonnage(supplier.missing)}t'),
-              _Metric(label: 'Fark', value: '${AppFormat.tonnage(supplier.difference)}t'),
+              _Metric(label: 'Sipariş', value: '${AppFormat.tonnage(supplier.totalOrdered)}'),
+              _Metric(label: 'Teslim', value: '${AppFormat.tonnage(supplier.totalDelivered)}'),
+              _Metric(label: 'Eksik', value: '${AppFormat.tonnage(supplier.missing)}'),
+              _Metric(label: 'Fark', value: '${AppFormat.tonnage(supplier.difference)}'),
             ],
           ),
         ],
