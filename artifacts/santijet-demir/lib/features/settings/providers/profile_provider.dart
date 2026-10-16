@@ -30,6 +30,10 @@ final profilePhoneProvider = Provider<String>((ref) {
   return ref.watch(appSettingsProvider).contactPhone.trim();
 });
 
+final profileCompanyNameProvider = Provider<String>((ref) {
+  return ref.watch(appSettingsProvider).companyName.trim();
+});
+
 final profileInitialProvider = Provider<String>((ref) {
   final name = ref.watch(profileDisplayNameProvider).trim();
   if (name.isEmpty) return 'U';

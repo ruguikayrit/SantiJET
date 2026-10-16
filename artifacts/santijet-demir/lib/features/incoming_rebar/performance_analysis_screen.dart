@@ -7,6 +7,7 @@ import 'package:santijet_demir/core/theme/app_typography.dart';
 import 'package:santijet_demir/core/widgets/empty_states.dart';
 import 'package:santijet_demir/core/widgets/health_ring.dart';
 import 'package:santijet_demir/features/incoming_rebar/providers/performance_analysis_provider.dart';
+import 'package:santijet_demir/core/widgets/santijet_header.dart';
 
 class PerformanceAnalysisScreen extends ConsumerWidget {
   const PerformanceAnalysisScreen({super.key});
@@ -22,7 +23,7 @@ class PerformanceAnalysisScreen extends ConsumerWidget {
     if (!hasVariance && !hasConsumed && !hasSupplierBars) {
       return Scaffold(
         backgroundColor: AppColors.canvas,
-        appBar: AppBar(title: const Text('Performans Analizi')),
+        appBar: DemirAppBar(title: const Text('Performans Analizi')),
         body: const ModuleEmptyState(type: EmptyStateType.noAnalysis),
       );
     }
@@ -36,7 +37,7 @@ class PerformanceAnalysisScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
-      appBar: AppBar(title: const Text('Performans Analizi')),
+      appBar: DemirAppBar(title: const Text('Performans Analizi')),
       body: ListView(
         padding: const EdgeInsets.all(AppSpacing.md),
         children: [

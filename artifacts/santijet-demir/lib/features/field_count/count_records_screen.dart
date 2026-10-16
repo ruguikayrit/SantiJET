@@ -13,6 +13,7 @@ import 'package:santijet_demir/core/widgets/empty_states.dart';
 import 'package:santijet_demir/domain/entities/field_count.dart';
 import 'package:santijet_demir/features/auth/providers/membership_permission_provider.dart';
 import 'package:santijet_demir/features/field_count/providers/field_count_provider.dart';
+import 'package:santijet_demir/core/widgets/santijet_header.dart';
 
 class CountRecordsScreen extends ConsumerStatefulWidget {
   const CountRecordsScreen({super.key});
@@ -38,7 +39,7 @@ class _CountRecordsScreenState extends ConsumerState<CountRecordsScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
-      appBar: AppBar(title: const Text('Sayım Kayıtları')),
+      appBar: DemirAppBar(title: const Text('Sayım Kayıtları')),
       body: Column(
         children: [
           Padding(

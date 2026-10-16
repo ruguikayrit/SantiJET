@@ -669,6 +669,64 @@ class AppTappable extends StatelessWidget {
   }
 }
 
+/// Sipariş, Keşif, Gelen Demir ve Saha Sayım’daki mavi artı düğmesi.
+class ShellAddFab extends StatelessWidget {
+  const ShellAddFab({
+    super.key,
+    required this.heroTag,
+    required this.onPressed,
+  });
+
+  final Object heroTag;
+  final VoidCallback onPressed;
+
+  /// Sekme gövdesinin sağ altı: nav çizgisinin hemen üstü.
+  static const location = ShellFabLocation();
+
+  @override
+  Widget build(BuildContext context) {
+    return FloatingActionButton(
+      heroTag: heroTag,
+      backgroundColor: const Color(0xFF2563EB),
+      foregroundColor: Colors.white,
+      onPressed: onPressed,
+      child: const Icon(Icons.add, size: 28),
+    );
+  }
+}
+
+/// Alt nav’ın hemen üstü, sağ alt köşe.
+///
+/// Varsayılan [FloatingActionButtonLocation.endFloat] `viewPadding.bottom`
+/// kadar yukarı kayar. Bu boşluğu alt nav zaten kendi yüksekliğinde çizer.
+class ShellFabLocation extends FloatingActionButtonLocation {
+  const ShellFabLocation();
+
+  static const _edge = 16.0;
+  static const _aboveNav = 8.0;
+
+  @override
+  Offset getOffset(ScaffoldPrelayoutGeometry scaffoldGeometry) {
+    final size = scaffoldGeometry.floatingActionButtonSize;
+    final x = scaffoldGeometry.scaffoldSize.width -
+        _edge -
+        scaffoldGeometry.minInsets.right -
+        size.width;
+    var y = scaffoldGeometry.contentBottom - _aboveNav - size.height;
+    final snack = scaffoldGeometry.snackBarSize.height;
+    if (snack > 0) {
+      final lifted = scaffoldGeometry.contentBottom - snack - size.height - _edge;
+      if (lifted < y) y = lifted;
+    }
+    final sheet = scaffoldGeometry.bottomSheetSize.height;
+    if (sheet > 0) {
+      final lifted = scaffoldGeometry.contentBottom - sheet - size.height / 2;
+      if (lifted < y) y = lifted;
+    }
+    return Offset(x, y);
+  }
+}
+
 class AppFab extends StatelessWidget {
   const AppFab({
     super.key,

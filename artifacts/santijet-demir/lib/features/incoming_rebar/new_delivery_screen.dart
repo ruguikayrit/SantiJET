@@ -14,6 +14,7 @@ import 'package:santijet_demir/core/theme/app_typography.dart';
 import 'package:santijet_demir/core/widgets/app_table_header.dart';
 import 'package:santijet_demir/domain/entities/delivery.dart';
 import 'package:santijet_demir/features/incoming_rebar/providers/incoming_rebar_provider.dart';
+import 'package:santijet_demir/core/widgets/santijet_header.dart';
 
 class NewDeliveryScreen extends ConsumerStatefulWidget {
   const NewDeliveryScreen({super.key, this.orderId});
@@ -74,7 +75,7 @@ class _NewDeliveryScreenState extends ConsumerState<NewDeliveryScreen> {
     if (draft.orderId == null) {
       return Scaffold(
         backgroundColor: AppColors.canvas,
-        appBar: AppBar(title: const Text('Yeni Teslimat')),
+        appBar: DemirAppBar(title: const Text('Yeni Teslimat')),
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(AppSpacing.lg),
@@ -97,7 +98,7 @@ class _NewDeliveryScreenState extends ConsumerState<NewDeliveryScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
-      appBar: AppBar(title: const Text('Yeni Teslimat')),
+      appBar: DemirAppBar(title: const Text('Yeni Teslimat')),
       body: ListView(
         padding: const EdgeInsets.all(AppSpacing.md),
         children: [

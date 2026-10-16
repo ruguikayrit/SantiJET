@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:santijet_demir/core/format/app_format.dart';
+import 'package:santijet_demir/core/widgets/app_components.dart';
+import 'package:santijet_demir/core/widgets/santijet_header.dart';
 import 'package:santijet_demir/core/widgets/swipe_to_delete_row.dart';
 import 'package:santijet_demir/domain/entities/project.dart';
 import 'package:santijet_demir/domain/entities/survey.dart';
@@ -11,7 +13,6 @@ import 'package:santijet_demir/features/survey/imalat_block_template.dart';
 import 'package:santijet_demir/features/survey/providers/survey_provider.dart';
 
 const _bg = Color(0xFFF4F7FB);
-const _header = Color(0xFF0B1424);
 const _blue = Color(0xFF2F6BFF);
 const _ink = Color(0xFF1C2430);
 const _muted = Color(0xFF8B95A5);
@@ -83,16 +84,14 @@ class _ImalatFlowScreenState extends ConsumerState<ImalatFlowScreen> {
     _booted = true;
     final imalat = _imalat();
     if (imalat == null || !mounted) return;
-    final blocks = imalat.blocks.isNotEmpty ? imalat.blocks : ImalatBlockTemplate.build(imalat);
+    final generated = ImalatBlockTemplate.isUntouchedGenerated(imalat.blocks);
+    final blocks = generated ? const <ImalatBlock>[] : imalat.blocks;
     setState(() {
       _blocks = blocks;
       _ready = true;
-      if (blocks.isNotEmpty) {
-        _expanded.add(blocks.first.id);
-        _focusBlockId = blocks.first.id;
-      }
+      _expanded.clear();
     });
-    if (imalat.blocks.isEmpty) await _persist();
+    if (generated) await _persist();
   }
 
   Future<void> _persist() async {
@@ -244,9 +243,8 @@ class _ImalatFlowScreenState extends ConsumerState<ImalatFlowScreen> {
       onDelete: () => _deleteSub(block.id, item.id),
       child: _SubTile(
         item: item,
-        thumb: _thumbFor(item.name),
-        onTap: () => _editSubProgress(block.id, item),
         onOpen: () => _openSub(block.id, item.id),
+        onProgress: () => _editSubProgress(block.id, item),
       ),
     );
   }
@@ -263,37 +261,34 @@ class _ImalatFlowScreenState extends ConsumerState<ImalatFlowScreen> {
   }
 
   Future<void> _addBlock() async {
-    final code = _nextCode();
+    final name = await _askText('İmalat adı', 'Örn: Kuzey kısım, 1. bölge, A Blok');
+    if (name == null || name.trim().isEmpty) return;
+    final trimmed = name.trim();
     final block = ImalatBlock(
-      id: 'block-$code-${DateTime.now().microsecondsSinceEpoch}',
-      code: code,
-      name: '$code Blok',
+      id: 'block-${DateTime.now().microsecondsSinceEpoch}',
+      code: _mark(trimmed),
+      name: trimmed,
     );
     setState(() {
       _blocks = [..._blocks, block];
       _expanded.add(block.id);
+      _focusBlockId = block.id;
     });
     await _persist();
   }
 
-  String _nextCode() {
-    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-    final used = _blocks.map((block) => block.code).toSet();
-    for (final letter in letters.split('')) {
-      if (!used.contains(letter)) return letter;
-    }
-    return 'Z${_blocks.length + 1}';
+  String _mark(String name) {
+    final trimmed = name.trim();
+    if (trimmed.isEmpty) return '?';
+    return String.fromCharCode(trimmed.runes.first).toUpperCase();
   }
 
   Future<void> _addSub(ImalatBlock block) async {
-    final name = await _askText('Alt imalat adı', 'Örn: Radye Temel');
+    final name = await _askText('Alt imalat adı', 'Örn: Kolon, hatıl, sahanlık');
     if (name == null || name.trim().isEmpty) return;
     final item = ImalatSubWork(
       id: 'sub-${DateTime.now().microsecondsSinceEpoch}',
       name: name.trim(),
-      lines: const [
-        DiameterLine(diameter: 12, planned: 0, ordered: 0, delivered: 0),
-      ],
     );
     setState(() {
       _blocks = [
@@ -302,6 +297,8 @@ class _ImalatFlowScreenState extends ConsumerState<ImalatFlowScreen> {
       ];
     });
     await _persist();
+    if (!mounted) return;
+    _openSub(block.id, item.id);
   }
 
   Future<String?> _askText(String title, String hint) async {
@@ -437,13 +434,26 @@ class _ImalatFlowScreenState extends ConsumerState<ImalatFlowScreen> {
       ),
     );
     if (picked == null) return;
-    final blocks = picked.blocks.isNotEmpty ? picked.blocks : ImalatBlockTemplate.build(picked);
-    if (blocks.isEmpty) return;
     final copy = sub.copyWith(id: 'sub-${DateTime.now().microsecondsSinceEpoch}');
-    final first = blocks.first.copyWith(items: [...blocks.first.items, copy]);
+    final List<ImalatBlock> blocks;
+    if (picked.blocks.isEmpty || ImalatBlockTemplate.isUntouchedGenerated(picked.blocks)) {
+      blocks = [
+        ImalatBlock(
+          id: 'block-${DateTime.now().microsecondsSinceEpoch}',
+          code: _mark(_blockById(_entryBlockId)?.name ?? sub.name),
+          name: _blockById(_entryBlockId)?.name ?? sub.name,
+          items: [copy],
+        ),
+      ];
+    } else {
+      final first = picked.blocks.first.copyWith(
+        items: [...picked.blocks.first.items, copy],
+      );
+      blocks = [first, ...picked.blocks.skip(1)];
+    }
     await ref.read(surveyProjectProvider.notifier).saveImalatBlocks(
           imalatId: picked.id,
-          blocks: [first, ...blocks.skip(1)],
+          blocks: blocks,
         );
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -482,30 +492,6 @@ class _ImalatFlowScreenState extends ConsumerState<ImalatFlowScreen> {
           if (item.name != sub.name) item else item.copyWith(lines: sub.lines, note: sub.note),
       ],
     );
-  }
-
-  Future<void> _applyTemplate(SurveyImalat imalat) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Şablonu uygula'),
-        content: const Text('Bloklar ve alt imalatlar bu türün standart dağılımına döner. Toplam miktar korunur.'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('İptal')),
-          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Uygula')),
-        ],
-      ),
-    );
-    if (confirmed != true) return;
-    final blocks = ImalatBlockTemplate.build(imalat);
-    setState(() {
-      _blocks = blocks;
-      _expanded
-        ..clear()
-        ..addAll(blocks.take(1).map((block) => block.id));
-      _focusBlockId = blocks.isEmpty ? null : blocks.first.id;
-    });
-    await _persist();
   }
 
   Future<void> _editProgress(SurveyImalat imalat) async {
@@ -606,6 +592,15 @@ class _ImalatFlowScreenState extends ConsumerState<ImalatFlowScreen> {
         value: SystemUiOverlayStyle.light,
         child: Scaffold(
           backgroundColor: _bg,
+          floatingActionButton: _ready &&
+                  imalat != null &&
+                  _stage == _Stage.blocks &&
+                  ref.watch(canEditActiveProjectProvider)
+              ? ShellAddFab(
+                  heroTag: 'new-flow-imalat',
+                  onPressed: _addBlock,
+                )
+              : null,
           body: Column(
             children: [
               _FlowHeader(
@@ -650,7 +645,7 @@ class _ImalatFlowScreenState extends ConsumerState<ImalatFlowScreen> {
 
   Widget _blocksBody(SurveyImalat imalat) {
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+      padding: EdgeInsets.fromLTRB(16, 14, 16, AppFab.scrollClearanceOf(context)),
       children: [
         const _SectionHeading('Veri Girişi'),
         const SizedBox(height: 10),
@@ -671,7 +666,7 @@ class _ImalatFlowScreenState extends ConsumerState<ImalatFlowScreen> {
   }
 
   Widget _blockDiameterMatrix() {
-    if (_blocks.isEmpty) return const _EmptyHint('İmalat bloğu yok');
+    if (_blocks.isEmpty) return const _EmptyHint('Henüz imalat yok');
 
     final byBlockDiameter = <String, Map<int, double>>{
       for (final block in _blocks) block.id: {},
@@ -736,6 +731,10 @@ class _ImalatFlowScreenState extends ConsumerState<ImalatFlowScreen> {
 
   List<Widget> _blockCards() {
     return [
+      if (_blocks.isEmpty) ...[
+        const _EmptyHint('Henüz imalat yok'),
+        const SizedBox(height: 10),
+      ],
       for (var i = 0; i < _blocks.length; i++) ...[
         _BlockCard(
           block: _blocks[i],
@@ -749,7 +748,6 @@ class _ImalatFlowScreenState extends ConsumerState<ImalatFlowScreen> {
         ),
         const SizedBox(height: 10),
       ],
-      _DashedButton(label: 'Yeni İmalat Ekle', icon: Icons.add, onTap: _addBlock),
     ];
   }
 
@@ -924,10 +922,10 @@ class _ImalatFlowScreenState extends ConsumerState<ImalatFlowScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Diğer Bloklara Kopyala', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: _ink)),
+              const Text('Diğer imalatlara kopyala', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: _ink)),
               const SizedBox(height: 4),
               const Text(
-                'Aynı çap ve miktarlar seçilen bloklara kopyalayın.',
+                'Aynı çap ve miktarları seçilen imalatlara kopyalayın.',
                 style: TextStyle(fontSize: 12, color: _muted, fontWeight: FontWeight.w500),
               ),
               const SizedBox(height: 8),
@@ -1239,8 +1237,8 @@ class _FlowHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ColoredBox(
-      color: _header,
+    return DecoratedBox(
+      decoration: DemirHeaderChrome.decoration,
       child: SafeArea(
         bottom: false,
         child: Padding(
@@ -1580,51 +1578,36 @@ class _LetterBadge extends StatelessWidget {
 class _SubTile extends StatelessWidget {
   const _SubTile({
     required this.item,
-    required this.thumb,
-    required this.onTap,
     required this.onOpen,
+    required this.onProgress,
   });
 
   final ImalatSubWork item;
-  final String thumb;
-  final VoidCallback onTap;
   final VoidCallback onOpen;
+  final VoidCallback onProgress;
 
   @override
   Widget build(BuildContext context) {
-    final diameters = item.lines.map((line) => line.diameter).toList()..sort();
-    final shown = diameters.take(4).map((diameter) => 'Ø$diameter').join('  ');
     return Material(
       color: Colors.white,
       borderRadius: BorderRadius.circular(12),
       child: InkWell(
-        onTap: onTap,
+        onTap: onOpen,
         borderRadius: BorderRadius.circular(12),
         child: Container(
-          padding: const EdgeInsets.all(8),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: _line),
           ),
           child: Row(
             children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(10),
-                child: Image.asset(thumb, width: 44, height: 44, fit: BoxFit.cover),
-              ),
-              const SizedBox(width: 8),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(item.name, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: _ink)),
-                    Text(
-                      diameters.isEmpty ? 'Çap yok' : 'Çap: $shown',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontSize: 11, color: _muted, fontWeight: FontWeight.w600),
-                    ),
-                  ],
+                child: Text(
+                  item.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: _ink),
                 ),
               ),
               Text(
@@ -1632,16 +1615,27 @@ class _SubTile extends StatelessWidget {
                 style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: _ink),
               ),
               const SizedBox(width: 8),
-              Text(
-                '%${item.progressPercent.round()}',
-                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: _blue),
-              ),
-              GestureDetector(
-                onTap: onOpen,
-                behavior: HitTestBehavior.opaque,
-                child: const Padding(
-                  padding: EdgeInsets.only(left: 2),
-                  child: Icon(Icons.chevron_right, color: Color(0xFFB0B8C4), size: 20),
+              Material(
+                color: const Color(0xFFEFF4FF),
+                borderRadius: BorderRadius.circular(8),
+                child: InkWell(
+                  onTap: onProgress,
+                  borderRadius: BorderRadius.circular(8),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                    child: Column(
+                      children: [
+                        const Text(
+                          'İlerleme',
+                          style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: _muted),
+                        ),
+                        Text(
+                          '%${item.progressPercent.round()}',
+                          style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: _blue),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
             ],

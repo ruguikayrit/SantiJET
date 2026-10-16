@@ -13,6 +13,7 @@ import 'package:santijet_demir/domain/entities/workforce.dart';
 import 'package:santijet_demir/features/prediction/providers/workforce_provider.dart';
 import 'package:santijet_demir/features/projects/providers/project_provider.dart';
 import 'package:santijet_demir/features/survey/providers/survey_provider.dart';
+import 'package:santijet_demir/core/widgets/santijet_header.dart';
 
 class WorkforceScreen extends ConsumerStatefulWidget {
   const WorkforceScreen({super.key});
@@ -142,7 +143,7 @@ class _WorkforceScreenState extends ConsumerState<WorkforceScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
-      appBar: AppBar(
+      appBar: DemirAppBar(
         title: const Text('Günlük Puantaj'),
         actions: [
           if (canEdit && hasProject)

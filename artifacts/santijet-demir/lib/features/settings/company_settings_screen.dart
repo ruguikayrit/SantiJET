@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:santijet_demir/core/theme/app_spacing.dart';
 import 'package:santijet_demir/domain/entities/app_settings.dart';
 import 'package:santijet_demir/features/settings/providers/settings_provider.dart';
+import 'package:santijet_demir/core/widgets/santijet_header.dart';
 
 class CompanySettingsScreen extends ConsumerStatefulWidget {
   const CompanySettingsScreen({super.key});
@@ -45,7 +46,7 @@ class _CompanySettingsScreenState extends ConsumerState<CompanySettingsScreen> {
     _ensureControllers(settings);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Firma Bilgileri')),
+      appBar: DemirAppBar(title: const Text('Firma Bilgileri')),
       body: ListView(
         padding: const EdgeInsets.all(AppSpacing.md),
         children: [

@@ -14,6 +14,7 @@ import 'package:santijet_demir/domain/entities/work_schedule.dart';
 import 'package:santijet_demir/features/prediction/providers/work_schedule_provider.dart';
 import 'package:santijet_demir/features/projects/providers/project_provider.dart';
 import 'package:santijet_demir/features/survey/providers/survey_provider.dart';
+import 'package:santijet_demir/core/widgets/santijet_header.dart';
 
 class WorkScheduleScreen extends ConsumerStatefulWidget {
   const WorkScheduleScreen({super.key});
@@ -66,7 +67,7 @@ class _WorkScheduleScreenState extends ConsumerState<WorkScheduleScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
-      appBar: AppBar(title: const Text('İş Programı')),
+      appBar: DemirAppBar(title: const Text('İş Programı')),
       body: !hasProject
           ? const ModuleEmptyState(type: EmptyStateType.noProject)
           : survey.imalats.isEmpty

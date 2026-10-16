@@ -8,6 +8,7 @@ import 'package:santijet_demir/core/theme/app_typography.dart';
 import 'package:santijet_demir/core/widgets/empty_states.dart';
 import 'package:santijet_demir/domain/entities/delivery.dart';
 import 'package:santijet_demir/features/incoming_rebar/providers/incoming_rebar_provider.dart';
+import 'package:santijet_demir/core/widgets/santijet_header.dart';
 
 class SupplierPerformanceScreen extends ConsumerWidget {
   const SupplierPerformanceScreen({super.key});
@@ -19,7 +20,7 @@ class SupplierPerformanceScreen extends ConsumerWidget {
     if (suppliers.isEmpty) {
       return Scaffold(
         backgroundColor: AppColors.canvas,
-        appBar: AppBar(title: const Text('Tedarikçi Performansı')),
+        appBar: DemirAppBar(title: const Text('Tedarikçi Performansı')),
         body: const ModuleEmptyState(type: EmptyStateType.noAnalysis),
       );
     }
@@ -32,7 +33,7 @@ class SupplierPerformanceScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
-      appBar: AppBar(title: const Text('Tedarikçi Performansı')),
+      appBar: DemirAppBar(title: const Text('Tedarikçi Performansı')),
       body: ListView(
         padding: const EdgeInsets.all(AppSpacing.md),
         children: [

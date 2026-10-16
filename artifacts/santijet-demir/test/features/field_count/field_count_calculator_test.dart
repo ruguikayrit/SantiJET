@@ -63,6 +63,14 @@ void main() {
     });
   });
 
+  group('consumedTonnage', () {
+    test('is zero when the count exceeds what was delivered', () {
+      expect(consumedTonnage(delivered: 0, counted: 24.2), 0);
+      expect(consumedTonnage(delivered: 16, counted: 18.4), 0);
+      expect(consumedTonnage(delivered: 38, counted: 24.2), closeTo(13.8, 0.001));
+    });
+  });
+
   group('computeExpectedStockByDiameter', () {
     test('subtracts planned usage from delivered tonnage', () {
       final expected = computeExpectedStockByDiameter(
@@ -72,6 +80,15 @@ void main() {
 
       expect(expected[16], 280);
       expect(expected[20], 250);
+    });
+
+    test('does not report negative stock when usage exceeds delivery', () {
+      final expected = computeExpectedStockByDiameter(
+        deliveredByDiameter: {12: 38},
+        plannedUsageByDiameter: {12: 90},
+      );
+
+      expect(expected[12], 0);
     });
   });
 

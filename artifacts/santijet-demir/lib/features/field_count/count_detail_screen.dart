@@ -13,6 +13,7 @@ import 'package:santijet_demir/core/widgets/app_table_header.dart';
 import 'package:santijet_demir/data/mock/mock_field_counts.dart';
 import 'package:santijet_demir/domain/entities/field_count.dart';
 import 'package:santijet_demir/features/field_count/providers/field_count_provider.dart';
+import 'package:santijet_demir/core/widgets/santijet_header.dart';
 
 class CountDetailScreen extends ConsumerStatefulWidget {
   const CountDetailScreen({super.key, required this.countId});
@@ -101,7 +102,7 @@ class _CountDetailScreenState extends ConsumerState<CountDetailScreen> {
     if (record == null) {
       return Scaffold(
         backgroundColor: AppColors.canvas,
-        appBar: AppBar(title: const Text('Sayım Detayı')),
+        appBar: DemirAppBar(title: const Text('Sayım Detayı')),
         body: const Center(child: Text('Sayım kaydı bulunamadı')),
       );
     }
@@ -112,14 +113,14 @@ class _CountDetailScreenState extends ConsumerState<CountDetailScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
-      appBar: AppBar(
+      appBar: DemirAppBar(
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(record.title, style: AppTypography.titleLarge),
+            Text(record.title, style: AppTypography.titleLarge.copyWith(color: Colors.white)),
             Text(
               DateFormat('d MMM yyyy · HH:mm').format(record.date),
-              style: AppTypography.labelMedium,
+              style: AppTypography.labelMedium.copyWith(color: const Color(0xFFB7BDC7)),
             ),
           ],
         ),

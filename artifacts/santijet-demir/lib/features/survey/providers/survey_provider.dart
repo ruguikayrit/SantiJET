@@ -5,75 +5,22 @@ import 'package:santijet_demir/domain/entities/rebar_metraj.dart';
 import 'package:santijet_demir/domain/entities/survey.dart';
 import 'package:santijet_demir/features/projects/providers/project_provider.dart';
 
-class _StandardImalatSpec {
-  const _StandardImalatSpec({
-    required this.name,
-    required this.progressPercent,
-    required this.lines,
-  });
+/// Eski sürümün boş projeye yazdığı örnek keşif. Yalnız bu toplamlar silinir.
+const _injectedSampleImalats = <String, (double, double, double, double)>{
+  'temel': (280, 172, 148, 49),
+  'doseme': (320, 128, 72, 20),
+  'merdiven': (85, 34, 22, 23),
+};
 
-  final String name;
-  final double progressPercent;
-  final List<DiameterLine> lines;
-}
-
-const _standardImalatSpecs = <_StandardImalatSpec>[
-  _StandardImalatSpec(
-    name: 'Temel',
-    progressPercent: 62,
-    lines: [
-      DiameterLine(diameter: 12, planned: 80, ordered: 50, delivered: 42, progressPercent: 62),
-      DiameterLine(diameter: 14, planned: 70, ordered: 42, delivered: 36, progressPercent: 62),
-      DiameterLine(diameter: 16, planned: 70, ordered: 42, delivered: 36, progressPercent: 62),
-      DiameterLine(diameter: 20, planned: 60, ordered: 38, delivered: 34, progressPercent: 62),
-    ],
-  ),
-  _StandardImalatSpec(
-    name: 'Döşeme',
-    progressPercent: 40,
-    lines: [
-      DiameterLine(diameter: 8, planned: 70, ordered: 28, delivered: 16, progressPercent: 40),
-      DiameterLine(diameter: 10, planned: 60, ordered: 24, delivered: 14, progressPercent: 40),
-      DiameterLine(diameter: 12, planned: 70, ordered: 28, delivered: 16, progressPercent: 40),
-      DiameterLine(diameter: 14, planned: 60, ordered: 24, delivered: 14, progressPercent: 40),
-      DiameterLine(diameter: 16, planned: 60, ordered: 24, delivered: 12, progressPercent: 40),
-    ],
-  ),
-  _StandardImalatSpec(
-    name: 'Merdiven',
-    progressPercent: 35,
-    lines: [
-      DiameterLine(diameter: 10, planned: 30, ordered: 12, delivered: 8, progressPercent: 35),
-      DiameterLine(diameter: 12, planned: 30, ordered: 12, delivered: 8, progressPercent: 35),
-      DiameterLine(diameter: 14, planned: 25, ordered: 10, delivered: 6, progressPercent: 35),
-    ],
-  ),
-];
-
-SurveyImalat _imalatFromSpec(_StandardImalatSpec spec, Set<String> usedIds) {
-  final planned = spec.lines.fold<double>(0, (sum, line) => sum + line.planned);
-  final ordered = spec.lines.fold<double>(0, (sum, line) => sum + line.ordered);
-  final delivered = spec.lines.fold<double>(0, (sum, line) => sum + line.delivered);
-  final baseId = RebarSurveyMapper.slugifyImalatId(spec.name);
-  var id = baseId;
-  var suffix = 1;
-  while (usedIds.contains(id)) {
-    id = '$baseId-$suffix';
-    suffix++;
-  }
-  usedIds.add(id);
-  return SurveyImalat(
-    id: id,
-    name: spec.name,
-    totalTonnage: planned,
-    progressPercent: spec.progressPercent,
-    diameters: spec.lines.map((line) => line.diameter).toList(),
-    diameterLines: spec.lines,
-    planned: planned,
-    ordered: ordered,
-    delivered: delivered,
-    pending: (ordered - delivered).clamp(0, double.infinity),
-  );
+/// Boş projeye otomatik yazılmış Temel / Döşeme / Merdiven örneği mi?
+bool isInjectedSampleImalat(SurveyImalat imalat) {
+  final expected = _injectedSampleImalats[_foldImalatName(imalat.name)];
+  if (expected == null) return false;
+  bool near(double value, double target) => (value - target).abs() < 0.05;
+  return near(imalat.planned, expected.$1) &&
+      near(imalat.ordered, expected.$2) &&
+      near(imalat.delivered, expected.$3) &&
+      near(imalat.progressPercent, expected.$4);
 }
 
 String _foldImalatName(String name) {
@@ -159,13 +106,20 @@ class SurveyProjectNotifier extends StateNotifier<SurveyProject> {
     final saved = _repo.read(projectId);
     final activeName = _ref.read(activeProjectProvider)?.name ?? '';
     if (saved != null) {
+      final cleaned = [
+        for (final imalat in saved.imalats)
+          if (!isInjectedSampleImalat(imalat)) imalat,
+      ];
       state = saved.copyWith(
         projectName: activeName.isEmpty ? saved.projectName : activeName,
+        imalats: cleaned,
       );
+      if (cleaned.length != saved.imalats.length) {
+        _persist();
+      }
     } else {
       state = _repo.defaultProject(projectName: activeName);
     }
-    ensureStandardImalats();
   }
 
   Future<void> _persist() async {
@@ -205,21 +159,6 @@ class SurveyProjectNotifier extends StateNotifier<SurveyProject> {
     );
     await _persist();
     return updated;
-  }
-
-  /// Eksik standart imalatları ekler. Aynı adlı kayıt varsa dokunulmaz.
-  Future<void> ensureStandardImalats() async {
-    if (_ref.read(activeProjectIdProvider) == null) return;
-    final present = state.imalats.map((imalat) => _foldImalatName(imalat.name)).toSet();
-    final usedIds = state.imalats.map((imalat) => imalat.id).toSet();
-    final missing = <SurveyImalat>[];
-    for (final spec in _standardImalatSpecs) {
-      if (present.contains(_foldImalatName(spec.name))) continue;
-      missing.add(_imalatFromSpec(spec, usedIds));
-    }
-    if (missing.isEmpty) return;
-    state = state.copyWith(imalats: [...state.imalats, ...missing]);
-    await _persist();
   }
 
   Future<SurveyImalat> createImalat({required String name}) async {

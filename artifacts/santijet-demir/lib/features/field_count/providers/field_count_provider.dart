@@ -250,11 +250,15 @@ final reconciliationRowsProvider = Provider<List<ReconciliationRow>>((ref) {
   final latestCount = ref.watch(fieldCountsProvider).firstOrNull;
   final countedByDiameter = {
     for (final line in latestCount?.lines ?? const <FieldCountLineRecord>[])
-      line.diameter: line.actual,
+      line.diameter: line.actual < 0 ? 0.0 : line.actual,
   };
+  // Kayıttaki teslim anlık görüntüsü 0 kalmış olsa bile kullanım güncel teslimden hesaplanır.
   final usedByDiameter = {
-    for (final line in latestCount?.lines ?? const <FieldCountLineRecord>[])
-      line.diameter: line.actualUsed,
+    for (final entry in countedByDiameter.entries)
+      entry.key: consumedTonnage(
+        delivered: delivered[entry.key] ?? 0,
+        counted: entry.value,
+      ),
   };
 
   return buildReconciliationRows(

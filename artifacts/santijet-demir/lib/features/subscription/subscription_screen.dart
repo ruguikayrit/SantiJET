@@ -11,6 +11,7 @@ import 'package:santijet_demir/domain/enums/subscription_plan.dart';
 import 'package:santijet_demir/domain/subscription/subscription_catalog.dart';
 import 'package:santijet_demir/features/auth/providers/auth_provider.dart';
 import 'package:santijet_demir/features/subscription/providers/subscription_provider.dart';
+import 'package:santijet_demir/core/widgets/santijet_header.dart';
 
 class SubscriptionScreen extends ConsumerWidget {
   const SubscriptionScreen({super.key});
@@ -24,7 +25,7 @@ class SubscriptionScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
-      appBar: AppBar(title: const Text('Abonelik')),
+      appBar: DemirAppBar(title: const Text('Abonelik')),
       body: ListView(
         padding: const EdgeInsets.all(AppSpacing.md),
         children: [

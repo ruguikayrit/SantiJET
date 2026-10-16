@@ -275,21 +275,16 @@ class _OrdersScreenState extends ConsumerState<OrdersScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF3F6FB),
+      floatingActionButtonLocation: ShellAddFab.location,
       floatingActionButton: hasActiveProject && ref.watch(canCreateOrderProvider)
-          ? FloatingActionButton(
+          ? ShellAddFab(
               heroTag: 'new-order',
-              backgroundColor: const Color(0xFF2563EB),
-              foregroundColor: Colors.white,
               onPressed: () => context.push(AppRoutes.newOrder),
-              child: const Icon(Icons.add, size: 28),
             )
           : null,
       body: Column(
         children: [
-          SantijetHeader(
-            subtitle: 'Sipariş',
-            onCreateReport: () => context.push(AppRoutes.reports),
-          ),
+          const SantijetHeader(subtitle: 'Sipariş'),
           if (!hasActiveProject)
             const Expanded(child: ActiveProjectGate(child: SizedBox.shrink()))
           else ...[

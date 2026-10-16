@@ -1,3 +1,16 @@
+/// Sahada kullanılan demir: teslim − sayım.
+/// Teslim yoksa veya sayım teslimi aşıyorsa tüketim 0'dır; ilerleme negatif olamaz.
+double consumedTonnage({
+  required double delivered,
+  required double counted,
+}) {
+  if (delivered <= 0 || delivered.isNaN) return 0;
+  final onSite = counted.isNaN || counted < 0 ? 0.0 : counted;
+  final used = delivered - onSite;
+  if (used <= 0) return 0;
+  return used;
+}
+
 class ReconciliationRow {
   const ReconciliationRow({
     required this.diameter,
@@ -176,7 +189,8 @@ class FieldCountLineRecord {
   final double expectedStock;
   final double actual;
 
-  double get actualUsed => delivered - actual;
+  double get actualUsed =>
+      consumedTonnage(delivered: delivered, counted: actual);
   double get stockVariance => actual - expectedStock;
   double get usageVariance => actualUsed - plannedUsage;
 
@@ -280,8 +294,9 @@ class CountDiameterLine {
   /// Gerçek — saha sayımı.
   final double actual;
 
-  /// Gerçek — kullanılan demir (teslim − sayım).
-  double get actualUsed => delivered - actual;
+  /// Gerçek — kullanılan demir (teslim − sayım). Sayım teslimi aşarsa 0.
+  double get actualUsed =>
+      consumedTonnage(delivered: delivered, counted: actual);
 
   /// Stok sapması: sayım − beklenen stok.
   double get stockVariance => actual - expectedStock;

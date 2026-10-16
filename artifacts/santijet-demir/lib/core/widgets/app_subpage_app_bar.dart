@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:santijet_demir/core/responsive/app_safe_area.dart';
-import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
+import 'package:santijet_demir/core/widgets/santijet_header.dart';
 
 /// Alt sayfa üst çubuğu: güvenli alan + tek satır başlık.
 /// Scaffold'ta `primary: false` kullanın (çift safe-area önlenir).
@@ -17,9 +17,15 @@ PreferredSizeWidget appSubpageAppBar(
 
   return PreferredSize(
     preferredSize: Size.fromHeight(topInset + rowHeight),
-    child: Material(
-      color: backgroundColor ?? AppColors.canvas,
-      child: SizedBox(
+    child: DecoratedBox(
+      decoration: backgroundColor == null
+          ? DemirHeaderChrome.decoration
+          : BoxDecoration(color: backgroundColor),
+      child: Material(
+      type: MaterialType.transparency,
+      child: IconTheme(
+        data: const IconThemeData(color: Colors.white),
+        child: SizedBox(
         height: topInset + rowHeight,
         child: Padding(
           padding: EdgeInsets.only(top: topInset),
@@ -34,6 +40,8 @@ PreferredSizeWidget appSubpageAppBar(
             centerMiddle: false,
           ),
         ),
+        ),
+      ),
       ),
     ),
   );
@@ -53,13 +61,16 @@ PreferredSizeWidget appSubpageTitleAppBar(
     actions: actions,
     backgroundColor: backgroundColor,
     title: subtitle == null
-        ? Text(title, style: AppTypography.titleLarge)
+        ? Text(title, style: AppTypography.titleLarge.copyWith(color: Colors.white))
         : Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text(title, style: AppTypography.titleLarge),
-              Text(subtitle, style: AppTypography.labelMedium),
+              Text(title, style: AppTypography.titleLarge.copyWith(color: Colors.white)),
+              Text(
+                subtitle,
+                style: AppTypography.labelMedium.copyWith(color: const Color(0xFFB7BDC7)),
+              ),
             ],
           ),
   );
@@ -79,8 +90,12 @@ PreferredSizeWidget appTabbedSubpageAppBar(
 
   return PreferredSize(
     preferredSize: Size.fromHeight(topInset + tabBarHeight),
-    child: Material(
-      color: backgroundColor ?? AppColors.canvas,
+    child: DecoratedBox(
+      decoration: backgroundColor == null
+          ? DemirHeaderChrome.decoration
+          : BoxDecoration(color: backgroundColor),
+      child: Material(
+      type: MaterialType.transparency,
       child: SizedBox(
         height: topInset + tabBarHeight,
         child: Column(
@@ -94,7 +109,7 @@ PreferredSizeWidget appTabbedSubpageAppBar(
                   SizedBox(
                     width: 48,
                     child: IconButton(
-                      icon: const Icon(Icons.arrow_back),
+                      icon: const Icon(Icons.arrow_back, color: Colors.white),
                       tooltip: 'Geri',
                       onPressed: onBack ?? () => Navigator.maybePop(context),
                     ),
@@ -106,6 +121,7 @@ PreferredSizeWidget appTabbedSubpageAppBar(
             ),
           ],
         ),
+      ),
       ),
     ),
   );

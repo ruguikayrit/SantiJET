@@ -55,6 +55,10 @@ abstract final class AppColors {
 
   // —— Koyu sabitler ——
   static const darkCanvas = Color(0xFF05070A);
+
+  /// Sayfa başlığı bandı — düz koyu lacivert.
+  static const headerNavyTop = Color(0xFF16406E);
+  static const headerNavyBottom = Color(0xFF0B2344);
   static const darkSurface = Color(0xFF0D1117);
   static const darkSurfaceElevated = Color(0xFF151B26);
   static const darkSurfaceHighlight = Color(0xFF1E293B);

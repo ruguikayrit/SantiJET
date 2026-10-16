@@ -6,12 +6,12 @@ import 'package:santijet_demir/core/format/app_format.dart';
 import 'package:santijet_demir/core/routing/app_routes.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
 import 'package:santijet_demir/core/widgets/app_components.dart';
+import 'package:santijet_demir/core/widgets/diameter_status_cells.dart';
 import 'package:santijet_demir/core/widgets/santijet_header.dart';
 import 'package:santijet_demir/core/widgets/shell_tab_guard.dart';
 import 'package:santijet_demir/domain/entities/field_count.dart';
 import 'package:santijet_demir/features/auth/providers/membership_permission_provider.dart';
 import 'package:santijet_demir/features/field_count/providers/field_count_provider.dart';
-import 'package:santijet_demir/features/orders/widgets/order_card.dart';
 import 'package:santijet_demir/features/projects/providers/project_provider.dart';
 
 class FieldCountScreen extends ConsumerWidget {
@@ -26,13 +26,11 @@ class FieldCountScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF3F6FA),
+      floatingActionButtonLocation: ShellAddFab.location,
       floatingActionButton: hasActiveProject && canEdit
-          ? FloatingActionButton(
+          ? ShellAddFab(
               heroTag: 'new-count',
-              backgroundColor: const Color(0xFF2563EB),
-              foregroundColor: Colors.white,
               onPressed: () => context.push(AppRoutes.newCount),
-              child: const Icon(Icons.add, size: 28),
             )
           : null,
       body: Column(
@@ -136,15 +134,14 @@ class _LatestCountKpi extends StatelessWidget {
             ),
           ),
           if (lines.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
+            const SizedBox(height: 14),
+            DiameterStatusCells(
+              items: [
                 for (final line in lines)
-                  OrderDiameterKpiChip(
+                  DiameterStatusCellItem(
                     diameter: line.diameter,
-                    tons: line.actual,
+                    bottomLabel: AppFormat.tonnage(line.actual),
+                    sortValue: line.actual,
                   ),
               ],
             ),
@@ -257,23 +254,14 @@ class _CountRecordTile extends StatelessWidget {
                 ),
               ),
               if (lines.isNotEmpty) ...[
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    for (final line in lines.take(10))
-                      OrderDiameterKpiChip(
+                const SizedBox(height: 12),
+                DiameterStatusCells(
+                  items: [
+                    for (final line in lines)
+                      DiameterStatusCellItem(
                         diameter: line.diameter,
-                        tons: line.actual,
-                      ),
-                    if (lines.length > 10)
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
-                        child: Text(
-                          '+${lines.length - 10} çap',
-                          style: AppTypography.labelMedium.copyWith(color: const Color(0xFF94A3B8)),
-                        ),
+                        bottomLabel: AppFormat.tonnage(line.actual),
+                        sortValue: line.actual,
                       ),
                   ],
                 ),

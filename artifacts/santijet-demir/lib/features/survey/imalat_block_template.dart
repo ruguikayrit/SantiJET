@@ -6,7 +6,7 @@ abstract final class ImalatBlockTemplate {
   static List<ImalatBlock> build(SurveyImalat imalat) {
     final rows = _rowsFor(imalat.name);
     final weight = rows.fold<double>(0, (sum, row) => sum + row.subWeight);
-    final scale = imalat.planned > 0 && weight > 0 ? imalat.planned / weight : 1.0;
+    final scale = imalat.planned > 0 && weight > 0 ? imalat.planned / weight : 0.0;
     final grouped = <String, List<_TemplateRow>>{};
     for (final row in rows) {
       grouped.putIfAbsent(row.code, () => []).add(row);
@@ -95,6 +95,47 @@ abstract final class ImalatBlockTemplate {
     }
     return buffer.toString();
   }
+
+  /// Otomatik yazılmış, kullanıcı miktar girmemiş şablon.
+  static bool isUntouchedGenerated(List<ImalatBlock> blocks) {
+    if (blocks.isEmpty) return false;
+    final idPattern = RegExp(r'^block-[A-Z]$');
+    for (final block in blocks) {
+      if (!idPattern.hasMatch(block.id)) return false;
+      if (block.name != '${block.code} Blok') return false;
+      for (final item in block.items) {
+        if (!_templateNames.contains(item.name)) return false;
+        for (final line in item.lines) {
+          if (line.planned > 0.0001) return false;
+        }
+      }
+    }
+    return true;
+  }
+
+  static const _templateNames = {
+    'Radye Temel',
+    'Bağ Kirişi',
+    'Tekil Temel',
+    'Kolon',
+    'Kısa Kolon',
+    'Perde Kolon',
+    'Perde',
+    'Perde Başı',
+    'Perde Ucu',
+    'Kiriş',
+    'Hatıl',
+    'Lento',
+    'Döşeme',
+    'Kirişli Döşeme',
+    'Plak',
+    'Merdiven',
+    'Sahanlık',
+    'Basamak',
+    'Ana İmalat',
+    'Yan İmalat',
+    'Detay İmalat',
+  };
 }
 
 class _TemplateRow {

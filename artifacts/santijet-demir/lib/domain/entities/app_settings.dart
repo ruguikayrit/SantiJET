@@ -1,6 +1,34 @@
 class AppSettings {
+  /// Ayarlar yalnızca Açık (`light`) ve Koyu (`dark`) yazar.
+  static const defaultThemeMode = 'light';
+
+  /// Alt menü görünümü. `classic` mevcut açık çubuktur.
+  static const defaultNavStyle = 'classic';
+
+  static String normalizeNavStyle(String? raw) {
+    return switch (raw) {
+      'navy' => 'navy',
+      'pill' => 'pill',
+      'line' => 'line',
+      _ => defaultNavStyle,
+    };
+  }
+
+  /// Eski hibrit kayıtları Açık/Koyu ile aynı palete bağlar.
+  /// `santijet_pro` / `gecejet` koyu Material tema kullanıyordu; koyu palete alınır.
+  /// `santijet` açık Material tema kullanıyordu; açık palete alınır.
+  static String normalizeThemeMode(String? raw) {
+    return switch (raw) {
+      'light' || 'santijet' => 'light',
+      'dark' || 'santijet_pro' || 'gecejet' => 'dark',
+      'system' => 'system',
+      _ => defaultThemeMode,
+    };
+  }
+
   AppSettings({
-    this.themeMode = 'santijet_pro',
+    this.themeMode = defaultThemeMode,
+    this.navStyle = defaultNavStyle,
     this.weightUnit = 'ton',
     this.language = 'tr',
     this.companyName = '',
@@ -27,6 +55,7 @@ class AppSettings {
   });
 
   final String themeMode;
+  final String navStyle;
   final String weightUnit;
   final String language;
   final String companyName;
@@ -54,6 +83,7 @@ class AppSettings {
 
   AppSettings copyWith({
     String? themeMode,
+    String? navStyle,
     String? weightUnit,
     String? language,
     String? companyName,
@@ -80,6 +110,7 @@ class AppSettings {
   }) {
     return AppSettings(
       themeMode: themeMode ?? this.themeMode,
+      navStyle: navStyle ?? this.navStyle,
       weightUnit: weightUnit ?? this.weightUnit,
       language: language ?? this.language,
       companyName: companyName ?? this.companyName,
@@ -108,6 +139,7 @@ class AppSettings {
 
   Map<String, dynamic> toJson() => {
         'themeMode': themeMode,
+        'navStyle': navStyle,
         'weightUnit': weightUnit,
         'language': language,
         'companyName': companyName,
@@ -135,12 +167,8 @@ class AppSettings {
 
   factory AppSettings.fromJson(Map<dynamic, dynamic> json) {
     return AppSettings(
-      themeMode: switch (json['themeMode'] as String?) {
-        'gecejet' => 'santijet_pro',
-        'light' || 'dark' || 'santijet' || 'santijet_pro' || 'system' =>
-          json['themeMode'] as String,
-        _ => 'santijet_pro',
-      },
+      themeMode: normalizeThemeMode(json['themeMode'] as String?),
+      navStyle: normalizeNavStyle(json['navStyle'] as String?),
       weightUnit: json['weightUnit'] as String? ?? 'ton',
       language: json['language'] as String? ?? 'tr',
       companyName: json['companyName'] as String? ?? '',

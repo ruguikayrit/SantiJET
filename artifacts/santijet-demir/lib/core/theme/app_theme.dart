@@ -36,15 +36,18 @@ abstract final class AppTheme {
         surfaceTintColor: Colors.transparent,
       ),
       appBarTheme: AppBarTheme(
-        backgroundColor: AppColors.lightCanvas,
-        foregroundColor: AppColors.lightTextPrimary,
+        backgroundColor: AppColors.headerNavyBottom,
+        foregroundColor: Colors.white,
+        surfaceTintColor: Colors.transparent,
         elevation: 0,
+        scrolledUnderElevation: 0,
         centerTitle: false,
         titleTextStyle: AppTypography.headlineMedium.copyWith(
-          color: AppColors.lightTextPrimary,
+          color: Colors.white,
         ),
-        systemOverlayStyle: SystemUiOverlayStyle.dark,
-        iconTheme: const IconThemeData(color: AppColors.lightTextPrimary),
+        systemOverlayStyle: SystemUiOverlayStyle.light,
+        iconTheme: const IconThemeData(color: Colors.white),
+        actionsIconTheme: const IconThemeData(color: Colors.white),
       ),
       cardTheme: CardThemeData(
         color: AppColors.lightSurface,
@@ -178,7 +181,7 @@ abstract final class AppTheme {
         surfaceTintColor: Colors.transparent,
       ),
       appBarTheme: AppBarTheme(
-        backgroundColor: AppColors.darkCanvas,
+        backgroundColor: AppColors.headerNavyBottom,
         foregroundColor: AppColors.darkTextPrimary,
         elevation: 0,
         centerTitle: false,

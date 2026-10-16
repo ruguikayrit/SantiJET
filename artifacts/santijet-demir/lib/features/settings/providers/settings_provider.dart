@@ -76,6 +76,11 @@ class AppSettingsNotifier extends StateNotifier<AppSettings> {
     await _persist();
   }
 
+  Future<void> setNavStyle(String style) async {
+    state = state.copyWith(navStyle: AppSettings.normalizeNavStyle(style));
+    await _persist();
+  }
+
   Future<void> setWeightUnit(String unit) async {
     state = state.copyWith(weightUnit: unit);
     await _persist();

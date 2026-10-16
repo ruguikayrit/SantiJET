@@ -62,6 +62,43 @@ void main() {
       expect(rows[1].delivered, 0);
       expect(rows[1].plannedUsage, 20);
     });
+
+    test('clamps negative usage and negative expected stock to zero', () {
+      const imalats = [
+        SurveyImalat(
+          id: 'kolon',
+          name: 'Kolon',
+          totalTonnage: 40,
+          progressPercent: 10,
+          diameters: [12],
+          diameterLines: [
+            DiameterLine(
+              diameter: 12,
+              planned: 40,
+              ordered: 20,
+              delivered: 10,
+              progressPercent: 10,
+            ),
+          ],
+          planned: 40,
+          ordered: 20,
+          delivered: 10,
+          pending: 10,
+        ),
+      ];
+
+      final rows = buildReconciliationRows(
+        imalats: imalats,
+        deliveredByDiameter: const {12: 10},
+        plannedUsageByDiameter: const {12: 4},
+        expectedStockByDiameter: const {12: -6},
+        countedByDiameter: const {12: 24},
+        usedByDiameter: const {12: -14},
+      );
+
+      expect(rows.single.used, 0);
+      expect(rows.single.expectedStock, 0);
+    });
   });
 
   group('computeReconciliationTotals', () {

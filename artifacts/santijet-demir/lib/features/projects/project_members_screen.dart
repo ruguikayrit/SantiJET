@@ -10,6 +10,7 @@ import 'package:santijet_demir/domain/entities/project_member.dart';
 import 'package:santijet_demir/domain/enums/corporate_role.dart';
 import 'package:santijet_demir/features/auth/providers/auth_provider.dart';
 import 'package:santijet_demir/features/projects/providers/project_provider.dart';
+import 'package:santijet_demir/core/widgets/santijet_header.dart';
 
 class ProjectMembersScreen extends ConsumerWidget {
   const ProjectMembersScreen({super.key, required this.projectId});
@@ -26,7 +27,7 @@ class ProjectMembersScreen extends ConsumerWidget {
     final isOwner = myMembership?.isOwner ?? false;
 
     return Scaffold(
-      appBar: AppBar(
+      appBar: DemirAppBar(
         title: Text(project?.name ?? 'Ekip'),
       ),
       body: ListView(

@@ -10,6 +10,7 @@ import 'package:santijet_demir/core/widgets/app_components.dart';
 import 'package:santijet_demir/core/widgets/app_table_header.dart';
 import 'package:santijet_demir/domain/entities/delivery.dart';
 import 'package:santijet_demir/features/incoming_rebar/providers/incoming_rebar_provider.dart';
+import 'package:santijet_demir/core/widgets/santijet_header.dart';
 
 class DeliveryDetailScreen extends ConsumerWidget {
   const DeliveryDetailScreen({super.key, required this.deliveryId});
@@ -27,7 +28,7 @@ class DeliveryDetailScreen extends ConsumerWidget {
     if (delivery == null) {
       return Scaffold(
         backgroundColor: AppColors.canvas,
-        appBar: AppBar(title: const Text('Teslimat')),
+        appBar: DemirAppBar(title: const Text('Teslimat')),
         body: const Center(child: Text('Teslimat bulunamadı')),
       );
     }
@@ -36,12 +37,12 @@ class DeliveryDetailScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
-      appBar: AppBar(
+      appBar: DemirAppBar(
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(delivery.orderNo, style: AppTypography.titleLarge),
-            Text(delivery.supplier, style: AppTypography.labelMedium),
+            Text(delivery.orderNo, style: AppTypography.titleLarge.copyWith(color: Colors.white)),
+            Text(delivery.supplier, style: AppTypography.labelMedium.copyWith(color: const Color(0xFFB7BDC7))),
           ],
         ),
       ),

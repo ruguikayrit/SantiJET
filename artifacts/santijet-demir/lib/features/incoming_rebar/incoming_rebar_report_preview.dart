@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:pdf/pdf.dart';
 import 'package:printing/printing.dart';
 import 'package:santijet_demir/core/theme/app_colors.dart';
+import 'package:santijet_demir/core/widgets/santijet_header.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
 import 'package:santijet_demir/data/services/export_service.dart';
 import 'package:santijet_demir/features/incoming_rebar/incoming_rebar_tracking_report.dart';
@@ -64,7 +65,7 @@ class _TrackingPdfPreviewScreenState extends State<TrackingPdfPreviewScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF12161C),
+      backgroundColor: AppColors.darkCanvas,
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -138,7 +139,7 @@ class _TrackingPdfPreviewScreenState extends State<TrackingPdfPreviewScreen> {
                 dynamicLayout: false,
                 padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
                 scrollViewDecoration: const BoxDecoration(
-                  color: Color(0xFF12161C),
+                  color: AppColors.darkCanvas,
                 ),
                 loadingWidget: const Center(
                   child: CircularProgressIndicator(),
@@ -240,7 +241,7 @@ class _TrackingExcelPreviewScreenState extends State<TrackingExcelPreviewScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF12161C),
+      backgroundColor: AppColors.darkCanvas,
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -415,7 +416,9 @@ class _PreviewBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
+    return DecoratedBox(
+      decoration: DemirHeaderChrome.decoration,
+      child: SizedBox(
       height: 56,
       child: Row(
         children: [
@@ -482,6 +485,7 @@ class _PreviewBar extends StatelessWidget {
             ),
           ),
         ],
+      ),
       ),
     );
   }

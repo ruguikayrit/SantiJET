@@ -5,6 +5,7 @@ import 'package:santijet_demir/core/format/app_format.dart';
 import 'package:santijet_demir/core/routing/app_routes.dart';
 import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
+import 'package:santijet_demir/core/widgets/app_components.dart';
 import 'package:santijet_demir/core/widgets/empty_states.dart';
 import 'package:santijet_demir/core/widgets/santijet_header.dart';
 import 'package:santijet_demir/features/auth/providers/membership_permission_provider.dart';
@@ -44,13 +45,11 @@ class _IncomingRebarScreenState extends ConsumerState<IncomingRebarScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF3F6FA),
+      floatingActionButtonLocation: ShellAddFab.location,
       floatingActionButton: hasActiveProject && canCreate
-          ? FloatingActionButton(
+          ? ShellAddFab(
               heroTag: 'new-delivery',
-              backgroundColor: const Color(0xFF2563EB),
-              foregroundColor: Colors.white,
               onPressed: () => context.push(AppRoutes.selectInTransitOrder),
-              child: const Icon(Icons.add, size: 28),
             )
           : null,
       body: Column(

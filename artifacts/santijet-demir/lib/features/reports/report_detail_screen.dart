@@ -14,6 +14,7 @@ import 'package:santijet_demir/features/reports/report_context.dart';
 import 'package:santijet_demir/features/reports/report_dialogs.dart';
 import 'package:santijet_demir/features/reports/report_service.dart';
 import 'package:santijet_demir/features/settings/providers/profile_provider.dart';
+import 'package:santijet_demir/core/widgets/santijet_header.dart';
 
 class ReportDetailScreen extends ConsumerWidget {
   const ReportDetailScreen({super.key, required this.reportId});
@@ -135,7 +136,9 @@ class ReportDetailScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
-      appBar: AppBar(title: Text(title, style: AppTypography.titleLarge)),
+      appBar: DemirAppBar(
+        title: Text(title, style: AppTypography.titleLarge.copyWith(color: Colors.white)),
+      ),
       body: ListView(
         padding: const EdgeInsets.all(AppSpacing.md),
         children: [

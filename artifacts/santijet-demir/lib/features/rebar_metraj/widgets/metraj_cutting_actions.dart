@@ -9,6 +9,7 @@ import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_radii.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
 import 'package:santijet_demir/core/widgets/app_bottom_nav_bar.dart';
+import 'package:santijet_demir/core/widgets/santijet_header.dart';
 import 'package:santijet_demir/domain/entities/rebar_metraj.dart';
 import 'package:santijet_demir/domain/entities/survey.dart';
 import 'package:santijet_demir/features/analysis/cutting_bending_calculator.dart';
@@ -268,25 +269,17 @@ class _ImalatImportPageState extends State<_ImalatImportPage> {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          SafeArea(
-            bottom: false,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'İmalattan Veri Al',
-                    style: AppTypography.headlineMedium,
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    'CAD metrajı bağlı imalatları Hesap ve Analiz’e aktarın.',
-                    style: AppTypography.bodySmall.copyWith(
-                      color: AppColors.textMuted,
-                    ),
-                  ),
-                ],
+          const DemirBrandHeader(
+            title: 'İmalattan Veri Al',
+            showBack: true,
+            showSettings: false,
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 14, 20, 8),
+            child: Text(
+              'CAD metrajı bağlı imalatları Hesap ve Analiz’e aktarın.',
+              style: AppTypography.bodySmall.copyWith(
+                color: AppColors.textMuted,
               ),
             ),
           ),

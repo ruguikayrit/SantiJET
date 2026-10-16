@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:santijet_demir/core/routing/app_routes.dart';
@@ -27,8 +28,8 @@ class SantijetHeader extends StatelessWidget {
   static const actionSize = 40.0;
   static const actionIconSize = 22.0;
 
-  /// Açık temada iç sayfa başlık bandı (ana sayfa hariç).
-  static const pageHeaderBandColor = Color(0xFF05070A);
+  /// İç sayfa başlık bandının alt laciverti.
+  static const pageHeaderBandColor = AppColors.headerNavyBottom;
 
   final String? subtitle;
   final bool showWordmark;
@@ -56,8 +57,51 @@ class SantijetHeader extends StatelessWidget {
   }
 }
 
-/// Ana sayfadaki siyah gradyan, wordmark ve DEMİR kilidi.
-/// Sayfa adı varsa wordmark’ın altında, aynı bantta durur.
+/// Tüm sayfa başlıklarında kullanılan Proje ritmi zemini.
+abstract final class DemirHeaderChrome {
+  static const decoration = BoxDecoration(
+    gradient: LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: [Color(0xFF0F2744), Color(0xFF071526)],
+    ),
+  );
+}
+
+/// AppBar’ın arkasında lacivert geçişi doldurur.
+class DemirHeaderBackdrop extends StatelessWidget {
+  const DemirHeaderBackdrop({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const DecoratedBox(
+      decoration: DemirHeaderChrome.decoration,
+      child: SizedBox.expand(),
+    );
+  }
+}
+
+/// Lacivert geçişli sayfa başlığı.
+class DemirAppBar extends AppBar {
+  DemirAppBar({
+    super.key,
+    super.leading,
+    super.automaticallyImplyLeading,
+    super.title,
+    super.actions,
+    super.bottom,
+    super.toolbarHeight,
+  }) : super(
+          backgroundColor: Colors.transparent,
+          surfaceTintColor: Colors.transparent,
+          elevation: 0,
+          scrolledUnderElevation: 0,
+          systemOverlayStyle: SystemUiOverlayStyle.light,
+          flexibleSpace: const DemirHeaderBackdrop(),
+        );
+}
+
+/// Wordmark veya sayfa adı. Arka plan lacivert geçiştir.
 class DemirBrandHeader extends StatelessWidget {
   const DemirBrandHeader({
     super.key,
@@ -78,24 +122,28 @@ class DemirBrandHeader extends StatelessWidget {
   final VoidCallback? onCreateReport;
   final VoidCallback? onImport;
 
-  static const headerTop = Color(0xFF2A2A2A);
-  static const headerBottom = Color(0xFF000000);
-
   @override
   Widget build(BuildContext context) {
     final top = MediaQuery.paddingOf(context).top;
     final canBack = showBack && context.canPop();
 
-    return DecoratedBox(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [headerTop, headerBottom],
+    if (showWordmark) {
+      return Container(
+        color: SantijetHomeBrand.homeBandColor,
+        padding: EdgeInsets.fromLTRB(16, top + 8, 12, 12),
+        child: Row(
+          children: [
+            const Expanded(child: _WordmarkLockup()),
+            if (showSettings) const _HeaderSettingsButton(onDarkBand: true),
+          ],
         ),
-      ),
+      );
+    }
+
+    return DecoratedBox(
+      decoration: DemirHeaderChrome.decoration,
       child: Padding(
-        padding: EdgeInsets.fromLTRB(canBack ? 4 : 14, top + 8, 6, 16),
+        padding: EdgeInsets.fromLTRB(canBack ? 4 : 14, top + 8, 6, 11),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
@@ -109,9 +157,7 @@ class DemirBrandHeader extends StatelessWidget {
                 icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white, size: 18),
               ),
             Expanded(
-              child: showWordmark
-                  ? const _WordmarkLockup()
-                  : _PageTitleLockup(title: title, caption: caption),
+              child: _PageTitleLockup(title: title, caption: caption),
             ),
             if (onCreateReport != null)
               _HeaderReportButton(onDarkBand: true, onPressed: onCreateReport!),
@@ -138,27 +184,32 @@ class _WordmarkLockup extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return Row(
       children: [
-        const SizedBox(
-          height: 19.6,
-          width: double.infinity,
-          child: Image(
-            image: AssetImage(SantijetHomeBrand.darkWordmarkAsset),
+        Flexible(
+          child: Image.asset(
+            SantijetHomeBrand.darkWordmarkAsset,
+            height: 28,
             fit: BoxFit.contain,
             alignment: Alignment.centerLeft,
+            errorBuilder: (_, __, ___) => Text(
+              'ŞantiJET',
+              style: GoogleFonts.rajdhani(
+                color: Colors.white,
+                fontSize: 22,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
           ),
         ),
-        const SizedBox(height: 2),
+        const SizedBox(width: 8),
         Text(
           'DEMİR',
           style: GoogleFonts.inter(
             color: Colors.white,
-            fontSize: 21,
+            fontSize: 18,
             fontWeight: FontWeight.w800,
-            letterSpacing: 0.4,
-            height: 1.1,
+            letterSpacing: 0.75,
           ),
         ),
       ],
@@ -363,6 +414,9 @@ TextStyle get _homeDemirTitleStyle => _demirTitleStyle.copyWith(
 /// Ana sayfa wordmark + DEMİR — güncelleme öncesi kilitli ölçek.
 abstract final class SantijetHomeBrand {
   static const darkWordmarkAsset = 'assets/images/splash_wordmark.png';
+
+  /// Ana sayfa marka bandı — PRO klasik tema `secondary` ile aynı.
+  static const homeBandColor = Color(0xFF16213E);
   static const wordmarkToDemirGap = SantijetHeader._homeWordmarkToDemirGap;
 
   static double wordmarkHeightOf(BuildContext context) =>

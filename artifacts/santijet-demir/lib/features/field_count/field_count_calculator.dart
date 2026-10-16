@@ -192,16 +192,23 @@ List<ReconciliationRow> buildReconciliationRows({
         final delivered = deliveredByDiameter[diameter] ?? 0.0;
         final counted = countedByDiameter[diameter] ?? 0.0;
         final plannedUsage = plannedUsageByDiameter[diameter] ?? 0.0;
-        final expectedStockValue = delivered > 0
+        final rawExpected = delivered > 0
             ? (expectedStockByDiameter[diameter] ?? (delivered - plannedUsage))
             : 0.0;
+        final expectedStockValue = rawExpected < 0 ? 0.0 : rawExpected;
         final ordered = surveyOrdered[diameter] ??
             orderedByDiameterFromOrders[diameter] ??
             orderedByDiameterFromDeliveries[diameter] ??
             0.0;
-        final usedValue = usedByDiameter.containsKey(diameter)
-            ? usedByDiameter[diameter]!
-            : (counted > 0 ? delivered - counted : 0.0);
+        final double rawUsed;
+        if (usedByDiameter.containsKey(diameter)) {
+          rawUsed = usedByDiameter[diameter]!;
+        } else if (counted > 0) {
+          rawUsed = consumedTonnage(delivered: delivered, counted: counted);
+        } else {
+          rawUsed = 0;
+        }
+        final usedValue = rawUsed < 0 ? 0.0 : rawUsed;
 
         return ReconciliationRow(
           diameter: diameter,
@@ -274,8 +281,10 @@ Map<int, double> computeExpectedStockByDiameter({
   required Map<int, double> deliveredByDiameter,
   required Map<int, double> plannedUsageByDiameter,
 }) {
-  return {
-    for (final entry in deliveredByDiameter.entries)
-      entry.key: entry.value - (plannedUsageByDiameter[entry.key] ?? 0),
-  };
+  final expected = <int, double>{};
+  for (final entry in deliveredByDiameter.entries) {
+    final raw = entry.value - (plannedUsageByDiameter[entry.key] ?? 0);
+    expected[entry.key] = raw < 0 ? 0.0 : raw;
+  }
+  return expected;
 }

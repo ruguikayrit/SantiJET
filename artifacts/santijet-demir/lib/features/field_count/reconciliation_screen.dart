@@ -16,6 +16,7 @@ import 'package:santijet_demir/domain/entities/field_count.dart';
 import 'package:santijet_demir/features/field_count/field_count_calculator.dart';
 import 'package:santijet_demir/features/field_count/providers/field_count_provider.dart';
 import 'package:santijet_demir/features/field_count/widgets/reconciliation_table.dart';
+import 'package:santijet_demir/core/widgets/santijet_header.dart';
 
 class ReconciliationScreen extends ConsumerStatefulWidget {
   const ReconciliationScreen({super.key});
@@ -66,7 +67,7 @@ class _ReconciliationScreenState extends ConsumerState<ReconciliationScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.canvas,
-      appBar: AppBar(
+      appBar: DemirAppBar(
         title: const Text('Mukayese Tablosu'),
         actions: [
           IconButton(

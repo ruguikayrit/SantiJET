@@ -10,6 +10,7 @@ import 'package:santijet_demir/core/format/app_format.dart';
 import 'package:santijet_demir/core/theme/app_colors.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
 import 'package:santijet_demir/core/widgets/app_toast.dart';
+import 'package:santijet_demir/core/widgets/santijet_header.dart';
 import 'package:santijet_demir/domain/entities/field_count.dart';
 import 'package:santijet_demir/features/field_count/providers/field_count_provider.dart';
 
@@ -199,14 +200,17 @@ class _NewCountScreenState extends ConsumerState<NewCountScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xFFF3F6FA),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF05070A),
-        foregroundColor: Colors.white,
-        title: Text(isEditing ? 'Sayım Düzenle' : 'Yeni Saha Sayımı'),
-      ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+      body: Column(
         children: [
+          DemirBrandHeader(
+            title: isEditing ? 'Sayım Düzenle' : 'Yeni Saha Sayımı',
+            showBack: true,
+            showSettings: false,
+          ),
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+              children: [
           Text(
             'Genel Bilgiler',
             style: AppTypography.titleMedium.copyWith(
@@ -433,36 +437,59 @@ class _NewCountScreenState extends ConsumerState<NewCountScreen> {
               ),
             ),
           const SizedBox(height: 24),
-          FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: const Color(0xFF2563EB),
-              minimumSize: const Size.fromHeight(48),
+          Row(
+            children: [
+              TextButton(
+                onPressed: () {
+                  ref.read(newCountDraftProvider.notifier).reset();
+                  context.pop();
+                },
+                style: TextButton.styleFrom(
+                  foregroundColor: AppColors.textMuted,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                ),
+                child: const Text('İptal'),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: FilledButton(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: const Color(0xFF2563EB),
+                    minimumSize: const Size.fromHeight(48),
+                  ),
+                  onPressed: lines.isEmpty
+                      ? null
+                      : () async {
+                          final record = await notifier.completeCount(lines);
+                          if (!context.mounted) return;
+
+                          if (record == null) {
+                            ScaffoldMessenger.of(context).showAppSnackBar(
+                              const SnackBar(
+                                content: Text('En az bir çap için tonaj girin'),
+                                backgroundColor: AppColors.warning,
+                              ),
+                            );
+                            return;
+                          }
+
+                          ScaffoldMessenger.of(context).showAppSnackBar(
+                            SnackBar(
+                              content: Text(
+                                isEditing ? 'Sayım güncellendi' : 'Sayım kaydedildi',
+                              ),
+                              backgroundColor: AppColors.success,
+                            ),
+                          );
+                          context.pop();
+                        },
+                  child: Text(isEditing ? 'Güncelle' : 'Kaydet'),
+                ),
+              ),
+            ],
+          ),
+              ],
             ),
-            onPressed: lines.isEmpty
-                ? null
-                : () async {
-                    final record = await notifier.completeCount(lines);
-                    if (!context.mounted) return;
-
-                    if (record == null) {
-                      ScaffoldMessenger.of(context).showAppSnackBar(
-                        const SnackBar(
-                          content: Text('En az bir çap için tonaj girin'),
-                          backgroundColor: AppColors.warning,
-                        ),
-                      );
-                      return;
-                    }
-
-                    ScaffoldMessenger.of(context).showAppSnackBar(
-                      SnackBar(
-                        content: Text(isEditing ? 'Sayım güncellendi' : 'Sayım kaydedildi'),
-                        backgroundColor: AppColors.success,
-                      ),
-                    );
-                    context.pop();
-                  },
-            child: Text(isEditing ? 'Güncelle' : 'Kaydet'),
           ),
         ],
       ),

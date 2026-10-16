@@ -16,6 +16,7 @@ import 'package:santijet_demir/features/projects/providers/project_provider.dart
 import 'package:santijet_demir/features/settings/providers/profile_provider.dart';
 import 'package:santijet_demir/features/settings/providers/backup_provider.dart';
 import 'package:santijet_demir/core/widgets/santijet_header.dart';
+import 'package:santijet_demir/domain/entities/app_settings.dart';
 import 'package:santijet_demir/features/settings/providers/settings_provider.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -29,6 +30,7 @@ class SettingsScreen extends ConsumerWidget {
     final profession = ref.watch(profileProfessionProvider);
     final email = ref.watch(profileEmailProvider);
     final phone = ref.watch(profilePhoneProvider);
+    final companyName = ref.watch(profileCompanyNameProvider);
     final initial = ref.watch(profileInitialProvider);
 
     return Scaffold(
@@ -47,6 +49,7 @@ class SettingsScreen extends ConsumerWidget {
           _ProfileHeader(
             displayName: displayName,
             profession: profession,
+            companyName: companyName,
             email: email,
             phone: phone,
             initial: initial,
@@ -55,6 +58,7 @@ class SettingsScreen extends ConsumerWidget {
               ref,
               displayName: displayName,
               profession: profession,
+              companyName: companyName,
               email: email,
               phone: phone,
             ),
@@ -83,6 +87,12 @@ class SettingsScreen extends ConsumerWidget {
             title: 'Tema',
             subtitle: _themeLabel(settings.themeMode),
             onTap: () => _showThemePicker(context, ref),
+          ),
+          _SettingsTile(
+            icon: Icons.border_bottom,
+            title: 'Alt menü',
+            subtitle: _navStyleLabel(settings.navStyle),
+            onTap: () => _showNavStylePicker(context, ref),
           ),
           const _RebarUnitWeightTable(),
           _SettingsTile(
@@ -119,6 +129,7 @@ class SettingsScreen extends ConsumerWidget {
     WidgetRef ref, {
     required String displayName,
     required String profession,
+    required String companyName,
     required String email,
     required String phone,
   }) {
@@ -129,6 +140,7 @@ class SettingsScreen extends ConsumerWidget {
       builder: (ctx) => _ProfileEditorSheet(
         displayName: displayName,
         profession: profession,
+        companyName: companyName,
         email: email,
         phone: phone,
       ),
@@ -175,9 +187,46 @@ class SettingsScreen extends ConsumerWidget {
     context.go(AppRoutes.login);
   }
 
-  String _themeLabel(String mode) => switch (mode) {
-        'light' => 'Açık',
-        _ => 'Koyu',
+  String _themeLabel(String mode) => switch (AppSettings.normalizeThemeMode(mode)) {
+        'dark' => 'Koyu',
+        _ => 'Açık',
+      };
+
+  String _navStyleLabel(String style) => switch (AppSettings.normalizeNavStyle(style)) {
+        'navy' => 'Lacivert',
+        'pill' => 'Hap',
+        'line' => 'Çizgi',
+        _ => 'Klasik',
+      };
+
+  void _showNavStylePicker(BuildContext context, WidgetRef ref) {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: AppColors.surfaceElevated,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (final style in const ['classic', 'navy', 'pill', 'line'])
+              ListTile(
+                title: Text(_navStyleLabel(style)),
+                subtitle: Text(_navStyleHint(style)),
+                onTap: () {
+                  ref.read(appSettingsProvider.notifier).setNavStyle(style);
+                  Navigator.pop(ctx);
+                },
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _navStyleHint(String style) => switch (style) {
+        'navy' => 'Koyu lacivert zemin, beyaz seçili sekme',
+        'pill' => 'Seçili sekme lacivert hap içinde',
+        'line' => 'Seçili sekmenin üstünde kısa çizgi',
+        _ => 'Açık zemin, mavi seçili sekme',
       };
 
   void _showThemePicker(BuildContext context, WidgetRef ref) {
@@ -405,6 +454,7 @@ class _ProfileHeader extends StatelessWidget {
   const _ProfileHeader({
     required this.displayName,
     required this.profession,
+    required this.companyName,
     required this.email,
     required this.phone,
     required this.initial,
@@ -413,6 +463,7 @@ class _ProfileHeader extends StatelessWidget {
 
   final String displayName;
   final String profession;
+  final String companyName;
   final String email;
   final String phone;
   final String initial;
@@ -447,6 +498,8 @@ class _ProfileHeader extends StatelessWidget {
                     Text(displayName.toUpperCase(), style: AppTypography.titleLarge),
                     if (profession.isNotEmpty)
                       Text(profession, style: AppTypography.bodySmall),
+                    if (companyName.isNotEmpty)
+                      Text(companyName, style: AppTypography.bodySmall),
                     if (email.isNotEmpty)
                       Text(email, style: AppTypography.bodySmall),
                     if (phone.isNotEmpty)
@@ -679,12 +732,14 @@ class _ProfileEditorSheet extends ConsumerStatefulWidget {
   const _ProfileEditorSheet({
     required this.displayName,
     required this.profession,
+    required this.companyName,
     required this.email,
     required this.phone,
   });
 
   final String displayName;
   final String profession;
+  final String companyName;
   final String email;
   final String phone;
 
@@ -695,6 +750,7 @@ class _ProfileEditorSheet extends ConsumerStatefulWidget {
 class _ProfileEditorSheetState extends ConsumerState<_ProfileEditorSheet> {
   late final TextEditingController _nameCtrl = TextEditingController(text: widget.displayName);
   late final TextEditingController _professionCtrl = TextEditingController(text: widget.profession);
+  late final TextEditingController _companyCtrl = TextEditingController(text: widget.companyName);
   late final TextEditingController _emailCtrl = TextEditingController(text: widget.email);
   late final TextEditingController _phoneCtrl = TextEditingController(text: widget.phone);
 
@@ -702,6 +758,7 @@ class _ProfileEditorSheetState extends ConsumerState<_ProfileEditorSheet> {
   void dispose() {
     _nameCtrl.dispose();
     _professionCtrl.dispose();
+    _companyCtrl.dispose();
     _emailCtrl.dispose();
     _phoneCtrl.dispose();
     super.dispose();
@@ -730,6 +787,15 @@ class _ProfileEditorSheetState extends ConsumerState<_ProfileEditorSheet> {
               decoration: const InputDecoration(
                 labelText: 'Meslek',
                 hintText: 'Örn: İnşaat mühendisi',
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _companyCtrl,
+              textCapitalization: TextCapitalization.words,
+              decoration: const InputDecoration(
+                labelText: 'Çalıştığı firma adı',
+                hintText: 'Opsiyonel',
               ),
             ),
             const SizedBox(height: 12),
@@ -776,6 +842,7 @@ class _ProfileEditorSheetState extends ConsumerState<_ProfileEditorSheet> {
       return;
     }
     await ref.read(appSettingsProvider.notifier).updateCompany(
+          companyName: _companyCtrl.text.trim(),
           contactEmail: _emailCtrl.text.trim(),
           contactPhone: _phoneCtrl.text.trim(),
         );

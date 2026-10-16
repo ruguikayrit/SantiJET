@@ -234,10 +234,7 @@ class OrderCard extends ConsumerWidget {
               (a, b) => a.isAfter(b) ? a : b,
             );
     final visual = orderVisual(order, delivered, shownTonnage);
-    final subtitle = [
-      if (imalat.isNotEmpty) imalat,
-      if (order.supplier.trim().isNotEmpty) order.supplier.trim(),
-    ].join(' · ');
+    final subtitle = imalat;
     final footer = visual == OrderVisual.cancelled
         ? '${deliveries.length} sevkiyat · $dateStr tarihinde iptal edildi'
         : lastDelivery == null

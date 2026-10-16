@@ -6,6 +6,7 @@ import 'package:santijet_demir/core/routing/app_routes.dart';
 import 'package:santijet_demir/core/theme/app_spacing.dart';
 import 'package:santijet_demir/data/repositories/project_repository.dart';
 import 'package:santijet_demir/features/projects/providers/project_provider.dart';
+import 'package:santijet_demir/core/widgets/santijet_header.dart';
 
 class JoinProjectScreen extends ConsumerStatefulWidget {
   const JoinProjectScreen({super.key});
@@ -46,7 +47,7 @@ class _JoinProjectScreenState extends ConsumerState<JoinProjectScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Proje Koduna Katıl')),
+      appBar: DemirAppBar(title: const Text('Proje Koduna Katıl')),
       body: ListView(
         padding: const EdgeInsets.all(AppSpacing.lg),
         children: [

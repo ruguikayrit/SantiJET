@@ -1,3 +1,12 @@
+/// İlerleme oranı 0–100 aralığındadır.
+double boundedProgressPercent(double value) {
+  if (value.isNaN || value <= 0) return 0;
+  if (value >= 100) return 100;
+  return value;
+}
+
+double _nonNegative(double value) => value.isNaN || value < 0 ? 0 : value;
+
 class DiameterLine {
   const DiameterLine({
     required this.diameter,
@@ -17,7 +26,7 @@ class DiameterLine {
 
   double get pending => (ordered - delivered).clamp(0, double.infinity);
   double get ratio => planned > 0 ? ordered / planned * 100 : 0;
-  double get expectedUsage => planned * progressPercent / 100;
+  double get expectedUsage => planned * boundedProgressPercent(progressPercent) / 100;
 
   DiameterLine copyWith({
     int? diameter,
@@ -49,7 +58,9 @@ class DiameterLine {
       planned: (json['planned'] as num).toDouble(),
       ordered: (json['ordered'] as num).toDouble(),
       delivered: (json['delivered'] as num).toDouble(),
-      progressPercent: (json['progressPercent'] as num?)?.toDouble() ?? 0,
+      progressPercent: boundedProgressPercent(
+        (json['progressPercent'] as num?)?.toDouble() ?? 0,
+      ),
     );
   }
 }
@@ -100,7 +111,9 @@ class ImalatSubWork {
       id: json['id'] as String? ?? '',
       name: json['name'] as String? ?? '',
       note: json['note'] as String? ?? '',
-      progressPercent: (json['progressPercent'] as num?)?.toDouble() ?? 0,
+      progressPercent: boundedProgressPercent(
+        (json['progressPercent'] as num?)?.toDouble() ?? 0,
+      ),
       lines: (json['lines'] as List<dynamic>? ?? const [])
           .map((line) => DiameterLine.fromJson(line as Map<dynamic, dynamic>))
           .toList(),
@@ -236,7 +249,9 @@ class SurveyImalat {
       id: json['id'] as String,
       name: json['name'] as String,
       totalTonnage: (json['totalTonnage'] as num).toDouble(),
-      progressPercent: (json['progressPercent'] as num).toDouble(),
+      progressPercent: boundedProgressPercent(
+        (json['progressPercent'] as num?)?.toDouble() ?? 0,
+      ),
       diameters: (json['diameters'] as List<dynamic>? ?? const [])
           .map((value) => (value as num).toInt())
           .toList(),
@@ -244,7 +259,7 @@ class SurveyImalat {
       planned: (json['planned'] as num).toDouble(),
       ordered: (json['ordered'] as num).toDouble(),
       delivered: (json['delivered'] as num).toDouble(),
-      pending: (json['pending'] as num).toDouble(),
+      pending: _nonNegative((json['pending'] as num?)?.toDouble() ?? 0),
       blocks: (json['blocks'] as List<dynamic>? ?? const [])
           .map((block) => ImalatBlock.fromJson(block as Map<dynamic, dynamic>))
           .toList(),

@@ -9,6 +9,7 @@ import 'package:santijet_demir/features/auth/app_lock_screen.dart';
 import 'package:santijet_demir/features/auth/providers/app_lock_provider.dart';
 import 'package:santijet_demir/features/auth/providers/auth_provider.dart';
 import 'package:santijet_demir/features/auth/session_expired_screen.dart';
+import 'package:santijet_demir/domain/entities/app_settings.dart';
 import 'package:santijet_demir/features/settings/providers/settings_provider.dart';
 
 const _appLocalizationsDelegates = [
@@ -31,8 +32,8 @@ class SantijetDemirApp extends ConsumerWidget {
     final router = ref.watch(routerProvider);
     final lock = ref.watch(appLockProvider);
     final auth = ref.watch(authProvider);
-    final themeMode = _themeModeFromSettings(settings.themeMode);
-    final modeKey = settings.themeMode;
+    final modeKey = AppSettings.normalizeThemeMode(settings.themeMode);
+    final themeMode = _themeModeFromSettings(modeKey);
 
     Widget wrap(Widget? child) => AppMediaQuery(
           child: AppColorsThemeSync(
@@ -85,10 +86,10 @@ class SantijetDemirApp extends ConsumerWidget {
     );
   }
 
-  /// ŞantiJET açık Material chrome; ŞantiJET Pro koyu chrome — kartlar [AppColors.cardSurface].
+  /// Açık ve Koyu, Material teması ile [AppColors] paletini aynı moda bağlar.
   ThemeMode _themeModeFromSettings(String mode) => switch (mode) {
-        'light' || 'santijet' => ThemeMode.light,
-        'dark' || 'santijet_pro' || 'gecejet' => ThemeMode.dark,
+        'light' => ThemeMode.light,
+        'dark' => ThemeMode.dark,
         _ => ThemeMode.system,
       };
 }

@@ -7,6 +7,7 @@ import 'package:santijet_demir/core/theme/app_spacing.dart';
 import 'package:santijet_demir/core/theme/app_typography.dart';
 import 'package:santijet_demir/domain/entities/project.dart';
 import 'package:santijet_demir/features/projects/providers/project_provider.dart';
+import 'package:santijet_demir/core/widgets/santijet_header.dart';
 
 class ProjectSettingsScreen extends ConsumerStatefulWidget {
   const ProjectSettingsScreen({super.key});
@@ -39,7 +40,7 @@ class _ProjectSettingsScreenState extends ConsumerState<ProjectSettingsScreen> {
 
     if (project == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Proje Bilgileri')),
+        appBar: DemirAppBar(title: const Text('Proje Bilgileri')),
         body: Center(
           child: FilledButton(
             onPressed: () => context.push(AppRoutes.projects),
@@ -52,7 +53,7 @@ class _ProjectSettingsScreenState extends ConsumerState<ProjectSettingsScreen> {
     _ensureControllers(project);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Proje Bilgileri')),
+      appBar: DemirAppBar(title: const Text('Proje Bilgileri')),
       body: ListView(
         padding: const EdgeInsets.all(AppSpacing.md),
         children: [

@@ -25,17 +25,11 @@ class _SurveyListScreenState extends ConsumerState<SurveyListScreen> {
   late final ScrollController _imalatListScrollController;
   final _searchController = TextEditingController();
   String _query = '';
-  var _ensuredTypes = false;
 
   @override
   void initState() {
     super.initState();
     _imalatListScrollController = ScrollController();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || _ensuredTypes) return;
-      _ensuredTypes = true;
-      ref.read(surveyProjectProvider.notifier).ensureStandardImalats();
-    });
   }
 
   @override
@@ -105,8 +99,9 @@ class _SurveyListScreenState extends ConsumerState<SurveyListScreen> {
       backgroundColor: screenBg,
       primary: false,
       resizeToAvoidBottomInset: false,
+      floatingActionButtonLocation: ShellAddFab.location,
       floatingActionButton: canEdit
-          ? AppFab(
+          ? ShellAddFab(
               heroTag: 'new-imalat',
               onPressed: _showCreateImalatDialog,
             )

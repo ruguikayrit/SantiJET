@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:santijet_demir/core/theme/app_spacing.dart';
 import 'package:santijet_demir/features/settings/providers/settings_provider.dart';
+import 'package:santijet_demir/core/widgets/santijet_header.dart';
 
 class NotificationSettingsScreen extends ConsumerWidget {
   const NotificationSettingsScreen({super.key});
@@ -12,7 +13,7 @@ class NotificationSettingsScreen extends ConsumerWidget {
     final notifier = ref.read(appSettingsProvider.notifier);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Bildirim Ayarları')),
+      appBar: DemirAppBar(title: const Text('Bildirim Ayarları')),
       body: ListView(
         padding: const EdgeInsets.all(AppSpacing.md),
         children: [
