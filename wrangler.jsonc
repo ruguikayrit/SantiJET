@@ -1,0 +1,8 @@
+{
+  "name": "santijet",
+  "compatibility_date": "2026-10-27",
+  "assets": {
+    "directory": "./artifacts/santijet-website/dist/public",
+    "not_found_handling": "single-page-application"
+  }
+}
