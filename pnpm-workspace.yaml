@@ -64,6 +64,8 @@ onlyBuiltDependencies:
   - unrs-resolver
 
 overrides:
+  # Cloudflare Workers Builds runs pnpm 9.10, which reads this list only from
+  # package.json "pnpm.overrides". Keep the two copies identical.
   # Exclude unused platform-specific native binaries
   "esbuild>@esbuild/darwin-arm64": "-"
   "esbuild>@esbuild/darwin-x64": "-"
