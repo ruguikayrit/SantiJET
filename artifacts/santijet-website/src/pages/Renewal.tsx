@@ -8,7 +8,7 @@ export default function Renewal() {
         <img
           src={`${BASE_URL}/brand/santijet-bolt-nobg.png`}
           alt=""
-          className="mb-2 h-[10.5rem] w-[10.5rem] object-contain"
+          className="mb-[-0.35rem] h-[10.5rem] w-[10.5rem] object-contain"
         />
         <img
           src={`${BASE_URL}/brand/santijet-wordmark-plain-nobg.png`}
