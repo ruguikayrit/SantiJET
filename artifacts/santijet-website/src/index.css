@@ -163,3 +163,13 @@
     scroll-margin-top: 6rem;
   }
 }
+
+:root {
+  --page-gutter: clamp(1.5rem, 2.8vw, 2.75rem);
+}
+
+.site-frame {
+  width: min(100%, 76rem);
+  margin-inline: auto;
+  padding-inline: var(--page-gutter);
+}

@@ -10,6 +10,35 @@ import { useState, useEffect, useRef } from "react";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 
 const BASE_URL = import.meta.env.BASE_URL.replace(/\/$/, "");
+const WORDMARK_OPTICAL = "calc(2.5rem * -28 / 266)";
+
+const APP_STORES = [
+  { id: "app-store", label: "App Store", href: "" },
+  { id: "google-play", label: "Google Play", href: "" },
+] as const;
+
+function StoreLinks() {
+  return (
+    <div className="flex flex-col gap-2" role="group" aria-label="Uygulama mağazaları">
+      {APP_STORES.map((store) => {
+        const className = "flex h-11 items-center justify-between rounded-md border border-white/10 bg-white/[0.04] px-3 text-sm text-white/55";
+        if (!store.href) {
+          return (
+            <button key={store.id} type="button" disabled className={`${className} cursor-not-allowed`}>
+              <span>{store.label}</span>
+              <span className="text-[10px] font-medium uppercase tracking-[0.14em] text-white/35">Yakında</span>
+            </button>
+          );
+        }
+        return (
+          <a key={store.id} href={store.href} className={`${className} text-white hover:bg-white/[0.08]`} target="_blank" rel="noreferrer">
+            <span>{store.label}</span>
+          </a>
+        );
+      })}
+    </div>
+  );
+}
 
 const fadeIn = {
   hidden: { opacity: 0, y: 20 },
@@ -27,6 +56,7 @@ const staggerContainer = {
 // --- Navbar ---
 function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [tryOpen, setTryOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
@@ -38,19 +68,36 @@ function Navbar() {
   return (
     <>
       <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? "bg-background/80 backdrop-blur-md border-b border-white/5" : "bg-transparent"}`}>
-        <div className="h-20 flex items-center justify-between pr-4">
-          <Link href="/" className="flex items-center">
-            <img src={`${BASE_URL}/brand/santijet-wordmark-plain-nobg.png`} alt="ŞantiJET" className="block h-10 w-auto object-contain object-left" style={{ marginLeft: "calc(2.5rem * -28 / 266)" }} />
+        <div className="site-frame flex h-20 items-center justify-between gap-8">
+          <Link href="/" className="flex shrink-0 items-center">
+            <img src={`${BASE_URL}/brand/santijet-wordmark-plain-nobg.png`} alt="ŞantiJET" className="block h-10 w-auto object-contain object-left" style={{ marginLeft: WORDMARK_OPTICAL }} />
           </Link>
           
-          <nav className="hidden md:flex items-center gap-8">
+          <nav className="hidden items-center gap-8 lg:flex">
             <a href="#pro" className="text-sm font-medium text-muted-foreground hover:text-white transition-colors">Pro</a>
             <a href="#apps" className="text-sm font-medium text-muted-foreground hover:text-white transition-colors">Apps</a>
             <a href="#nasil-calisir" className="text-sm font-medium text-muted-foreground hover:text-white transition-colors">Nasıl Çalışır</a>
             <a href="#fiyatlandirma" className="text-sm font-medium text-muted-foreground hover:text-white transition-colors">Fiyatlandırma</a>
           </nav>
 
-          <div className="hidden md:flex items-center gap-4">
+          <div className="hidden items-center gap-3 md:flex">
+            <div className="relative">
+              <Button
+                type="button"
+                variant="outline"
+                aria-expanded={tryOpen}
+                aria-controls="santijet-try-stores"
+                onClick={() => setTryOpen((open) => !open)}
+                className="border-white/15 bg-transparent text-white hover:bg-white/5"
+              >
+                ŞantiJET'i Dene
+              </Button>
+              {tryOpen && (
+                <div id="santijet-try-stores" className="absolute right-0 top-[calc(100%+0.5rem)] z-50 w-64 rounded-lg border border-white/10 bg-[#070b16] p-2 shadow-[0_16px_40px_rgba(0,0,0,0.45)]">
+                  <StoreLinks />
+                </div>
+              )}
+            </div>
             <a href="#fiyatlandirma">
               <Button variant="default" className="bg-primary hover:bg-primary/90 text-white shadow-[0_0_20px_rgba(26,95,255,0.4)]">
                 Teklif Al
@@ -58,19 +105,23 @@ function Navbar() {
             </a>
           </div>
 
-          <button className="md:hidden text-white" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+          <button className="text-white md:hidden" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
             {mobileMenuOpen ? <X /> : <Menu />}
           </button>
         </div>
       </header>
 
       {mobileMenuOpen && (
-        <div className="fixed inset-0 z-40 bg-background/95 backdrop-blur-xl pt-24 px-4 flex flex-col gap-6">
+        <div className="site-frame fixed inset-0 z-40 flex flex-col gap-6 bg-background/95 pt-24 backdrop-blur-xl">
           <a href="#pro" onClick={() => setMobileMenuOpen(false)} className="text-lg font-medium">Pro — Firmalar</a>
           <a href="#apps" onClick={() => setMobileMenuOpen(false)} className="text-lg font-medium">Apps — Mühendisler</a>
           <a href="#nasil-calisir" onClick={() => setMobileMenuOpen(false)} className="text-lg font-medium">Nasıl Çalışır</a>
           <a href="#fiyatlandirma" onClick={() => setMobileMenuOpen(false)} className="text-lg font-medium">Fiyatlandırma</a>
-          <a href="#fiyatlandirma" onClick={() => setMobileMenuOpen(false)}><Button className="w-full mt-4 bg-primary text-white">Teklif Al</Button></a>
+          <div className="mt-2 flex flex-col gap-3">
+            <p className="text-sm font-medium">ŞantiJET'i Dene</p>
+            <StoreLinks />
+            <a href="#fiyatlandirma" onClick={() => setMobileMenuOpen(false)}><Button className="w-full bg-primary text-white">Teklif Al</Button></a>
+          </div>
         </div>
       )}
     </>
@@ -83,7 +134,7 @@ function Hero() {
     <section className="relative pt-32 pb-20 md:pt-48 md:pb-32 overflow-hidden">
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-primary/20 rounded-full blur-[120px] pointer-events-none" />
       
-      <div className="container mx-auto px-4 relative z-10 text-center">
+      <div className="site-frame relative z-10 text-center">
         <motion.h1 
           initial="hidden" animate="visible" variants={fadeIn}
           className="text-5xl md:text-7xl font-bold tracking-tight mb-6 max-w-4xl mx-auto leading-tight"
@@ -123,7 +174,7 @@ function Hero() {
 function Families() {
   return (
     <section className="pb-8 pt-4 relative">
-      <div className="container mx-auto px-4">
+      <div className="site-frame">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-5xl font-bold mb-4">İki aile. İki iş.</h2>
           <p className="text-muted-foreground max-w-2xl mx-auto text-lg">
@@ -525,7 +576,7 @@ function Ecosystem() {
         }}
       />
 
-      <div className="container mx-auto px-4">
+      <div className="site-frame">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 18 }}
@@ -1082,7 +1133,7 @@ function ProductShowcase() {
 
   return (
     <section id="apps" className="py-32 relative bg-black">
-      <div className="container mx-auto px-4">
+      <div className="site-frame">
         <div className="text-center mb-24">
            <div className="text-xs font-bold tracking-[0.22em] text-cyan-300 mb-4">MÜHENDİSLER İÇİN</div>
            <motion.h2 
@@ -1268,7 +1319,7 @@ function HowItWorks() {
 
   return (
     <section id="nasil-calisir" className="py-24 bg-black/30 border-y border-white/5 relative">
-      <div className="container mx-auto px-4">
+      <div className="site-frame">
         <div className="text-center mb-16">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">İki ayrı akış</h2>
           <p className="text-muted-foreground max-w-2xl mx-auto">Pro şirketin operasyonunu bağlar. Apps, mühendisin o günkü hesabını hızlandırır.</p>
@@ -1325,7 +1376,7 @@ function Benefits() {
 
   return (
     <section className="py-24">
-      <div className="container mx-auto px-4">
+      <div className="site-frame">
         <h2 className="text-3xl md:text-4xl font-bold mb-12 text-center">Neden iki aile?</h2>
         <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
           {columns.map((col) => (
@@ -1357,7 +1408,7 @@ function Benefits() {
 function Pricing() {
   return (
     <section id="fiyatlandirma" className="py-24 relative">
-      <div className="container mx-auto px-4">
+      <div className="site-frame">
         <div className="text-center mb-16">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">Kime, ne satılır</h2>
           <p className="text-muted-foreground max-w-2xl mx-auto">Fiyat firmaya ve seçilen uygulamaya göre çıkar. Rakam teklifte netleşir.</p>
@@ -1426,7 +1477,7 @@ function FaqAndFooter() {
   return (
     <>
       <section className="py-24 bg-black/20">
-        <div className="container mx-auto px-4 max-w-3xl">
+        <div className="site-frame max-w-3xl">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold mb-4">Sıkça Sorulan Sorular</h2>
           </div>
@@ -1445,11 +1496,11 @@ function FaqAndFooter() {
 
       <footer className="bg-black py-16 border-t border-white/5 relative">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1/2 h-[1px] bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
-        <img src={`${BASE_URL}/brand/santijet-wordmark-plain-nobg.png`} alt="ŞantiJET" className="mb-8 block h-10 w-auto object-contain object-left" style={{ marginLeft: "calc(2.5rem * -28 / 266)" }} />
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-8 mb-12">
+        <div className="site-frame">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-x-8 gap-y-10 mb-12">
             <div className="col-span-2">
-              <p className="text-sm text-muted-foreground max-w-xs">
+              <img src={`${BASE_URL}/brand/santijet-wordmark-plain-nobg.png`} alt="ŞantiJET" className="mb-5 block h-10 w-auto object-contain object-left" style={{ marginLeft: WORDMARK_OPTICAL }} />
+              <p className="text-sm text-muted-foreground max-w-xs leading-relaxed">
                 Pro firmalar için ERP. Apps, mühendislerin rutinini kısaltan uygulama ailesi.
               </p>
             </div>
