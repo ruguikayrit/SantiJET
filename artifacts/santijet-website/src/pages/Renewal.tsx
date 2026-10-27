@@ -17,8 +17,10 @@ export default function Renewal() {
         />
         <div className="mt-12 flex max-w-md flex-col gap-3">
           <h1 className="text-3xl font-semibold tracking-tight md:text-4xl">Yenileniyoruz...</h1>
-          <p className="text-base leading-relaxed text-muted-foreground">ŞantiJET yeni yüzüyle hazırlanıyor...</p>
-          <p className="text-base leading-relaxed text-muted-foreground">Kısa süre sonra buradayız...</p>
+          <div className="flex flex-col gap-[2.75px]">
+            <p className="text-base leading-relaxed text-muted-foreground">ŞantiJET yeni yüzüyle hazırlanıyor...</p>
+            <p className="text-base leading-relaxed text-muted-foreground">Kısa süre sonra buradayız...</p>
+          </div>
         </div>
       </div>
     </main>
