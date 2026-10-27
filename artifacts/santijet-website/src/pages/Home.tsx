@@ -38,9 +38,9 @@ function Navbar() {
   return (
     <>
       <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? "bg-background/80 backdrop-blur-md border-b border-white/5" : "bg-transparent"}`}>
-        <div className="container mx-auto px-4 h-20 flex items-center justify-between">
+        <div className="h-20 flex items-center justify-between pr-4">
           <Link href="/" className="flex items-center">
-            <img src={`${BASE_URL}/brand/santijet-wordmark-plain-nobg.png`} alt="ŞantiJET" className="h-10 w-auto object-contain" />
+            <img src={`${BASE_URL}/brand/santijet-wordmark-plain-nobg.png`} alt="ŞantiJET" className="block h-10 w-auto object-contain object-left" style={{ marginLeft: "calc(2.5rem * -28 / 266)" }} />
           </Link>
           
           <nav className="hidden md:flex items-center gap-8">
@@ -1443,15 +1443,12 @@ function FaqAndFooter() {
         </div>
       </section>
 
-      <footer className="bg-black py-16 border-t border-white/5 relative overflow-hidden">
+      <footer className="bg-black py-16 border-t border-white/5 relative">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1/2 h-[1px] bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
+        <img src={`${BASE_URL}/brand/santijet-wordmark-plain-nobg.png`} alt="ŞantiJET" className="mb-8 block h-10 w-auto object-contain object-left" style={{ marginLeft: "calc(2.5rem * -28 / 266)" }} />
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-2 md:grid-cols-5 gap-8 mb-12">
             <div className="col-span-2">
-              <div className="flex items-center gap-1 mb-0">
-                <img src={`${BASE_URL}/brand/santijet-bolt-nav-nobg.png`} alt="ŞantiJET" className="h-[86px] w-auto object-contain" />
-                <img src={`${BASE_URL}/brand/santijet-wordmark-plain-nobg.png`} alt="ŞantiJET" className="h-10 w-auto object-contain" />
-              </div>
               <p className="text-sm text-muted-foreground max-w-xs">
                 Pro firmalar için ERP. Apps, mühendislerin rutinini kısaltan uygulama ailesi.
               </p>
