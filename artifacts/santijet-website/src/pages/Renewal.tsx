@@ -8,19 +8,18 @@ export default function Renewal() {
         <img
           src={`${BASE_URL}/brand/santijet-bolt-nobg.png`}
           alt=""
-          className="mb-7 h-28 w-28 object-contain"
+          className="mb-2 h-[10.5rem] w-[10.5rem] object-contain"
         />
         <img
           src={`${BASE_URL}/brand/santijet-wordmark-plain-nobg.png`}
           alt="ŞantiJET"
           className="h-11 w-auto object-contain"
         />
-        <h1 className="mt-12 text-3xl font-semibold tracking-tight md:text-4xl">
-          Yenileniyoruz
-        </h1>
-        <p className="mt-4 max-w-md text-base leading-relaxed text-muted-foreground">
-          ŞantiJET yeni yüzüyle hazırlanıyor. Kısa süre sonra buradayız.
-        </p>
+        <div className="mt-12 flex max-w-md flex-col gap-3">
+          <h1 className="text-3xl font-semibold tracking-tight md:text-4xl">Yenileniyoruz...</h1>
+          <p className="text-base leading-relaxed text-muted-foreground">ŞantiJET yeni yüzüyle hazırlanıyor...</p>
+          <p className="text-base leading-relaxed text-muted-foreground">Kısa süre sonra buradayız...</p>
+        </div>
       </div>
     </main>
   );
