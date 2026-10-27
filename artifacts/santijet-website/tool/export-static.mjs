@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 const here = path.dirname(fileURLToPath(import.meta.url));
 const dist = path.resolve(here, "../dist/public");
 const out = path.resolve(here, "../../santijet-web");
-const keep = new Set(["wrangler.jsonc"]);
+const keep = new Set(["wrangler.jsonc", "package.json"]);
 
 for (const name of readdirSync(out)) {
   if (keep.has(name)) continue;
