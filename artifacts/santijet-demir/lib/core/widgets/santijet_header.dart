@@ -57,15 +57,10 @@ class SantijetHeader extends StatelessWidget {
   }
 }
 
-/// Tüm sayfa başlıklarında kullanılan Proje ritmi zemini.
+/// Ana sayfa dahil tüm sayfa başlıklarında kullanılan düz koyu lacivert zemin.
 abstract final class DemirHeaderChrome {
-  static const decoration = BoxDecoration(
-    gradient: LinearGradient(
-      begin: Alignment.topLeft,
-      end: Alignment.bottomRight,
-      colors: [Color(0xFF0F2744), Color(0xFF071526)],
-    ),
-  );
+  static const color = AppColors.headerNavyBottom;
+  static const decoration = BoxDecoration(color: color);
 }
 
 /// AppBar’ın arkasında lacivert geçişi doldurur.
@@ -184,35 +179,22 @@ class _WordmarkLockup extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Flexible(
-          child: Image.asset(
-            SantijetHomeBrand.darkWordmarkAsset,
-            height: 28,
-            fit: BoxFit.contain,
-            alignment: Alignment.centerLeft,
-            errorBuilder: (_, __, ___) => Text(
-              'ŞantiJET',
-              style: GoogleFonts.rajdhani(
-                color: Colors.white,
-                fontSize: 22,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(width: 8),
-        Text(
-          'DEMİR',
-          style: GoogleFonts.inter(
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Image.asset(
+        SantijetHomeBrand.darkWordmarkAsset,
+        height: 28,
+        fit: BoxFit.contain,
+        alignment: Alignment.centerLeft,
+        errorBuilder: (_, __, ___) => Text(
+          'ŞantiJET',
+          style: GoogleFonts.rajdhani(
             color: Colors.white,
-            fontSize: 18,
-            fontWeight: FontWeight.w800,
-            letterSpacing: 0.75,
+            fontSize: 22,
+            fontWeight: FontWeight.w700,
           ),
         ),
-      ],
+      ),
     );
   }
 }
@@ -415,8 +397,8 @@ TextStyle get _homeDemirTitleStyle => _demirTitleStyle.copyWith(
 abstract final class SantijetHomeBrand {
   static const darkWordmarkAsset = 'assets/images/splash_wordmark.png';
 
-  /// Ana sayfa marka bandı — PRO klasik tema `secondary` ile aynı.
-  static const homeBandColor = Color(0xFF16213E);
+  /// Ana sayfa marka bandı — iç sayfa başlıklarıyla aynı koyu lacivert.
+  static const homeBandColor = DemirHeaderChrome.color;
   static const wordmarkToDemirGap = SantijetHeader._homeWordmarkToDemirGap;
 
   static double wordmarkHeightOf(BuildContext context) =>

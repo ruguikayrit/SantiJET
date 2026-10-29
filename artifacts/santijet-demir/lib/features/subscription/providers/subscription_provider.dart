@@ -20,12 +20,6 @@ final canAccessAnalysisBySubscriptionProvider = Provider<bool>((ref) {
   );
 });
 
-final canAccessPredictionBySubscriptionProvider = Provider<bool>((ref) {
-  return SubscriptionAccess.canAccessPrediction(
-    ref.watch(currentSubscriptionPlanProvider),
-  );
-});
-
 final isGuestSessionProvider = Provider<bool>((ref) {
   return ref.watch(authProvider).user?.isGuest ?? false;
 });

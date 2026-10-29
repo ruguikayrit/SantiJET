@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>DWG</title>
+</head>
+<body>
+  <script type="module" src="dwg_bridge.js"></script>
+  <script type="module">
+    async function post(path, body) {
+      await fetch(path, { method: 'POST', body });
+    }
+
+    async function waitReady() {
+      for (let i = 0; i < 600; i++) {
+        const status = window.__SANTIJET_DWG_MODULE__;
+        if (status === 'ready' && typeof window.santijetExtractDwgTexts === 'function') return;
+        if (status === 'error') {
+          throw new Error(window.__SANTIJET_DWG_MODULE_ERROR__ || 'LibreDWG yüklenemedi.');
+        }
+        await new Promise((r) => setTimeout(r, 100));
+      }
+      throw new Error('LibreDWG zaman aşımı.');
+    }
+
+    window.santijetRunDwgJob = async (id) => {
+      try {
+        await waitReady();
+        const res = await fetch(`/input/${id}`);
+        const bytes = new Uint8Array(await res.arrayBuffer());
+        const texts = await window.santijetExtractDwgTexts(bytes);
+        await post(`/result/${id}`, JSON.stringify({ texts }));
+      } catch (e) {
+        await post(`/error/${id}`, String((e && e.message) || e));
+      }
+    };
+
+    waitReady()
+      .then(() => post('/ready', 'ok'))
+      .catch((e) => post('/ready', 'error:' + String((e && e.message) || e)));
+  </script>
+</body>
+</html>

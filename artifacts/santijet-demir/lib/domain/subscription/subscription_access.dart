@@ -4,9 +4,6 @@ import 'package:santijet_demir/domain/enums/subscription_plan.dart';
 abstract final class SubscriptionAccess {
   static bool canAccessAnalysis(SubscriptionPlan plan) => plan.includesAnalysis;
 
-  static bool canAccessPrediction(SubscriptionPlan plan) =>
-      plan.includesPrediction;
-
   /// Metraj / keşif her planda açık.
   static bool canAccessMetraj(SubscriptionPlan plan) => true;
 }

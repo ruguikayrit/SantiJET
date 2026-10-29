@@ -19,7 +19,7 @@ Alt nav: **Ana Sayfa · Keşif · Sipariş · Gelen Demir · Saha Sayım**
 - Bildirim zili yok. `showNotification` varsayılan `false`; açma. Avatar / baş harf butonu yok (çark kullan).
 - `PointerInterceptor` header çarkında yok (dokunuşu yutuyordu); alt navda web için kalır.
 - Alt nav: Saha (`santijet-puantaj`) stil / kurgu — `AppColors.surface` + üst kenarlık, lift dışarıda, `electricBlue` / `textMuted`, klavyede gizle, `Router.neglect`. Tema `dividerColor` / `onSurfaceVariant` ile boyama yok.
-- Ana sayfa başlığı: siyah gradyan bant. Wordmark (`splash_wordmark.png`) ve altındaki **DEMİR** yazısı güncelleme öncesi ölçekte kalır. Sağda yalnız dişli. İş seçici anasayfada yok; iş **Ayarlar → Projelerim** üzerinden seçilir. Firma adı yok. Koda katıl yok.
+- Başlık zemini ana sayfa dahil tüm sayfalarda düz koyu lacivert (`DemirHeaderChrome.color` = `AppColors.headerNavyBottom`). Gradyan geri koyma. Ana sayfa başlığında yalnız wordmark (`splash_wordmark.png`) var; **DEMİR** yazısı yok, geri koyma. Sağda yalnız dişli. İş seçici anasayfada yok; iş **Ayarlar → Projelerim** üzerinden seçilir. Firma adı yok. Koda katıl yok.
 - Ana sayfa gövdesi referans düzen: Proje ilerlemesi, Gelen / Tüketilen / Mevcut Stok, Çap Bazlı Durum, Demir tüketim ilerlemesi. Eski KPI ızgarası, kritik uyarı ve aktivite listesi anasayfada yok.
 - İç sayfalar bolt + DEMİR + sayfa adı.
 - Shell body `SafeArea(bottom: false)` — üst inset status bar için.
@@ -41,12 +41,14 @@ Kaynak: `lib/core/widgets/santijet_header.dart`, `lib/features/shell/main_shell.
 
 - Analiz ekranında **Tahvil Hesaplayıcı** kartı / bölümü yok. Geri koyma.
 - DWG analiz listesi kartının altında **İmalattan Veri Al** (mavi) sonra **Fire analizi yap** (yeşil). Üstte import butonu yok.
+- Otomatik Metraj DWG okuma telefonda internetsiz çalışır: `assets/dwg/` içinde gömülü LibreDWG (WASM) + `dwg_host.html`, `DwgEmbeddedExtractor` (127.0.0.1 sunucu + görünmez WebView). `assets/dwg/dwg_bridge.js`, `web/dwg/dwg_bridge.js` ile aynı tutulur. Kaldırma; "web sürümünü kullanın" hatasını geri koyma.
 - Fire özeti paneli yalnız fire analizi tamamlandıktan sonra görünür; panel içinde **Fire analizi yap** yok.
 - Analiz veri kaynağı: **İmalattan Veri Al** (CAD metrajı imalata gönderilmiş kayıtlar). **Ön İmalat** sekmesi / “Ön İmalattan Veri Al” yok; geri koyma.
 - Keşif alt navda, Ana Sayfa ile Sipariş arasında. Sayfa başlığı diğer iç sayfalar gibi **Keşif**. İmalat listesinin üstünde proje/tarih satırı yok. Altta dışa aktar / içe aktar / Excel / PDF butonları yok. İçe aktar, başlıkta dişlinin solunda. Yeni imalat yalnız `+`. Otomatik Metraj ve Analiz Ayarlar listesindedir (Otomatik Metraj, hemen altında Analiz). Anasayfada Keşif satırı yok.
 - Ayarlar’da Bildirim Ayarları, Uygulama Kilidi ve Abonelik satırı yok. Profil: Ad Soyad, Meslek, mail, telefon. Üyelik tipi yok. Çıkış profil bilgilerinden. Projelerim sağ üst çıkış yok.
 - Fire analizi **tahvilsiz**: zayiatsız kesim + minimum fire (boy eşleştirme + stok kesim). Tahvil banner / `(tahvil ile fire analizi yap)` / tahvil zorunluluğu yok. Buton: **Fire analizi yap**. KPI: **Kesim Fire**.
-- Raporlar listesinde turuncu **DEMO — 16 rapor…** bandı yok. Geri koyma. Demo PDF veri (`useDemoReports`) ayrı; bandı açmak demek değil.
+- Raporlar listesinde turuncu **DEMO — 16 rapor…** bandı yok. Geri koyma.
+- `useDemoReports = false`. Açma. Katalogda yalnız canlı üreticisi olan 5 rapor: genel özet, teslimat listesi, stok mukayese, sayım sapması, aylık özet. Tahvil / keşif icmali / fire vitrin raporlarını geri koyma.
 
 ## Web / ölü alan / dokunuş (kilitli)
 

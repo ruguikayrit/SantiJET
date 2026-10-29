@@ -54,7 +54,6 @@ class _AnalysisFireSummaryPanelState
           rawWasteTonnage: 0,
           rawWastePercent: 0,
         );
-    final comparison = ref.watch(analysisComparisonProvider);
     final progress = ref.watch(optimumFireAnalysisProgressProvider);
     final analysisError = ref.watch(optimumFireAnalysisErrorProvider);
     final progressForBatch = progress.appliesTo(batch.id);
@@ -267,7 +266,6 @@ class _AnalysisFireSummaryPanelState
                       kind: _expandedDetail!,
                       batch: batch,
                       summary: summary,
-                      comparison: comparison,
                     )
                   else ...[
                     const SizedBox(height: 8),
@@ -350,13 +348,6 @@ Future<void> confirmAndRunFireAnalysis({
       .read(cuttingBendingBatchesProvider.notifier)
       .runOptimumFireAnalysis();
 }
-
-/// Geriye dönük alias.
-Future<void> confirmAndRunTahvilFireAnalysis({
-  required BuildContext context,
-  required WidgetRef ref,
-}) =>
-    confirmAndRunFireAnalysis(context: context, ref: ref);
 
 class _ActiveKpiCard extends StatelessWidget {
   const _ActiveKpiCard({

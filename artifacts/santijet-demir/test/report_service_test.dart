@@ -29,26 +29,41 @@ void main() {
     );
   }
 
-  test('pdf raporu eksik verilerde uyarı listesi döner', () {
-    final validation = service.validate('pdf', emptyContext());
+  test('genel özet eksik verilerde uyarı listesi döner', () {
+    final validation = service.validate('genel', emptyContext());
 
     expect(validation.isValid, isFalse);
-    expect(validation.missingRequirements, contains('Keşif / imalat metraj verisi'));
-    expect(validation.missingRequirements, contains('Sipariş kaydı'));
-    expect(validation.missingRequirements, contains('Teslimat kaydı'));
+    expect(
+      validation.missingRequirements,
+      contains('Keşif / imalat metraj verisi'),
+    );
+    expect(
+      validation.missingRequirements,
+      contains('Mukayese / stok verisi'),
+    );
     expect(validation.missingRequirements, contains('Saha sayım kaydı'));
   });
 
-  test('teslimat raporu sipariş ve teslimat ister', () {
-    final validation = service.validate('teslimat', emptyContext());
+  test('teslimat raporu teslimat ister', () {
+    final validation = service.validate('teslimat_liste', emptyContext());
 
     expect(validation.isValid, isFalse);
-    expect(validation.missingRequirements, contains('Sipariş kaydı'));
     expect(validation.missingRequirements, contains('Teslimat kaydı'));
+    expect(validation.missingRequirements, isNot(contains('Sipariş kaydı')));
   });
 
-  test('veriler tamamlandığında pdf raporu geçerli olur', () {
+  test('veriler tamamlandığında genel özet canlı projeden üretilir', () {
     final now = DateTime.now();
+    final row = const ReconciliationRow(
+      diameter: 16,
+      survey: 100,
+      ordered: 80,
+      delivered: 60,
+      plannedUsage: 50,
+      expectedStock: 10,
+      counted: 9,
+      used: 51,
+    );
     final context = ReportContext(
       projectName: 'Test Proje',
       hasActiveProject: true,
@@ -108,37 +123,16 @@ void main() {
           status: 'completed',
         ),
       ],
-      reconciliationRows: const [
-        ReconciliationRow(
-          diameter: 16,
-          survey: 100,
-          ordered: 80,
-          delivered: 60,
-          plannedUsage: 50,
-          expectedStock: 10,
-          counted: 9,
-          used: 51,
-        ),
-      ],
-      summary: computeReconciliationTotals(const [
-        ReconciliationRow(
-          diameter: 16,
-          survey: 100,
-          ordered: 80,
-          delivered: 60,
-          plannedUsage: 50,
-          expectedStock: 10,
-          counted: 9,
-          used: 51,
-        ),
-      ]),
+      reconciliationRows: [row],
+      summary: computeReconciliationTotals([row]),
     );
 
-    final validation = service.validate('pdf', context);
+    final validation = service.validate('genel', context);
     expect(validation.isValid, isTrue);
 
-    final payload = service.build('pdf', context);
-    expect(payload.title, 'Genel Özet Raporu');
+    final payload = service.build('genel', context);
+    expect(payload.title, 'Genel Proje Özeti');
     expect(payload.rows.first, ['Proje', 'Test Proje']);
+    expect(payload.title, isNot(contains('DEMO')));
   });
 }

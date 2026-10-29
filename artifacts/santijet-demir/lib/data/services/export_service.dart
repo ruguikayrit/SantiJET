@@ -168,6 +168,22 @@ class ExportService {
     );
   }
 
+  Future<void> shareExcelBytes({
+    required List<int> bytes,
+    required String fileName,
+    Rect? sharePositionOrigin,
+  }) async {
+    final safeName =
+        fileName.toLowerCase().endsWith('.xlsx') ? fileName : '$fileName.xlsx';
+    await _shareBytes(
+      bytes: bytes,
+      fileName: safeName,
+      mimeType:
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      sharePositionOrigin: sharePositionOrigin,
+    );
+  }
+
   Future<void> shareMultiSectionPdf({
     required String title,
     required List<PdfReportSection> sections,

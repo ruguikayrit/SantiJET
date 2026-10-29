@@ -190,8 +190,6 @@ class AnalysisReportService {
         ('Ham fire', '${_tonnage(comparison.rawFireTonnage)} (${_percent(comparison.rawFirePercent)})'),
         ('Plan fire', '${_tonnage(comparison.plannedFireTonnage)} (${_percent(comparison.plannedFirePercent)})'),
         ('Fire kazancı', '${_tonnage(comparison.savedFireTonnage)} (${_percent(comparison.savedFirePercent)})'),
-        if (comparison.tahvilGroupsApplied > 0)
-          ('Tahvil özeti', comparison.tahvilApplicationCaption),
       ],
     );
   }
@@ -326,30 +324,6 @@ class AnalysisReportService {
             ],
           )
           .toList(),
-    );
-  }
-
-  PdfReportSection _buildTahvilSection(List<TahvilSuggestion> groups) {
-    return PdfReportSection(
-      title: 'Onaylı Tahvil Grupları',
-      headers: const ['Grup', 'Uzunluk (m)', 'Üyeler', 'Dönüşüm', 'Adet'],
-      rows: groups.map((group) {
-        final equivalent = pickBestTahvilEquivalentForGroup(group);
-        final memberSummary = group.members
-            .map((member) => 'Ø${member.diameter}×${member.quantity}')
-            .join(', ');
-        return [
-          group.id,
-          group.representativeLengthM.toStringAsFixed(2),
-          memberSummary,
-          equivalent == null
-              ? '—'
-              : 'Ø${equivalent.fromDiameter}→Ø${equivalent.toDiameter}',
-          equivalent == null
-              ? '—'
-              : AppFormat.integer(equivalent.equivalentQuantity),
-        ];
-      }).toList(),
     );
   }
 

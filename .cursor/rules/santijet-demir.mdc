@@ -21,6 +21,6 @@ Kapsam: `artifacts/santijet-demir/**`. Başka ürüne dokunma. Özet: `artifacts
 - Keşif: navda, başlık **Keşif**. İmalat / Otomatik Metraj sekmeleri yok. Otomatik Metraj ve Analiz Ayarlar’da (metraj satırının altı Analiz). Anasayfa Keşif satırı yok. Analiz: **İmalattan Veri Al**.
 - Ayarlar’da Bildirim, Uygulama Kilidi ve Abonelik satırı yok. Profilde üyelik tipi yok; Ad Soyad, Meslek, mail, telefon. Çıkış profil sayfasından.
 - Fire analizi tahvilsiz (minimum fire / zayiatsız kesim). Liste altında: **İmalattan Veri Al** (mavi) → **Fire analizi yap** (yeşil). Fire özeti yalnız analiz sonrası; panelde tekrar buton yok.
-- Raporlar DEMO bandını açma.
+- Raporlar DEMO bandını açma. `useDemoReports` kapalı kalsın; sahte PDF vitrinini (tahvil dahil) geri koyma.
 - `AppMediaQuery` `padding.bottom = 0`; nav yalnız `viewPadding`. Turuncu STAGING şeridi, 28px spacer ve `flutter-view` `top:28px` yok; geri koyma.
 - Dal `staging`. Mesaj `feat(demir):` / `fix(demir):` / `docs(demir):`.

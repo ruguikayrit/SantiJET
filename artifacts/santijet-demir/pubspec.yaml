@@ -33,6 +33,7 @@ dependencies:
   url_launcher: ^6.3.1
   crypto: ^3.0.6
   supabase_flutter: ^2.9.1
+  flutter_inappwebview: ^6.1.5
 
 dev_dependencies:
   flutter_test:
@@ -44,9 +45,9 @@ dev_dependencies:
 flutter_launcher_icons:
   android: true
   ios: true
-  image_path: assets/images/s_logo.png
-  adaptive_icon_background: '#05070A'
-  adaptive_icon_foreground: assets/images/s_logo.png
+  image_path: assets/images/app_icon_demir.png
+  adaptive_icon_background: '#000000'
+  adaptive_icon_foreground: assets/images/app_icon_demir_foreground.png
   min_sdk_android: 21
   remove_alpha_ios: true
 
@@ -63,3 +64,5 @@ flutter:
   uses-material-design: true
   assets:
     - assets/images/
+    - assets/dwg/
+    - assets/dwg/wasm/

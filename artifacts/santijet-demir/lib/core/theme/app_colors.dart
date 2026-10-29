@@ -58,7 +58,7 @@ abstract final class AppColors {
 
   /// Sayfa başlığı bandı — düz koyu lacivert.
   static const headerNavyTop = Color(0xFF16406E);
-  static const headerNavyBottom = Color(0xFF0B2344);
+  static const headerNavyBottom = Color(0xFF06162E);
   static const darkSurface = Color(0xFF0D1117);
   static const darkSurfaceElevated = Color(0xFF151B26);
   static const darkSurfaceHighlight = Color(0xFF1E293B);
@@ -169,7 +169,7 @@ abstract final class AppColors {
   }
 
   // Blueprint / overlay
-  static const blueprintGrid = Color(0x0B4876DC);
+  static const blueprintGrid = Color(0x14FFFFFF);
   static Color get rebarOverlay =>
       useDarkChrome ? const Color(0x0AFFFFFF) : const Color(0x0A0B1220);
 

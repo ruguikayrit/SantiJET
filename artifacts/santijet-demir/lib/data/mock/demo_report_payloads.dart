@@ -161,7 +161,7 @@ ReportPayload? demoReportPayload(String reportId) {
           ['Ham fire', '7,90 t (%12,2)'],
           ['Plan fire', '4,10 t (%6,3)'],
           ['Kazanç', '3,80 t'],
-          ['Strateji', 'Tahvil + kesim optimizasyonu'],
+          ['Strateji', 'Minimum fire / zayiatsız kesim'],
           ['Firesiz çubuk', '1.842'],
           ['Fireli çubuk', '216'],
           ['Stok boyu', '12 m'],
@@ -176,19 +176,7 @@ ReportPayload? demoReportPayload(String reportId) {
           ['Fire', '7,90', '4,10', '-3,80'],
           ['Fire %', '%12,2', '%6,3', '-5,9 pp'],
           ['Çubuk adedi', '2.180', '2.058', '-122'],
-          ['Tahvil grubu', '0', '6', '+6'],
           ['Kazanç', '—', '3,80 t', '—'],
-        ],
-      ),
-    'tahvil_uygulama' => const ReportPayload(
-        title: 'Tahvil Uygulama Raporu (DEMO)',
-        headers: ['Kaynak Ø', 'Hedef Ø', 'Adet', 'As değişim', 'Durum'],
-        rows: [
-          ['Ø16', 'Ø14', '120', '+2,4%', 'Onaylı'],
-          ['Ø16', 'Ø12', '80', '+1,1%', 'Onaylı'],
-          ['Ø20', 'Ø16', '40', '+0,8%', 'Onaylı'],
-          ['Ø14', 'Ø12', '60', '-1,2%', 'Reddedildi'],
-          ['Ø12', 'Ø10', '90', '+0,5%', 'Onaylı'],
         ],
       ),
     'kesim_plani' => const ReportPayload(

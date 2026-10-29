@@ -55,6 +55,10 @@ Future<List<CadTextEntity>> extractDwgTextsWeb(List<int> bytes) async {
       .toList(growable: false);
 }
 
+Future<List<Map<String, dynamic>>> extractDwgTextsEmbedded(List<int> bytes) {
+  throw UnsupportedError('Embedded DWG parser is only available on mobile.');
+}
+
 Future<Object?> _waitForDwgBridge({
   Duration timeout = const Duration(seconds: 15),
 }) async {

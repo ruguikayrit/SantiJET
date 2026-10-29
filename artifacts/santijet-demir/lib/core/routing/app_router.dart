@@ -21,9 +21,6 @@ import 'package:santijet_demir/features/orders/orders_screen.dart';
 import 'package:santijet_demir/features/rebar_metraj/metraj_screen.dart';
 import 'package:santijet_demir/features/reports/report_detail_screen.dart';
 import 'package:santijet_demir/features/reports/reports_screen.dart';
-import 'package:santijet_demir/features/settings/company_settings_screen.dart';
-import 'package:santijet_demir/features/settings/notification_settings_screen.dart';
-import 'package:santijet_demir/features/settings/project_settings_screen.dart';
 import 'package:santijet_demir/features/settings/settings_screen.dart';
 import 'package:santijet_demir/features/shell/diameter_calc_detail_screen.dart';
 import 'package:santijet_demir/features/shell/diameter_status_screen.dart';
@@ -341,27 +338,6 @@ final routerProvider = Provider<GoRouter>((ref) {
             pageBuilder: (context, state) => fadeSlidePage(
               key: state.pageKey,
               child: const SubscriptionScreen(),
-            ),
-          ),
-          GoRoute(
-            path: 'company',
-            pageBuilder: (context, state) => fadeSlidePage(
-              key: state.pageKey,
-              child: const CompanySettingsScreen(),
-            ),
-          ),
-          GoRoute(
-            path: 'project',
-            pageBuilder: (context, state) => fadeSlidePage(
-              key: state.pageKey,
-              child: const ProjectSettingsScreen(),
-            ),
-          ),
-          GoRoute(
-            path: 'notifications',
-            pageBuilder: (context, state) => fadeSlidePage(
-              key: state.pageKey,
-              child: const NotificationSettingsScreen(),
             ),
           ),
           GoRoute(

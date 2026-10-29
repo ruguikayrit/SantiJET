@@ -1,43 +1,27 @@
 import 'package:santijet_demir/data/services/rebar_weight_calculator.dart';
 import 'package:santijet_demir/domain/entities/rebar_metraj.dart';
-import 'package:santijet_demir/domain/tahvil/tahvil_rules.dart';
 
-/// Fire azaltma analiz stratejisi.
+/// Fire azaltma stratejisi — yalnız yakın boy eşleştirme + stok kesim.
 enum FireReductionStrategy {
-  tahvilOnly,
-  lengthMatchOnly,
-  both;
+  lengthMatchOnly;
 
-  String get label => switch (this) {
-        FireReductionStrategy.tahvilOnly => 'Sadece tahvil',
-        FireReductionStrategy.lengthMatchOnly =>
-          'Minimum fire / zayiatsız kesim',
-        FireReductionStrategy.both => 'Tahvil + uzunluk eşleştirme',
-      };
+  String get label => 'Minimum fire / zayiatsız kesim';
 
-  String get description => switch (this) {
-        FireReductionStrategy.tahvilOnly => 'Farklı çaplarda yakın uzunluklar',
-        FireReductionStrategy.lengthMatchOnly =>
-          'Aynı çapta yakın boy eşleştirme ve stok kesim',
-        FireReductionStrategy.both => 'Tahvil + uzunluk eşleştirme',
-      };
+  String get description => 'Aynı çapta yakın boy eşleştirme ve stok kesim';
 
   String get toleranceDescription => 'Proje uzunluğunun max %5 toleransı';
 
-  bool get appliesTahvil =>
-      this == FireReductionStrategy.tahvilOnly ||
-      this == FireReductionStrategy.both;
+  bool get appliesLengthMatch => true;
 
-  bool get appliesLengthMatch =>
-      this == FireReductionStrategy.lengthMatchOnly ||
-      this == FireReductionStrategy.both;
-
-  static FireReductionStrategy? fromJson(String? value) {
-    if (value == null) return null;
-    for (final item in FireReductionStrategy.values) {
-      if (item.name == value) return item;
+  /// Eski kayıtlardaki tahvilOnly / both anahtarlarını da bu stratejiye alır.
+  static FireReductionStrategy fromJson(String? value) {
+    switch (value) {
+      case 'lengthMatchOnly':
+      case 'tahvilOnly':
+      case 'both':
+      default:
+        return FireReductionStrategy.lengthMatchOnly;
     }
-    return null;
   }
 }
 
@@ -230,159 +214,6 @@ class LengthMatchGroup {
           .map(RebarPieceLine.fromJson)
           .toList(),
       selectedLengthM: (json['selectedLengthM'] as num?)?.toDouble(),
-      approved: json['approved'] as bool? ?? false,
-    );
-  }
-}
-
-class TahvilEquivalent {
-  const TahvilEquivalent({
-    required this.fromDiameter,
-    required this.fromQuantity,
-    required this.toDiameter,
-    required this.equivalentQuantity,
-    this.areaDeviationPercent = 0,
-    this.resultingSpacingCm,
-    this.isRecommended = false,
-  });
-
-  final int fromDiameter;
-  final int fromQuantity;
-  final int toDiameter;
-  final int equivalentQuantity;
-  final double areaDeviationPercent;
-  final double? resultingSpacingCm;
-  final bool isRecommended;
-
-  TahvilEquivalent copyWith({
-    int? fromDiameter,
-    int? fromQuantity,
-    int? toDiameter,
-    int? equivalentQuantity,
-    double? areaDeviationPercent,
-    double? resultingSpacingCm,
-    bool? isRecommended,
-  }) {
-    return TahvilEquivalent(
-      fromDiameter: fromDiameter ?? this.fromDiameter,
-      fromQuantity: fromQuantity ?? this.fromQuantity,
-      toDiameter: toDiameter ?? this.toDiameter,
-      equivalentQuantity: equivalentQuantity ?? this.equivalentQuantity,
-      areaDeviationPercent: areaDeviationPercent ?? this.areaDeviationPercent,
-      resultingSpacingCm: resultingSpacingCm ?? this.resultingSpacingCm,
-      isRecommended: isRecommended ?? this.isRecommended,
-    );
-  }
-
-  Map<String, dynamic> toJson() => {
-        'fromDiameter': fromDiameter,
-        'fromQuantity': fromQuantity,
-        'toDiameter': toDiameter,
-        'equivalentQuantity': equivalentQuantity,
-        'areaDeviationPercent': areaDeviationPercent,
-        if (resultingSpacingCm != null) 'resultingSpacingCm': resultingSpacingCm,
-        'isRecommended': isRecommended,
-      };
-
-  factory TahvilEquivalent.fromJson(Map<dynamic, dynamic> json) {
-    return TahvilEquivalent(
-      fromDiameter: (json['fromDiameter'] as num?)?.toInt() ?? 0,
-      fromQuantity: (json['fromQuantity'] as num?)?.toInt() ?? 0,
-      toDiameter: (json['toDiameter'] as num?)?.toInt() ?? 0,
-      equivalentQuantity: (json['equivalentQuantity'] as num?)?.toInt() ?? 0,
-      areaDeviationPercent:
-          (json['areaDeviationPercent'] as num?)?.toDouble() ?? 0,
-      resultingSpacingCm: (json['resultingSpacingCm'] as num?)?.toDouble(),
-      isRecommended: json['isRecommended'] as bool? ?? false,
-    );
-  }
-
-  /// Kesit alanı oranı: d₁² × adet₁ ÷ d₂² → hedef çapta tahvil adedi.
-  static int computeEquivalentQuantity({
-    required int fromDiameter,
-    required int fromQuantity,
-    required int toDiameter,
-  }) {
-    return computeTahvilEquivalentQuantity(
-      fromDiameter: fromDiameter,
-      fromQuantity: fromQuantity,
-      toDiameter: toDiameter,
-    );
-  }
-
-  /// Grup üyelerinden kurallara uygun tahvil eşdeğerleri üretir.
-  static List<TahvilEquivalent> fromMembers(List<RebarPieceLine> members) {
-    return computeTahvilEquivalents(members);
-  }
-}
-
-class TahvilSuggestion {
-  const TahvilSuggestion({
-    required this.id,
-    required this.representativeLengthM,
-    required this.minLengthM,
-    required this.maxLengthM,
-    required this.members,
-    required this.equivalents,
-    this.approved = false,
-  });
-
-  final String id;
-  final double representativeLengthM;
-  final double minLengthM;
-  final double maxLengthM;
-  final List<RebarPieceLine> members;
-  final List<TahvilEquivalent> equivalents;
-  final bool approved;
-
-  TahvilSuggestion copyWith({bool? approved}) {
-    return TahvilSuggestion(
-      id: id,
-      representativeLengthM: representativeLengthM,
-      minLengthM: minLengthM,
-      maxLengthM: maxLengthM,
-      members: members,
-      equivalents: equivalents,
-      approved: approved ?? this.approved,
-    );
-  }
-
-  Set<int> get diameters => members.map((m) => m.diameter).toSet();
-
-  Map<String, dynamic> toJson() => {
-        'id': id,
-        'representativeLengthM': representativeLengthM,
-        'minLengthM': minLengthM,
-        'maxLengthM': maxLengthM,
-        'members': members.map((m) => m.toJson()).toList(),
-        'equivalents': equivalents.map((e) => e.toJson()).toList(),
-        'approved': approved,
-      };
-
-  factory TahvilSuggestion.fromJson(Map<dynamic, dynamic> json) {
-    final rawMembers = json['members'] as List<dynamic>? ?? const [];
-    final rawEquivalents = json['equivalents'] as List<dynamic>? ?? const [];
-    return TahvilSuggestion(
-      id: json['id'] as String? ?? '',
-      representativeLengthM:
-          (json['representativeLengthM'] as num?)?.toDouble() ?? 0,
-      minLengthM: (json['minLengthM'] as num?)?.toDouble() ?? 0,
-      maxLengthM: (json['maxLengthM'] as num?)?.toDouble() ?? 0,
-      members: rawMembers
-          .whereType<Map>()
-          .map(RebarPieceLine.fromJson)
-          .toList(),
-      equivalents: rawEquivalents.isEmpty
-          ? TahvilEquivalent.fromMembers(
-              rawMembers
-                  .whereType<Map>()
-                  .map(RebarPieceLine.fromJson)
-                  .toList(),
-            )
-          : rawEquivalents
-              .whereType<Map>()
-              .map(TahvilEquivalent.fromJson)
-              .toList(),
       approved: json['approved'] as bool? ?? false,
     );
   }
@@ -587,7 +418,6 @@ class OptimizationSnapshot {
     required this.optimizationAppliedAt,
     required this.revisedPieceLines,
     required this.lengthMatches,
-    required this.tahvilGroups,
     required this.stockCutPlans,
     required this.lengthMatchTolerancePercent,
   });
@@ -597,7 +427,6 @@ class OptimizationSnapshot {
   final DateTime optimizationAppliedAt;
   final List<RebarPieceLine> revisedPieceLines;
   final List<LengthMatchGroup> lengthMatches;
-  final List<TahvilSuggestion> tahvilGroups;
   final List<StockCutPlan> stockCutPlans;
   final double lengthMatchTolerancePercent;
 
@@ -608,7 +437,6 @@ class OptimizationSnapshot {
         'revisedPieceLines':
             revisedPieceLines.map((piece) => piece.toJson()).toList(),
         'lengthMatches': lengthMatches.map((group) => group.toJson()).toList(),
-        'tahvilGroups': tahvilGroups.map((group) => group.toJson()).toList(),
         'stockCutPlans': stockCutPlans.map((plan) => plan.toJson()).toList(),
         'lengthMatchTolerancePercent': lengthMatchTolerancePercent,
       };
@@ -624,8 +452,7 @@ class OptimizationSnapshot {
     }
 
     return OptimizationSnapshot(
-      strategy: FireReductionStrategy.fromJson(json['strategy'] as String?) ??
-          FireReductionStrategy.both,
+      strategy: FireReductionStrategy.fromJson(json['strategy'] as String?),
       savedAt: DateTime.tryParse(json['savedAt'] as String? ?? '') ??
           DateTime.now(),
       optimizationAppliedAt:
@@ -634,7 +461,6 @@ class OptimizationSnapshot {
       revisedPieceLines:
           parseList('revisedPieceLines', RebarPieceLine.fromJson),
       lengthMatches: parseList('lengthMatches', LengthMatchGroup.fromJson),
-      tahvilGroups: parseList('tahvilGroups', TahvilSuggestion.fromJson),
       stockCutPlans: parseList('stockCutPlans', StockCutPlan.fromJson),
       lengthMatchTolerancePercent: CuttingBendingBatch.parseLengthMatchTolerancePercent(
         json,
@@ -653,7 +479,6 @@ class CuttingBendingBatch {
     required this.pieceLines,
     required this.revisedPieceLines,
     required this.lengthMatches,
-    required this.tahvilGroups,
     required this.stockCutPlans,
     this.lengthMatchTolerancePercent = defaultLengthMatchTolerancePercent,
     this.optimizationAppliedAt,
@@ -686,7 +511,6 @@ class CuttingBendingBatch {
   final List<RebarPieceLine> pieceLines;
   final List<RebarPieceLine> revisedPieceLines;
   final List<LengthMatchGroup> lengthMatches;
-  final List<TahvilSuggestion> tahvilGroups;
   final List<StockCutPlan> stockCutPlans;
   final double lengthMatchTolerancePercent;
   final DateTime? optimizationAppliedAt;
@@ -719,7 +543,6 @@ class CuttingBendingBatch {
     List<RebarPieceLine>? pieceLines,
     List<RebarPieceLine>? revisedPieceLines,
     List<LengthMatchGroup>? lengthMatches,
-    List<TahvilSuggestion>? tahvilGroups,
     List<StockCutPlan>? stockCutPlans,
     double? lengthMatchTolerancePercent,
     DateTime? optimizationAppliedAt,
@@ -737,7 +560,6 @@ class CuttingBendingBatch {
       pieceLines: pieceLines ?? this.pieceLines,
       revisedPieceLines: revisedPieceLines ?? this.revisedPieceLines,
       lengthMatches: lengthMatches ?? this.lengthMatches,
-      tahvilGroups: tahvilGroups ?? this.tahvilGroups,
       stockCutPlans: stockCutPlans ?? this.stockCutPlans,
       lengthMatchTolerancePercent:
           lengthMatchTolerancePercent ?? this.lengthMatchTolerancePercent,
@@ -760,7 +582,6 @@ class CuttingBendingBatch {
         'pieceLines': pieceLines.map((p) => p.toJson()).toList(),
         'revisedPieceLines': revisedPieceLines.map((p) => p.toJson()).toList(),
         'lengthMatches': lengthMatches.map((g) => g.toJson()).toList(),
-        'tahvilGroups': tahvilGroups.map((g) => g.toJson()).toList(),
         'stockCutPlans': stockCutPlans.map((p) => p.toJson()).toList(),
         'lengthMatchTolerancePercent': lengthMatchTolerancePercent,
         if (optimizationAppliedAt != null)
@@ -798,15 +619,16 @@ class CuttingBendingBatch {
       pieceLines: parseList('pieceLines', RebarPieceLine.fromJson),
       revisedPieceLines: parseList('revisedPieceLines', RebarPieceLine.fromJson),
       lengthMatches: parseList('lengthMatches', LengthMatchGroup.fromJson),
-      tahvilGroups: parseList('tahvilGroups', TahvilSuggestion.fromJson),
       stockCutPlans: parseList('stockCutPlans', StockCutPlan.fromJson),
       lengthMatchTolerancePercent: parseLengthMatchTolerancePercent(json),
       optimizationAppliedAt: json['optimizationAppliedAt'] != null
           ? DateTime.tryParse(json['optimizationAppliedAt'] as String)
           : null,
-      optimizationStrategy: FireReductionStrategy.fromJson(
-        json['optimizationStrategy'] as String?,
-      ),
+      optimizationStrategy: json['optimizationStrategy'] == null
+          ? null
+          : FireReductionStrategy.fromJson(
+              json['optimizationStrategy'] as String?,
+            ),
       savedOptimizations: _parseSavedOptimizations(json['savedOptimizations']),
     );
   }
@@ -816,8 +638,8 @@ class CuttingBendingBatch {
     if (raw is! Map) return const {};
     final result = <FireReductionStrategy, OptimizationSnapshot>{};
     for (final entry in raw.entries) {
+      if (entry.value is! Map) continue;
       final strategy = FireReductionStrategy.fromJson(entry.key.toString());
-      if (strategy == null || entry.value is! Map) continue;
       result[strategy] =
           OptimizationSnapshot.fromJson(entry.value as Map<dynamic, dynamic>);
     }

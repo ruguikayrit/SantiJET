@@ -1,4 +1,5 @@
 import 'package:santijet_demir/core/format/app_format.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:santijet_demir/core/widgets/app_toast.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -10,9 +11,11 @@ import 'package:santijet_demir/core/theme/app_typography.dart';
 import 'package:santijet_demir/core/widgets/app_components.dart';
 import 'package:santijet_demir/core/widgets/santijet_header.dart';
 import 'package:santijet_demir/core/widgets/swipe_to_delete_row.dart';
+import 'package:santijet_demir/data/services/export_service.dart';
 import 'package:santijet_demir/domain/entities/survey.dart';
 import 'package:santijet_demir/features/projects/providers/project_provider.dart';
 import 'package:santijet_demir/features/survey/providers/survey_provider.dart';
+import 'package:santijet_demir/features/survey/survey_table_import.dart';
 
 class SurveyListScreen extends ConsumerStatefulWidget {
   const SurveyListScreen({super.key});
@@ -74,6 +77,143 @@ class _SurveyListScreenState extends ConsumerState<SurveyListScreen> {
     );
   }
 
+  Future<void> _openImportSheet() async {
+    final canEdit = ref.read(canEditActiveProjectProvider);
+    if (!canEdit) {
+      ScaffoldMessenger.of(context).showAppSnackBar(
+        const SnackBar(content: Text('Bu projeyi düzenleme yetkiniz yok')),
+      );
+      return;
+    }
+
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (sheetContext) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Text(
+                  'Excel içe aktar',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF1C2430),
+                  ),
+                ),
+                const SizedBox(height: 6),
+                const Text(
+                  'Dosya, referans şablonun satır ve sütun düzeninde olmalıdır.',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    color: Color(0xFF8B95A5),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.table_view_outlined),
+                  title: const Text('Şablonu indir'),
+                  subtitle: const Text('Keşif sayfasını bu dosyaya göre doldurun'),
+                  onTap: () {
+                    Navigator.pop(sheetContext);
+                    _downloadImportTemplate();
+                  },
+                ),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.upload_file_outlined),
+                  title: const Text('Dolu Excel’i içe aktar'),
+                  subtitle: const Text('Yalnız .xlsx — Keşif sayfası'),
+                  onTap: () {
+                    Navigator.pop(sheetContext);
+                    _pickAndImportExcel();
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _downloadImportTemplate() async {
+    try {
+      await exportService.shareExcelBytes(
+        bytes: buildSurveyImportTemplateBytes(),
+        fileName: surveyImportTemplateFileName,
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showAppSnackBar(
+        SnackBar(content: Text('Şablon indirilemedi: $error')),
+      );
+    }
+  }
+
+  Future<void> _pickAndImportExcel() async {
+    final picked = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: const ['xlsx'],
+      withData: true,
+    );
+    if (!mounted || picked == null || picked.files.isEmpty) return;
+
+    final file = picked.files.first;
+    final bytes = file.bytes;
+    if (bytes == null) {
+      ScaffoldMessenger.of(context).showAppSnackBar(
+        const SnackBar(content: Text('Dosya okunamadı. Lütfen tekrar deneyin.')),
+      );
+      return;
+    }
+
+    try {
+      final incoming = parseSurveyImport(fileName: file.name, bytes: bytes);
+      if (!mounted) return;
+      final merged = await ref
+          .read(surveyProjectProvider.notifier)
+          .importPlannedImalats(incoming);
+      if (!mounted) return;
+      _scrollToImalatListEnd();
+      ScaffoldMessenger.of(context).showAppSnackBar(
+        SnackBar(
+          content: Text(_importResultMessage(merged)),
+          backgroundColor: AppColors.success,
+        ),
+      );
+    } on SurveyImportException catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showAppSnackBar(
+        SnackBar(content: Text(error.message)),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showAppSnackBar(
+        SnackBar(content: Text('İçe aktarma hatası: $error')),
+      );
+    }
+  }
+
+  String _importResultMessage(SurveyImportMerge merged) {
+    if (merged.added > 0 && merged.updated > 0) {
+      return '${merged.added} imalat eklendi, ${merged.updated} güncellendi';
+    }
+    if (merged.updated > 0) {
+      return '${merged.updated} imalat güncellendi';
+    }
+    return '${merged.added} imalat içe aktarıldı';
+  }
+
   List<SurveyImalat> _visibleImalats(List<SurveyImalat> source) {
     final query = _foldImalat(_query.trim());
     final visible = query.isEmpty
@@ -110,8 +250,9 @@ class _SurveyListScreenState extends ConsumerState<SurveyListScreen> {
         color: screenBg,
         child: Column(
           children: [
-            const SantijetHeader(
+            SantijetHeader(
               subtitle: 'Keşif',
+              onImport: _openImportSheet,
             ),
             Expanded(
               child: ListView(

@@ -6,24 +6,22 @@ enum SubscriptionPlan {
   /// Sipariş, teslimat, sayım, mukayese, metraj.
   demirTakip,
 
-  /// Paket 1 + hesap/analiz/rapor + tahmin motoru.
+  /// Paket 1 + hesap/analiz/rapor.
   demirTakipAnaliz;
 
   String get label => switch (this) {
         SubscriptionPlan.none => 'Plan yok',
         SubscriptionPlan.demirTakip => 'Demir Takip',
-        SubscriptionPlan.demirTakipAnaliz => 'Demir Takip & Analiz & Tahmin',
+        SubscriptionPlan.demirTakipAnaliz => 'Demir Takip & Analiz',
       };
 
   String get shortLabel => switch (this) {
         SubscriptionPlan.none => 'Yok',
         SubscriptionPlan.demirTakip => 'Demir Takip',
-        SubscriptionPlan.demirTakipAnaliz => 'Analiz & Tahmin',
+        SubscriptionPlan.demirTakipAnaliz => 'Analiz',
       };
 
   bool get includesAnalysis => this == SubscriptionPlan.demirTakipAnaliz;
-
-  bool get includesPrediction => this == SubscriptionPlan.demirTakipAnaliz;
 
   bool get isPaid =>
       this == SubscriptionPlan.demirTakip ||

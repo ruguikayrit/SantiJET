@@ -39,21 +39,7 @@ class AnalysisScreen extends ConsumerWidget {
             if (!hasActiveProject)
               const ActiveProjectSliverGate()
             else ...[
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(AppSpacing.md, 0, AppSpacing.md, 0),
-                sliver: SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-                    child: Text(
-                      'Amaç: demir firesi azaltmak ve planlı kesim üretmek',
-                      style: AppTypography.bodySmall.copyWith(
-                        color: AppColors.textMuted,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                ),
-              ),
+              const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.sm)),
               if (state.batches.isEmpty) ...[
                 SliverToBoxAdapter(
                   child: ModuleEmptyState(

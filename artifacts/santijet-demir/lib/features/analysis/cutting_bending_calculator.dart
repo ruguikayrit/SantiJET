@@ -3,12 +3,12 @@ import 'package:santijet_demir/data/services/element_header_parser.dart';
 import 'package:santijet_demir/data/services/rebar_weight_calculator.dart';
 import 'package:santijet_demir/domain/entities/cutting_bending.dart';
 import 'package:santijet_demir/domain/entities/rebar_metraj.dart';
-import 'package:santijet_demir/domain/tahvil/tahvil_rules.dart';
 import 'package:santijet_demir/features/analysis/analysis_compute_cache.dart';
+
 /// Boy eşleştirme — kaynak demir boyunun en fazla bu oranı kadar tolerans.
 const lengthMatchTolerancePercent = 0.05;
 
-/// Kaynak boy (m) için boy eşleştirme / tahvil toleransı (m).
+/// Kaynak boy (m) için boy eşleştirme toleransı (m).
 double lengthMatchToleranceMForLength(double lengthM) =>
     lengthM * lengthMatchTolerancePercent;
 
@@ -718,7 +718,6 @@ List<RebarPieceLine> extractPieceLinesFromMetrajDetails(
 
 /// Sıralı parçaları boy aralığı toleransına göre gruplar.
 /// Boy eşleştirmede tolerans = en kısa boy × [tolerancePercent].
-/// Tahvil gruplamada aynı kural uygulanır.
 List<List<RebarPieceLine>> clusterPiecesByLengthSpan(
   List<RebarPieceLine> sortedPieces, {
   double tolerancePercent = lengthMatchTolerancePercent,
@@ -891,19 +890,6 @@ RebarPieceLine _resolveRevisedStateForRawPiece(
   var diameter = raw.diameter;
   var length = raw.lengthM;
 
-  for (final group in batch.tahvilGroups.where((group) => group.approved)) {
-    final equivalent = pickBestTahvilEquivalentForGroup(group);
-    if (equivalent == null) continue;
-    if (raw.diameter != equivalent.fromDiameter) continue;
-    final matched = group.members.any(
-      (member) => pieceLineKey(member) == pieceLineKey(raw),
-    );
-    if (!matched) continue;
-    diameter = equivalent.toDiameter;
-    length = group.representativeLengthM;
-    break;
-  }
-
   for (final group in batch.lengthMatches.where(
     (group) => group.approved && group.selectedLengthM != null,
   )) {
@@ -991,157 +977,8 @@ double computeMaterialTonnage(List<RebarPieceLine> pieces) {
   return total;
 }
 
-/// Onaylı tahvil gruplarını parça listesine uygular; kaynak liste korunur.
-///
-/// Dönüştürülen satırlar imalat kimliğini (elementCode / tip) korur;
-/// eşdeğer adet kaynak satırlara orantılı dağıtılır.
-List<RebarPieceLine> applyApprovedTahvilToPieceLines(
-  List<RebarPieceLine> pieceLines,
-  List<TahvilSuggestion> tahvilGroups,
-) {
-  var result = List<RebarPieceLine>.from(pieceLines);
-
-  for (final group in tahvilGroups.where((group) => group.approved)) {
-    final equivalent = pickBestTahvilEquivalentForGroup(group);
-    if (equivalent == null) continue;
-
-    final sources = group.members
-        .where((member) => member.diameter == equivalent.fromDiameter)
-        .toList();
-    if (sources.isEmpty) continue;
-
-    final memberKeys = sources.map(pieceLineKey).toSet();
-    final updated = <RebarPieceLine>[];
-    for (final piece in result) {
-      if (memberKeys.contains(pieceLineKey(piece))) continue;
-      updated.add(piece);
-    }
-
-    updated.addAll(
-      _distributeTahvilEquivalentPieces(
-        sources: sources,
-        toDiameter: equivalent.toDiameter,
-        lengthM: group.representativeLengthM,
-        equivalentQuantity: equivalent.equivalentQuantity,
-      ),
-    );
-    result = updated;
-  }
-
-  return _mergePieceLines(result);
-}
-
-/// Eşdeğer tahvil adedini kaynak satırlara miktar oranında dağıtır.
-List<RebarPieceLine> _distributeTahvilEquivalentPieces({
-  required List<RebarPieceLine> sources,
-  required int toDiameter,
-  required double lengthM,
-  required int equivalentQuantity,
-}) {
-  if (equivalentQuantity <= 0 || sources.isEmpty) return const [];
-
-  final totalFromQty =
-      sources.fold<int>(0, (sum, piece) => sum + piece.quantity);
-  if (totalFromQty <= 0) return const [];
-
-  final exactShares = <double>[
-    for (final piece in sources)
-      equivalentQuantity * piece.quantity / totalFromQty,
-  ];
-  final quantities = exactShares.map((share) => share.floor()).toList();
-  var assigned = quantities.fold<int>(0, (sum, qty) => sum + qty);
-  var remainder = equivalentQuantity - assigned;
-
-  if (remainder > 0) {
-    final order = List<int>.generate(sources.length, (i) => i)
-      ..sort((a, b) {
-        final fracA = exactShares[a] - quantities[a];
-        final fracB = exactShares[b] - quantities[b];
-        final byFrac = fracB.compareTo(fracA);
-        if (byFrac != 0) return byFrac;
-        return sources[b].quantity.compareTo(sources[a].quantity);
-      });
-    for (var i = 0; i < remainder; i++) {
-      quantities[order[i % order.length]]++;
-    }
-  }
-
-  final converted = <RebarPieceLine>[];
-  for (var i = 0; i < sources.length; i++) {
-    final qty = quantities[i];
-    if (qty <= 0) continue;
-    final source = sources[i];
-    converted.add(
-      source.copyWith(
-        diameter: toDiameter,
-        lengthM: lengthM,
-        quantity: qty,
-      ),
-    );
-  }
-  return converted;
-}
-
-/// Grup başına tek tahvil yönü seçer (çift yönlü uygulama parça kaybına yol açar).
-TahvilEquivalent? pickBestTahvilEquivalentForGroup(TahvilSuggestion group) {
-  final candidates =
-      group.equivalents.where((equivalent) => equivalent.isRecommended).toList();
-  if (candidates.isEmpty) return null;
-  if (candidates.length == 1) return candidates.first;
-
-  candidates.sort((a, b) {
-    final deviation =
-        a.areaDeviationPercent.compareTo(b.areaDeviationPercent);
-    if (deviation != 0) return deviation;
-    return b.fromQuantity.compareTo(a.fromQuantity);
-  });
-  return candidates.first;
-}
-
-/// Onaylı tahvil uygulamalarının çap / imalat özeti.
-class TahvilApplicationSummary {
-  const TahvilApplicationSummary({
-    required this.groupCount,
-    required this.diameterCount,
-    required this.imalatCount,
-  });
-
-  final int groupCount;
-  final int diameterCount;
-  final int imalatCount;
-}
-
-TahvilApplicationSummary summarizeAppliedTahvil(CuttingBendingBatch batch) {
-  final approved =
-      batch.tahvilGroups.where((group) => group.approved).toList();
-  final diameters = <int>{};
-  final imalats = <String>{};
-
-  for (final group in approved) {
-    for (final member in group.members) {
-      diameters.add(member.diameter);
-      final label = member.elementDisplayLabel.trim();
-      if (label.isNotEmpty) {
-        imalats.add(label);
-      }
-    }
-    final equivalent = pickBestTahvilEquivalentForGroup(group);
-    if (equivalent != null) {
-      diameters.add(equivalent.fromDiameter);
-      diameters.add(equivalent.toDiameter);
-    }
-  }
-
-  return TahvilApplicationSummary(
-    groupCount: approved.length,
-    diameterCount: diameters.length,
-    imalatCount: imalats.length,
-  );
-}
-
 List<RebarPieceLine> _workingPieceLines(CuttingBendingBatch batch) {
-  if (!batch.isOptimized) return batch.pieceLines;
-  return applyApprovedTahvilToPieceLines(batch.pieceLines, batch.tahvilGroups);
+  return batch.pieceLines;
 }
 
 /// Bir boy eşleştirme grubu için simüle fireyi minimize eden boyu seçer.
@@ -1230,7 +1067,6 @@ OptimizationSnapshot createOptimizationSnapshot(CuttingBendingBatch batch) {
     optimizationAppliedAt: batch.optimizationAppliedAt!,
     revisedPieceLines: List<RebarPieceLine>.from(batch.revisedPieceLines),
     lengthMatches: List<LengthMatchGroup>.from(batch.lengthMatches),
-    tahvilGroups: List<TahvilSuggestion>.from(batch.tahvilGroups),
     stockCutPlans: List<StockCutPlan>.from(batch.stockCutPlans),
     lengthMatchTolerancePercent: batch.lengthMatchTolerancePercent,
   );
@@ -1244,7 +1080,6 @@ CuttingBendingBatch applyOptimizationSnapshot(
     batch.copyWith(
       revisedPieceLines: snapshot.revisedPieceLines,
       lengthMatches: snapshot.lengthMatches,
-      tahvilGroups: snapshot.tahvilGroups,
       stockCutPlans: snapshot.stockCutPlans,
       lengthMatchTolerancePercent: snapshot.lengthMatchTolerancePercent,
       optimizationStrategy: snapshot.strategy,
@@ -1272,7 +1107,6 @@ CuttingBendingBatch clearActiveOptimization(CuttingBendingBatch batch) {
       clearOptimizationStrategy: true,
       lengthMatches: const [],
       stockCutPlans: const [],
-      tahvilGroups: computeTahvilGroups(batch.pieceLines),
     ),
   );
 }
@@ -1307,160 +1141,6 @@ class AnalysisFireSummary {
       : 0;
 }
 
-/// Proje fire'ı ile tahvil sonrası fire arasındaki ön izleme (boy eşleştirme yok).
-class TahvilFirePreview {
-  const TahvilFirePreview({
-    required this.baselineWasteTonnage,
-    required this.baselineWastePercent,
-    required this.tahvilWasteTonnage,
-    required this.tahvilWastePercent,
-    required this.savedWasteTonnage,
-    required this.savedWastePercent,
-    required this.applicableTahvilGroupCount,
-  });
-
-  final double baselineWasteTonnage;
-  final double baselineWastePercent;
-  final double tahvilWasteTonnage;
-  final double tahvilWastePercent;
-  final double savedWasteTonnage;
-  final double savedWastePercent;
-  final int applicableTahvilGroupCount;
-
-  bool get hasSavings =>
-      savedWastePercent > 0.001 && applicableTahvilGroupCount > 0;
-}
-
-/// Yalnızca toplam fire oranını düşüren tahvil gruplarını onaylar.
-List<TahvilSuggestion> selectBeneficialTahvilGroups({
-  required List<RebarPieceLine> pieceLines,
-  required List<TahvilSuggestion> groups,
-}) {
-  if (groups.isEmpty || pieceLines.isEmpty) {
-    return groups.map((group) => group.copyWith(approved: false)).toList();
-  }
-
-  final baseline = _aggregateStockCutFireMetrics(
-    computeStockCutPlans(pieceLines, retainBars: false, useCache: false),
-  );
-
-  final candidates = groups
-      .where((group) => pickBestTahvilEquivalentForGroup(group) != null)
-      .toList();
-  if (candidates.isEmpty) {
-    return groups.map((group) => group.copyWith(approved: false)).toList();
-  }
-
-  final approvedIds = <String>{};
-  var currentPercent = baseline.wastePercent;
-
-  while (true) {
-    TahvilSuggestion? bestGroup;
-    var bestPercent = currentPercent;
-
-    for (final group in candidates) {
-      if (approvedIds.contains(group.id)) continue;
-
-      final trialGroups = groups
-          .map(
-            (item) => item.copyWith(
-              approved:
-                  approvedIds.contains(item.id) || item.id == group.id,
-            ),
-          )
-          .toList();
-      final trialPieces = applyApprovedTahvilToPieceLines(
-        pieceLines,
-        trialGroups,
-      );
-      final trialMetrics = _aggregateStockCutFireMetrics(
-        computeStockCutPlans(
-          trialPieces,
-          retainBars: false,
-          useCache: false,
-        ),
-      );
-
-      if (trialMetrics.wastePercent < bestPercent - 1e-9) {
-        bestGroup = group;
-        bestPercent = trialMetrics.wastePercent;
-      }
-    }
-
-    if (bestGroup == null) break;
-
-    approvedIds.add(bestGroup.id);
-    currentPercent = bestPercent;
-  }
-
-  final beneficial = currentPercent < baseline.wastePercent - 1e-9;
-  final effectiveApproved = beneficial ? approvedIds : <String>{};
-
-  return groups
-      .map(
-        (group) => group.copyWith(
-          approved: effectiveApproved.contains(group.id),
-        ),
-      )
-      .toList();
-}
-
-List<TahvilSuggestion> autoApproveBestTahvilGroups(List<TahvilSuggestion> groups) {
-  return groups
-      .map(
-        (group) => pickBestTahvilEquivalentForGroup(group) != null
-            ? group.copyWith(approved: true)
-            : group.copyWith(approved: false),
-      )
-      .toList();
-}
-
-TahvilFirePreview estimateTahvilFirePreview(CuttingBendingBatch batch) {
-  // Sayfa açılışında greedy tahvil seçimi (N× paketleme) yapılmaz —
-  // önerilen grupların hepsi ile tek metrik paketi yeterlidir.
-  final baseline = _aggregateStockCutFireMetrics(
-    computeStockCutPlans(
-      batch.pieceLines,
-      retainBars: false,
-      useCache: false,
-    ),
-  );
-
-  final sourceGroups = batch.tahvilGroups.isNotEmpty
-      ? batch.tahvilGroups
-      : computeTahvilGroups(batch.pieceLines);
-  final tahvilGroups = autoApproveBestTahvilGroups(sourceGroups);
-  final tahvilPieces = applyApprovedTahvilToPieceLines(
-    batch.pieceLines,
-    tahvilGroups,
-  );
-  final tahvilMetrics = _aggregateStockCutFireMetrics(
-    computeStockCutPlans(
-      tahvilPieces,
-      retainBars: false,
-      useCache: false,
-    ),
-  );
-
-  final savedTonnage = (baseline.wasteTonnage - tahvilMetrics.wasteTonnage)
-      .clamp(0.0, double.infinity)
-      .toDouble();
-  final savedPercent = (baseline.wastePercent - tahvilMetrics.wastePercent)
-      .clamp(0.0, double.infinity)
-      .toDouble();
-
-  return TahvilFirePreview(
-    baselineWasteTonnage: baseline.wasteTonnage,
-    baselineWastePercent: baseline.wastePercent,
-    tahvilWasteTonnage: tahvilMetrics.wasteTonnage,
-    tahvilWastePercent: tahvilMetrics.wastePercent,
-    savedWasteTonnage: savedTonnage,
-    savedWastePercent: savedPercent,
-    applicableTahvilGroupCount:
-        tahvilGroups.where((group) => group.approved).length,
-  );
-}
-
 class AnalysisComparison {
   const AnalysisComparison({
     required this.rawLineCount,
@@ -1474,9 +1154,6 @@ class AnalysisComparison {
     required this.plannedFireTonnage,
     required this.plannedFirePercent,
     required this.lengthMatchGroupsApplied,
-    required this.tahvilGroupsApplied,
-    this.tahvilDiameterCount = 0,
-    this.tahvilImalatCount = 0,
   });
 
   final int rawLineCount;
@@ -1490,9 +1167,6 @@ class AnalysisComparison {
   final double plannedFireTonnage;
   final double plannedFirePercent;
   final int lengthMatchGroupsApplied;
-  final int tahvilGroupsApplied;
-  final int tahvilDiameterCount;
-  final int tahvilImalatCount;
 
   int get savedLines => (rawLineCount - revisedLineCount).clamp(0, rawLineCount);
 
@@ -1501,20 +1175,6 @@ class AnalysisComparison {
 
   double get savedFirePercent =>
       (rawFirePercent - plannedFirePercent).clamp(-100, 100);
-
-  String get tahvilApplicationCaption =>
-      tahvilApplicationLines.join('\n');
-
-  List<String> get tahvilApplicationLines {
-    if (tahvilGroupsApplied <= 0) return const [];
-    if (tahvilImalatCount > 0) {
-      return [
-        '$tahvilDiameterCount çapta tahvil uygulandı.',
-        '$tahvilImalatCount farklı imalatta tahvil uygulandı.',
-      ];
-    }
-    return ['$tahvilDiameterCount çapta tahvil uygulandı.'];
-  }
 }
 
 class StrategyFireComparison {
@@ -1830,8 +1490,6 @@ AnalysisComparison computeAnalysisComparison(CuttingBendingBatch batch) {
     (sum, piece) => sum + piece.quantity,
   );
 
-  final tahvilSummary = summarizeAppliedTahvil(batch);
-
   return AnalysisComparison(
     rawLineCount: batch.pieceLines.length,
     rawPieceCount: rawPieceCount,
@@ -1845,16 +1503,12 @@ AnalysisComparison computeAnalysisComparison(CuttingBendingBatch batch) {
     plannedFirePercent: summary.plannedWastePercent ?? 0,
     lengthMatchGroupsApplied:
         batch.lengthMatches.where((group) => group.approved).length,
-    tahvilGroupsApplied: tahvilSummary.groupCount,
-    tahvilDiameterCount: tahvilSummary.diameterCount,
-    tahvilImalatCount: tahvilSummary.imalatCount,
   );
 }
 
-/// Minimum fire / zayiatsız kesim hattını çalıştırır (tahvil uygulanmaz).
+/// Minimum fire / zayiatsız kesim hattını çalıştırır.
 Future<CuttingBendingBatch> runOptimumFireAnalysis(
   CuttingBendingBatch batch, {
-  required FireReductionStrategy strategy,
   Future<void> Function(int percent, String stepLabel)? onProgress,
 }) async {
   Future<void> report(int percent, String stepLabel) async {
@@ -1865,13 +1519,6 @@ Future<CuttingBendingBatch> runOptimumFireAnalysis(
 
   await report(8, 'Ham fire özeti hazırlanıyor...');
   await _yieldToEventLoop();
-
-  // Tahvil kapalı — gruplar bilgi amaçlı kalabilir ama onaylanmaz.
-  final tahvilState = (batch.tahvilGroups.isNotEmpty
-          ? batch.tahvilGroups
-          : computeTahvilGroups(batch.pieceLines))
-      .map((group) => group.copyWith(approved: false))
-      .toList();
 
   await report(25, 'Yakın boylar minimum fire için eşleştiriliyor...');
   await _yieldToEventLoop();
@@ -1902,7 +1549,6 @@ Future<CuttingBendingBatch> runOptimumFireAnalysis(
 
   final result = await syncBatchLengthMatchDerivativesAsync(
     batch.copyWith(
-      tahvilGroups: tahvilState,
       lengthMatches: lengthMatches,
       lengthMatchTolerancePercent:
           CuttingBendingBatch.defaultLengthMatchTolerancePercent,
@@ -1914,52 +1560,6 @@ Future<CuttingBendingBatch> runOptimumFireAnalysis(
   await _yieldToEventLoop();
   await report(100, 'Fire analizi tamamlandı');
   return result;
-}
-
-List<TahvilSuggestion> computeTahvilGroups(
-  List<RebarPieceLine> pieces, {
-  double tolerancePercent = lengthMatchTolerancePercent,
-}) {
-  if (pieces.length < 2) return const [];
-
-  final sorted = List<RebarPieceLine>.from(pieces)
-    ..sort((a, b) => a.lengthM.compareTo(b.lengthM));
-
-  final clusters = clusterPiecesByLengthSpan(
-    sorted,
-    tolerancePercent: tolerancePercent,
-  );
-
-  final suggestions = <TahvilSuggestion>[];
-  var tahvilIndex = 0;
-
-  for (final lengthCluster in clusters) {
-    final diameters = lengthCluster.map((p) => p.diameter).toSet();
-    if (diameters.length < 2) continue;
-    if (!shouldIncludeTahvilCluster(lengthCluster)) continue;
-
-    final lengths = lengthCluster.map((p) => p.lengthM).toList();
-    final minLength = lengths.reduce((a, b) => a < b ? a : b);
-    final maxLength = lengths.reduce((a, b) => a > b ? a : b);
-    final avgLength = lengths.fold(0.0, (sum, value) => sum + value) / lengths.length;
-
-    final equivalents = computeTahvilEquivalents(lengthCluster);
-    if (equivalents.isEmpty) continue;
-
-    suggestions.add(
-      TahvilSuggestion(
-        id: 'tahvil-$tahvilIndex',
-        representativeLengthM: avgLength,
-        minLengthM: minLength,
-        maxLengthM: maxLength,
-        members: List.unmodifiable(lengthCluster),
-        equivalents: equivalents,
-      ),
-    );
-    tahvilIndex++;
-  }
-
-  return suggestions;
 }
 
 CuttingBendingBatch buildCuttingBendingBatch({
@@ -1980,10 +1580,6 @@ CuttingBendingBatch buildCuttingBendingBatch({
       pieceLines: pieceLines,
       revisedPieceLines: const [],
       lengthMatches: computeLengthMatchGroups(
-        pieceLines,
-        tolerancePercent: lengthMatchTolerancePercent,
-      ),
-      tahvilGroups: computeTahvilGroups(
         pieceLines,
         tolerancePercent: lengthMatchTolerancePercent,
       ),
@@ -2031,7 +1627,7 @@ CuttingBendingBatch hydrateCuttingBendingBatchLabels(
   return batch.copyWith(labelDetails: details);
 }
 
-/// Etiket listesi değişince parça, boy eşleştirme ve tahvil gruplarını yeniden hesaplar.
+/// Etiket listesi değişince parça ve boy eşleştirme gruplarını yeniden hesaplar.
 CuttingBendingBatch rebuildCuttingBendingBatch(
   CuttingBendingBatch batch, {
   required List<RebarMetrajTextDetail> labelDetails,
@@ -2047,10 +1643,6 @@ CuttingBendingBatch rebuildCuttingBendingBatch(
       labelDetails: labelDetails,
       pieceLines: pieceLines,
       lengthMatches: computeLengthMatchGroups(
-        pieceLines,
-        tolerancePercent: tolerancePercent,
-      ),
-      tahvilGroups: computeTahvilGroups(
         pieceLines,
         tolerancePercent: tolerancePercent,
       ),
@@ -2146,10 +1738,6 @@ CuttingBendingBatch mergeCuttingBendingBatchesForAnalysis(
       pieceLines: mergedPieces,
       revisedPieceLines: const [],
       lengthMatches: computeLengthMatchGroups(
-        mergedPieces,
-        tolerancePercent: tolerance,
-      ),
-      tahvilGroups: computeTahvilGroups(
         mergedPieces,
         tolerancePercent: tolerance,
       ),

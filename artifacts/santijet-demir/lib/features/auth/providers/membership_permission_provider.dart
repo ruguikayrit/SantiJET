@@ -74,10 +74,6 @@ final canViewAnalysisProvider = Provider<bool>((ref) {
   return planOk && permissions.contains(AppPermission.viewAnalysis);
 });
 
-final canAccessPredictionProvider = Provider<bool>((ref) {
-  return ref.watch(canAccessPredictionBySubscriptionProvider);
-});
-
 bool userCanApproveOrderRole(
   Set<AppPermission> permissions,
   OrderApproverRole role,

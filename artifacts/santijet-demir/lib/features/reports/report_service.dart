@@ -38,26 +38,14 @@ class ReportService {
         require(context.hasReconciliationData, 'Mukayese / stok verisi');
         require(context.hasFieldCounts, 'Saha sayım kaydı');
         break;
-      case 'kesif_icmal':
-      case 'kesif_ilerleme':
-        require(context.hasSurveyData, 'Keşif / imalat metraj verisi');
-        break;
-      case 'siparis_ozet':
-      case 'siparis_bakiye':
-        require(context.hasOrders, 'Sipariş kaydı');
-        require(context.hasSurveyData, 'Keşif verisi');
-        break;
       case 'teslimat_liste':
-      case 'teslim_sapma':
         require(context.hasDeliveries, 'Teslimat kaydı');
-        break;
-      case 'saha_tutanak':
-        require(context.hasFieldCounts, 'Saha sayım kaydı');
         break;
       case 'aylik_ozet':
         require(context.hasMonthlyActivity, 'Bu aya ait proje aktivitesi');
         break;
       default:
+        missing.add('Bu rapor henüz canlı verilere bağlı değil');
         break;
     }
 

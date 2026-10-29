@@ -46,7 +46,8 @@ class _DiameterAmountDialogState extends State<_DiameterAmountDialog> {
   }
 
   double? _parsed() {
-    final parsed = double.tryParse(_controller.text.trim().replaceAll(',', '.'));
+    final parsed =
+        double.tryParse(_controller.text.trim().replaceAll(',', '.'));
     if (parsed == null || parsed < 0) return null;
     return parsed;
   }
@@ -107,8 +108,7 @@ class OrderCard extends ConsumerWidget {
 
     final message = switch (result) {
       OrderCancelResult.success => '${order.orderNo} iptal edildi',
-      OrderCancelResult.notCancellable =>
-        'Tamamlanan sipariş iptal edilemez',
+      OrderCancelResult.notCancellable => 'Tamamlanan sipariş iptal edilemez',
       OrderCancelResult.invalidInput => 'Ad soyad ve iptal nedeni zorunludur',
       OrderCancelResult.notFound => 'Sipariş bulunamadı',
     };
@@ -234,7 +234,7 @@ class OrderCard extends ConsumerWidget {
               (a, b) => a.isAfter(b) ? a : b,
             );
     final visual = orderVisual(order, delivered, shownTonnage);
-    final subtitle = imalat;
+    final subtitle = imalat.isEmpty ? dateStr : '$dateStr · $imalat';
     final footer = visual == OrderVisual.cancelled
         ? '${deliveries.length} sevkiyat · $dateStr tarihinde iptal edildi'
         : lastDelivery == null
@@ -247,7 +247,8 @@ class OrderCard extends ConsumerWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: const [
-          BoxShadow(color: Color(0x120F2744), blurRadius: 12, offset: Offset(0, 4)),
+          BoxShadow(
+              color: Color(0x120F2744), blurRadius: 12, offset: Offset(0, 4)),
         ],
       ),
       child: ClipRRect(
@@ -259,87 +260,89 @@ class OrderCard extends ConsumerWidget {
               ColoredBox(color: visual.color, child: const SizedBox(width: 4)),
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 12, 8, 12),
+                  padding: const EdgeInsets.fromLTRB(12, 9, 6, 9),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Text(
-                        order.orderNo,
-                        softWrap: true,
-                        style: GoogleFonts.inter(
-                          color: const Color(0xFF0F2744),
-                          fontSize: 15,
-                          fontWeight: FontWeight.w800,
-                          height: 1.25,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
                       Row(
                         children: [
-                          _StatusPill(visual: visual),
-                          const SizedBox(width: 8),
-                          Text(
-                            dateStr,
-                            style: GoogleFonts.inter(
-                              color: const Color(0xFF8B97A8),
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
+                          Expanded(
+                            child: Text(
+                              order.orderNo,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: GoogleFonts.inter(
+                                color: const Color(0xFF0F2744),
+                                fontSize: 15,
+                                fontWeight: FontWeight.w800,
+                                height: 1.2,
+                              ),
                             ),
                           ),
-                          const Spacer(),
+                          const SizedBox(width: 8),
+                          _StatusPill(visual: visual),
                           _OrderMenu(
                             showDeliver: showDeliver,
                             showCancel: showCancel,
                             onDeliver: () => _deliver(context),
                             onCancel: () => _cancelOrder(context, ref),
-                            onDiameters: () => _openDiameters(context, ref, amounts),
+                            onDiameters: () =>
+                                _openDiameters(context, ref, amounts),
                           ),
                         ],
                       ),
-                      if (subtitle.isNotEmpty) ...[
-                        const SizedBox(height: 2),
-                        Text(
+                      Padding(
+                        padding: const EdgeInsets.only(right: 6),
+                        child: Text(
                           subtitle,
-                          softWrap: true,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: GoogleFonts.inter(
                             color: const Color(0xFF64748B),
                             fontSize: 12,
-                            height: 1.35,
+                            fontWeight: FontWeight.w500,
+                            height: 1.3,
                           ),
                         ),
-                      ],
-                      const SizedBox(height: 12),
-                      _OrderKpiBand(
-                        total: shownTonnage,
-                        delivered: delivered,
-                        remaining: remaining.toDouble(),
+                      ),
+                      const SizedBox(height: 8),
+                      Padding(
+                        padding: const EdgeInsets.only(right: 6),
+                        child: _OrderKpiBand(
+                          total: shownTonnage,
+                          delivered: delivered,
+                          remaining: remaining.toDouble(),
+                        ),
                       ),
                       if (diameters.isNotEmpty) ...[
-                        const SizedBox(height: 10),
+                        const SizedBox(height: 7),
                         Wrap(
-                          spacing: 8,
-                          runSpacing: 6,
+                          spacing: 6,
+                          runSpacing: 5,
                           children: [
                             for (final diameter in diameters)
                               OrderDiameterKpiChip(
                                 diameter: diameter,
                                 tons: amounts[diameter] ?? 0,
-                                onTap: () => _reviseDiameter(context, ref, amounts, diameter),
+                                onTap: () => _reviseDiameter(
+                                    context, ref, amounts, diameter),
                               ),
                           ],
                         ),
                       ],
-                      const SizedBox(height: 10),
+                      const SizedBox(height: 7),
                       Row(
                         children: [
-                          const Icon(Icons.local_shipping_outlined, size: 16, color: Color(0xFF64748B)),
+                          const Icon(Icons.local_shipping_outlined,
+                              size: 15, color: Color(0xFF64748B)),
                           const SizedBox(width: 6),
                           Expanded(
                             child: Text(
                               footer,
-                              maxLines: 2,
+                              maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: GoogleFonts.inter(color: const Color(0xFF64748B), fontSize: 12),
+                              style: GoogleFonts.inter(
+                                  color: const Color(0xFF64748B), fontSize: 12),
                             ),
                           ),
                           if (cancellation != null)
@@ -347,13 +350,17 @@ class OrderCard extends ConsumerWidget {
                           else
                             const SizedBox(width: 8),
                           OutlinedButton(
-                            onPressed: () => _openDiameters(context, ref, amounts),
+                            onPressed: () =>
+                                _openDiameters(context, ref, amounts),
                             style: OutlinedButton.styleFrom(
                               foregroundColor: const Color(0xFF2563EB),
                               side: const BorderSide(color: Color(0xFFBFDBFE)),
                               visualDensity: VisualDensity.compact,
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
-                              minimumSize: const Size(0, 32),
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              padding: const EdgeInsets.fromLTRB(10, 0, 4, 0),
+                              minimumSize: const Size(0, 28),
+                              textStyle: GoogleFonts.inter(
+                                  fontSize: 12, fontWeight: FontWeight.w700),
                             ),
                             child: const Row(
                               mainAxisSize: MainAxisSize.min,
@@ -464,14 +471,28 @@ class _OrderKpiBand extends StatelessWidget {
       ),
     ];
 
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        for (var i = 0; i < cells.length; i++) ...[
-          if (i > 0) const SizedBox(width: 6),
-          Expanded(child: cells[i]),
+    return Container(
+      height: 34,
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: const Color(0xFFE8EDF3)),
+      ),
+      child: Row(
+        children: [
+          for (var i = 0; i < cells.length; i++) ...[
+            if (i > 0)
+              const VerticalDivider(
+                width: 1,
+                thickness: 1,
+                indent: 8,
+                endIndent: 8,
+                color: Color(0xFFE2E8F0),
+              ),
+            Expanded(child: cells[i]),
+          ],
         ],
-      ],
+      ),
     );
   }
 }
@@ -489,38 +510,36 @@ class _KpiCell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: const Color(0xFFE8EDF3)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            softWrap: true,
-            style: GoogleFonts.inter(
-              color: const Color(0xFF64748B),
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              height: 1.2,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 6),
+      child: Center(
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text.rich(
+            TextSpan(
+              children: [
+                TextSpan(
+                  text: '$label ',
+                  style: GoogleFonts.inter(
+                    color: const Color(0xFF8B97A8),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                TextSpan(
+                  text: value,
+                  style: GoogleFonts.inter(
+                    color: valueColor,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                    fontFeatures: const [FontFeature.tabularFigures()],
+                  ),
+                ),
+              ],
             ),
+            maxLines: 1,
           ),
-          const SizedBox(height: 4),
-          Text(
-            value,
-            softWrap: false,
-            style: GoogleFonts.inter(
-              color: valueColor,
-              fontSize: 14,
-              fontWeight: FontWeight.w800,
-              height: 1.1,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -543,7 +562,7 @@ class OrderDiameterKpiChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = HomeDashboard.diameterDot(diameter);
     final child = Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -605,26 +624,29 @@ class _OrderMenu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return PopupMenuButton<String>(
-      icon: const Icon(Icons.more_vert, size: 18, color: Color(0xFF94A3B8)),
-      padding: EdgeInsets.zero,
-      onSelected: (value) {
-        switch (value) {
-          case 'deliver':
-            onDeliver();
-          case 'cancel':
-            onCancel();
-          case 'diameters':
-            onDiameters();
-        }
-      },
-      itemBuilder: (context) => [
-        if (showDeliver)
-          const PopupMenuItem(value: 'deliver', child: Text('Teslim al')),
-        const PopupMenuItem(value: 'diameters', child: Text('Çaplar')),
-        if (showCancel)
-          const PopupMenuItem(value: 'cancel', child: Text('İptal et')),
-      ],
+    return SizedBox.square(
+      dimension: 30,
+      child: PopupMenuButton<String>(
+        icon: const Icon(Icons.more_vert, size: 18, color: Color(0xFF94A3B8)),
+        padding: EdgeInsets.zero,
+        onSelected: (value) {
+          switch (value) {
+            case 'deliver':
+              onDeliver();
+            case 'cancel':
+              onCancel();
+            case 'diameters':
+              onDiameters();
+          }
+        },
+        itemBuilder: (context) => [
+          if (showDeliver)
+            const PopupMenuItem(value: 'deliver', child: Text('Teslim al')),
+          const PopupMenuItem(value: 'diameters', child: Text('Çaplar')),
+          if (showCancel)
+            const PopupMenuItem(value: 'cancel', child: Text('İptal et')),
+        ],
+      ),
     );
   }
 }

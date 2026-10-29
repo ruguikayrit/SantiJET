@@ -184,44 +184,308 @@ class _Card extends StatelessWidget {
   }
 }
 
-class _RhythmTons extends StatelessWidget {
-  const _RhythmTons({
+const _rhythmBlue = Color(0xFF60A5FA);
+const _rhythmMuted = Color(0xFF8DA2BA);
+TextStyle _rhythmCaps(Color color) => GoogleFonts.inter(
+      color: color,
+      fontSize: 10,
+      fontWeight: FontWeight.w800,
+      letterSpacing: 0.8,
+    );
+
+/// Montaj yüzdesi + tonaj (sol) ve kalan süre (sağ).
+class _RhythmHero extends StatelessWidget {
+  const _RhythmHero({
     required this.consumed,
     required this.survey,
     required this.percent,
+    this.daysValue,
+    this.daysLabel,
+    this.daysElapsed,
+    this.daysTotal,
+    this.daysAlert = false,
   });
 
   final double consumed;
   final double survey;
   final double percent;
+  final String? daysValue;
+  final String? daysLabel;
+  final int? daysElapsed;
+  final int? daysTotal;
+  final bool daysAlert;
+
+  @override
+  Widget build(BuildContext context) {
+    final daysColor = daysAlert ? const Color(0xFFFCA5A5) : Colors.white;
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const _RhythmLabel(text: 'MONTAJ', dot: _rhythmBlue),
+                const SizedBox(height: 4),
+                Text(
+                  _pct(percent),
+                  style: GoogleFonts.inter(
+                    color: Colors.white,
+                    fontSize: 32,
+                    fontWeight: FontWeight.w800,
+                    height: 1,
+                    letterSpacing: -1,
+                    fontFeatures: const [FontFeature.tabularFigures()],
+                  ),
+                ),
+                const SizedBox(height: 4),
+                _RhythmRatio(lead: _tons(consumed), rest: _tons(survey)),
+              ],
+            ),
+          ),
+          if (daysValue != null) ...[
+            Container(
+              width: 1,
+              margin: const EdgeInsets.symmetric(horizontal: 16),
+              color: Colors.white.withValues(alpha: 0.10),
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                _RhythmLabel(
+                  text: daysLabel ?? '',
+                  dot: daysAlert ? const Color(0xFFFCA5A5) : Colors.white,
+                ),
+                const SizedBox(height: 4),
+                Text.rich(
+                  TextSpan(
+                    children: [
+                      TextSpan(text: daysValue),
+                      TextSpan(
+                        text: ' gün',
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: daysColor.withValues(alpha: 0.75),
+                        ),
+                      ),
+                    ],
+                  ),
+                  style: GoogleFonts.inter(
+                    color: daysColor,
+                    fontSize: 24,
+                    fontWeight: FontWeight.w800,
+                    height: 1.1,
+                    fontFeatures: const [FontFeature.tabularFigures()],
+                  ),
+                ),
+                const SizedBox(height: 4),
+                if (daysElapsed != null && daysTotal != null)
+                  _RhythmRatio(lead: '$daysElapsed', rest: '$daysTotal gün'),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _RhythmLabel extends StatelessWidget {
+  const _RhythmLabel({required this.text, required this.dot});
+
+  final String text;
+  final Color dot;
 
   @override
   Widget build(BuildContext context) {
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.end,
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Expanded(
-          child: Text(
-            '${_tons(consumed)} / ${_tons(survey)}',
-            style: GoogleFonts.inter(
-              color: Colors.white,
-              fontSize: 22,
-              fontWeight: FontWeight.w800,
-              height: 1.05,
+        Container(
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(color: dot, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: 6),
+        Text(text, style: _rhythmCaps(_rhythmMuted)),
+      ],
+    );
+  }
+}
+
+/// «179,20 t / 460,00 t» ve «158 / 365 gün» için ortak ilerleme satırı.
+class _RhythmRatio extends StatelessWidget {
+  const _RhythmRatio({required this.lead, required this.rest});
+
+  final String lead;
+  final String rest;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text.rich(
+      TextSpan(
+        children: [
+          TextSpan(text: lead, style: const TextStyle(color: Colors.white)),
+          TextSpan(text: '  /  $rest'),
+        ],
+      ),
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: GoogleFonts.inter(
+        color: _rhythmMuted,
+        fontSize: 13,
+        fontWeight: FontWeight.w700,
+        fontFeatures: const [FontFeature.tabularFigures()],
+      ),
+    );
+  }
+}
+
+/// Tek çubuk: mavi dolgu montaj, «Bugün» işareti geçen süre.
+class _RhythmTrack extends StatelessWidget {
+  const _RhythmTrack({
+    required this.materialPercent,
+    required this.timePercent,
+    required this.behind,
+    required this.gapColor,
+  });
+
+  final double materialPercent;
+  final double timePercent;
+  final bool behind;
+  final Color gapColor;
+
+  @override
+  Widget build(BuildContext context) {
+    final material = (materialPercent / 100).clamp(0.0, 1.0);
+    final time = (timePercent / 100).clamp(0.0, 1.0);
+    const trackTop = 17.0;
+    const trackHeight = 8.0;
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth;
+        final timeX = width * time;
+        final materialX = width * material;
+        const labelWidth = 84.0;
+        final labelLeft = (timeX - labelWidth / 2).clamp(0.0, (width - labelWidth).clamp(0.0, width));
+
+        return SizedBox(
+          height: trackTop + trackHeight + 5,
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Positioned(
+                left: labelLeft,
+                top: 0,
+                width: labelWidth,
+                child: Text(
+                  'BUGÜN · ${_pct(timePercent)}',
+                  textAlign: TextAlign.center,
+                  style: _rhythmCaps(Colors.white),
+                ),
+              ),
+              Positioned(
+                left: 0,
+                right: 0,
+                top: trackTop,
+                height: trackHeight,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(99),
+                  ),
+                ),
+              ),
+              if (behind && timeX > materialX)
+                Positioned(
+                  left: materialX,
+                  top: trackTop,
+                  width: timeX - materialX,
+                  height: trackHeight,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: gapColor.withValues(alpha: 0.35),
+                      borderRadius: const BorderRadius.horizontal(right: Radius.circular(99)),
+                    ),
+                  ),
+                ),
+              Positioned(
+                left: 0,
+                top: trackTop,
+                width: materialX,
+                height: trackHeight,
+                child: const DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [Color(0xFF2563EB), _rhythmBlue],
+                    ),
+                    borderRadius: BorderRadius.all(Radius.circular(99)),
+                  ),
+                ),
+              ),
+              Positioned(
+                left: (timeX - 1.5).clamp(0.0, (width - 3).clamp(0.0, width)),
+                top: trackTop - 5,
+                width: 3,
+                height: trackHeight + 10,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(99),
+                    boxShadow: const [
+                      BoxShadow(color: Color(0x66000000), blurRadius: 4),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _RhythmInsight extends StatelessWidget {
+  const _RhythmInsight({
+    required this.text,
+    required this.color,
+    required this.icon,
+  });
+
+  final String text;
+  final Color color;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withValues(alpha: 0.28)),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 16, color: color),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              text,
+              style: GoogleFonts.inter(
+                color: Colors.white,
+                fontSize: 12.5,
+                fontWeight: FontWeight.w700,
+                height: 1.25,
+              ),
             ),
           ),
-        ),
-        const SizedBox(width: 8),
-        Text(
-          _pct(percent),
-          style: GoogleFonts.inter(
-            color: const Color(0xFF60A5FA),
-            fontSize: 28,
-            fontWeight: FontWeight.w800,
-            height: 1,
-          ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
@@ -256,12 +520,12 @@ class _ScheduleCard extends ConsumerWidget {
           children: [
             const _RhythmTitle(),
             const SizedBox(height: 12),
-            _RhythmTons(
+            _RhythmHero(
               consumed: consumed,
               survey: survey,
               percent: materialPercent,
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: 12),
             Row(
               children: [
                 const Icon(Icons.event_outlined, size: 18, color: Color(0xFF94A3B8)),
@@ -302,12 +566,9 @@ class _ScheduleCard extends ConsumerWidget {
             : ('Plana uygun', HomeDashboard.green, Icons.check_circle_rounded);
 
     final dateFormat = DateFormat('dd.MM.yyyy', 'tr_TR');
-    final remainingText = remainingDays > 0
-        ? '$remainingDays gün kaldı'
-        : remainingDays == 0
-            ? 'Bugün bitiyor'
-            : '${-remainingDays} gün gecikti';
     final overdue = remainingDays < 0;
+    final daysLabel = overdue ? 'GECİKME' : 'KALAN SÜRE';
+    final daysValue = '${remainingDays.abs()}';
 
     final gapPoints = gap.abs().round();
     final interpretation = gap < -_tolerance
@@ -315,8 +576,6 @@ class _ScheduleCard extends ConsumerWidget {
         : gap > _tolerance
             ? 'Montaj sürenin $gapPoints puan önünde.'
             : 'Süre ve montaj dengeli ilerliyor.';
-
-    final todayFraction = totalDays > 0 ? elapsedDays / totalDays : 0.0;
 
     return _RhythmShell(
       onTap: canEdit ? () => _pickDates(context, ref, project) : null,
@@ -333,69 +592,59 @@ class _ScheduleCard extends ConsumerWidget {
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          _RhythmTons(
+          const SizedBox(height: 10),
+          _RhythmHero(
             consumed: consumed,
             survey: survey,
             percent: materialPercent,
+            daysLabel: daysLabel,
+            daysValue: daysValue,
+            daysElapsed: elapsedDays,
+            daysTotal: totalDays,
+            daysAlert: overdue,
           ),
-          const SizedBox(height: 14),
-          _RhythmChart(
-                  timePercent: timePercent,
-                  materialPercent: materialPercent,
-                  elapsedDays: elapsedDays,
-                  totalDays: totalDays,
-                ),
-                const SizedBox(height: 14),
-                Text(
-                  interpretation,
-                  style: GoogleFonts.inter(
-                    color: Colors.white,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    height: 1.3,
+          const SizedBox(height: 10),
+          _RhythmTrack(
+            materialPercent: materialPercent,
+            timePercent: timePercent,
+            behind: gap < -_tolerance,
+            gapColor: _amber,
+          ),
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              _ScheduleDatePoint(
+                label: 'BAŞLANGIÇ',
+                value: dateFormat.format(start),
+              ),
+              const Spacer(),
+              _ScheduleDatePoint(
+                label: 'BİTİŞ',
+                value: dateFormat.format(end),
+              ),
+              if (canEdit) ...[
+                const SizedBox(width: 8),
+                Container(
+                  width: 22,
+                  height: 22,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(7),
+                  ),
+                  child: const Icon(
+                    Icons.edit_calendar_outlined,
+                    size: 13,
+                    color: Color(0xFFCBD5E1),
                   ),
                 ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Icon(
-                      overdue ? Icons.warning_amber_rounded : Icons.timer_outlined,
-                      size: 15,
-                      color: overdue
-                          ? const Color(0xFFFCA5A5)
-                          : const Color(0xFF94A3B8),
-                    ),
-                    const SizedBox(width: 5),
-                    Text(
-                      remainingText,
-                      style: GoogleFonts.inter(
-                        color: overdue
-                            ? const Color(0xFFFCA5A5)
-                            : Colors.white,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const Spacer(),
-                    if (canEdit)
-                      const Icon(
-                        Icons.edit_calendar_outlined,
-                        size: 16,
-                        color: Color(0xFF94A3B8),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                Container(
-                  height: 1,
-                  color: Colors.white.withValues(alpha: 0.10),
-                ),
-          const SizedBox(height: 12),
-          _TodayAxis(
-            start: dateFormat.format(start),
-            end: dateFormat.format(end),
-            fraction: todayFraction,
+              ],
+            ],
+          ),
+          const SizedBox(height: 10),
+          _RhythmInsight(
+            text: interpretation,
+            color: statusColor,
+            icon: statusIcon,
           ),
         ],
       ),
@@ -465,7 +714,7 @@ class _RhythmShell extends StatelessWidget {
           onTap: onTap,
           borderRadius: BorderRadius.circular(20),
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 15, 16, 14),
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
             child: child,
           ),
         ),
@@ -497,99 +746,6 @@ class _RhythmTitle extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-class _TodayAxis extends StatelessWidget {
-  const _TodayAxis({
-    required this.start,
-    required this.end,
-    required this.fraction,
-  });
-
-  final String start;
-  final String end;
-  final double fraction;
-
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final width = constraints.maxWidth;
-        final marker = width * fraction.clamp(0.0, 1.0);
-        const labelWidth = 44.0;
-        final maxLeft = width > labelWidth ? width - labelWidth : 0.0;
-        final labelLeft = (marker - labelWidth / 2).clamp(0.0, maxLeft);
-        final dotLeft = (marker - 4).clamp(0.0, (width - 8).clamp(0.0, width));
-        return Column(
-          children: [
-            SizedBox(
-              height: 22,
-              child: Stack(
-                children: [
-                  Positioned(
-                    left: 0,
-                    right: 0,
-                    bottom: 3,
-                    child: Container(
-                      height: 2,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(99),
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    left: labelLeft,
-                    top: 0,
-                    width: labelWidth,
-                    child: Text(
-                      'BUGÜN',
-                      textAlign: TextAlign.center,
-                      style: GoogleFonts.inter(
-                        color: const Color(0xFF60A5FA),
-                        fontSize: 9,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 0.6,
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    left: dotLeft,
-                    bottom: 0,
-                    child: Container(
-                      width: 8,
-                      height: 8,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF60A5FA),
-                        shape: BoxShape.circle,
-                        border: Border.all(color: const Color(0xFF0F2744), width: 1),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                _ScheduleDatePoint(
-                  label: 'BAŞLANGIÇ',
-                  value: start,
-                  alignment: CrossAxisAlignment.start,
-                ),
-                const Spacer(),
-                _ScheduleDatePoint(
-                  label: 'BİTİŞ',
-                  value: end,
-                  alignment: CrossAxisAlignment.end,
-                ),
-              ],
-            ),
-          ],
-        );
-      },
     );
   }
 }
@@ -646,206 +802,6 @@ class _RhythmMarkBar extends StatelessWidget {
   }
 }
 
-class _RhythmChart extends StatelessWidget {
-  const _RhythmChart({
-    required this.timePercent,
-    required this.materialPercent,
-    required this.elapsedDays,
-    required this.totalDays,
-  });
-
-  final double timePercent;
-  final double materialPercent;
-  final int elapsedDays;
-  final int totalDays;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        _RhythmSeries(
-          label: 'Süre',
-          percent: timePercent,
-          color: const Color(0xFFCBD5E1),
-        ),
-        const SizedBox(height: 10),
-        _RhythmSeries(
-          label: 'Montaj',
-          percent: materialPercent,
-          color: const Color(0xFF60A5FA),
-        ),
-        const SizedBox(height: 8),
-        Padding(
-          padding: const EdgeInsets.only(left: 58, right: 46),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const _RhythmScale(),
-              const SizedBox(height: 2),
-              Text(
-                '$elapsedDays / $totalDays gün',
-                style: GoogleFonts.inter(
-                  color: const Color(0xFF70849A),
-                  fontSize: 10,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _RhythmSeries extends StatelessWidget {
-  const _RhythmSeries({
-    required this.label,
-    required this.percent,
-    required this.color,
-  });
-
-  final String label;
-  final double percent;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    final fraction = (percent / 100).clamp(0.0, 1.0);
-    return Row(
-      children: [
-        SizedBox(
-          width: 58,
-          child: Text(
-            label,
-            style: GoogleFonts.inter(
-              color: const Color(0xFFB8C6D8),
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ),
-        Expanded(
-          child: SizedBox(
-            height: 22,
-            child: Stack(
-              alignment: Alignment.centerLeft,
-              children: [
-                const Positioned.fill(child: _RhythmGrid()),
-                const Positioned(
-                  left: 0,
-                  right: 0,
-                  top: 7,
-                  height: 8,
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      color: Color(0x14FFFFFF),
-                      borderRadius: BorderRadius.all(Radius.circular(99)),
-                    ),
-                  ),
-                ),
-                LayoutBuilder(
-                  builder: (context, constraints) {
-                    return Align(
-                      alignment: Alignment.centerLeft,
-                      child: Container(
-                        width: constraints.maxWidth * fraction,
-                        height: 8,
-                        decoration: BoxDecoration(
-                          color: color,
-                          borderRadius: BorderRadius.circular(99),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ],
-            ),
-          ),
-        ),
-        SizedBox(
-          width: 46,
-          child: Text(
-            _pct(percent),
-            textAlign: TextAlign.right,
-            style: GoogleFonts.inter(
-              color: Colors.white,
-              fontSize: 13,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _RhythmGrid extends StatelessWidget {
-  const _RhythmGrid();
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        for (var i = 0; i < 4; i++)
-          Expanded(
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                border: Border(
-                  left: BorderSide(
-                    color: Colors.white.withValues(alpha: i == 0 ? 0.18 : 0.10),
-                  ),
-                  right: i == 3
-                      ? BorderSide(
-                          color: Colors.white.withValues(alpha: 0.18),
-                        )
-                      : BorderSide.none,
-                ),
-              ),
-              child: const SizedBox.expand(),
-            ),
-          ),
-      ],
-    );
-  }
-}
-
-class _RhythmScale extends StatelessWidget {
-  const _RhythmScale();
-
-  @override
-  Widget build(BuildContext context) {
-    const marks = [0, 25, 50, 75, 100];
-    return SizedBox(
-      height: 14,
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final width = constraints.maxWidth;
-          return Stack(
-            clipBehavior: Clip.none,
-            children: [
-              for (final mark in marks)
-                Positioned(
-                  left: (width * mark / 100 - (mark == 0 ? 0 : 10))
-                      .clamp(0.0, (width - 16).clamp(0.0, width)),
-                  child: Text(
-                    '$mark',
-                    style: GoogleFonts.inter(
-                      color: const Color(0xFF70849A),
-                      fontSize: 9,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-            ],
-          );
-        },
-      ),
-    );
-  }
-}
-
 class _ScheduleDarkStatus extends StatelessWidget {
   const _ScheduleDarkStatus({
     required this.label,
@@ -860,7 +816,7 @@ class _ScheduleDarkStatus extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.16),
         borderRadius: BorderRadius.circular(99),
@@ -889,37 +845,35 @@ class _ScheduleDatePoint extends StatelessWidget {
   const _ScheduleDatePoint({
     required this.label,
     required this.value,
-    required this.alignment,
   });
 
   final String label;
   final String value;
-  final CrossAxisAlignment alignment;
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: alignment,
-      children: [
-        Text(
-          label,
-          style: GoogleFonts.inter(
-            color: const Color(0xFF70849A),
-            fontSize: 9,
-            fontWeight: FontWeight.w800,
-            letterSpacing: 0.6,
+    return Text.rich(
+      TextSpan(
+        children: [
+          TextSpan(
+            text: '$label  ',
+            style: GoogleFonts.inter(
+              color: const Color(0xFF70849A),
+              fontSize: 9,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0.6,
+            ),
           ),
-        ),
-        const SizedBox(height: 3),
-        Text(
-          value,
-          style: GoogleFonts.inter(
-            color: Colors.white,
-            fontSize: 11,
-            fontWeight: FontWeight.w700,
+          TextSpan(
+            text: value,
+            style: GoogleFonts.inter(
+              color: Colors.white,
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

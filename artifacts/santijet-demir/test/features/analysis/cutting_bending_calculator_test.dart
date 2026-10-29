@@ -86,75 +86,6 @@ void main() {
       expect(group400.first.maxLengthM - group400.first.minLengthM, closeTo(0.20, 1e-9));
     });
 
-    test('tahvil grouping uses percent tolerance from source bar length', () {
-      const pieces = [
-        RebarPieceLine(diameter: 16, lengthM: 1.00, quantity: 10),
-        RebarPieceLine(diameter: 20, lengthM: 1.04, quantity: 6),
-      ];
-
-      final tahvil5 = computeTahvilGroups(pieces);
-      expect(tahvil5, hasLength(1));
-
-      const piecesTooFar = [
-        RebarPieceLine(diameter: 16, lengthM: 1.00, quantity: 10),
-        RebarPieceLine(diameter: 20, lengthM: 1.07, quantity: 6),
-      ];
-
-      final tahvilNone = computeTahvilGroups(piecesTooFar);
-      expect(tahvilNone, isEmpty);
-    });
-
-    test('suggests tahvil for different diameters with near lengths', () {
-      const pieces = [
-        RebarPieceLine(diameter: 16, lengthM: 2.00, quantity: 10),
-        RebarPieceLine(diameter: 20, lengthM: 2.08, quantity: 6),
-        RebarPieceLine(diameter: 12, lengthM: 5.00, quantity: 3),
-      ];
-
-      final tahvil = computeTahvilGroups(pieces);
-
-      expect(tahvil, hasLength(1));
-      expect(tahvil.first.members, hasLength(2));
-      expect(tahvil.first.diameters, {16, 20});
-      expect(tahvil.first.equivalents, isNotEmpty);
-      expect(
-        tahvil.first.equivalents.every(
-          (eq) => (eq.fromDiameter - eq.toDiameter).abs() <= 4,
-        ),
-        isTrue,
-      );
-    });
-
-    test('does not suggest tahvil when diameter difference exceeds 4 mm', () {
-      const pieces = [
-        RebarPieceLine(diameter: 12, lengthM: 2.60, quantity: 2),
-        RebarPieceLine(diameter: 28, lengthM: 2.70, quantity: 24),
-      ];
-
-      final tahvil = computeTahvilGroups(pieces, tolerancePercent: 0.20);
-
-      expect(tahvil, isEmpty);
-    });
-
-    test('computes tahvil quantity from cross-section area ratio', () {
-      expect(
-        TahvilEquivalent.computeEquivalentQuantity(
-          fromDiameter: 16,
-          fromQuantity: 1978,
-          toDiameter: 12,
-        ),
-        3516,
-      );
-      expect(
-        TahvilEquivalent.computeEquivalentQuantity(
-          fromDiameter: 12,
-          fromQuantity: 52,
-          toDiameter: 16,
-        ),
-        29,
-      );
-    });
-
     test('plans 12m stock cuts with minimum waste for same diameter', () {
       const pieces = [
         RebarPieceLine(diameter: 12, lengthM: 6.50, quantity: 5),
@@ -231,8 +162,8 @@ void main() {
       expect(plan.totalBars, 2285);
       expect(stockBarWasteCount(plan), 200);
       expect(stockBarNoWasteCount(plan), 2085);
-      expect(listStockBarsWithWaste(plan).length, lessThanOrEqualTo(120));
-      expect(listStockBarsWithoutWaste(plan).length, lessThanOrEqualTo(120));
+      expect(listStockBarsWithWaste(plan).length, 200);
+      expect(listStockBarsWithoutWaste(plan).length, 2085);
       expect(listStockBarsWithoutWaste(plan), isNotEmpty);
       expect(
         computeFireWasteLengthBuckets(plan).fold<int>(
@@ -288,13 +219,10 @@ void main() {
       expect(batch.stockCutPlans, isEmpty);
       expect(batch.isOptimized, isFalse);
 
-      final optimized = await runOptimumFireAnalysis(
-        batch,
-        strategy: FireReductionStrategy.tahvilOnly,
-      );
+      final optimized = await runOptimumFireAnalysis(batch);
 
       expect(optimized.isOptimized, isTrue);
-      expect(optimized.optimizationStrategy, FireReductionStrategy.tahvilOnly);
+      expect(optimized.optimizationStrategy, FireReductionStrategy.lengthMatchOnly);
       expect(optimized.lengthMatches, isEmpty);
       expect(optimized.stockCutPlans, isNotEmpty);
       expect(optimized.stockCutPlans.first.totalBars, 2);
@@ -339,7 +267,6 @@ void main() {
           lengthMatches: [
             groups.first.copyWith(approved: true, selectedLengthM: 6.50),
           ],
-          tahvilGroups: const [],
           stockCutPlans: const [],
         ),
       );
@@ -387,92 +314,7 @@ void main() {
 
       expect(rebuilt.labelDetails, hasLength(1));
       expect(rebuilt.pieceLines, hasLength(1));
-      expect(rebuilt.tahvilGroups, isEmpty);
-    });
-
-    test('applyApprovedTahvil applies only one direction per group', () {
-      const pieces = [
-        RebarPieceLine(diameter: 16, lengthM: 2.00, quantity: 100),
-        RebarPieceLine(diameter: 20, lengthM: 2.05, quantity: 60),
-      ];
-      final tahvil = computeTahvilGroups(pieces);
-      expect(tahvil, hasLength(1));
-
-      final rawMaterial = computeMaterialTonnage(pieces);
-      final approved = tahvil.first.copyWith(approved: true);
-      final converted = applyApprovedTahvilToPieceLines(pieces, [approved]);
-      final convertedMaterial = computeMaterialTonnage(converted);
-
-      expect(convertedMaterial, greaterThan(rawMaterial * 0.85));
-      expect(
-        pickBestTahvilEquivalentForGroup(tahvil.first),
-        isNotNull,
-      );
-    });
-
-    test('applyApprovedTahvil preserves element identity on converted pieces', () {
-      const pieces = [
-        RebarPieceLine(
-          diameter: 16,
-          lengthM: 2.00,
-          quantity: 100,
-          elementCode: 'P21',
-          elementTypeCode: 'P',
-          elementTypeLabel: 'Perde',
-        ),
-        RebarPieceLine(
-          diameter: 16,
-          lengthM: 2.02,
-          quantity: 40,
-          elementCode: 'P22',
-          elementTypeCode: 'P',
-          elementTypeLabel: 'Perde',
-        ),
-        RebarPieceLine(
-          diameter: 20,
-          lengthM: 2.05,
-          quantity: 60,
-          elementCode: 'K10',
-          elementTypeCode: 'K',
-          elementTypeLabel: 'Kiriş',
-        ),
-      ];
-      final tahvil = computeTahvilGroups(pieces);
-      expect(tahvil, isNotEmpty);
-
-      final approved = tahvil.first.copyWith(approved: true);
-      final equivalent = pickBestTahvilEquivalentForGroup(approved);
-      expect(equivalent, isNotNull);
-
-      final converted = applyApprovedTahvilToPieceLines(pieces, [approved]);
-      expect(converted, isNotEmpty);
-      expect(
-        converted.every(
-          (piece) =>
-              (piece.elementCode ?? '').isNotEmpty &&
-              (piece.elementTypeLabel ?? '').isNotEmpty,
-        ),
-        isTrue,
-      );
-
-      final fromCodes = pieces
-          .where((piece) => piece.diameter == equivalent!.fromDiameter)
-          .map((piece) => piece.elementCode)
-          .toSet();
-      final convertedCodes = converted
-          .where((piece) => piece.diameter == equivalent!.toDiameter)
-          .map((piece) => piece.elementCode)
-          .toSet();
-      expect(convertedCodes, containsAll(fromCodes));
-
-      final convertedQty = converted
-          .where(
-            (piece) =>
-                piece.diameter == equivalent!.toDiameter &&
-                fromCodes.contains(piece.elementCode),
-          )
-          .fold<int>(0, (sum, piece) => sum + piece.quantity);
-      expect(convertedQty, equivalent!.equivalentQuantity);
+      expect(rebuilt.lengthMatches, isEmpty);
     });
 
     test('optimized fire percent moves with fire tonnage', () async {
@@ -488,10 +330,7 @@ void main() {
         textDetails: const [],
       ).copyWith(pieceLines: pieces);
 
-      final optimized = await runOptimumFireAnalysis(
-        batch,
-        strategy: FireReductionStrategy.tahvilOnly,
-      );
+      final optimized = await runOptimumFireAnalysis(batch);
       final summary = computeAnalysisFireSummary(optimized);
 
       expect(summary.isPlannedReady, isTrue);
@@ -514,15 +353,12 @@ void main() {
         textDetails: const [],
       ).copyWith(pieceLines: pieces);
 
-      final optimized = await runOptimumFireAnalysis(
-        batch,
-        strategy: FireReductionStrategy.tahvilOnly,
-      );
+      final optimized = await runOptimumFireAnalysis(batch);
 
       expect(optimized.pieceLines, pieces);
       expect(optimized.isOptimized, isTrue);
-      expect(optimized.lengthMatches, isEmpty);
-      expect(optimized.optimizationStrategy, FireReductionStrategy.tahvilOnly);
+      expect(optimized.lengthMatches, isNotEmpty);
+      expect(optimized.optimizationStrategy, FireReductionStrategy.lengthMatchOnly);
       expect(computeAnalysisFireSummary(optimized).isPlannedReady, isTrue);
     });
 
@@ -547,7 +383,6 @@ void main() {
         revisedPieceLines:
             applyLengthMatchesToPieceLines(pieces, [approvedGroup]),
         lengthMatches: [approvedGroup],
-        tahvilGroups: const [],
         stockCutPlans: const [],
         optimizationAppliedAt: DateTime(2026),
         optimizationStrategy: FireReductionStrategy.lengthMatchOnly,
@@ -593,9 +428,11 @@ void main() {
         'lengthMatches': [],
         'tahvilGroups': [],
         'stockCutPlans': [],
+        'optimizationStrategy': 'tahvilOnly',
       });
 
       expect(batch.labelDetails, isEmpty);
+      expect(batch.optimizationStrategy, FireReductionStrategy.lengthMatchOnly);
     });
 
     test('saveOptimizationSnapshot stores result per strategy', () async {
@@ -609,14 +446,11 @@ void main() {
         textDetails: const [],
       ).copyWith(pieceLines: pieces);
 
-      batch = await runOptimumFireAnalysis(
-        batch,
-        strategy: FireReductionStrategy.tahvilOnly,
-      );
+      batch = await runOptimumFireAnalysis(batch);
 
       final saved = saveOptimizationSnapshot(batch);
 
-      expect(saved.hasSavedOptimization(FireReductionStrategy.tahvilOnly), isTrue);
+      expect(saved.hasSavedOptimization(FireReductionStrategy.lengthMatchOnly), isTrue);
       expect(saved.isCurrentOptimizationSaved, isTrue);
       expect(saved.savedOptimizations, hasLength(1));
     });
@@ -632,10 +466,7 @@ void main() {
         textDetails: const [],
       ).copyWith(pieceLines: pieces);
 
-      batch = await runOptimumFireAnalysis(
-        batch,
-        strategy: FireReductionStrategy.tahvilOnly,
-      );
+      batch = await runOptimumFireAnalysis(batch);
       final withSave = saveOptimizationSnapshot(batch);
       final cleared = clearActiveOptimization(withSave);
 
@@ -643,11 +474,11 @@ void main() {
 
       final restored = applyOptimizationSnapshot(
         cleared,
-        withSave.savedOptimizations[FireReductionStrategy.tahvilOnly]!,
+        withSave.savedOptimizations[FireReductionStrategy.lengthMatchOnly]!,
       );
 
       expect(restored.isOptimized, isTrue);
-      expect(restored.optimizationStrategy, FireReductionStrategy.tahvilOnly);
+      expect(restored.optimizationStrategy, FireReductionStrategy.lengthMatchOnly);
       expect(restored.revisedPieceLines.length, batch.revisedPieceLines.length);
       expect(restored.stockCutPlans, isNotEmpty);
       expect(
@@ -667,16 +498,13 @@ void main() {
         textDetails: const [],
       ).copyWith(pieceLines: pieces);
 
-      batch = await runOptimumFireAnalysis(
-        batch,
-        strategy: FireReductionStrategy.tahvilOnly,
-      );
+      batch = await runOptimumFireAnalysis(batch);
       batch = saveOptimizationSnapshot(batch);
 
       final decoded = CuttingBendingBatch.fromJson(batch.toJson());
 
       expect(decoded.savedOptimizations, hasLength(1));
-      expect(decoded.hasSavedOptimization(FireReductionStrategy.tahvilOnly), isTrue);
+      expect(decoded.hasSavedOptimization(FireReductionStrategy.lengthMatchOnly), isTrue);
     });
 
     test('computeStrategyFireComparisons lists saved and active strategies', () async {
@@ -690,76 +518,17 @@ void main() {
         textDetails: const [],
       ).copyWith(pieceLines: pieces);
 
-      batch = await runOptimumFireAnalysis(
-        batch,
-        strategy: FireReductionStrategy.tahvilOnly,
-      );
+      batch = await runOptimumFireAnalysis(batch);
       batch = saveOptimizationSnapshot(batch);
 
       final rows = computeStrategyFireComparisons(batch);
 
-      expect(rows, hasLength(3));
+      expect(rows, hasLength(1));
       expect(rows.where((row) => row.isAvailable), hasLength(1));
       expect(
-        rows.firstWhere((row) => row.strategy == FireReductionStrategy.tahvilOnly).isSaved,
+        rows.firstWhere((row) => row.strategy == FireReductionStrategy.lengthMatchOnly).isSaved,
         isTrue,
       );
-    });
-
-    test('estimateTahvilFirePreview only counts beneficial tahvil groups', () {
-      const pieces = [
-        RebarPieceLine(diameter: 16, lengthM: 2.00, quantity: 100),
-        RebarPieceLine(diameter: 20, lengthM: 2.05, quantity: 60),
-      ];
-      final batch = buildCuttingBendingBatch(
-        title: 'Test',
-        sourceMetrajRecordIds: const [],
-        textDetails: const [],
-      ).copyWith(pieceLines: pieces);
-
-      final preview = estimateTahvilFirePreview(batch);
-
-      expect(preview.baselineWasteTonnage, greaterThan(0));
-      if (preview.hasSavings) {
-        expect(preview.savedWastePercent, greaterThan(0));
-        expect(preview.applicableTahvilGroupCount, greaterThan(0));
-        expect(
-          preview.tahvilWastePercent,
-          lessThan(preview.baselineWastePercent),
-        );
-      } else {
-        expect(preview.applicableTahvilGroupCount, 0);
-      }
-    });
-
-    test('selectBeneficialTahvilGroups never approves when fire percent would rise', () {
-      const pieces = [
-        RebarPieceLine(diameter: 16, lengthM: 2.00, quantity: 100),
-        RebarPieceLine(diameter: 20, lengthM: 2.05, quantity: 60),
-      ];
-      final groups = computeTahvilGroups(pieces);
-      final selected = selectBeneficialTahvilGroups(
-        pieceLines: pieces,
-        groups: groups,
-      );
-      final approvedCount = selected.where((group) => group.approved).length;
-      final batch = buildCuttingBendingBatch(
-        title: 'Test',
-        sourceMetrajRecordIds: const [],
-        textDetails: const [],
-      ).copyWith(pieceLines: pieces, tahvilGroups: selected);
-      final preview = estimateTahvilFirePreview(batch);
-
-      if (approvedCount > 0) {
-        expect(
-          preview.tahvilWastePercent,
-          lessThan(preview.baselineWastePercent),
-        );
-        expect(preview.hasSavings, isTrue);
-      } else {
-        expect(preview.hasSavings, isFalse);
-        expect(preview.applicableTahvilGroupCount, 0);
-      }
     });
 
     test('mergeCuttingBendingBatchesForAnalysis combines piece lines across files', () {

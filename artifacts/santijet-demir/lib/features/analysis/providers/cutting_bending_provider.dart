@@ -43,7 +43,6 @@ abstract final class AnalysisSectionIds {
   static const lengthMatch = 'analysis-length-match';
   static const revisedPieceList = 'analysis-revised-piece-list';
   static const stockCutList = 'analysis-stock-cut-list';
-  static const tahvilSuggestions = 'analysis-tahvil-suggestions';
 
   static String stockCutDiameter(String batchId, int diameter) =>
       'analysis-stock-cut-$batchId-d$diameter';
@@ -104,37 +103,6 @@ final analysisFireSummaryProvider = Provider<analysis_calc.AnalysisFireSummary?>
   return analysis_calc.computeAnalysisFireSummary(batch);
 });
 
-/// Karşılaştırma özeti — optimize batch için memoize.
-final analysisComparisonProvider = Provider<analysis_calc.AnalysisComparison?>((ref) {
-  final batch = ref.watch(mergedAnalysisBatchProvider);
-  if (batch == null || !batch.isOptimized) return null;
-  return analysis_calc.computeAnalysisComparison(batch);
-});
-
-/// Strateji fire karşılaştırması — build içinde tekrar hesaplanmaz.
-final analysisStrategyComparisonProvider =
-    Provider<List<analysis_calc.StrategyFireComparison>>((ref) {
-  final batch = ref.watch(mergedAnalysisBatchProvider);
-  if (batch == null) return const [];
-  return analysis_calc.computeStrategyFireComparisons(batch);
-});
-
-/// Ham ↔ revize parça karşılaştırma satırları.
-final analysisPieceListComparisonProvider =
-    Provider<List<PieceListComparisonRow>>((ref) {
-  final batch = ref.watch(mergedAnalysisBatchProvider);
-  if (batch == null || !batch.isOptimized) return const [];
-  return analysis_calc.computePieceListComparisonRows(batch);
-});
-
-/// Boy eşleştirme değişiklikleri.
-final analysisLengthMatchChangesProvider =
-    Provider<List<LengthMatchChange>>((ref) {
-  final batch = ref.watch(mergedAnalysisBatchProvider);
-  if (batch == null) return const [];
-  return analysis_calc.computeLengthMatchChanges(batch.lengthMatches);
-});
-
 /// Malzeme özeti (çap bazında).
 final analysisMaterialSummaryProvider =
     Provider<List<analysis_calc.MaterialDiameterSummary>>((ref) {
@@ -190,20 +158,6 @@ final selectedFireReductionStrategyProvider =
     StateProvider<FireReductionStrategy>(
   (ref) => FireReductionStrategy.lengthMatchOnly,
 );
-
-/// Proje fire'ı ile tahvil ön izlemesi (boy eşleştirme yok).
-/// Optimize batch'te gerekmez; sayfa açılışında ağır hesabı atlar.
-final tahvilFirePreviewProvider = Provider<analysis_calc.TahvilFirePreview?>((ref) {
-  final batch = ref.watch(mergedAnalysisBatchProvider);
-  if (batch == null || batch.pieceLines.isEmpty || batch.isOptimized) {
-    return null;
-  }
-  try {
-    return analysis_calc.estimateTahvilFirePreview(batch);
-  } catch (_) {
-    return null;
-  }
-});
 
 final optimumFireAnalysisProgressProvider =
     StateProvider<OptimumFireAnalysisProgress>(
@@ -384,20 +338,6 @@ class CuttingBendingNotifier extends StateNotifier<CuttingBendingState> {
     });
   }
 
-  Future<void> approveTahvil(String groupId, {required bool approved}) async {
-    await _updateBatch((batch) {
-      final updated = batch.tahvilGroups
-          .map((group) => group.id == groupId ? group.copyWith(approved: approved) : group)
-          .toList();
-      return analysis_calc.syncBatchLengthMatchDerivatives(
-        batch.copyWith(
-          tahvilGroups: updated,
-          clearOptimizationAppliedAt: true,
-        ),
-      );
-    });
-  }
-
   Future<void> runOptimumFireAnalysis() async {
     final projectId = _loadedProjectId;
     final merged = _mergedBatchForScope();
@@ -425,7 +365,6 @@ class CuttingBendingNotifier extends StateNotifier<CuttingBendingState> {
       var lastReportedPercent = -1;
       final updated = await analysis_calc.runOptimumFireAnalysis(
         merged,
-        strategy: _ref.read(selectedFireReductionStrategyProvider),
         onProgress: (percent, stepLabel) async {
           final now = DateTime.now();
           if (percent < 100 &&

@@ -20,11 +20,19 @@ class DiameterStatusCells extends StatelessWidget {
     required this.items,
     this.onDiameterTap,
     this.highlightLowest = true,
+    this.maxVisible = 5,
+    this.controller,
   });
 
   final List<DiameterStatusCellItem> items;
   final ValueChanged<int>? onDiameterTap;
   final bool highlightLowest;
+
+  /// Satırda aynı anda görünen çap sayısı; fazlası yatay kaydırılır.
+  final int maxVisible;
+
+  /// Çap sayısı [maxVisible]'ı aşınca yatay kaydırmayı dışarıdan sürmek için.
+  final ScrollController? controller;
 
   static const _ink = Color(0xFF0F2744);
   static const _blue = Color(0xFF2563EB);
@@ -62,15 +70,16 @@ class DiameterStatusCells extends StatelessWidget {
                   : () => onDiameterTap!(item.diameter),
             ),
         ];
-        if (items.length <= 5) {
+        if (items.length <= maxVisible) {
           return Row(
             children: [
               for (final cell in cells) Expanded(child: cell),
             ],
           );
         }
-        final cellWidth = constraints.maxWidth / 5;
+        final cellWidth = constraints.maxWidth / maxVisible;
         return SingleChildScrollView(
+          controller: controller,
           scrollDirection: Axis.horizontal,
           child: Row(
             children: [
@@ -144,13 +153,17 @@ class DiameterStatusCell extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 8),
-            Text(
-              bottomLabel,
-              textAlign: TextAlign.center,
-              style: GoogleFonts.inter(
-                color: color,
-                fontSize: 15,
-                fontWeight: FontWeight.w800,
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                bottomLabel,
+                maxLines: 1,
+                textAlign: TextAlign.center,
+                style: GoogleFonts.inter(
+                  color: color,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w800,
+                ),
               ),
             ),
           ],

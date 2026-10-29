@@ -69,7 +69,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
       }
     }
 
-    await Future<void>.delayed(const Duration(milliseconds: 800));
+    await Future<void>.delayed(const Duration(milliseconds: 2400));
     if (!mounted) return;
 
     final latestAuth = ref.read(authProvider);

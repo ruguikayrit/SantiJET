@@ -9,6 +9,7 @@ void main() {
       final deliveries = [
         DeliveryItem(
           id: 'd1',
+          orderId: 'o1',
           orderNo: 'SIP-1',
           irsaliyeNo: 'IR-1',
           date: DateTime(2025, 5, 14),
@@ -23,6 +24,7 @@ void main() {
         ),
         DeliveryItem(
           id: 'd2',
+          orderId: 'o2',
           orderNo: 'SIP-2',
           irsaliyeNo: 'IR-2',
           date: DateTime(2025, 5, 13),
@@ -40,8 +42,9 @@ void main() {
 
       expect(summary.totalOrdered, 60);
       expect(summary.totalDelivered, 48);
-      expect(summary.pending, 12);
+      expect(summary.remainingOrder, 12);
       expect(summary.missing, 12);
+      expect(summary.excess, 0);
       expect(summary.fulfillmentPercent, closeTo(80, 0.01));
     });
 
@@ -50,8 +53,9 @@ void main() {
 
       expect(summary.totalOrdered, 0);
       expect(summary.totalDelivered, 0);
-      expect(summary.pending, 0);
+      expect(summary.remainingOrder, 0);
       expect(summary.missing, 0);
+      expect(summary.excess, 0);
       expect(summary.fulfillmentPercent, 0);
     });
   });

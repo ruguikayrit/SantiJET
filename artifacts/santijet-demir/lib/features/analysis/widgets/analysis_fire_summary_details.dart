@@ -25,13 +25,11 @@ class FireSummaryDetailPanel extends StatelessWidget {
     required this.kind,
     required this.batch,
     required this.summary,
-    this.comparison,
   });
 
   final FireSummaryDetailKind kind;
   final CuttingBendingBatch batch;
   final AnalysisFireSummary summary;
-  final AnalysisComparison? comparison;
 
   @override
   Widget build(BuildContext context) {
@@ -60,7 +58,6 @@ class FireSummaryDetailPanel extends StatelessWidget {
             ),
           FireSummaryDetailKind.savings => _SavingsDetail(
               summary: summary,
-              comparison: comparison,
               batch: batch,
             ),
         },
@@ -610,24 +607,20 @@ class _FireCutFilterTab extends StatelessWidget {
 class _SavingsDetail extends StatelessWidget {
   const _SavingsDetail({
     required this.summary,
-    required this.comparison,
     required this.batch,
   });
 
   final AnalysisFireSummary summary;
-  final AnalysisComparison? comparison;
   final CuttingBendingBatch batch;
 
   @override
   Widget build(BuildContext context) {
-    if (!summary.isPlannedReady || comparison == null) {
+    if (!summary.isPlannedReady) {
       return Text(
         'Kazanç, ham ve plan fire karşılaştırmasından hesaplanır.',
         style: AppTypography.bodySmall.copyWith(color: AppColors.textMuted),
       );
     }
-
-    final comp = comparison!;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -668,13 +661,6 @@ class _SavingsDetail extends StatelessWidget {
               : '—',
           highlight: summary.savedWastePercent > 0,
         ),
-        if (comp.tahvilGroupsApplied > 0) ...[
-          const SizedBox(height: 8),
-          AppDescriptionLines(
-            comp.tahvilApplicationLines,
-            textAlign: TextAlign.center,
-          ),
-        ],
       ],
     );
   }

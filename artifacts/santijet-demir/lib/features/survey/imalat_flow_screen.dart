@@ -691,40 +691,37 @@ class _ImalatFlowScreenState extends ConsumerState<ImalatFlowScreen> {
     if (rows.isEmpty) return const _EmptyHint('Çap yok');
 
     return _WhiteCard(
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          return SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: ConstrainedBox(
-              constraints: BoxConstraints(minWidth: constraints.maxWidth),
-              child: _PivotTable(
-                cornerLabel: 'Çap',
-                columnLabels: [
-                  for (final block in _blocks)
-                    block.name.isNotEmpty ? block.name : block.code,
-                ],
-                rowLabels: [for (final diameter in rows) 'Ø$diameter'],
-                cellAt: (rowIndex, colIndex) {
-                  final block = _blocks[colIndex];
-                  return byBlockDiameter[block.id]?[rows[rowIndex]] ?? 0;
-                },
-                rowTotal: (rowIndex) {
-                  final diameter = rows[rowIndex];
-                  var sum = 0.0;
-                  for (final block in _blocks) {
-                    sum += byBlockDiameter[block.id]?[diameter] ?? 0;
-                  }
-                  return sum;
-                },
-                columnTotal: (colIndex) {
-                  final block = _blocks[colIndex];
-                  return (byBlockDiameter[block.id]?.values ?? const <double>[])
-                      .fold<double>(0, (sum, value) => sum + value);
-                },
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: _PivotTable(
+          cornerLabel: 'Çap',
+          columns: [
+            for (final block in _blocks)
+              _PivotColumn(
+                code: block.code,
+                name: block.name.isNotEmpty ? block.name : block.code,
+                color: _colorFor(block),
               ),
-            ),
-          );
-        },
+          ],
+          rowLabels: [for (final diameter in rows) 'Ø$diameter'],
+          cellAt: (rowIndex, colIndex) {
+            final block = _blocks[colIndex];
+            return byBlockDiameter[block.id]?[rows[rowIndex]] ?? 0;
+          },
+          rowTotal: (rowIndex) {
+            final diameter = rows[rowIndex];
+            var sum = 0.0;
+            for (final block in _blocks) {
+              sum += byBlockDiameter[block.id]?[diameter] ?? 0;
+            }
+            return sum;
+          },
+          columnTotal: (colIndex) {
+            final block = _blocks[colIndex];
+            return (byBlockDiameter[block.id]?.values ?? const <double>[])
+                .fold<double>(0, (sum, value) => sum + value);
+          },
+        ),
       ),
     );
   }
@@ -1717,10 +1714,11 @@ class _SectionHeading extends StatelessWidget {
   }
 }
 
-class _PivotTable extends StatelessWidget {
+/// İmalat bazlı icmal: Çap ve Toplam sabit, blok sütunları yatay kayar.
+class _PivotTable extends StatefulWidget {
   const _PivotTable({
     required this.cornerLabel,
-    required this.columnLabels,
+    required this.columns,
     required this.rowLabels,
     required this.cellAt,
     required this.rowTotal,
@@ -1728,109 +1726,491 @@ class _PivotTable extends StatelessWidget {
   });
 
   final String cornerLabel;
-  final List<String> columnLabels;
+  final List<_PivotColumn> columns;
   final List<String> rowLabels;
   final double Function(int rowIndex, int colIndex) cellAt;
   final double Function(int rowIndex) rowTotal;
   final double Function(int colIndex) columnTotal;
 
   @override
-  Widget build(BuildContext context) {
-    const headStyle = TextStyle(
-      fontSize: 11,
-      fontWeight: FontWeight.w700,
-      color: _muted,
-    );
-    const cellStyle = TextStyle(
-      fontSize: 12,
-      fontWeight: FontWeight.w600,
-      color: _ink,
-    );
-    const boldStyle = TextStyle(
-      fontSize: 12,
-      fontWeight: FontWeight.w800,
-      color: _ink,
-    );
+  State<_PivotTable> createState() => _PivotTableState();
+}
 
-    return Table(
-      defaultVerticalAlignment: TableCellVerticalAlignment.middle,
-      columnWidths: {
-        0: const IntrinsicColumnWidth(),
-        for (var i = 0; i < columnLabels.length; i++) i + 1: const IntrinsicColumnWidth(),
-        columnLabels.length + 1: const IntrinsicColumnWidth(),
-      },
-      border: TableBorder(
-        horizontalInside: BorderSide(color: _line.withValues(alpha: 0.9)),
-        verticalInside: BorderSide(color: _line.withValues(alpha: 0.6)),
-      ),
+class _PivotColumn {
+  const _PivotColumn({required this.code, required this.name, required this.color});
+
+  final String code;
+  final String name;
+  final Color color;
+}
+
+class _PivotTableState extends State<_PivotTable> {
+  static const _maxVisibleColumns = 3;
+  static const _cornerWidth = 68.0;
+  static const _totalWidth = 96.0;
+  static const _headHeight = 58.0;
+  static const _rowHeight = 50.0;
+  static const _footHeight = 52.0;
+  static const _zebra = Color(0xFFFAFBFD);
+  static const _totalTint = Color(0xFFF2F6FF);
+  static const _footTint = Color(0xFFEAF0FF);
+
+  final _scroll = ScrollController();
+  bool _fadeLeft = false;
+  bool _fadeRight = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _scroll.addListener(_syncFades);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _syncFades());
+  }
+
+  @override
+  void didUpdateWidget(covariant _PivotTable oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _syncFades());
+  }
+
+  @override
+  void dispose() {
+    _scroll.dispose();
+    super.dispose();
+  }
+
+  void _syncFades() {
+    if (!mounted || !_scroll.hasClients) return;
+    final position = _scroll.position;
+    final left = position.pixels > 1;
+    final right = position.pixels < position.maxScrollExtent - 1;
+    if (left != _fadeLeft || right != _fadeRight) {
+      setState(() {
+        _fadeLeft = left;
+        _fadeRight = right;
+      });
+    }
+  }
+
+  void _pageColumns() {
+    if (!_scroll.hasClients) return;
+    final position = _scroll.position;
+    final atEnd = position.pixels >= position.maxScrollExtent - 1;
+    final target = atEnd
+        ? 0.0
+        : (position.pixels + position.viewportDimension)
+            .clamp(0.0, position.maxScrollExtent);
+    _scroll.animateTo(
+      target,
+      duration: const Duration(milliseconds: 320),
+      curve: Curves.easeOutCubic,
+    );
+  }
+
+  static String _number(double value) {
+    final text = AppFormat.tonnage(value);
+    return text.endsWith(' t') ? text.substring(0, text.length - 2) : text;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final columns = widget.columns;
+    final rowCount = widget.rowLabels.length;
+    final rowTotals = [for (var r = 0; r < rowCount; r++) widget.rowTotal(r)];
+    final grandTotal = rowTotals.fold<double>(0, (a, b) => a + b);
+    final overflow = columns.length > _maxVisibleColumns;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        TableRow(
-          decoration: const BoxDecoration(
-            border: Border(bottom: BorderSide(color: _line)),
-          ),
-          children: [
-            _tableCell(cornerLabel, headStyle, align: TextAlign.start),
-            for (final label in columnLabels)
-              _tableCell(label, headStyle, align: TextAlign.center),
-            _tableCell('Toplam', headStyle, align: TextAlign.end),
-          ],
-        ),
-        for (var r = 0; r < rowLabels.length; r++)
-          TableRow(
-            children: [
-              _tableCell(rowLabels[r], cellStyle, align: TextAlign.start, maxLines: 2),
-              for (var c = 0; c < columnLabels.length; c++)
-                _tableCell(
-                  AppFormat.tonnage(cellAt(r, c)),
-                  cellStyle,
-                  align: TextAlign.center,
+        _metaBar(columns.length, rowCount, overflow),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final middleWidth = constraints.maxWidth - _cornerWidth - _totalWidth;
+            final visible = columns.length.clamp(1, _maxVisibleColumns);
+            final columnWidth = middleWidth / visible;
+
+            return Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(width: _cornerWidth, child: _diameterColumn(rowCount)),
+                Expanded(
+                  child: Stack(
+                    children: [
+                      SingleChildScrollView(
+                        controller: _scroll,
+                        scrollDirection: Axis.horizontal,
+                        physics: const ClampingScrollPhysics(),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            for (var c = 0; c < columns.length; c++)
+                              SizedBox(
+                                width: columnWidth,
+                                child: _blockColumn(c, rowCount, last: c == columns.length - 1),
+                              ),
+                          ],
+                        ),
+                      ),
+                      _edgeFade(visible: _fadeLeft, alignLeft: true),
+                      _edgeFade(visible: _fadeRight, alignLeft: false),
+                    ],
+                  ),
                 ),
-              _tableCell(
-                AppFormat.tonnage(rowTotal(r)),
-                boldStyle,
-                align: TextAlign.end,
-              ),
-            ],
-          ),
-        TableRow(
-          decoration: BoxDecoration(color: _bg.withValues(alpha: 0.6)),
-          children: [
-            _tableCell('Toplam', boldStyle, align: TextAlign.start),
-            for (var c = 0; c < columnLabels.length; c++)
-              _tableCell(
-                AppFormat.tonnage(columnTotal(c)),
-                boldStyle,
-                align: TextAlign.center,
-              ),
-            _tableCell(
-              AppFormat.tonnage(
-                List.generate(columnLabels.length, columnTotal)
-                    .fold<double>(0, (a, b) => a + b),
-              ),
-              boldStyle,
-              align: TextAlign.end,
-            ),
-          ],
+                SizedBox(
+                  width: _totalWidth,
+                  child: _totalColumn(rowTotals, grandTotal),
+                ),
+              ],
+            );
+          },
         ),
       ],
     );
   }
 
-  Widget _tableCell(
-    String text,
-    TextStyle style, {
-    required TextAlign align,
-    int maxLines = 1,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-      child: Text(
-        text,
-        textAlign: align,
-        maxLines: maxLines,
-        overflow: TextOverflow.ellipsis,
-        style: style,
+  Widget _metaBar(int blockCount, int diameterCount, bool overflow) {
+    const style = TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: _muted);
+    return Container(
+      padding: const EdgeInsets.fromLTRB(14, 12, 12, 10),
+      decoration: const BoxDecoration(
+        border: Border(bottom: BorderSide(color: _line)),
       ),
+      child: Row(
+        children: [
+          Text('$blockCount blok · $diameterCount çap', style: style),
+          const SizedBox(width: 6),
+          const Text('·', style: style),
+          const SizedBox(width: 6),
+          const Text('Değerler ton', style: style),
+          const Spacer(),
+          if (overflow) _pageButton(),
+        ],
+      ),
+    );
+  }
+
+  Widget _pageButton() {
+    final backToStart = _fadeLeft && !_fadeRight;
+    const labelStyle = TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: _blue);
+    return Semantics(
+      button: true,
+      label: backToStart ? 'Tabloyu başa kaydır' : 'Sonraki sütunlara kaydır',
+      child: Material(
+        color: _blue.withValues(alpha: 0.08),
+        shape: StadiumBorder(side: BorderSide(color: _blue.withValues(alpha: 0.25))),
+        child: InkWell(
+          customBorder: const StadiumBorder(),
+          onTap: _pageColumns,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 32),
+            child: Padding(
+              padding: EdgeInsets.fromLTRB(backToStart ? 6 : 12, 0, backToStart ? 12 : 6, 0),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: backToStart
+                    ? const [
+                        Icon(Icons.chevron_left_rounded, size: 18, color: _blue),
+                        SizedBox(width: 2),
+                        Text('Başa dön', style: labelStyle),
+                      ]
+                    : const [
+                        Text('Kaydır', style: labelStyle),
+                        SizedBox(width: 2),
+                        Icon(Icons.chevron_right_rounded, size: 18, color: _blue),
+                      ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _edgeFade({required bool visible, required bool alignLeft}) {
+    return Positioned(
+      top: 0,
+      bottom: 0,
+      left: alignLeft ? 0 : null,
+      right: alignLeft ? null : 0,
+      width: 18,
+      child: IgnorePointer(
+        child: AnimatedOpacity(
+          opacity: visible ? 1 : 0,
+          duration: const Duration(milliseconds: 160),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: alignLeft ? Alignment.centerLeft : Alignment.centerRight,
+                end: alignLeft ? Alignment.centerRight : Alignment.centerLeft,
+                colors: [
+                  _ink.withValues(alpha: 0.08),
+                  _ink.withValues(alpha: 0),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Color _rowColor(int r) => r.isOdd ? _zebra : Colors.white;
+
+  Widget _diameterColumn(int rowCount) {
+    return DecoratedBox(
+      decoration: const BoxDecoration(
+        border: Border(right: BorderSide(color: _line)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _headCell(
+            alignment: Alignment.centerLeft,
+            child: Text(widget.cornerLabel, style: _headText),
+          ),
+          for (var r = 0; r < rowCount; r++)
+            _bodyCell(
+              color: _rowColor(r),
+              alignment: Alignment.centerLeft,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: _bg,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: _line),
+                ),
+                child: Text(
+                  widget.rowLabels[r],
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: _ink),
+                ),
+              ),
+            ),
+          _footCell(
+            alignment: Alignment.centerLeft,
+            child: const Text('Toplam', style: _footLabel),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _blockColumn(int c, int rowCount, {required bool last}) {
+    final column = widget.columns[c];
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        border: Border(
+          right: last ? BorderSide.none : BorderSide(color: _line.withValues(alpha: 0.7)),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _headCell(
+            alignment: Alignment.center,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 22,
+                  height: 22,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: column.color,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    column.code,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  column.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: _headText,
+                ),
+              ],
+            ),
+          ),
+          for (var r = 0; r < rowCount; r++)
+            _bodyCell(
+              color: _rowColor(r),
+              alignment: Alignment.center,
+              child: _valueText(widget.cellAt(r, c)),
+            ),
+          _footCell(
+            alignment: Alignment.center,
+            child: Text(
+              _number(widget.columnTotal(c)),
+              maxLines: 1,
+              style: _footValue,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _totalColumn(List<double> rowTotals, double grandTotal) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: _totalTint,
+        border: Border(left: BorderSide(color: _blue.withValues(alpha: 0.18))),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _headCell(
+            color: _totalTint,
+            alignment: Alignment.centerRight,
+            child: const Text(
+              'Toplam',
+              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: _blue),
+            ),
+          ),
+          for (var r = 0; r < rowTotals.length; r++)
+            _bodyCell(
+              color: _totalTint,
+              alignment: Alignment.centerRight,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    _number(rowTotals[r]),
+                    maxLines: 1,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w800,
+                      color: _ink,
+                      fontFeatures: [FontFeature.tabularFigures()],
+                    ),
+                  ),
+                  const SizedBox(height: 5),
+                  _shareBar(grandTotal <= 0 ? 0 : rowTotals[r] / grandTotal),
+                ],
+              ),
+            ),
+          _footCell(
+            color: _blue,
+            alignment: Alignment.centerRight,
+            child: Text(
+              _number(grandTotal),
+              maxLines: 1,
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w800,
+                color: Colors.white,
+                fontFeatures: [FontFeature.tabularFigures()],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _shareBar(double share) {
+    final clamped = share.clamp(0.0, 1.0);
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          '%${(clamped * 100).round()}',
+          style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: _muted),
+        ),
+        const SizedBox(width: 5),
+        SizedBox(
+          width: 34,
+          height: 4,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(2),
+            child: Stack(
+              children: [
+                Container(color: _blue.withValues(alpha: 0.12)),
+                FractionallySizedBox(
+                  widthFactor: clamped,
+                  child: Container(color: _blue),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _valueText(double value) {
+    if (value.abs() < 0.005) {
+      return Text(
+        '–',
+        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: _muted.withValues(alpha: 0.7)),
+      );
+    }
+    return Text(
+      _number(value),
+      maxLines: 1,
+      style: const TextStyle(
+        fontSize: 13,
+        fontWeight: FontWeight.w600,
+        color: _ink,
+        fontFeatures: [FontFeature.tabularFigures()],
+      ),
+    );
+  }
+
+  static const _headText = TextStyle(
+    fontSize: 11,
+    fontWeight: FontWeight.w700,
+    color: _muted,
+    letterSpacing: 0.2,
+  );
+  static const _footLabel = TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: _ink);
+  static const _footValue = TextStyle(
+    fontSize: 13,
+    fontWeight: FontWeight.w800,
+    color: _ink,
+    fontFeatures: [FontFeature.tabularFigures()],
+  );
+
+  Widget _headCell({required Widget child, required Alignment alignment, Color? color}) {
+    return Container(
+      height: _headHeight,
+      padding: const EdgeInsets.symmetric(horizontal: 10),
+      alignment: alignment,
+      decoration: BoxDecoration(
+        color: color ?? Colors.white,
+        border: const Border(bottom: BorderSide(color: _line)),
+      ),
+      child: child,
+    );
+  }
+
+  Widget _bodyCell({required Widget child, required Alignment alignment, required Color color}) {
+    return Container(
+      height: _rowHeight,
+      padding: const EdgeInsets.symmetric(horizontal: 10),
+      alignment: alignment,
+      decoration: BoxDecoration(
+        color: color,
+        border: Border(bottom: BorderSide(color: _line.withValues(alpha: 0.7))),
+      ),
+      child: child,
+    );
+  }
+
+  Widget _footCell({required Widget child, required Alignment alignment, Color? color}) {
+    return Container(
+      height: _footHeight,
+      padding: const EdgeInsets.symmetric(horizontal: 10),
+      alignment: alignment,
+      color: color ?? _footTint,
+      child: child,
     );
   }
 }

@@ -21,10 +21,8 @@ Future<List<CadTextEntity>> extractDwgTextsNative(List<int> bytes) async {
     return _extractViaHttp(bytes);
   }
 
-  throw const FormatException(
-    'DWG dosyaları bu cihazda doğrudan okunamaz. Web sürümünü kullanın veya '
-    'DWG_CONVERTER_URL yapılandırın.',
-  );
+  final rawTexts = await extractDwgTextsEmbedded(bytes);
+  return _mapTexts(rawTexts);
 }
 
 Future<List<CadTextEntity>> _extractViaHttp(List<int> bytes) async {
@@ -49,7 +47,10 @@ Future<List<CadTextEntity>> _extractViaHttp(List<int> bytes) async {
 
   final decoded = jsonDecode(body) as Map<String, dynamic>;
   final rawTexts = decoded['texts'] as List<dynamic>? ?? const [];
+  return _mapTexts(rawTexts);
+}
 
+List<CadTextEntity> _mapTexts(List<dynamic> rawTexts) {
   return rawTexts
       .map((item) {
         if (item is Map<String, dynamic>) {

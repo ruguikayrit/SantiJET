@@ -5,8 +5,6 @@ import 'package:santijet_demir/core/routing/app_router.dart';
 import 'package:santijet_demir/core/responsive/app_safe_area.dart';
 import 'package:santijet_demir/core/theme/app_theme.dart';
 import 'package:santijet_demir/core/theme/theme_rebuild_gate.dart';
-import 'package:santijet_demir/features/auth/app_lock_screen.dart';
-import 'package:santijet_demir/features/auth/providers/app_lock_provider.dart';
 import 'package:santijet_demir/features/auth/providers/auth_provider.dart';
 import 'package:santijet_demir/features/auth/session_expired_screen.dart';
 import 'package:santijet_demir/domain/entities/app_settings.dart';
@@ -30,7 +28,6 @@ class SantijetDemirApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(appSettingsProvider);
     final router = ref.watch(routerProvider);
-    final lock = ref.watch(appLockProvider);
     final auth = ref.watch(authProvider);
     final modeKey = AppSettings.normalizeThemeMode(settings.themeMode);
     final themeMode = _themeModeFromSettings(modeKey);
@@ -54,21 +51,6 @@ class SantijetDemirApp extends ConsumerWidget {
         supportedLocales: _appSupportedLocales,
         builder: (context, child) => wrap(child),
         home: const SessionExpiredScreen(),
-      );
-    }
-
-    if (lock.isEnabled && !lock.isUnlocked) {
-      return MaterialApp(
-        title: 'ŞantiJET DEMİR',
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.light,
-        darkTheme: AppTheme.dark,
-        themeMode: themeMode,
-        locale: const Locale('tr', 'TR'),
-        localizationsDelegates: _appLocalizationsDelegates,
-        supportedLocales: _appSupportedLocales,
-        builder: (context, child) => wrap(child),
-        home: const AppLockScreen(),
       );
     }
 

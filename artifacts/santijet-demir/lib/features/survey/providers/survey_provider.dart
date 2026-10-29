@@ -4,6 +4,7 @@ import 'package:santijet_demir/data/services/rebar_survey_mapper.dart';
 import 'package:santijet_demir/domain/entities/rebar_metraj.dart';
 import 'package:santijet_demir/domain/entities/survey.dart';
 import 'package:santijet_demir/features/projects/providers/project_provider.dart';
+import 'package:santijet_demir/features/survey/survey_table_import.dart';
 
 /// Eski sürümün boş projeye yazdığı örnek keşif. Yalnız bu toplamlar silinir.
 const _injectedSampleImalats = <String, (double, double, double, double)>{
@@ -470,6 +471,18 @@ class SurveyProjectNotifier extends StateNotifier<SurveyProject> {
   Future<void> replaceImportedImalats(List<SurveyImalat> imalats) async {
     state = state.copyWith(imalats: imalats);
     await _persist();
+  }
+
+  Future<SurveyImportMerge> importPlannedImalats(
+    List<SurveyImalat> incoming,
+  ) async {
+    final merged = mergeImportedImalats(
+      existing: state.imalats,
+      incoming: incoming,
+    );
+    state = state.copyWith(imalats: merged.imalats);
+    await _persist();
+    return merged;
   }
 
   Future<void> deleteImalat(String imalatId) async {
